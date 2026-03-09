@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -26,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { compressImage } from '@/lib/image-compression';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -90,6 +90,7 @@ function AuthenticatedHome() {
   const firestore = useFirestore();
   const { user } = useUser();
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [open, setOpen] = useState(false);
   const [base64Image, setBase64Image] = useState<string | null>(null);
 
@@ -104,22 +105,26 @@ function AuthenticatedHome() {
   const { data: stores, isLoading: loadingStores } = useCollection(storesQuery);
   const { data: products, isLoading: loadingProducts } = useCollection(productsQuery);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024) { // 1MB Limit
+      setIsCompressing(true);
+      try {
+        const compressed = await compressImage(file);
+        setBase64Image(compressed);
         toast({
-          title: "Imagen muy pesada",
-          description: "El tamaño máximo permitido es 1MB para mantener la rapidez de la app.",
+          title: "Imagen procesada",
+          description: "La imagen ha sido optimizada para la web.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error al procesar",
+          description: "No se pudo optimizar la imagen.",
           variant: "destructive",
         });
-        return;
+      } finally {
+        setIsCompressing(false);
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setBase64Image(reader.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -204,7 +209,11 @@ function AuthenticatedHome() {
                   <div className="space-y-2">
                     <Label>Imagen de la Tienda</Label>
                     <div className="flex flex-col gap-3">
-                      {base64Image ? (
+                      {isCompressing ? (
+                        <div className="aspect-video rounded-xl bg-muted animate-pulse flex items-center justify-center">
+                          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        </div>
+                      ) : base64Image ? (
                         <div className="relative aspect-video rounded-xl overflow-hidden border">
                           <Image src={base64Image} alt="Preview" fill className="object-cover" />
                           <Button 
@@ -221,7 +230,7 @@ function AuthenticatedHome() {
                         <label className="flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors">
                           <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
                           <span className="text-sm font-medium text-muted-foreground text-center px-4">
-                            Sube una foto de tu fachada o logo (Máx 1MB)
+                            Sube una foto real de tu fachada o logo
                           </span>
                           <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                         </label>
@@ -241,7 +250,7 @@ function AuthenticatedHome() {
                     <Label htmlFor="description">Breve Descripción</Label>
                     <Textarea id="description" name="description" placeholder="Cuéntanos qué te hace especial..." required />
                   </div>
-                  <Button type="submit" className="w-full h-12 font-bold text-lg" disabled={isRegistering}>
+                  <Button type="submit" className="w-full h-12 font-bold text-lg" disabled={isRegistering || isCompressing}>
                     {isRegistering ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />}
                     Lanzar Vitrina
                   </Button>

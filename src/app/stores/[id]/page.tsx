@@ -1,13 +1,12 @@
-
 "use client";
 
-import { useState, use, useEffect } from 'react';
+import { useState, use } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Phone, Info, Star, Plus, Package, ListPlus, Loader2, ArrowLeft } from 'lucide-react';
+import { Phone, Info, Star, Plus, Package, ListPlus, Loader2, ArrowLeft, Image as ImageIcon, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -26,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { compressImage } from '@/lib/image-compression';
 
 export default function StorePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -44,8 +44,10 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
   const [activeTab, setActiveTab] = useState("all");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [isCompressingProduct, setIsCompressingProduct] = useState(false);
   const [catDialogOpen, setCatDialogOpen] = useState(false);
   const [prodDialogOpen, setProdDialogOpen] = useState(false);
+  const [productImage, setProductImage] = useState<string | null>(null);
 
   if (loadingStore) {
     return (
@@ -63,6 +65,29 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
   if (!store && !loadingStore) notFound();
 
   const isOwner = user?.uid === store?.ownerId;
+
+  const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsCompressingProduct(true);
+      try {
+        const compressed = await compressImage(file);
+        setProductImage(compressed);
+        toast({
+          title: "Foto optimizada",
+          description: "La imagen del producto está lista.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo procesar la imagen.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsCompressingProduct(false);
+      }
+    }
+  };
 
   async function handleAddCategory(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -124,7 +149,7 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
         name,
         price,
         description,
-        imageUrls: [`https://picsum.photos/seed/${prodRef.id}/600/400`],
+        imageUrls: [productImage || `https://picsum.photos/seed/${prodRef.id}/600/400`],
         status: 'available',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -143,6 +168,7 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
         description: `"${name}" ya está disponible en tu vitrina.`,
       });
       setProdDialogOpen(false);
+      setProductImage(null);
     } catch (error) {
       toast({
         title: "Error",
@@ -226,7 +252,7 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
                         </DialogContent>
                       </Dialog>
 
-                      <Dialog open={prodDialogOpen} onOpenChange={setProdDialogOpen}>
+                      <Dialog open={prodDialogOpen} onOpenChange={(v) => { setProdDialogOpen(v); if(!v) setProductImage(null); }}>
                         <DialogTrigger asChild>
                           <Button className="rounded-full gap-2 bg-secondary hover:bg-secondary/90 font-bold">
                             <Package className="w-4 h-4" /> Producto
@@ -242,6 +268,39 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
                               <Label htmlFor="prodName">Nombre del Producto</Label>
                               <Input id="prodName" name="name" required />
                             </div>
+
+                            <div className="space-y-2">
+                              <Label>Foto del Producto</Label>
+                              <div className="flex flex-col gap-3">
+                                {isCompressingProduct ? (
+                                  <div className="aspect-video rounded-xl bg-muted animate-pulse flex items-center justify-center">
+                                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                  </div>
+                                ) : productImage ? (
+                                  <div className="relative aspect-video rounded-xl overflow-hidden border">
+                                    <Image src={productImage} alt="Preview" fill className="object-cover" />
+                                    <Button 
+                                      type="button" 
+                                      variant="destructive" 
+                                      size="icon" 
+                                      className="absolute top-2 right-2 rounded-full w-8 h-8"
+                                      onClick={() => setProductImage(null)}
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <label className="flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors">
+                                    <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
+                                    <span className="text-xs font-medium text-muted-foreground text-center px-4">
+                                      Haz clic para subir una foto real del producto
+                                    </span>
+                                    <input type="file" accept="image/*" className="hidden" onChange={handleProductImageUpload} />
+                                  </label>
+                                )}
+                              </div>
+                            </div>
+
                             <div className="space-y-2">
                               <Label htmlFor="prodPrice">Precio (COP)</Label>
                               <Input id="prodPrice" name="price" type="number" required />
@@ -263,7 +322,7 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
                               <Label htmlFor="prodDesc">Descripción</Label>
                               <Textarea id="prodDesc" name="description" placeholder="Detalla los ingredientes o características..." required />
                             </div>
-                            <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingProduct}>
+                            <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingProduct || isCompressingProduct}>
                               {isAddingProduct ? <Loader2 className="animate-spin" /> : "Publicar en Vitrina"}
                             </Button>
                           </form>
