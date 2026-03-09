@@ -13,40 +13,19 @@ export default function Home() {
       <Navbar />
       
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative bg-primary py-20 px-4 overflow-hidden">
-          <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/pattern/1920/1080')] opacity-10 mix-blend-overlay"></div>
-          <div className="container mx-auto text-center relative z-10">
-            <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
-              Vitrinea lo mejor de <br /> tu ciudad en un solo lugar
-            </h1>
-            <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-              Descubre tiendas increíbles, productos exclusivos y recibe todo en la puerta de tu casa. 
-              Moderno, rápido y confiable.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" className="bg-secondary hover:bg-secondary/90 text-white font-bold px-8 rounded-full h-14">
-                Explorar Tiendas
-              </Button>
-              <Button size="lg" variant="outline" className="bg-white/10 text-white border-white/20 hover:bg-white/20 px-8 rounded-full h-14">
-                Registrar mi Negocio
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Categories / Featured Stores */}
-        <section className="py-16 bg-background">
+        {/* Categories / Featured Stores - Now directly at the top */}
+        <section className="py-12 bg-background">
           <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
               <div>
-                <h2 className="text-3xl font-bold text-foreground">Tiendas Destacadas</h2>
-                <p className="text-muted-foreground">Los negocios más populares de la comunidad.</p>
+                <h1 className="text-4xl font-black text-foreground mb-2">Vitrinea en tu Ciudad</h1>
+                <p className="text-muted-foreground text-lg">Descubre los mejores negocios locales seleccionados para ti.</p>
               </div>
-              <Button variant="link" className="text-primary font-semibold flex items-center gap-1">
-                Ver todas <ChevronRight className="w-4 h-4" />
+              <Button variant="outline" className="rounded-full border-primary text-primary hover:bg-primary hover:text-white transition-all font-bold">
+                Ver todas las categorías <ChevronRight className="ml-1 w-4 h-4" />
               </Button>
             </div>
+            
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {STORES.map((store) => (
                 <StoreCard key={store.id} store={store} />
@@ -70,7 +49,9 @@ export default function Home() {
                 </p>
               </div>
               <div className="md:ml-auto">
-                <Button className="bg-primary hover:bg-primary/90 rounded-full px-8">Comenzar ahora</Button>
+                <Link href="/admin/manage">
+                  <Button className="bg-primary hover:bg-primary/90 rounded-full px-8">Comenzar ahora</Button>
+                </Link>
               </div>
             </div>
           </div>
@@ -111,7 +92,7 @@ export default function Home() {
             <h4 className="font-bold mb-4">Plataforma</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link href="/">Tiendas</Link></li>
-              <li><Link href="/">Delivery</Link></li>
+              <li><Link href="/about">Sobre Nosotros</Link></li>
               <li><Link href="/">Precios</Link></li>
             </ul>
           </div>
