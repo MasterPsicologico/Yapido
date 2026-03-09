@@ -35,10 +35,10 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {!user && <div className="absolute top-0 left-0 w-full z-50"><Navbar /></div>}
+    <div className="flex flex-col min-h-screen overflow-hidden">
+      {!user && <div className="absolute top-0 left-0 w-full z-50 bg-transparent border-none"><Navbar /></div>}
       {user && <Navbar />}
-      <main className="flex-1">
+      <main className="flex-1 h-full">
         {user ? <AuthenticatedHome /> : <UnauthenticatedLanding auth={auth} />}
       </main>
 
@@ -88,7 +88,7 @@ function AuthenticatedHome() {
   const { data: products, isLoading: loadingProducts } = useCollection(productsQuery);
 
   return (
-    <>
+    <div className="overflow-y-auto h-[calc(100vh-64px)]">
       <section className="py-12 bg-background">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -157,7 +157,7 @@ function AuthenticatedHome() {
           ) : null}
         </div>
       </section>
-    </>
+    </div>
   );
 }
 
@@ -171,56 +171,56 @@ function UnauthenticatedLanding({ auth }: { auth: any }) {
       <div className="absolute inset-0 z-0">
         <Image 
           src={morrocoyImage?.imageUrl || "https://picsum.photos/seed/morrocoy/1920/1080"} 
-          alt="Morrocoy Background" 
+          alt="Virtual Store Experience" 
           fill 
-          className="object-cover opacity-60"
+          className="object-cover opacity-50"
           priority
           data-ai-hint="morrocoy tortoise"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/80"></div>
       </div>
 
       {/* Content Scene */}
       <div className="container mx-auto px-4 relative z-10 text-center animate-in fade-in zoom-in duration-1000">
-        <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-2 mb-8 text-white/90 text-sm backdrop-blur-md">
+        <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-6 py-2 mb-12 text-white/70 text-sm backdrop-blur-xl">
           <Sparkles className="w-4 h-4 text-secondary" />
-          <span>Vitriniando presenta</span>
+          <span className="tracking-widest uppercase font-semibold">Experiencia de Compra Digital</span>
         </div>
         
-        <h1 className="text-6xl md:text-9xl font-black text-white mb-6 tracking-tighter leading-none">
-          AGUACHICA <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_auto] animate-gradient">
-            2.0
+        <h1 className="text-6xl md:text-[10rem] font-black text-white mb-6 tracking-tighter leading-none select-none">
+          VITRINIANDO <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_auto] animate-gradient block mt-2">
+            MARKETPLACE
           </span>
         </h1>
         
-        <p className="text-xl md:text-3xl text-white/80 mb-12 max-w-3xl mx-auto font-light leading-relaxed">
-          Descubre la nueva era del comercio local. <br />
-          Calidad, rapidez y el orgullo de nuestra tierra en un solo lugar.
+        <p className="text-xl md:text-3xl text-white/60 mb-14 max-w-4xl mx-auto font-light leading-relaxed">
+          La vitrina virtual que conecta los mejores comercios con <br />
+          el estilo de vida moderno. Encuentra, elige y disfruta.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
           <Button 
             onClick={handleLogin}
             size="lg" 
-            className="bg-primary hover:bg-primary/90 text-white font-black px-12 rounded-full h-20 text-2xl shadow-2xl shadow-primary/40 group transform hover:scale-105 transition-all"
+            className="bg-primary hover:bg-primary/90 text-white font-black px-16 rounded-full h-24 text-3xl shadow-[0_0_50px_rgba(var(--primary),0.3)] group transform hover:scale-105 transition-all"
           >
-            Comenzar Ahora <ArrowRight className="ml-2 w-8 h-8 group-hover:translate-x-2 transition-transform" />
+            Explorar Ahora <ArrowRight className="ml-3 w-10 h-10 group-hover:translate-x-3 transition-transform" />
           </Button>
         </div>
 
-        <div className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto text-white/60 text-sm font-medium">
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-white text-2xl font-bold">100%</span>
-            <span>Local</span>
+        <div className="mt-24 flex items-center justify-center gap-12 text-white/40 text-sm font-bold uppercase tracking-[0.2em]">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-px w-12 bg-white/20"></div>
+            <span>Global</span>
           </div>
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-white text-2xl font-bold">IA</span>
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-px w-12 bg-white/20"></div>
             <span>Inteligente</span>
           </div>
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-white text-2xl font-bold">24/7</span>
-            <span>Disponible</span>
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-px w-12 bg-white/20"></div>
+            <span>Directo</span>
           </div>
         </div>
       </div>
