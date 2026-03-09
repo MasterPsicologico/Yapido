@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Store, ShoppingBag, User, Search, Menu, Info, Home as HomeIcon } from 'lucide-react';
+import { Store, ShoppingBag, User, Search, Menu, Info, Home as HomeIcon, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,8 +12,25 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useUser, useAuth } from '@/firebase';
+import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Navbar() {
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+
+  const handleLogin = () => initiateGoogleSignIn(auth);
+  const handleLogout = () => auth.signOut();
+
   return (
     <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
@@ -43,10 +60,12 @@ export function Navbar() {
                   <Info className="w-5 h-5 text-primary" />
                   Sobre Nosotros
                 </Link>
-                <Link href="/admin/manage" className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-muted rounded-lg transition-colors">
-                  <Store className="w-5 h-5 text-primary" />
-                  Mi Tienda
-                </Link>
+                {user && (
+                  <Link href="/admin/manage" className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-muted rounded-lg transition-colors">
+                    <Store className="w-5 h-5 text-primary" />
+                    Mi Tienda
+                  </Link>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
@@ -68,16 +87,52 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/admin/manage">
-            <Button variant="ghost" className="hidden lg:flex items-center gap-2">
-              <Store className="w-4 h-4" />
-              Mi Tienda
-            </Button>
-          </Link>
-          <Button variant="default" className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-6">
-            <User className="w-4 h-4" />
-            <span className="hidden sm:inline">Ingresar</span>
-          </Button>
+          {!isUserLoading && (
+            <>
+              {user ? (
+                <div className="flex items-center gap-4">
+                  <Link href="/admin/manage">
+                    <Button variant="ghost" className="hidden lg:flex items-center gap-2">
+                      <Store className="w-4 h-4" />
+                      Mi Tienda
+                    </Button>
+                  </Link>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
+                          <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                          <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Cerrar Sesión</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ) : (
+                <Button 
+                  onClick={handleLogin}
+                  variant="default" 
+                  className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-6"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Ingresar</span>
+                </Button>
+              )}
+            </>
+          )}
         </div>
       </div>
     </nav>
