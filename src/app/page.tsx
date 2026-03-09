@@ -166,62 +166,84 @@ function UnauthenticatedLanding({ auth }: { auth: any }) {
   const morrocoyImage = PlaceHolderImages.find(img => img.id === 'bg-morrocoy');
 
   return (
-    <div className="relative h-screen w-full overflow-hidden flex items-center justify-center bg-slate-950">
-      {/* Background Image */}
+    <div className="relative h-screen w-full overflow-hidden flex items-center justify-center bg-black">
+      {/* Background Image with optimized overlay */}
       <div className="absolute inset-0 z-0">
         <Image 
           src={morrocoyImage?.imageUrl || "https://picsum.photos/seed/morrocoy/1920/1080"} 
-          alt="Virtual Store Experience" 
+          alt="Aguachica Cesar - Tierra Morrocoyera" 
           fill 
-          className="object-cover opacity-50"
+          className="object-cover opacity-60"
           priority
-          data-ai-hint="morrocoy tortoise"
+          data-ai-hint="tortoise morrocoy"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/80"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
       </div>
 
-      {/* Content Scene */}
-      <div className="container mx-auto px-4 relative z-10 text-center animate-in fade-in zoom-in duration-1000">
-        <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-6 py-2 mb-12 text-white/70 text-sm backdrop-blur-xl">
-          <Sparkles className="w-4 h-4 text-secondary" />
-          <span className="tracking-widest uppercase font-semibold">Experiencia de Compra Digital</span>
-        </div>
-        
-        <h1 className="text-6xl md:text-[10rem] font-black text-white mb-6 tracking-tighter leading-none select-none">
-          VITRINIANDO <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_auto] animate-gradient block mt-2">
-            MARKETPLACE
-          </span>
-        </h1>
-        
-        <p className="text-xl md:text-3xl text-white/60 mb-14 max-w-4xl mx-auto font-light leading-relaxed">
-          La vitrina virtual que conecta los mejores comercios con <br />
-          el estilo de vida moderno. Encuentra, elige y disfruta.
-        </p>
+      {/* Main Content with strict margins and responsiveness */}
+      <div className="container relative z-10 px-6 sm:px-12 mx-auto flex flex-col items-center justify-center text-center">
+        <div className="w-full max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-1000">
+          
+          {/* Badge Area */}
+          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 backdrop-blur-md">
+            <Sparkles className="w-4 h-4 text-secondary" />
+            <span className="text-[10px] sm:text-xs uppercase tracking-widest font-bold text-white/90">
+              Orgullo Morrocoyero • Cesar
+            </span>
+          </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-          <Button 
-            onClick={handleLogin}
-            size="lg" 
-            className="bg-primary hover:bg-primary/90 text-white font-black px-16 rounded-full h-24 text-3xl shadow-[0_0_50px_rgba(var(--primary),0.3)] group transform hover:scale-105 transition-all"
-          >
-            Explorar Ahora <ArrowRight className="ml-3 w-10 h-10 group-hover:translate-x-3 transition-transform" />
-          </Button>
-        </div>
+          {/* Headline - Responsive and balanced to avoid overflow */}
+          <div className="space-y-2">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white leading-none tracking-tighter uppercase">
+              Vitriniando <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_auto] animate-gradient block pb-2">
+                Digital
+              </span>
+            </h1>
+          </div>
 
-        <div className="mt-24 flex items-center justify-center gap-12 text-white/40 text-sm font-bold uppercase tracking-[0.2em]">
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-px w-12 bg-white/20"></div>
-            <span>Global</span>
+          {/* Body Text - Idiosyncrasy of Aguachica */}
+          <p className="text-base sm:text-xl md:text-2xl text-white/80 max-w-2xl mx-auto font-medium leading-snug text-balance">
+            La esencia de Aguachica llevada al siguiente nivel. 
+            Conectamos el empuje comercial de nuestra tierra con 
+            el estilo de vida del futuro. 
+            <span className="block mt-2 text-secondary font-bold italic">¡Lo mejor del Cesar a un solo toque!</span>
+          </p>
+
+          {/* CTA - Size adjusted for mobile to prevent overflow */}
+          <div className="pt-6">
+            <Button 
+              onClick={handleLogin}
+              size="lg" 
+              className="bg-primary hover:bg-primary/90 text-white font-black px-8 sm:px-12 py-8 sm:py-10 rounded-full text-xl sm:text-2xl shadow-2xl shadow-primary/20 hover:scale-105 transition-all group w-full sm:w-auto"
+            >
+              Explorar Tiendas <ArrowRight className="ml-3 w-6 h-6 sm:w-8 sm:h-8 group-hover:translate-x-2 transition-transform" />
+            </Button>
           </div>
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-px w-12 bg-white/20"></div>
-            <span>Inteligente</span>
+
+          {/* Footer Highlights */}
+          <div className="grid grid-cols-3 gap-4 pt-12 border-t border-white/10 max-w-md mx-auto">
+            <div className="text-center">
+              <span className="block text-white font-bold text-sm sm:text-lg">Local</span>
+              <span className="text-white/50 text-[10px] uppercase">Aguachica</span>
+            </div>
+            <div className="text-center">
+              <span className="block text-white font-bold text-sm sm:text-lg">Rápido</span>
+              <span className="text-white/50 text-[10px] uppercase">Directo</span>
+            </div>
+            <div className="text-center">
+              <span className="block text-white font-bold text-sm sm:text-lg">Seguro</span>
+              <span className="text-white/50 text-[10px] uppercase">Garantizado</span>
+            </div>
           </div>
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-px w-12 bg-white/20"></div>
-            <span>Directo</span>
-          </div>
+
+        </div>
+      </div>
+
+      {/* Aesthetic Accents */}
+      <div className="absolute bottom-8 right-8 z-20 hidden md:block">
+        <div className="w-12 h-12 border border-white/20 rounded-full flex items-center justify-center animate-pulse">
+          <div className="w-2 h-2 bg-secondary rounded-full"></div>
         </div>
       </div>
     </div>
