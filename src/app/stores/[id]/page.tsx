@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, use } from 'react';
+import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { 
   Phone, 
   MapPin, 
-  Globe, 
   Plus, 
   Package, 
   Loader2, 
@@ -176,8 +175,10 @@ export default function StorePage() {
         updatedAt: serverTimestamp(),
       };
 
+      // Guardar en subcolección de la tienda
       setDocumentNonBlocking(prodRef, prodData, { merge: true });
       
+      // Guardar en colección global para búsqueda y detalle directo
       const globalProdRef = doc(firestore, 'products', prodRef.id);
       setDocumentNonBlocking(globalProdRef, {
         ...prodData,
@@ -199,7 +200,6 @@ export default function StorePage() {
       <Navbar />
       
       <main className="flex-1 pb-20">
-        {/* Header Inmersivo */}
         <div className="relative h-[48vh] w-full">
           <Image 
             src={store?.imageUrl || 'https://picsum.photos/seed/bakery/1920/1080'} 
@@ -208,7 +208,6 @@ export default function StorePage() {
             className="object-cover" 
             priority
           />
-          {/* Capa de neblina/degradado superior */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent"></div>
           
           <div className="absolute top-6 left-6 z-30">
@@ -219,7 +218,6 @@ export default function StorePage() {
             </Link>
           </div>
 
-          {/* Logo Central Flotante (Simulado como en la imagen) */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pt-10">
              <div className="relative w-48 h-48 drop-shadow-2xl animate-in fade-in zoom-in duration-700">
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -236,12 +234,10 @@ export default function StorePage() {
           </div>
         </div>
 
-        {/* Tarjeta Flotante - Diseño Exacto */}
         <div className="container mx-auto max-w-xl px-0 -mt-24 relative z-20">
           <div className="bg-white rounded-t-[45px] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.2)] overflow-hidden">
             <div className="p-8 md:p-10 space-y-10">
               
-              {/* Info Principal */}
               <div className="space-y-4">
                 <Badge className="bg-[#00c9db] hover:bg-[#00b5c5] text-white rounded-full px-5 py-1.5 text-xs font-bold border-none">
                   {store?.category || 'Alimentos'}
@@ -250,11 +246,10 @@ export default function StorePage() {
                     {store?.name}
                 </h1>
                 <p className="text-[#6b7280] text-[17px] leading-snug font-medium max-w-[90%]">
-                  {store?.description || 'Los mejores panes artesanales y repostería fina de tu ciudad.'}
+                  {store?.description}
                 </p>
               </div>
 
-              {/* Grid de Imágenes Destacadas (Simulado como en el diseño) */}
               <div className="grid grid-cols-3 gap-3 overflow-x-auto no-scrollbar">
                 {[1, 2, 3].map((i) => (
                     <div key={i} className="relative aspect-square rounded-[22px] overflow-hidden shadow-sm">
@@ -268,7 +263,6 @@ export default function StorePage() {
                 ))}
               </div>
 
-              {/* Indicadores de Icono con Texto Debajo */}
               <div className="grid grid-cols-3 gap-2 px-1">
                 <div className="flex flex-col items-center gap-2">
                     <div className="w-11 h-11 rounded-full bg-[#fef3c7] flex items-center justify-center shadow-sm">
@@ -290,7 +284,6 @@ export default function StorePage() {
                 </div>
               </div>
 
-              {/* Contenedor de Contacto - Diseño Beige */}
               <div className="bg-[#f5f2eb] rounded-[32px] p-6 space-y-4 border border-[#e5e7eb]/40">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -316,13 +309,8 @@ export default function StorePage() {
                         <MessageCircle className="w-4 h-4 text-[#22c55e]" /> WhatsApp
                     </Button>
                 </div>
-
-                <div className="text-[#9ca3af] text-[12px] font-bold pt-1">
-                  www.{store?.name?.toLowerCase()?.replace(/\s/g, '') || 'tienda'}.com
-                </div>
               </div>
 
-              {/* Acciones de Propietario (Si aplica) */}
               {isOwner && (
                 <div className="grid grid-cols-2 gap-3 pt-2">
                     <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
@@ -360,15 +348,44 @@ export default function StorePage() {
                             <form onSubmit={handleAddProduct} className="space-y-4 pt-4">
                                 <div className="space-y-2">
                                     <Label>Nombre</Label>
-                                    <Input name="name" required />
+                                    <Input name="name" placeholder="Ej: Pan de Queso" required />
                                 </div>
+                                
                                 <div className="space-y-2">
-                                    <Label>Foto del Producto</Label>
-                                    <input type="file" accept="image/*" onChange={handleProductImageUpload} className="w-full" />
+                                  <Label>Imagen del Producto</Label>
+                                  <div className="flex flex-col gap-3">
+                                    {isCompressingProduct ? (
+                                      <div className="aspect-video rounded-xl bg-muted animate-pulse flex items-center justify-center">
+                                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                      </div>
+                                    ) : productImage ? (
+                                      <div className="relative aspect-video rounded-xl overflow-hidden border">
+                                        <Image src={productImage} alt="Preview" fill className="object-cover" />
+                                        <Button 
+                                          type="button" 
+                                          variant="destructive" 
+                                          size="icon" 
+                                          className="absolute top-2 right-2 rounded-full w-8 h-8"
+                                          onClick={() => setProductImage(null)}
+                                        >
+                                          <X className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <label className="flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors">
+                                        <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
+                                        <span className="text-sm font-medium text-muted-foreground text-center px-4">
+                                          Sube la mejor foto de tu producto
+                                        </span>
+                                        <input type="file" accept="image/*" className="hidden" onChange={handleProductImageUpload} />
+                                      </label>
+                                    )}
+                                  </div>
                                 </div>
+
                                 <div className="space-y-2">
                                     <Label>Precio (COP)</Label>
-                                    <Input name="price" type="number" required />
+                                    <Input name="price" type="number" placeholder="Ej: 3000" required />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Sección</Label>
@@ -379,10 +396,10 @@ export default function StorePage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Descripción</Label>
-                                    <Textarea name="description" required />
+                                    <Textarea name="description" placeholder="Describe los ingredientes o beneficios..." required />
                                 </div>
-                                <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingProduct}>
-                                    {isAddingProduct ? <Loader2 className="animate-spin" /> : "Publicar"}
+                                <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingProduct || isCompressingProduct}>
+                                    {isAddingProduct ? <Loader2 className="animate-spin" /> : "Publicar en Vitrina"}
                                 </Button>
                             </form>
                         </DialogContent>
@@ -390,7 +407,6 @@ export default function StorePage() {
                 </div>
               )}
 
-              {/* Barra de Categorías - Diseño Pill Estrecho */}
               <div className="pt-4 overflow-hidden">
                 <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
                   <div className="bg-[#f3f4f6]/50 rounded-full p-1 border border-slate-100 shadow-inner">
@@ -399,7 +415,7 @@ export default function StorePage() {
                         value="all" 
                         className="rounded-full px-5 py-2.5 data-[state=active]:bg-[#fef3c7] data-[state=active]:text-[#d97706] data-[state=active]:shadow-sm font-bold text-[13px] border-none transition-all flex items-center gap-2"
                       >
-                        <StoreIcon className="w-3.5 h-3.5" /> Productos
+                        <StoreIcon className="w-3.5 h-3.5" /> Todos
                       </TabsTrigger>
                       {categories?.map(cat => (
                         <TabsTrigger 
@@ -416,7 +432,7 @@ export default function StorePage() {
                   <TabsContent value="all" className="mt-8">
                     <div className="text-center py-20 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200">
                       <Package className="w-12 h-12 mx-auto text-slate-200 mb-4" />
-                      <p className="text-slate-400 font-bold italic">Selecciona una categoría arriba</p>
+                      <p className="text-slate-400 font-bold italic">Selecciona una sección arriba</p>
                     </div>
                   </TabsContent>
 
@@ -428,10 +444,9 @@ export default function StorePage() {
                 </Tabs>
               </div>
 
-              {/* Botón CTA Final - Amarillo Redondeado */}
               <div className="pt-8 flex justify-center pb-6">
                 <Button className="w-[85%] h-14 rounded-full bg-[#f59e0b] hover:bg-[#d97706] text-white text-xl font-bold shadow-xl shadow-orange-200 border-none gap-2 group">
-                   Ver Menú <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                   Ver Catálogo <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </div>
             </div>
