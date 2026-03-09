@@ -1,18 +1,31 @@
 
 "use client";
 
+import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { StoreCard } from '@/components/store/StoreCard';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Sparkles, ShoppingBag, ArrowRight } from 'lucide-react';
+import { ChevronRight, Sparkles, ShoppingBag, ArrowRight, Plus, Store as StoreIcon, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
-import { collection, query, where, limit } from 'firebase/firestore';
+import { collection, query, where, limit, doc, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/hooks/use-toast';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -75,7 +88,10 @@ export default function Home() {
 
 function AuthenticatedHome() {
   const firestore = useFirestore();
-  
+  const { user } = useUser();
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [open, setOpen] = useState(false);
+
   const storesQuery = useMemoFirebase(() => {
     return query(collection(firestore, 'stores'), where('status', '==', 'active'), limit(6));
   }, [firestore]);
@@ -87,6 +103,52 @@ function AuthenticatedHome() {
   const { data: stores, isLoading: loadingStores } = useCollection(storesQuery);
   const { data: products, isLoading: loadingProducts } = useCollection(productsQuery);
 
+  async function handleRegisterStore(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!user) return;
+
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const description = formData.get('description') as string;
+    const address = formData.get('address') as string;
+    const category = formData.get('category') as string;
+
+    setIsRegistering(true);
+    try {
+      const storeRef = doc(collection(firestore, 'stores'));
+      const storeData = {
+        id: storeRef.id,
+        ownerId: user.uid,
+        name,
+        description,
+        address,
+        phoneNumber: "",
+        email: user.email || "",
+        status: 'active',
+        category,
+        imageUrl: `https://picsum.photos/seed/${storeRef.id}/800/600`,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+
+      addDocumentNonBlocking(collection(firestore, 'stores'), storeData);
+      
+      toast({
+        title: "¡Éxito!",
+        description: "Tu tienda ha sido registrada correctamente.",
+      });
+      setOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo registrar la tienda.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRegistering(false);
+    }
+  }
+
   return (
     <div className="overflow-y-auto h-[calc(100vh-64px)]">
       <section className="py-12 bg-background">
@@ -96,9 +158,46 @@ function AuthenticatedHome() {
               <h1 className="text-4xl font-black text-foreground mb-2">Tu Vitrina Digital</h1>
               <p className="text-muted-foreground text-lg">Explora lo mejor de tu ciudad ahora mismo.</p>
             </div>
-            <Button variant="outline" className="rounded-full border-primary text-primary hover:bg-primary hover:text-white transition-all font-bold">
-              Todas las categorías <ChevronRight className="ml-1 w-4 h-4" />
-            </Button>
+            
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button className="rounded-full bg-primary hover:bg-primary/90 text-white font-bold h-12 px-6 gap-2">
+                  <Plus className="w-5 h-5" /> Registrar Mi Tienda
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <StoreIcon className="w-5 h-5 text-primary" /> Registrar Vitrina
+                  </DialogTitle>
+                  <DialogDescription>
+                    Completa los datos para abrir tu nueva vitrina digital.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleRegisterStore} className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nombre de la Tienda</Label>
+                    <Input id="name" name="name" placeholder="Ej: Panadería Morrocoy" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Categoría Principal</Label>
+                    <Input id="category" name="category" placeholder="Ej: Alimentos, Moda, Tech" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Dirección Física</Label>
+                    <Input id="address" name="address" placeholder="Ej: Calle 5 # 10-20, Aguachica" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Breve Descripción</Label>
+                    <Textarea id="description" name="description" placeholder="Cuéntanos qué vendes..." required />
+                  </div>
+                  <Button type="submit" className="w-full h-12 font-bold" disabled={isRegistering}>
+                    {isRegistering ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />}
+                    Crear Vitrina
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
           
           {loadingStores ? (
@@ -115,6 +214,7 @@ function AuthenticatedHome() {
             <div className="text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed">
               <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-20" />
               <p className="text-muted-foreground">No hay tiendas disponibles en este momento.</p>
+              <p className="text-sm text-muted-foreground mt-2">¡Sé el primero en registrar tu negocio!</p>
             </div>
           )}
         </div>
@@ -154,7 +254,9 @@ function AuthenticatedHome() {
                 <ProductCard key={product.id} product={product as any} />
               ))}
             </div>
-          ) : null}
+          ) : (
+             <p className="text-muted-foreground">Explora las tiendas para descubrir productos increíbles.</p>
+          )}
         </div>
       </section>
     </div>
