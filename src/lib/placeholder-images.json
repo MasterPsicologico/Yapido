@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "store-bakery",
+      "description": "A cozy modern bakery front",
+      "imageUrl": "https://picsum.photos/seed/bakery/800/600",
+      "imageHint": "modern bakery"
+    },
+    {
+      "id": "store-tech",
+      "description": "Minimalist electronics store interior",
+      "imageUrl": "https://picsum.photos/seed/techstore/800/600",
+      "imageHint": "electronics store"
+    },
+    {
+      "id": "store-fashion",
+      "description": "High-end fashion boutique",
+      "imageUrl": "https://picsum.photos/seed/fashion/800/600",
+      "imageHint": "fashion boutique"
+    },
+    {
+      "id": "product-croissant",
+      "description": "Golden butter croissant",
+      "imageUrl": "https://picsum.photos/seed/croissant/600/400",
+      "imageHint": "butter croissant"
+    },
+    {
+      "id": "product-headphones",
+      "description": "Sleek wireless headphones",
+      "imageUrl": "https://picsum.photos/seed/headphones/600/400",
+      "imageHint": "wireless headphones"
+    },
+    {
+      "id": "product-shirt",
+      "description": "Linen summer shirt",
+      "imageUrl": "https://picsum.photos/seed/shirt/600/400",
+      "imageHint": "linen shirt"
+    }
+  ]
 }
