@@ -1,0 +1,322 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Vitriniando application, distinguishing between customers and store owners.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user, typically obtained from the authentication provider.",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The publicly displayable name of the user."
+        },
+        "profileImageUrl": {
+          "type": "string",
+          "description": "URL to the user's profile picture, if available.",
+          "format": "uri"
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user within the application, e.g., 'customer' or 'storeOwner', defining their permissions and interface."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user account was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user account was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "displayName",
+        "role",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Store": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Store",
+      "type": "object",
+      "description": "Represents a merchant's shop where products are offered for sale.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Store entity."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Reference to the User who owns and manages this store. (Relationship: User 1:N Store)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The official name of the store."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the store, its offerings, and ethos."
+        },
+        "address": {
+          "type": "string",
+          "description": "The physical street address of the store."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The contact phone number for the store."
+        },
+        "email": {
+          "type": "string",
+          "description": "The contact email address for the store.",
+          "format": "email"
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "URL to the store's official logo image.",
+          "format": "uri"
+        },
+        "coverImageUrl": {
+          "type": "string",
+          "description": "URL to a prominent cover image or banner for the store's profile.",
+          "format": "uri"
+        },
+        "status": {
+          "type": "string",
+          "description": "The operational status of the store, e.g., 'active', 'inactive', 'pending_review'."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the store was registered.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the store's information was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "name",
+        "description",
+        "address",
+        "phoneNumber",
+        "email",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ProductCategory": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ProductCategory",
+      "type": "object",
+      "description": "Represents a category used to organize products within a specific store.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ProductCategory entity."
+        },
+        "storeId": {
+          "type": "string",
+          "description": "Reference to the Store that this category belongs to. (Relationship: Store 1:N ProductCategory)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the product category, as defined by the store owner (e.g., 'Bebidas', 'Snacks', 'Electrónica')."
+        },
+        "description": {
+          "type": "string",
+          "description": "An optional description explaining what products fall under this category."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the product category was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the product category was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "storeId",
+        "name",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a single product offered for sale by a store.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Product entity."
+        },
+        "storeId": {
+          "type": "string",
+          "description": "Reference to the Store that sells this product. (Relationship: Store 1:N Product)"
+        },
+        "productCategoryId": {
+          "type": "string",
+          "description": "Reference to the ProductCategory this product belongs to within its store. (Relationship: ProductCategory 1:N Product)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the product."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the product, potentially AI-generated for marketing purposes."
+        },
+        "price": {
+          "type": "number",
+          "description": "The selling price of the product."
+        },
+        "imageUrls": {
+          "type": "array",
+          "description": "An array of URLs pointing to images of the product.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stock": {
+          "type": "number",
+          "description": "The current number of units of this product available in stock."
+        },
+        "status": {
+          "type": "string",
+          "description": "The availability status of the product, e.g., 'available', 'out_of_stock', 'draft'."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the product was added.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the product information was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "storeId",
+        "productCategoryId",
+        "name",
+        "description",
+        "price",
+        "imageUrls",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores individual user profiles. The userId corresponds to the authenticated user's UID. Includes the 'role' field for DBAC.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, matching 'request.auth.uid'."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/stores/{storeId}",
+        "definition": {
+          "entityName": "Store",
+          "schema": {
+            "$ref": "#/backend/entities/Store"
+          },
+          "description": "Contains information about each registered store. Includes denormalized 'ownerId' for authorization independence and 'status' for public/private segregation and QAPs.",
+          "params": [
+            {
+              "name": "storeId",
+              "description": "The unique identifier for the store."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/stores/{storeId}/categories/{categoryId}",
+        "definition": {
+          "entityName": "ProductCategory",
+          "schema": {
+            "$ref": "#/backend/entities/ProductCategory"
+          },
+          "description": "Stores product categories specific to a store. Includes denormalized 'storeOwnerId' and 'storeStatus' from the parent store for authorization independence and QAPs.",
+          "params": [
+            {
+              "name": "storeId",
+              "description": "The unique identifier of the parent store."
+            },
+            {
+              "name": "categoryId",
+              "description": "The unique identifier for the product category within the store."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/stores/{storeId}/categories/{categoryId}/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Contains details for individual products offered by a store within a category. Includes denormalized 'storeOwnerId' and 'storeStatus' (from grandparent store) for authorization independence, and its own 'status' for QAPs.",
+          "params": [
+            {
+              "name": "storeId",
+              "description": "The unique identifier of the grandparent store."
+            },
+            {
+              "name": "categoryId",
+              "description": "The unique identifier of the parent product category."
+            },
+            {
+              "name": "productId",
+              "description": "The unique identifier for the product."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The proposed Firestore data structure for Vitriniando is meticulously designed around the core principles of Authorization Independence, Structural Segregation, and Queryable Authorization Properties (QAPs) to ensure maximum security, scalability, and debuggability. This design minimizes complexity in security rules and supports a clear separation of concerns for different access patterns.\n\n1.  **User Profiles (`/users/{userId}`):** User data is stored in a top-level collection. The document ID (`userId`) directly corresponds to `request.auth.uid`. This allows for extremely simple and robust security rules where users can only read/write their own profiles (`request.auth.uid == userId`), achieving full Authorization Independence for personal data. The `role` field on the `User` document acts as the primary source for Database-Backed Access Control (DBAC), enabling checks like `get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role` for other system-wide roles (though in this specific design, ownership is primarily handled via denormalized fields).\n\n2.  **Stores (`/stores/{storeId}`):** Stores are also managed in a top-level collection. Each `Store` document explicitly includes an `ownerId` field, which is the `userId` of the `storeOwner`. This is a critical denormalization step that ensures Authorization Independence for store ownership. Security rules can directly check `request.auth.uid == resource.data.ownerId` for write operations without needing to perform expensive or complex `get()` calls to parent documents (which in this case, there isn't one directly above it for authorization). The `status` field (e.g., `active`, `inactive`, `pending_review`) within the `Store` document is used to implement Structural Segregation. Public users (anonymous or customers) can only read `active` stores, while the `storeOwner` can manage their store regardless of its status. This `status` field directly on the document allows for QAPs: secure `list` operations for public users can be enforced by rules like `allow read: if resource.data.status == 'active';`, ensuring that Firestore only returns active stores, thus preventing security rules from acting as filters.\n\n3.  **Product Categories (`/stores/{storeId}/categories/{categoryId}`):** Product Categories are nested as subcollections under their respective `Store` documents. To uphold Authorization Independence, each `ProductCategory` document **denormalizes** the `storeOwnerId` (the `ownerId` from its parent `Store`) and `storeStatus` (the `status` from its parent `Store`). This means that security rules for categories do not need to `get()` the parent `Store` document to check ownership or store status. Authorization becomes local to the `ProductCategory` document itself. For write operations, rules check `request.auth.uid == resource.data.storeOwnerId`. For public read operations, rules check `resource.data.storeStatus == 'active'`, satisfying QAPs for category listings within an active store.\n\n4.  **Products (`/stores/{storeId}/categories/{categoryId}/products/{productId}`):** Products are deeply nested, residing as subcollections under `ProductCategory` documents. Following the same critical principle of Authorization Independence, each `Product` document **denormalizes** both the `storeOwnerId` and `storeStatus` from its grandparent `Store` document. Additionally, each `Product` has its own `status` field (e.g., `available`, `out_of_stock`, `draft`). This multi-level denormalization completely eliminates the need for `get()` calls across the hierarchy for authorization. Write access is granted if `request.auth.uid == resource.data.storeOwnerId`. Public read access requires two conditions to be met: `resource.data.storeStatus == 'active'` AND `resource.data.status == 'available'`. This precise filtering at the document level ensures QAPs for product listings.\n\n**Denormalization Maintenance:** While denormalization significantly simplifies security rules and enhances performance, it introduces a requirement for data consistency. Cloud Functions (Firestore Triggers) will be essential to maintain the denormalized `storeOwnerId` and `storeStatus` fields. Any changes to a `Store`'s `ownerId` or `status` will trigger a Cloud Function to update all associated `ProductCategory` and `Product` documents accordingly. This ensures the authorization context is always accurate and up-to-date across the database."
+  }
+}
