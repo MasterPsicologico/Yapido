@@ -1,14 +1,15 @@
 
 "use client";
 
-import { useState, use } from 'react';
+import { useState, use, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Phone, Info, Star, Plus, Package, ListPlus, Loader2 } from 'lucide-react';
+import { Phone, Info, Star, Plus, Package, ListPlus, Loader2, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { collection, doc, query, where, serverTimestamp } from 'firebase/firestore';
@@ -27,7 +28,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 
 export default function StorePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+  const resolvedParams = use(params);
+  const id = resolvedParams.id;
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -58,13 +60,13 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
     );
   }
 
-  if (!store) notFound();
+  if (!store && !loadingStore) notFound();
 
-  const isOwner = user?.uid === store.ownerId;
+  const isOwner = user?.uid === store?.ownerId;
 
   async function handleAddCategory(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!isOwner) return;
+    if (!isOwner || !user) return;
 
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
@@ -103,7 +105,7 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
 
   async function handleAddProduct(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!isOwner) return;
+    if (!isOwner || !user) return;
 
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
@@ -130,11 +132,10 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
 
       setDocumentNonBlocking(prodRef, prodData, { merge: true });
       
-      // Also add to global products for discovery
       const globalProdRef = doc(firestore, 'products', prodRef.id);
       setDocumentNonBlocking(globalProdRef, {
         ...prodData,
-        storeName: store.name
+        storeName: store?.name || 'Tienda'
       }, { merge: true });
 
       toast({
@@ -158,59 +159,67 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
       <Navbar />
       
       <main className="flex-1 bg-background">
-        {/* Store Header */}
-        <div className="relative h-64 md:h-80 w-full overflow-hidden">
+        <div className="relative h-64 md:h-80 w-full overflow-hidden bg-primary/20">
           <Image 
-            src={store.imageUrl || 'https://picsum.photos/seed/store/1920/1080'} 
-            alt={store.name} 
+            src={store?.imageUrl || 'https://picsum.photos/seed/store/1920/1080'} 
+            alt={store?.name || 'Cargando...'} 
             fill 
             className="object-cover" 
             priority
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent"></div>
+          <div className="absolute top-4 left-4 z-20">
+            <Link href="/">
+               <Button variant="secondary" className="rounded-full gap-2 shadow-lg">
+                 <ArrowLeft className="w-4 h-4" /> Volver
+               </Button>
+            </Link>
+          </div>
         </div>
 
         <div className="container mx-auto px-4 -mt-20 relative z-10 pb-20">
           <div className="bg-white rounded-3xl p-6 md:p-10 shadow-xl border border-border/50">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div className="space-y-4">
-                <Badge className="bg-secondary text-white">{store.category}</Badge>
+                <Badge className="bg-secondary text-white uppercase tracking-wider text-[10px] font-bold">
+                  {store?.category || 'Tienda'}
+                </Badge>
                 <div className="flex items-center gap-4">
-                  <h1 className="text-3xl md:text-5xl font-black text-foreground">{store.name}</h1>
+                  <h1 className="text-3xl md:text-5xl font-black text-foreground">{store?.name}</h1>
                   <div className="hidden sm:flex items-center gap-1 text-yellow-500 bg-yellow-50 px-2 py-1 rounded-lg">
                     <Star className="w-4 h-4 fill-current" />
                     <span className="font-bold text-sm">4.9</span>
                   </div>
                 </div>
-                <p className="text-lg text-muted-foreground max-w-2xl">{store.description}</p>
+                <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">{store?.description}</p>
                 <div className="flex flex-wrap gap-4 pt-2">
-                  <Button className="rounded-full gap-2">
-                    <Phone className="w-4 h-4" /> {store.phoneNumber || 'Contactar'}
+                  <Button className="rounded-full gap-2 font-bold px-6">
+                    <Phone className="w-4 h-4" /> {store?.phoneNumber || 'Contactar Tienda'}
                   </Button>
                   
                   {isOwner && (
-                    <>
+                    <div className="flex flex-wrap gap-2">
                       <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
                         <DialogTrigger asChild>
-                          <Button variant="outline" className="rounded-full gap-2 border-primary text-primary">
-                            <ListPlus className="w-4 h-4" /> Nueva Categoría
+                          <Button variant="outline" className="rounded-full gap-2 border-primary text-primary hover:bg-primary/5 font-bold">
+                            <Plus className="w-4 h-4" /> Categoría
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>Añadir Categoría</DialogTitle>
-                            <DialogDescription>Organiza tus productos en secciones.</DialogDescription>
+                            <DialogTitle className="text-2xl font-black">Nueva Categoría</DialogTitle>
+                            <DialogDescription>Organiza tus productos por secciones.</DialogDescription>
                           </DialogHeader>
                           <form onSubmit={handleAddCategory} className="space-y-4 pt-4">
                             <div className="space-y-2">
-                              <Label htmlFor="catName">Nombre</Label>
-                              <Input id="catName" name="name" placeholder="Ej: Bebidas Frías" required />
+                              <Label htmlFor="catName">Nombre de la Sección</Label>
+                              <Input id="catName" name="name" placeholder="Ej: Especiales del Día" required />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="catDesc">Descripción</Label>
-                              <Textarea id="catDesc" name="description" placeholder="Opcional..." />
+                              <Label htmlFor="catDesc">Descripción (Opcional)</Label>
+                              <Textarea id="catDesc" name="description" placeholder="Añade detalles sobre esta categoría..." />
                             </div>
-                            <Button type="submit" className="w-full" disabled={isAddingCategory}>
+                            <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingCategory}>
                               {isAddingCategory ? <Loader2 className="animate-spin" /> : "Crear Categoría"}
                             </Button>
                           </form>
@@ -219,14 +228,14 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
 
                       <Dialog open={prodDialogOpen} onOpenChange={setProdDialogOpen}>
                         <DialogTrigger asChild>
-                          <Button className="rounded-full gap-2 bg-secondary hover:bg-secondary/90">
-                            <Package className="w-4 h-4" /> Nuevo Producto
+                          <Button className="rounded-full gap-2 bg-secondary hover:bg-secondary/90 font-bold">
+                            <Package className="w-4 h-4" /> Producto
                           </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
-                            <DialogTitle>Añadir Producto</DialogTitle>
-                            <DialogDescription>Publica un nuevo artículo en tu vitrina.</DialogDescription>
+                            <DialogTitle className="text-2xl font-black">Nuevo Producto</DialogTitle>
+                            <DialogDescription>Añade un artículo a tu catálogo digital.</DialogDescription>
                           </DialogHeader>
                           <form onSubmit={handleAddProduct} className="space-y-4 pt-4">
                             <div className="space-y-2">
@@ -239,8 +248,12 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
                             </div>
                             <div className="space-y-2">
                               <Label htmlFor="prodCat">Seleccionar Categoría</Label>
-                              <select name="categoryId" className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm" required>
-                                <option value="">Elige una categoría...</option>
+                              <select 
+                                name="categoryId" 
+                                className="w-full h-12 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary" 
+                                required
+                              >
+                                <option value="">¿En qué sección va?</option>
                                 {categories?.map(cat => (
                                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
@@ -248,15 +261,15 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
                             </div>
                             <div className="space-y-2">
                               <Label htmlFor="prodDesc">Descripción</Label>
-                              <Textarea id="prodDesc" name="description" required />
+                              <Textarea id="prodDesc" name="description" placeholder="Detalla los ingredientes o características..." required />
                             </div>
-                            <Button type="submit" className="w-full" disabled={isAddingProduct}>
-                              {isAddingProduct ? <Loader2 className="animate-spin" /> : "Publicar Producto"}
+                            <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingProduct}>
+                              {isAddingProduct ? <Loader2 className="animate-spin" /> : "Publicar en Vitrina"}
                             </Button>
                           </form>
                         </DialogContent>
                       </Dialog>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
@@ -264,23 +277,26 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
 
             <div className="mt-12">
               <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
-                <TabsList className="bg-muted/50 p-1 rounded-full mb-8 h-12 flex overflow-x-auto min-w-full sm:min-w-0">
-                  <TabsTrigger value="all" className="rounded-full px-6 data-[state=active]:bg-primary data-[state=active]:text-white">
-                    Todos los productos
+                <TabsList className="bg-muted/50 p-1 rounded-full mb-8 h-12 flex overflow-x-auto min-w-full sm:min-w-0 no-scrollbar">
+                  <TabsTrigger value="all" className="rounded-full px-8 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
+                    Todo
                   </TabsTrigger>
                   {categories?.map(cat => (
-                    <TabsTrigger key={cat.id} value={cat.id} className="rounded-full px-6 data-[state=active]:bg-primary data-[state=active]:text-white">
+                    <TabsTrigger key={cat.id} value={cat.id} className="rounded-full px-8 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
                       {cat.name}
                     </TabsTrigger>
                   ))}
                 </TabsList>
 
                 <TabsContent value="all" className="mt-0">
-                  <ProductsGrid storeId={id} categoryId={null} />
+                  <div className="text-center py-12 bg-muted/10 rounded-3xl border-2 border-dashed border-muted-foreground/10">
+                    <Info className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-20" />
+                    <p className="text-muted-foreground font-medium">Explora las secciones de arriba para ver los productos.</p>
+                  </div>
                 </TabsContent>
 
                 {categories?.map(cat => (
-                  <TabsContent key={cat.id} value={cat.id} className="mt-0">
+                  <TabsContent key={cat.id} value={cat.id} className="mt-0 focus-visible:outline-none">
                      <ProductsGrid storeId={id} categoryId={cat.id} />
                   </TabsContent>
                 ))}
@@ -293,30 +309,17 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
   );
 }
 
-function ProductsGrid({ storeId, categoryId }: { storeId: string, categoryId: string | null }) {
+function ProductsGrid({ storeId, categoryId }: { storeId: string, categoryId: string }) {
   const firestore = useFirestore();
   
-  // Use a query based on the active tab
   const productsQuery = useMemoFirebase(() => {
-    if (categoryId) {
-      return query(
-        collection(firestore, 'stores', storeId, 'categories', categoryId, 'products'),
-        where('status', '==', 'available')
-      );
-    }
-    return null;
+    return query(
+      collection(firestore, 'stores', storeId, 'categories', categoryId, 'products'),
+      where('status', '==', 'available')
+    );
   }, [firestore, storeId, categoryId]);
 
   const { data: products, isLoading } = useCollection(productsQuery);
-
-  if (!categoryId) {
-    return (
-      <div className="text-center py-12 bg-muted/10 rounded-3xl border-2 border-dashed">
-        <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-20" />
-        <p className="text-muted-foreground">Selecciona una categoría para ver los productos.</p>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
@@ -328,9 +331,9 @@ function ProductsGrid({ storeId, categoryId }: { storeId: string, categoryId: st
 
   if (!products || products.length === 0) {
     return (
-      <div className="text-center py-12 bg-muted/10 rounded-3xl border-2 border-dashed">
+      <div className="text-center py-20 bg-muted/10 rounded-3xl border-2 border-dashed border-muted-foreground/10">
         <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-20" />
-        <p className="text-muted-foreground">No hay productos en esta categoría todavía.</p>
+        <p className="text-muted-foreground font-medium">No hay productos en esta sección todavía.</p>
       </div>
     );
   }

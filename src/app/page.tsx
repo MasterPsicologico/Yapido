@@ -6,7 +6,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { StoreCard } from '@/components/store/StoreCard';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Sparkles, ShoppingBag, ArrowRight, Plus, Store as StoreIcon, Loader2 } from 'lucide-react';
+import { ChevronRight, Sparkles, ShoppingBag, ArrowRight, Plus, Store as StoreIcon, Loader2, Image as ImageIcon, X } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
@@ -91,9 +91,10 @@ function AuthenticatedHome() {
   const { user } = useUser();
   const [isRegistering, setIsRegistering] = useState(false);
   const [open, setOpen] = useState(false);
+  const [base64Image, setBase64Image] = useState<string | null>(null);
 
   const storesQuery = useMemoFirebase(() => {
-    return query(collection(firestore, 'stores'), where('status', '==', 'active'), limit(6));
+    return query(collection(firestore, 'stores'), where('status', '==', 'active'), limit(9));
   }, [firestore]);
 
   const productsQuery = useMemoFirebase(() => {
@@ -102,6 +103,25 @@ function AuthenticatedHome() {
 
   const { data: stores, isLoading: loadingStores } = useCollection(storesQuery);
   const { data: products, isLoading: loadingProducts } = useCollection(productsQuery);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) { // 1MB Limit
+        toast({
+          title: "Imagen muy pesada",
+          description: "El tamaño máximo permitido es 1MB para mantener la rapidez de la app.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBase64Image(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   async function handleRegisterStore(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -126,7 +146,7 @@ function AuthenticatedHome() {
         email: user.email || "",
         status: 'active',
         category,
-        imageUrl: `https://picsum.photos/seed/${storeRef.id}/800/600`,
+        imageUrl: base64Image || `https://picsum.photos/seed/${storeRef.id}/800/600`,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -134,10 +154,11 @@ function AuthenticatedHome() {
       setDocumentNonBlocking(storeRef, storeData, { merge: true });
       
       toast({
-        title: "¡Éxito!",
-        description: "Tu tienda ha sido registrada correctamente.",
+        title: "¡Vitriniando con éxito!",
+        description: "Tu tienda ha sido registrada y ya está en la nube.",
       });
       setOpen(false);
+      setBase64Image(null);
     } catch (error) {
       toast({
         title: "Error",
@@ -159,19 +180,19 @@ function AuthenticatedHome() {
               <p className="text-muted-foreground text-lg">Explora lo mejor de tu ciudad ahora mismo.</p>
             </div>
             
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if(!v) setBase64Image(null); }}>
               <DialogTrigger asChild>
                 <Button className="rounded-full bg-primary hover:bg-primary/90 text-white font-bold h-12 px-6 gap-2">
                   <Plus className="w-5 h-5" /> Registrar Mi Tienda
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <StoreIcon className="w-5 h-5 text-primary" /> Registrar Vitrina
+                  <DialogTitle className="flex items-center gap-2 text-2xl font-black">
+                    <StoreIcon className="w-6 h-6 text-primary" /> Crear Vitrina
                   </DialogTitle>
                   <DialogDescription>
-                    Completa los datos para abrir tu nueva vitrina digital.
+                    Publica tu negocio en Aguachica y el mundo.
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleRegisterStore} className="space-y-4 pt-4">
@@ -179,21 +200,50 @@ function AuthenticatedHome() {
                     <Label htmlFor="name">Nombre de la Tienda</Label>
                     <Input id="name" name="name" placeholder="Ej: Panadería Morrocoy" required />
                   </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Imagen de la Tienda</Label>
+                    <div className="flex flex-col gap-3">
+                      {base64Image ? (
+                        <div className="relative aspect-video rounded-xl overflow-hidden border">
+                          <Image src={base64Image} alt="Preview" fill className="object-cover" />
+                          <Button 
+                            type="button" 
+                            variant="destructive" 
+                            size="icon" 
+                            className="absolute top-2 right-2 rounded-full w-8 h-8"
+                            onClick={() => setBase64Image(null)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors">
+                          <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
+                          <span className="text-sm font-medium text-muted-foreground text-center px-4">
+                            Sube una foto de tu fachada o logo (Máx 1MB)
+                          </span>
+                          <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="category">Categoría Principal</Label>
                     <Input id="category" name="category" placeholder="Ej: Alimentos, Moda, Tech" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="address">Dirección Física</Label>
-                    <Input id="address" name="address" placeholder="Ej: Calle 5 # 10-20, Aguachica" required />
+                    <Input id="address" name="address" placeholder="Calle central, Aguachica" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="description">Breve Descripción</Label>
-                    <Textarea id="description" name="description" placeholder="Cuéntanos qué vendes..." required />
+                    <Textarea id="description" name="description" placeholder="Cuéntanos qué te hace especial..." required />
                   </div>
-                  <Button type="submit" className="w-full h-12 font-bold" disabled={isRegistering}>
+                  <Button type="submit" className="w-full h-12 font-bold text-lg" disabled={isRegistering}>
                     {isRegistering ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />}
-                    Crear Vitrina
+                    Lanzar Vitrina
                   </Button>
                 </form>
               </DialogContent>
@@ -211,10 +261,10 @@ function AuthenticatedHome() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed">
+            <div className="text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed border-muted-foreground/20">
               <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-20" />
-              <p className="text-muted-foreground">No hay tiendas disponibles en este momento.</p>
-              <p className="text-sm text-muted-foreground mt-2">¡Sé el primero en registrar tu negocio!</p>
+              <p className="text-muted-foreground font-medium">No hay vitrinas activas aún.</p>
+              <p className="text-sm text-muted-foreground mt-2">¡Aguachica te espera, registra tu negocio!</p>
             </div>
           )}
         </div>
@@ -227,9 +277,9 @@ function AuthenticatedHome() {
               <Sparkles className="w-8 h-8" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-2xl font-bold">¿Eres comerciante?</h3>
+              <h3 className="text-2xl font-bold">¿Quieres vender más?</h3>
               <p className="text-muted-foreground max-w-xl">
-                Potencia tu catálogo con nuestra Inteligencia Artificial. Genera descripciones que venden y llega a más clientes en segundos.
+                Nuestra tecnología IA te ayuda a crear descripciones profesionales que captan la atención de tus clientes morrocoyeros en segundos.
               </p>
             </div>
             <div className="md:ml-auto">
@@ -255,7 +305,7 @@ function AuthenticatedHome() {
               ))}
             </div>
           ) : (
-             <p className="text-muted-foreground">Explora las tiendas para descubrir productos increíbles.</p>
+             <p className="text-muted-foreground italic">Las tiendas están preparando sus mejores ofertas...</p>
           )}
         </div>
       </section>
@@ -269,7 +319,6 @@ function UnauthenticatedLanding({ auth }: { auth: any }) {
 
   return (
     <div className="relative h-screen w-full overflow-hidden flex items-center justify-center bg-black">
-      {/* Background Image with optimized overlay */}
       <div className="absolute inset-0 z-0">
         <Image 
           src={morrocoyImage?.imageUrl || "https://picsum.photos/seed/morrocoy/1920/1080"} 
@@ -282,11 +331,9 @@ function UnauthenticatedLanding({ auth }: { auth: any }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
       </div>
 
-      {/* Main Content with strict margins and responsiveness */}
       <div className="container relative z-10 px-6 sm:px-12 mx-auto flex flex-col items-center justify-center text-center">
         <div className="w-full max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-1000">
           
-          {/* Badge Area */}
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 backdrop-blur-md">
             <Sparkles className="w-4 h-4 text-secondary" />
             <span className="text-[10px] sm:text-xs uppercase tracking-widest font-bold text-white/90">
@@ -294,7 +341,6 @@ function UnauthenticatedLanding({ auth }: { auth: any }) {
             </span>
           </div>
 
-          {/* Headline - Responsive and balanced to avoid overflow */}
           <div className="space-y-2">
             <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white leading-none tracking-tighter uppercase">
               Vitriniando <br />
@@ -304,15 +350,12 @@ function UnauthenticatedLanding({ auth }: { auth: any }) {
             </h1>
           </div>
 
-          {/* Body Text - Idiosyncrasy of Aguachica */}
           <p className="text-base sm:text-xl md:text-2xl text-white/80 max-w-2xl mx-auto font-medium leading-snug text-balance">
-            La esencia de Aguachica llevada al siguiente nivel. 
-            Conectamos el empuje comercial de nuestra tierra con 
-            el estilo de vida del futuro. 
+            Conectamos el empuje comercial de Aguachica con el mundo. 
+            Lleva tu negocio local al siguiente nivel con tecnología de punta.
             <span className="block mt-2 text-secondary font-bold italic">¡Lo mejor del Cesar a un solo toque!</span>
           </p>
 
-          {/* CTA - Size adjusted for mobile to prevent overflow */}
           <div className="pt-6">
             <Button 
               onClick={handleLogin}
@@ -323,7 +366,6 @@ function UnauthenticatedLanding({ auth }: { auth: any }) {
             </Button>
           </div>
 
-          {/* Footer Highlights */}
           <div className="grid grid-cols-3 gap-4 pt-12 border-t border-white/10 max-w-md mx-auto">
             <div className="text-center">
               <span className="block text-white font-bold text-sm sm:text-lg">Local</span>
@@ -338,14 +380,6 @@ function UnauthenticatedLanding({ auth }: { auth: any }) {
               <span className="text-white/50 text-[10px] uppercase">Garantizado</span>
             </div>
           </div>
-
-        </div>
-      </div>
-
-      {/* Aesthetic Accents */}
-      <div className="absolute bottom-8 right-8 z-20 hidden md:block">
-        <div className="w-12 h-12 border border-white/20 rounded-full flex items-center justify-center animate-pulse">
-          <div className="w-2 h-2 bg-secondary rounded-full"></div>
         </div>
       </div>
     </div>
