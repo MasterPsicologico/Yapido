@@ -1,18 +1,17 @@
+
 "use client";
 
 import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
-import { StoreCard } from '@/components/store/StoreCard';
-import { ProductCard } from '@/components/product/ProductCard';
+import { CategoryCard } from '@/components/category/CategoryCard';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Sparkles, ShoppingBag, ArrowRight, Plus, Store as StoreIcon, Loader2, Image as ImageIcon, X } from 'lucide-react';
+import { Plus, Store as StoreIcon, Loader2, Image as ImageIcon, X, LayoutGrid, Sparkles, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
-import { collection, query, where, limit, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, limit, doc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +25,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -48,40 +48,11 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen overflow-hidden">
-      {!user && <div className="absolute top-0 left-0 w-full z-50 bg-transparent border-none"><Navbar /></div>}
-      {user && <Navbar />}
-      <main className="flex-1 h-full">
+    <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+      <Navbar />
+      <main className="flex-1">
         {user ? <AuthenticatedHome /> : <UnauthenticatedLanding auth={auth} />}
       </main>
-
-      {user && (
-        <footer className="bg-primary/5 border-t py-12">
-          <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
-                  <ShoppingBag className="w-5 h-5" />
-                </div>
-                <span className="text-xl font-bold text-primary">Vitriniando</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                La plataforma definitiva para conectar tiendas locales con clientes modernos.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Plataforma</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/">Tiendas</Link></li>
-                <li><Link href="/about">Sobre Nosotros</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="container mx-auto px-4 mt-12 pt-8 border-t text-center text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Vitriniando. Todos los derechos reservados.
-          </div>
-        </footer>
-      )}
     </div>
   );
 }
@@ -89,21 +60,18 @@ export default function Home() {
 function AuthenticatedHome() {
   const firestore = useFirestore();
   const { user } = useUser();
+  const [openStore, setOpenStore] = useState(false);
+  const [openCategory, setOpenCategory] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
-  const [open, setOpen] = useState(false);
   const [base64Image, setBase64Image] = useState<string | null>(null);
 
-  const storesQuery = useMemoFirebase(() => {
-    return query(collection(firestore, 'stores'), where('status', '==', 'active'), limit(9));
+  // Consulta de Categorías Principales (Globales)
+  const categoriesQuery = useMemoFirebase(() => {
+    return query(collection(firestore, 'mainCategories'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
-  const productsQuery = useMemoFirebase(() => {
-    return query(collection(firestore, 'products'), where('status', '==', 'available'), limit(8));
-  }, [firestore]);
-
-  const { data: stores, isLoading: loadingStores } = useCollection(storesQuery);
-  const { data: products, isLoading: loadingProducts } = useCollection(productsQuery);
+  const { data: mainCategories, isLoading: loadingCategories } = useCollection(categoriesQuery);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -112,283 +80,281 @@ function AuthenticatedHome() {
       try {
         const compressed = await compressImage(file);
         setBase64Image(compressed);
-        toast({
-          title: "Imagen procesada",
-          description: "La imagen ha sido optimizada para la web.",
-        });
+        toast({ title: "Imagen lista", description: "Otimizada con éxito." });
       } catch (error) {
-        toast({
-          title: "Error al procesar",
-          description: "No se pudo optimizar la imagen.",
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: "No se pudo procesar la imagen.", variant: "destructive" });
       } finally {
         setIsCompressing(false);
       }
     }
   };
 
-  async function handleRegisterStore(e: React.FormEvent<HTMLFormElement>) {
+  const handleCreateMainCategory = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user) return;
-
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const description = formData.get('description') as string;
+
+    if (!base64Image) {
+      toast({ title: "Imagen requerida", variant: "destructive" });
+      return;
+    }
+
+    setIsRegistering(true);
+    try {
+      const catRef = doc(collection(firestore, 'mainCategories'));
+      setDocumentNonBlocking(catRef, {
+        id: catRef.id,
+        name,
+        description,
+        imageUrl: base64Image,
+        createdAt: serverTimestamp(),
+      }, { merge: true });
+
+      toast({ title: "Categoría Creada", description: "Ya puedes asignar tiendas aquí." });
+      setOpenCategory(false);
+      setBase64Image(null);
+    } catch (e) {
+      toast({ title: "Error", variant: "destructive" });
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  const handleRegisterStore = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const mainCategoryId = formData.get('mainCategoryId') as string;
     const address = formData.get('address') as string;
-    const category = formData.get('category') as string;
+
+    if (!mainCategoryId) {
+      toast({ title: "Selecciona una categoría", variant: "destructive" });
+      return;
+    }
 
     setIsRegistering(true);
     try {
       const storeRef = doc(collection(firestore, 'stores'));
-      const storeData = {
+      setDocumentNonBlocking(storeRef, {
         id: storeRef.id,
-        ownerId: user.uid,
+        ownerId: user?.uid,
+        mainCategoryId,
         name,
-        description,
         address,
-        phoneNumber: "",
-        email: user.email || "",
         status: 'active',
-        category,
         imageUrl: base64Image || `https://picsum.photos/seed/${storeRef.id}/800/600`,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
+      }, { merge: true });
 
-      setDocumentNonBlocking(storeRef, storeData, { merge: true });
-      
-      toast({
-        title: "¡Vitriniando con éxito!",
-        description: "Tu tienda ha sido registrada y ya está en la nube.",
-      });
-      setOpen(false);
+      toast({ title: "¡Vitrina Lanzada!", description: "Tu tienda ya es parte del Marketplace." });
+      setOpenStore(false);
       setBase64Image(null);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo registrar la tienda.",
-        variant: "destructive"
-      });
+    } catch (e) {
+      toast({ title: "Error al registrar", variant: "destructive" });
     } finally {
       setIsRegistering(false);
     }
-  }
+  };
 
   return (
-    <div className="overflow-y-auto h-[calc(100vh-64px)]">
-      <section className="py-12 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-            <div>
-              <h1 className="text-4xl font-black text-foreground mb-2">Tu Vitrina Digital</h1>
-              <p className="text-muted-foreground text-lg">Explora lo mejor de tu ciudad ahora mismo.</p>
-            </div>
-            
-            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if(!v) setBase64Image(null); }}>
-              <DialogTrigger asChild>
-                <Button className="rounded-full bg-primary hover:bg-primary/90 text-white font-bold h-12 px-6 gap-2">
-                  <Plus className="w-5 h-5" /> Registrar Mi Tienda
+    <div className="container mx-auto px-4 py-10 space-y-12">
+      {/* Hero Section */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2">Aguachica Digital</h1>
+          <p className="text-slate-500 text-lg font-medium">Explora las mejores vitrinas morrocoyeras por categoría.</p>
+        </div>
+        
+        <div className="flex gap-3">
+          {/* Admin: Crear Categoría Principal */}
+          <Dialog open={openCategory} onOpenChange={setOpenCategory}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="rounded-full h-12 px-6 gap-2 border-primary/20 hover:bg-primary/5 text-primary font-bold">
+                <LayoutGrid className="w-5 h-5" /> Nueva Categoría Pro
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-black italic">Crear Categoría Principal</DialogTitle>
+                <DialogDescription>Solo el administrador puede definir estos grupos globales.</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateMainCategory} className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label>Nombre de Categoría</Label>
+                  <Input name="name" placeholder="Ej: Panaderías y Cafés" required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Imagen Representativa</Label>
+                  <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border-2 border-dashed border-slate-300">
+                    {base64Image ? (
+                      <>
+                        <Image src={base64Image} alt="Preview" fill className="object-cover" />
+                        <Button type="button" size="icon" variant="destructive" className="absolute top-2 right-2 rounded-full h-8 w-8" onClick={() => setBase64Image(null)}>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center h-full cursor-pointer hover:bg-slate-200 transition-colors">
+                        <ImageIcon className="w-8 h-8 text-slate-400 mb-2" />
+                        <span className="text-xs font-bold text-slate-400">SUBIR FOTO IMPACTANTE</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                      </label>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Descripción Corta</Label>
+                  <Textarea name="description" placeholder="Ej: El aroma de nuestra tierra en un solo lugar." required />
+                </div>
+                <Button type="submit" className="w-full h-12 font-bold" disabled={isRegistering || isCompressing}>
+                  {isRegistering ? <Loader2 className="animate-spin" /> : <Plus className="mr-2" />} Crear Categoría Global
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-2xl font-black">
-                    <StoreIcon className="w-6 h-6 text-primary" /> Crear Vitrina
-                  </DialogTitle>
-                  <DialogDescription>
-                    Publica tu negocio en Aguachica y el mundo.
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleRegisterStore} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nombre de la Tienda</Label>
-                    <Input id="name" name="name" placeholder="Ej: Panadería Morrocoy" required />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Imagen de la Tienda</Label>
-                    <div className="flex flex-col gap-3">
-                      {isCompressing ? (
-                        <div className="aspect-video rounded-xl bg-muted animate-pulse flex items-center justify-center">
-                          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                        </div>
-                      ) : base64Image ? (
-                        <div className="relative aspect-video rounded-xl overflow-hidden border">
-                          <Image src={base64Image} alt="Preview" fill className="object-cover" />
-                          <Button 
-                            type="button" 
-                            variant="destructive" 
-                            size="icon" 
-                            className="absolute top-2 right-2 rounded-full w-8 h-8"
-                            onClick={() => setBase64Image(null)}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <label className="flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors">
-                          <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
-                          <span className="text-sm font-medium text-muted-foreground text-center px-4">
-                            Sube una foto real de tu fachada o logo
-                          </span>
-                          <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                        </label>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          {/* Dueño: Registrar Tienda */}
+          <Dialog open={openStore} onOpenChange={setOpenStore}>
+            <DialogTrigger asChild>
+              <Button className="rounded-full h-12 px-8 gap-2 bg-primary hover:bg-primary/90 text-white font-black shadow-xl shadow-primary/20">
+                <StoreIcon className="w-5 h-5" /> Registrar Mi Vitrina
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-black">Lanza tu Negocio</DialogTitle>
+                <DialogDescription>Selecciona la categoría principal a la que pertenece tu tienda.</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleRegisterStore} className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label>Nombre del Negocio</Label>
+                  <Input name="name" placeholder="Ej: Panadería Morrocoy" required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Categoría Principal (Admin)</Label>
+                  <Select name="mainCategoryId" required>
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Selecciona a qué grupo perteneces..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mainCategories?.map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                      ))}
+                      {(!mainCategories || mainCategories.length === 0) && (
+                        <p className="p-2 text-xs text-muted-foreground italic">No hay categorías globales creadas.</p>
                       )}
-                    </div>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Foto de Fachada</Label>
+                  <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border-2 border-dashed border-slate-300">
+                    {base64Image ? (
+                      <>
+                        <Image src={base64Image} alt="Preview" fill className="object-cover" />
+                        <Button type="button" size="icon" variant="destructive" className="absolute top-2 right-2 rounded-full h-8 w-8" onClick={() => setBase64Image(null)}>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center h-full cursor-pointer hover:bg-slate-200 transition-colors">
+                        <ImageIcon className="w-8 h-8 text-slate-400 mb-2" />
+                        <span className="text-xs font-bold text-slate-400 text-center px-4">TOMA UNA FOTO REAL DE TU LOCAL</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                      </label>
+                    )}
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Dirección Física</Label>
+                  <Input name="address" placeholder="Ej: Calle 5 con Carrera 20" required />
+                </div>
+                <Button type="submit" className="w-full h-14 font-black text-lg bg-secondary hover:bg-secondary/90 shadow-xl shadow-secondary/20" disabled={isRegistering || isCompressing}>
+                  {isRegistering ? <Loader2 className="animate-spin" /> : <Sparkles className="mr-2" />} Registrar Mi Vitrina
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Categoría Principal</Label>
-                    <Input id="category" name="category" placeholder="Ej: Alimentos, Moda, Tech" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Dirección Física</Label>
-                    <Input id="address" name="address" placeholder="Calle central, Aguachica" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Breve Descripción</Label>
-                    <Textarea id="description" name="description" placeholder="Cuéntanos qué te hace especial..." required />
-                  </div>
-                  <Button type="submit" className="w-full h-12 font-bold text-lg" disabled={isRegistering || isCompressing}>
-                    {isRegistering ? <Loader2 className="animate-spin mr-2" /> : <Plus className="mr-2" />}
-                    Lanzar Vitrina
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+      {/* Grid de Categorías Principales */}
+      <section>
+        <div className="flex items-center gap-2 mb-8">
+          <div className="w-2 h-8 bg-primary rounded-full" />
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Vitrinas por Categoría</h2>
+        </div>
+
+        {loadingCategories ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-72 rounded-[40px]" />)}
           </div>
-          
-          {loadingStores ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[1, 2, 3].map(i => <Skeleton key={i} className="h-64 rounded-3xl" />)}
-            </div>
-          ) : stores && stores.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {stores.map((store) => (
-                <StoreCard key={store.id} store={store as any} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed border-muted-foreground/20">
-              <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-20" />
-              <p className="text-muted-foreground font-medium">No hay vitrinas activas aún.</p>
-              <p className="text-sm text-muted-foreground mt-2">¡Aguachica te espera, registra tu negocio!</p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="bg-muted/30 rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 border border-border/50">
-            <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-secondary/20">
-              <Sparkles className="w-8 h-8" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-2xl font-bold">¿Quieres vender más?</h3>
-              <p className="text-muted-foreground max-w-xl">
-                Nuestra tecnología IA te ayuda a crear descripciones profesionales que captan la atención de tus clientes morrocoyeros en segundos.
-              </p>
-            </div>
-            <div className="md:ml-auto">
-              <Link href="/admin/manage">
-                <Button className="bg-primary hover:bg-primary/90 rounded-full px-8 h-12 font-bold">Gestionar mi Vitrina</Button>
-              </Link>
-            </div>
+        ) : mainCategories && mainCategories.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {mainCategories.map((cat) => (
+              <CategoryCard key={cat.id} category={cat as any} />
+            ))}
           </div>
-        </div>
+        ) : (
+          <div className="text-center py-24 bg-white rounded-[50px] shadow-sm border border-slate-100">
+            <LayoutGrid className="w-16 h-16 mx-auto text-slate-200 mb-4" />
+            <h3 className="text-xl font-bold text-slate-400 italic">No hay categorías creadas por el admin aún.</h3>
+            <p className="text-slate-400 text-sm mt-2">Usa el botón "Nueva Categoría Pro" para empezar.</p>
+          </div>
+        )}
       </section>
 
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-foreground mb-8">Novedades para ti</h2>
-          {loadingProducts ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-64 rounded-xl" />)}
-            </div>
-          ) : products && products.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product as any} />
-              ))}
-            </div>
-          ) : (
-             <p className="text-muted-foreground italic">Las tiendas están preparando sus mejores ofertas...</p>
-          )}
+      {/* Promo AI Banner */}
+      <div className="bg-slate-900 rounded-[50px] p-8 md:p-14 flex flex-col md:flex-row items-center gap-10 overflow-hidden relative group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700" />
+        <div className="relative z-10 flex-1 space-y-4">
+          <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1 border border-white/10">
+            <Sparkles className="w-4 h-4 text-secondary" />
+            <span className="text-[10px] font-black text-white uppercase tracking-widest">Tecnología Inteligente</span>
+          </div>
+          <h3 className="text-4xl md:text-5xl font-black text-white leading-none tracking-tighter">
+            ¿Tienes un negocio <br /> en Aguachica?
+          </h3>
+          <p className="text-slate-400 text-lg max-w-lg font-medium">
+            Nuestra IA crea descripciones profesionales para tus productos en segundos. ¡Destaca sobre el resto y vende más!
+          </p>
         </div>
-      </section>
+        <div className="relative z-10 shrink-0">
+          <Button onClick={() => setOpenStore(true)} size="lg" className="rounded-full h-16 px-10 text-xl font-black bg-white text-slate-900 hover:bg-slate-100 gap-3 group/btn">
+            Empezar ahora <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-2 transition-transform" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
 
 function UnauthenticatedLanding({ auth }: { auth: any }) {
   const handleLogin = () => initiateGoogleSignIn(auth);
-  const morrocoyImage = PlaceHolderImages.find(img => img.id === 'bg-morrocoy');
-
   return (
     <div className="relative h-screen w-full overflow-hidden flex items-center justify-center bg-black">
       <div className="absolute inset-0 z-0">
-        <Image 
-          src={morrocoyImage?.imageUrl || "https://picsum.photos/seed/morrocoy/1920/1080"} 
-          alt="Aguachica Cesar - Tierra Morrocoyera" 
-          fill 
-          className="object-cover opacity-60"
-          priority
-          data-ai-hint="tortoise morrocoy"
-        />
+        <Image src="https://picsum.photos/seed/morrocoy/1920/1080" alt="Aguachica Cesar" fill className="object-cover opacity-60" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
       </div>
-
-      <div className="container relative z-10 px-6 sm:px-12 mx-auto flex flex-col items-center justify-center text-center">
-        <div className="w-full max-w-4xl space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-1000">
-          
-          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 backdrop-blur-md">
-            <Sparkles className="w-4 h-4 text-secondary" />
-            <span className="text-[10px] sm:text-xs uppercase tracking-widest font-bold text-white/90">
-              Orgullo Morrocoyero • Cesar
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white leading-none tracking-tighter uppercase">
-              Vitriniando <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_auto] animate-gradient block pb-2">
-                Digital
-              </span>
-            </h1>
-          </div>
-
-          <p className="text-base sm:text-xl md:text-2xl text-white/80 max-w-2xl mx-auto font-medium leading-snug text-balance">
-            Conectamos el empuje comercial de Aguachica con el mundo. 
-            Lleva tu negocio local al siguiente nivel con tecnología de punta.
-            <span className="block mt-2 text-secondary font-bold italic">¡Lo mejor del Cesar a un solo toque!</span>
-          </p>
-
-          <div className="pt-6">
-            <Button 
-              onClick={handleLogin}
-              size="lg" 
-              className="bg-primary hover:bg-primary/90 text-white font-black px-8 sm:px-12 py-8 sm:py-10 rounded-full text-xl sm:text-2xl shadow-2xl shadow-primary/20 hover:scale-105 transition-all group w-full sm:w-auto"
-            >
-              Explorar Tiendas <ArrowRight className="ml-3 w-6 h-6 sm:w-8 sm:h-8 group-hover:translate-x-2 transition-transform" />
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 pt-12 border-t border-white/10 max-w-md mx-auto">
-            <div className="text-center">
-              <span className="block text-white font-bold text-sm sm:text-lg">Local</span>
-              <span className="text-white/50 text-[10px] uppercase">Aguachica</span>
-            </div>
-            <div className="text-center">
-              <span className="block text-white font-bold text-sm sm:text-lg">Rápido</span>
-              <span className="text-white/50 text-[10px] uppercase">Directo</span>
-            </div>
-            <div className="text-center">
-              <span className="block text-white font-bold text-sm sm:text-lg">Seguro</span>
-              <span className="text-white/50 text-[10px] uppercase">Garantizado</span>
-            </div>
-          </div>
+      <div className="container relative z-10 px-6 sm:px-12 text-center space-y-8 max-w-4xl">
+        <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 backdrop-blur-md animate-in fade-in slide-in-from-bottom-5 duration-700">
+          <Sparkles className="w-4 h-4 text-secondary" />
+          <span className="text-[10px] sm:text-xs uppercase tracking-widest font-bold text-white/90">Aguachica • Cesar • Orgullo Morrocoyero</span>
+        </div>
+        <h1 className="text-6xl sm:text-8xl md:text-9xl font-black text-white leading-none tracking-tighter uppercase animate-in fade-in zoom-in duration-1000">
+          Vitriniando <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_auto] animate-gradient block">Marketplace</span>
+        </h1>
+        <p className="text-lg sm:text-2xl text-white/80 font-medium max-w-2xl mx-auto leading-tight animate-in fade-in slide-in-from-bottom-10 duration-1000">
+          Lleva tu negocio de Aguachica al siguiente nivel. <br />
+          <span className="text-secondary font-black italic">¡La vitrina más moderna del Cesar a un solo clic!</span>
+        </p>
+        <div className="pt-8 animate-in fade-in slide-in-from-bottom-20 duration-1000">
+          <Button onClick={handleLogin} size="lg" className="bg-primary hover:bg-primary/90 text-white font-black px-12 py-10 rounded-full text-2xl shadow-2xl shadow-primary/40 hover:scale-105 transition-all group w-full sm:w-auto">
+            ENTRAR A VITRINIAR <ArrowRight className="ml-4 w-8 h-8 group-hover:translate-x-3 transition-transform" />
+          </Button>
         </div>
       </div>
     </div>
