@@ -3,108 +3,78 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * Vitriniando Security Rules
+     * Vitriniando Security Rules - Producción
      * 
-     * Core Philosophy:
-     * This ruleset enforces a strict ownership model for user profiles and store management,
-     * while enabling public discoverability for active stores and products. It leverages
-     * denormalization to ensure that authorization checks are fast, independent, and 
-     * performant without requiring expensive cross-document lookups.
-     * 
-     * Data Structure:
-     * - /users/{userId}: Private user profiles, accessible only by the account owner.
-     * - /stores/{storeId}: Publicly readable store info (if active), writeable only by the owner.
-     * - /stores/.../categories/{categoryId}: Sub-collection of stores, carrying denormalized owner IDs.
-     * - /stores/.../products/{productId}: Deeply nested products, also carrying denormalized owner IDs.
-     * 
-     * Key Security Decisions:
-     * - Authorization Independence: All documents (Categories, Products) contain the 'storeOwnerId' 
-     *   directly on the document. This allows rules to verify ownership without using get() calls.
-     * - Queryable Authorization: Public access is restricted based on 'status' fields 
-     *   ('active' for stores, 'available' for products).
-     * - Immutable Ownership: Critical relational fields like 'ownerId' and 'storeOwnerId' are 
-     *   enforced during creation and protected from modification during updates.
+     * Estas reglas permiten el acceso público de lectura a tiendas y productos
+     * para facilitar el descubrimiento, mientras restringen la edición 
+     * exclusivamente a los propietarios autenticados.
      */
 
-    // --- Helper Functions ---
+    // --- Funciones de Ayuda ---
 
-    /** Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** Checks if the authenticated user matches the provided ID. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** Combines ownership check with existence check for destructive operations. */
     function isExistingOwner(userId) {
       return resource != null && isOwner(userId);
     }
 
-    /** Validates that a field remains unchanged during an update. */
     function isUnchanged(field) {
       return request.resource.data[field] == resource.data[field];
     }
 
-    // --- Collection Rules ---
+    // --- Reglas de Colecciones ---
 
-    /**
-     * @description Rules for user profiles. Users can only manage their own data.
-     * @path /users/{userId}
-     * @allow (create) if auth.uid == userId
-     * @deny (get) if auth.uid != userId
-     * @principle Ownership and Relational Integrity (ID must match path).
-     */
+    /** Usuarios: Privados por defecto */
     match /users/{userId} {
       allow get, list: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update, delete: if isExistingOwner(userId) && isUnchanged('id');
     }
 
-    /**
-     * @description Rules for stores. Public can see active stores; owners manage their own.
-     * @path /stores/{storeId}
-     * @allow (get) if store is 'active' OR user is 'ownerId'
-     * @deny (update) if user is not the 'ownerId'
-     * @principle Public Read with Owner-Only Writes using denormalized 'ownerId'.
+    /** 
+     * Tiendas: 
+     * Lectura: Pública si es 'active' o si es el dueño.
+     * Escritura: Solo el dueño.
      */
     match /stores/{storeId} {
       allow get: if resource.data.status == 'active' || isOwner(resource.data.ownerId);
-      allow list: if true; // Listing is public; results filtered by queries matching 'get' logic.
+      allow list: if true; 
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid && request.resource.data.id == storeId;
       allow update: if isExistingOwner(resource.data.ownerId) && isUnchanged('ownerId') && isUnchanged('id');
       allow delete: if isExistingOwner(resource.data.ownerId);
     }
 
-    /**
-     * @description Rules for product categories. Uses denormalized 'storeOwnerId' for speed.
-     * @path /stores/{storeId}/categories/{categoryId}
-     * @allow (create) if auth.uid == request.resource.data.storeOwnerId
-     * @deny (list) if not querying an active store (handled by client query).
-     * @principle Authorization Independence via denormalized owner and status fields.
+    /** 
+     * Productos (Raíz):
+     * Permite que la página principal liste productos globales para descubrimiento.
+     */
+    match /products/{productId} {
+      allow get: if resource.data.status == 'available' || isOwner(resource.data.storeOwnerId);
+      allow list: if true;
+      allow create: if isSignedIn() && request.resource.data.storeOwnerId == request.auth.uid;
+      allow update: if isExistingOwner(resource.data.storeOwnerId) && isUnchanged('storeOwnerId');
+      allow delete: if isExistingOwner(resource.data.storeOwnerId);
+    }
+
+    /** 
+     * Categorías y Productos Anidados:
+     * Mantiene la estructura jerárquica con herencia de permisos.
      */
     match /stores/{storeId}/categories/{categoryId} {
-      allow get: if resource.data.storeStatus == 'active' || isOwner(resource.data.storeOwnerId);
-      allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.storeOwnerId == request.auth.uid && request.resource.data.storeId == storeId;
-      allow update: if isExistingOwner(resource.data.storeOwnerId) && isUnchanged('storeOwnerId') && isUnchanged('storeId');
-      allow delete: if isExistingOwner(resource.data.storeOwnerId);
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.storeOwnerId == request.auth.uid;
+      allow update, delete: if isExistingOwner(resource.data.storeOwnerId);
 
-      /**
-       * @description Rules for products. Deeply nested but uses local 'storeOwnerId'.
-       * @path /stores/{storeId}/categories/{categoryId}/products/{productId}
-       * @allow (get) if product 'available' AND store 'active'
-       * @deny (delete) if requester is not the store owner.
-       * @principle Multi-level denormalization for Queryable Authorization Properties (QAPs).
-       */
       match /products/{productId} {
-        allow get: if (resource.data.status == 'available' && resource.data.storeStatus == 'active') || isOwner(resource.data.storeOwnerId);
-        allow list: if true;
-        allow create: if isSignedIn() && request.resource.data.storeOwnerId == request.auth.uid && request.resource.data.storeId == storeId;
-        allow update: if isExistingOwner(resource.data.storeOwnerId) && isUnchanged('storeOwnerId') && isUnchanged('storeId');
-        allow delete: if isExistingOwner(resource.data.storeOwnerId);
+        allow get, list: if true;
+        allow create: if isSignedIn() && request.resource.data.storeOwnerId == request.auth.uid;
+        allow update, delete: if isExistingOwner(resource.data.storeOwnerId);
       }
     }
   }
