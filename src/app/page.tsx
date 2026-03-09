@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, Sparkles, ShoppingBag, ArrowRight, Plus, Store as StoreIcon, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { collection, query, where, limit, doc, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -131,7 +131,7 @@ function AuthenticatedHome() {
         updatedAt: serverTimestamp(),
       };
 
-      addDocumentNonBlocking(collection(firestore, 'stores'), storeData);
+      setDocumentNonBlocking(storeRef, storeData, { merge: true });
       
       toast({
         title: "¡Éxito!",

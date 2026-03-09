@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Phone, Info, Star, Plus, Package, ListPlus, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { collection, doc, query, where, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -83,7 +83,7 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
         updatedAt: serverTimestamp(),
       };
 
-      addDocumentNonBlocking(collection(firestore, 'stores', id, 'categories'), catData);
+      setDocumentNonBlocking(catRef, catData, { merge: true });
       
       toast({
         title: "Categoría creada",
@@ -128,13 +128,14 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
         updatedAt: serverTimestamp(),
       };
 
-      addDocumentNonBlocking(collection(firestore, 'stores', id, 'categories', categoryId, 'products'), prodData);
+      setDocumentNonBlocking(prodRef, prodData, { merge: true });
       
       // Also add to global products for discovery
-      addDocumentNonBlocking(collection(firestore, 'products'), {
+      const globalProdRef = doc(firestore, 'products', prodRef.id);
+      setDocumentNonBlocking(globalProdRef, {
         ...prodData,
         storeName: store.name
-      });
+      }, { merge: true });
 
       toast({
         title: "Producto añadido",
@@ -303,8 +304,6 @@ function ProductsGrid({ storeId, categoryId }: { storeId: string, categoryId: st
         where('status', '==', 'available')
       );
     }
-    // For "all", we might need a more complex query or multiple fetches if flattened. 
-    // Here we'll just show products if a category is selected for simplicity in this MVP.
     return null;
   }, [firestore, storeId, categoryId]);
 
