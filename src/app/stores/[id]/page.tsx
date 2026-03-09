@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,12 +22,13 @@ import {
   Zap,
   Tag,
   Clock,
-  Heart
+  Camera,
+  Edit2
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, query, where, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -43,6 +44,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
+import { cn } from '@/lib/utils';
 
 export default function StorePage() {
   const params = useParams();
@@ -71,6 +73,12 @@ export default function StorePage() {
   const [catDialogOpen, setCatDialogOpen] = useState(false);
   const [prodDialogOpen, setProdDialogOpen] = useState(false);
   const [productImage, setProductImage] = useState<string | null>(null);
+  
+  // Estados para edición de imágenes de la tienda
+  const [updatingImage, setUpdatingImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const highlightInputRef = useRef<HTMLInputElement>(null);
+  const [activeHighlightIndex, setActiveHighlightIndex] = useState<number | null>(null);
 
   if (loadingStore) {
     return (
@@ -102,6 +110,37 @@ export default function StorePage() {
   }
 
   const isOwner = user?.uid === store?.ownerId;
+
+  const handleUpdateStoreImage = async (e: React.ChangeEvent<HTMLInputElement>, field: string, index?: number) => {
+    const file = e.target.files?.[0];
+    if (!file || !storeRef) return;
+
+    const loadingId = index !== undefined ? `highlight-${index}` : 'main';
+    setUpdatingImage(loadingId);
+    
+    try {
+      const compressed = await compressImage(file, 1200, 1200, 0.85);
+      
+      if (index !== undefined) {
+        const currentHighlights = store?.highlights || [
+          `https://picsum.photos/seed/highlight-0-${id}/300/300`,
+          `https://picsum.photos/seed/highlight-1-${id}/300/300`,
+          `https://picsum.photos/seed/highlight-2-${id}/300/300`
+        ];
+        const newHighlights = [...currentHighlights];
+        newHighlights[index] = compressed;
+        updateDocumentNonBlocking(storeRef, { highlights: newHighlights, updatedAt: serverTimestamp() });
+      } else {
+        updateDocumentNonBlocking(storeRef, { [field]: compressed, updatedAt: serverTimestamp() });
+      }
+
+      toast({ title: "¡Actualizado!", description: "La vitrina se ve genial ahora." });
+    } catch (error) {
+      toast({ title: "Error", description: "No se pudo actualizar la imagen.", variant: "destructive" });
+    } finally {
+      setUpdatingImage(null);
+    }
+  };
 
   const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -175,10 +214,8 @@ export default function StorePage() {
         updatedAt: serverTimestamp(),
       };
 
-      // Guardar en subcolección de la tienda
       setDocumentNonBlocking(prodRef, prodData, { merge: true });
       
-      // Guardar en colección global para búsqueda y detalle directo
       const globalProdRef = doc(firestore, 'products', prodRef.id);
       setDocumentNonBlocking(globalProdRef, {
         ...prodData,
@@ -195,6 +232,12 @@ export default function StorePage() {
     }
   }
 
+  const highlightImages = store?.highlights || [
+    `https://picsum.photos/seed/highlight-0-${id}/300/300`,
+    `https://picsum.photos/seed/highlight-1-${id}/300/300`,
+    `https://picsum.photos/seed/highlight-2-${id}/300/300`
+  ];
+
   return (
     <div className="flex flex-col min-h-screen bg-[#f3f4f6]">
       <Navbar />
@@ -210,6 +253,27 @@ export default function StorePage() {
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent"></div>
           
+          {/* Botón edición imagen principal */}
+          {isOwner && (
+            <div className="absolute top-6 right-6 z-30">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={(e) => handleUpdateStoreImage(e, 'imageUrl')} 
+              />
+              <Button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={updatingImage === 'main'}
+                className="rounded-full bg-white/20 backdrop-blur-md hover:bg-white/40 text-white border border-white/30 h-11 px-4 gap-2 font-bold shadow-xl"
+              >
+                {updatingImage === 'main' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+                Cambiar Portada
+              </Button>
+            </div>
+          )}
+
           <div className="absolute top-6 left-6 z-30">
             <Link href="/">
               <Button size="icon" variant="secondary" className="rounded-full bg-white/95 shadow-lg border-none w-11 h-11">
@@ -250,15 +314,32 @@ export default function StorePage() {
                 </p>
               </div>
 
+              {/* Grid de Imágenes Destacadas */}
               <div className="grid grid-cols-3 gap-3 overflow-x-auto no-scrollbar">
-                {[1, 2, 3].map((i) => (
-                    <div key={i} className="relative aspect-square rounded-[22px] overflow-hidden shadow-sm">
+                <input 
+                  type="file" 
+                  ref={highlightInputRef} 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={(e) => activeHighlightIndex !== null && handleUpdateStoreImage(e, 'highlights', activeHighlightIndex)} 
+                />
+                {highlightImages.map((img: string, i: number) => (
+                    <div key={i} className="relative aspect-square rounded-[22px] overflow-hidden shadow-sm group">
                         <Image 
-                            src={`https://picsum.photos/seed/highlight-${i}-${id}/300/300`} 
-                            alt="Destacado" 
+                            src={img} 
+                            alt={`Destacado ${i}`} 
                             fill 
                             className="object-cover"
                         />
+                        {isOwner && (
+                          <button 
+                            onClick={() => { setActiveHighlightIndex(i); highlightInputRef.current?.click(); }}
+                            disabled={updatingImage === `highlight-${i}`}
+                            className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                          >
+                            {updatingImage === `highlight-${i}` ? <Loader2 className="w-6 h-6 animate-spin" /> : <Edit2 className="w-6 h-6" />}
+                          </button>
+                        )}
                     </div>
                 ))}
               </div>
