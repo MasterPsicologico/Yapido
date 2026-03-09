@@ -1,12 +1,29 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Phone, Info, Star, Plus, Package, Loader2, ArrowLeft, Image as ImageIcon, X, Store as StoreIcon } from 'lucide-react';
+import { 
+  Phone, 
+  MapPin, 
+  Globe, 
+  Star, 
+  Plus, 
+  Package, 
+  Loader2, 
+  ArrowLeft, 
+  Image as ImageIcon, 
+  X, 
+  Store as StoreIcon, 
+  ChevronRight,
+  MessageCircle,
+  Clock,
+  Zap,
+  Tag
+} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -57,12 +74,13 @@ export default function StorePage() {
 
   if (loadingStore) {
     return (
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen bg-background">
         <Navbar />
-        <main className="flex-1 container mx-auto px-4 py-12">
-          <Skeleton className="h-64 w-full rounded-3xl mb-8" />
-          <Skeleton className="h-12 w-1/3 mb-4" />
-          <Skeleton className="h-24 w-full rounded-2xl" />
+        <main className="flex-1">
+          <Skeleton className="h-[40vh] w-full" />
+          <div className="container mx-auto px-4 -mt-20">
+            <Skeleton className="h-64 w-full rounded-[40px]" />
+          </div>
         </main>
       </div>
     );
@@ -74,10 +92,9 @@ export default function StorePage() {
         <Navbar />
         <div className="text-center space-y-4">
           <StoreIcon className="w-16 h-16 mx-auto text-muted-foreground opacity-20" />
-          <h2 className="text-2xl font-bold">Vitrinas en mantenimiento</h2>
-          <p className="text-muted-foreground">No pudimos encontrar la tienda que buscas. Intenta de nuevo.</p>
+          <h2 className="text-2xl font-bold italic">Vitrina no encontrada</h2>
           <Link href="/">
-            <Button className="rounded-full">Volver al Inicio</Button>
+            <Button className="rounded-full bg-primary font-bold">Volver al Inicio</Button>
           </Link>
         </div>
       </div>
@@ -177,180 +194,252 @@ export default function StorePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-slate-50">
       <Navbar />
       
-      <main className="flex-1 bg-background">
-        <div className="relative h-64 md:h-80 w-full overflow-hidden bg-primary/20">
+      <main className="flex-1 pb-20">
+        {/* Hero Background */}
+        <div className="relative h-[45vh] w-full overflow-hidden">
           <Image 
-            src={store?.imageUrl || 'https://picsum.photos/seed/store/1920/1080'} 
+            src={store?.imageUrl || 'https://picsum.photos/seed/bakery/1920/1080'} 
             alt={store?.name || 'Vitriniando'} 
             fill 
             className="object-cover" 
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
-          <div className="absolute top-4 left-4 z-20">
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"></div>
+          
+          {/* Back Button */}
+          <div className="absolute top-6 left-6 z-30">
             <Link href="/">
-               <Button variant="secondary" className="rounded-full gap-2 shadow-lg h-10 px-4">
-                 <ArrowLeft className="w-4 h-4" /> Inicio
-               </Button>
+              <Button size="icon" variant="secondary" className="rounded-full bg-white/90 shadow-md">
+                <ArrowLeft className="w-5 h-5 text-slate-800" />
+              </Button>
             </Link>
+          </div>
+
+          {/* Centered Logo Placeholder (Like Panaderia El Sol) */}
+          <div className="absolute inset-0 flex items-center justify-center">
+             <div className="bg-white/20 p-4 rounded-full backdrop-blur-md border border-white/30">
+                <StoreIcon className="w-16 h-16 text-white" />
+             </div>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 -mt-16 relative z-10 pb-20">
-          <div className="bg-white rounded-3xl p-6 md:p-10 shadow-xl border border-border/50">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div className="space-y-3">
-                <Badge className="bg-secondary text-white uppercase tracking-wider text-[10px] font-bold">
-                  {store?.category || 'Vitriniando'}
+        {/* Floating Content Card */}
+        <div className="container mx-auto max-w-2xl px-4 -mt-24 relative z-20">
+          <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-white/50">
+            <div className="p-8 md:p-10 space-y-8">
+              {/* Header Info */}
+              <div className="space-y-4">
+                <Badge className="bg-cyan-500 hover:bg-cyan-600 text-white rounded-full px-4 py-1 text-xs font-bold border-none">
+                  {store?.category || 'Tienda'}
                 </Badge>
-                <div className="flex items-center gap-4">
-                  <h1 className="text-3xl md:text-5xl font-black text-foreground">{store?.name}</h1>
-                  <div className="flex items-center gap-1 text-yellow-500 bg-yellow-50 px-2 py-1 rounded-lg">
-                    <Star className="w-4 h-4 fill-current" />
-                    <span className="font-bold text-sm">4.9</span>
+                <h1 className="text-4xl font-black text-slate-900 tracking-tight">{store?.name}</h1>
+                <p className="text-slate-500 text-lg leading-relaxed font-medium">
+                  {store?.description}
+                </p>
+              </div>
+
+              {/* Features Icons */}
+              <div className="flex flex-wrap items-center justify-between gap-4 py-2">
+                <div className="flex flex-col items-center gap-2 group cursor-default">
+                  <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 shadow-sm">
+                    <Tag className="w-5 h-5" />
                   </div>
+                  <span className="text-[11px] font-bold text-slate-700 text-center leading-tight">Promociones<br/>diarias</span>
                 </div>
-                <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">{store?.description}</p>
-                
-                <div className="flex flex-wrap gap-3 pt-4">
-                   <Button className="rounded-full gap-2 font-bold px-6 h-12 bg-primary hover:bg-primary/90">
-                    <Phone className="w-4 h-4" /> Contactar
-                  </Button>
-                  
-                  {isOwner && (
-                    <div className="flex flex-wrap gap-2">
-                      <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" className="rounded-full gap-2 border-primary text-primary h-12 font-bold hover:bg-primary/5">
-                            <Plus className="w-4 h-4" /> Nueva Sección
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle className="text-2xl font-black text-primary">Crear Sección</DialogTitle>
-                            <DialogDescription>Organiza tus productos (ej: Desayunos, Almuerzos).</DialogDescription>
-                          </DialogHeader>
-                          <form onSubmit={handleAddCategory} className="space-y-4 pt-4">
-                            <div className="space-y-2">
-                              <Label>Nombre de la Sección</Label>
-                              <Input name="name" placeholder="Ej: Especiales del Mes" required />
-                            </div>
-                            <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingCategory}>
-                              {isAddingCategory ? <Loader2 className="animate-spin" /> : "Guardar Sección"}
-                            </Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
-
-                      <Dialog open={prodDialogOpen} onOpenChange={(v) => { setProdDialogOpen(v); if(!v) setProductImage(null); }}>
-                        <DialogTrigger asChild>
-                          <Button className="rounded-full gap-2 bg-secondary hover:bg-secondary/90 h-12 font-bold shadow-lg shadow-secondary/20">
-                            <Package className="w-4 h-4" /> Publicar Producto
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-h-[90vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle className="text-2xl font-black text-secondary">Nuevo Ítem</DialogTitle>
-                            <DialogDescription>Sube fotos reales para mejores ventas.</DialogDescription>
-                          </DialogHeader>
-                          <form onSubmit={handleAddProduct} className="space-y-4 pt-4">
-                            <div className="space-y-2">
-                              <Label>Nombre</Label>
-                              <Input name="name" required />
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label>Foto Real (Optimización Automática)</Label>
-                              <div className="flex flex-col gap-3">
-                                {isCompressingProduct ? (
-                                  <div className="aspect-video rounded-xl bg-muted animate-pulse flex items-center justify-center">
-                                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                                  </div>
-                                ) : productImage ? (
-                                  <div className="relative aspect-video rounded-xl overflow-hidden border">
-                                    <Image src={productImage} alt="Preview" fill className="object-cover" />
-                                    <Button 
-                                      type="button" 
-                                      variant="destructive" 
-                                      size="icon" 
-                                      className="absolute top-2 right-2 rounded-full w-8 h-8"
-                                      onClick={() => setProductImage(null)}
-                                    >
-                                      <X className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <label className="flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors">
-                                    <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
-                                    <span className="text-xs font-medium text-muted-foreground">Toca para subir foto real</span>
-                                    <input type="file" accept="image/*" className="hidden" onChange={handleProductImageUpload} />
-                                  </label>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label>Precio (COP)</Label>
-                              <Input name="price" type="number" required />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Categoría / Sección</Label>
-                              <select 
-                                name="categoryId" 
-                                className="w-full h-12 rounded-lg border border-input bg-background px-3" 
-                                required
-                              >
-                                <option value="">Selecciona donde mostrarlo...</option>
-                                {categories?.map(cat => (
-                                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Descripción Corta</Label>
-                              <Textarea name="description" placeholder="Atrae a tus clientes con una buena descripción..." required />
-                            </div>
-                            <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingProduct || isCompressingProduct}>
-                              {isAddingProduct ? <Loader2 className="animate-spin" /> : "Publicar Ahora"}
-                            </Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  )}
+                <div className="flex flex-col items-center gap-2 group cursor-default">
+                  <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 shadow-sm">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-700 text-center leading-tight">Productos<br/>frescos</span>
+                </div>
+                <div className="flex flex-col items-center gap-2 group cursor-default">
+                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-sm">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-700 text-center leading-tight">Domicilios<br/>rápidos</span>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-12">
-              <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
-                <TabsList className="bg-muted/50 p-1 rounded-full mb-8 h-12 flex overflow-x-auto min-w-full sm:min-w-0 no-scrollbar">
-                  <TabsTrigger value="all" className="rounded-full px-8 data-[state=active]:bg-primary data-[state=active]:text-white font-bold">
-                    Todo
-                  </TabsTrigger>
-                  {categories?.map(cat => (
-                    <TabsTrigger key={cat.id} value={cat.id} className="rounded-full px-8 data-[state=active]:bg-primary data-[state=active]:text-white font-bold">
-                      {cat.name}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-
-                <TabsContent value="all" className="mt-0">
-                   <div className="text-center py-20 bg-muted/5 rounded-3xl border-2 border-dashed border-muted-foreground/10">
-                    <Package className="w-10 h-10 mx-auto text-muted-foreground mb-3 opacity-20" />
-                    <p className="text-muted-foreground">Explora por categorías arriba para ver los productos.</p>
+              {/* Contact Information Section */}
+              <div className="bg-slate-50 rounded-3xl p-6 border border-slate-200/60 space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
+                    <Phone className="w-4 h-4 text-slate-600" />
                   </div>
-                </TabsContent>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-800 font-bold">{store?.phoneNumber || '+57 3XX XXX XXXX'}</span>
+                      <Button size="sm" className="bg-yellow-500 hover:bg-yellow-600 text-white rounded-full font-bold h-9 px-4 gap-2">
+                        <Phone className="w-3.5 h-3.5" /> Llamar ahora <ChevronRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
 
-                {categories?.map(cat => (
-                  <TabsContent key={cat.id} value={cat.id} className="mt-0">
-                     <ProductsGrid storeId={id} categoryId={cat.id} />
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
+                    <MapPin className="w-4 h-4 text-slate-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-slate-600 text-xs font-medium">{store?.address || 'Dirección no especificada'}</span>
+                        <span className="text-slate-400 text-[10px] uppercase font-bold mt-1">Aguachica, Cesar</span>
+                      </div>
+                      <Button size="sm" variant="outline" className="rounded-full font-bold h-9 px-4 gap-2 border-slate-200 text-slate-700 bg-white">
+                        <MessageCircle className="w-3.5 h-3.5 text-green-500" /> WhatsApp
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 text-slate-400 text-[11px] font-bold pt-2 border-t border-slate-200">
+                  <Globe className="w-3 h-3" /> 
+                  <span>www.{store?.name?.toLowerCase()?.replace(/\s/g, '') || 'tienda'}.com</span>
+                </div>
+              </div>
+
+              {/* Owner Actions */}
+              {isOwner && (
+                <div className="grid grid-cols-2 gap-3">
+                  <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="rounded-full gap-2 border-dashed border-primary/40 text-primary h-12 font-black text-xs uppercase tracking-widest hover:bg-primary/5">
+                        <Plus className="w-4 h-4" /> Nueva Sección
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl font-black text-primary italic">Crear Sección</DialogTitle>
+                        <DialogDescription>Organiza tus productos (ej: Desayunos, Almuerzos).</DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleAddCategory} className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                          <Label>Nombre de la Sección</Label>
+                          <Input name="name" placeholder="Ej: Especiales del Mes" required />
+                        </div>
+                        <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingCategory}>
+                          {isAddingCategory ? <Loader2 className="animate-spin" /> : "Guardar Sección"}
+                        </Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Dialog open={prodDialogOpen} onOpenChange={(v) => { setProdDialogOpen(v); if(!v) setProductImage(null); }}>
+                    <DialogTrigger asChild>
+                      <Button className="rounded-full gap-2 bg-slate-900 hover:bg-slate-800 text-white h-12 font-black text-xs uppercase tracking-widest shadow-xl">
+                        <Package className="w-4 h-4" /> Publicar Ítem
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl font-black italic">Nuevo Producto</DialogTitle>
+                        <DialogDescription>Sube fotos reales para mejores ventas.</DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleAddProduct} className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                          <Label>Nombre</Label>
+                          <Input name="name" required />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Foto del Producto</Label>
+                          <div className="flex flex-col gap-3">
+                            {isCompressingProduct ? (
+                              <div className="aspect-video rounded-xl bg-muted animate-pulse flex items-center justify-center">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                              </div>
+                            ) : productImage ? (
+                              <div className="relative aspect-video rounded-xl overflow-hidden border">
+                                <Image src={productImage} alt="Preview" fill className="object-cover" />
+                                <Button 
+                                  type="button" 
+                                  variant="destructive" 
+                                  size="icon" 
+                                  className="absolute top-2 right-2 rounded-full w-8 h-8"
+                                  onClick={() => setProductImage(null)}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <label className="flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors">
+                                <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
+                                <span className="text-xs font-medium text-muted-foreground">Toca para subir foto real</span>
+                                <input type="file" accept="image/*" className="hidden" onChange={handleProductImageUpload} />
+                              </label>
+                            )}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Precio (COP)</Label>
+                          <Input name="price" type="number" required />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Sección</Label>
+                          <select 
+                            name="categoryId" 
+                            className="w-full h-12 rounded-lg border border-input bg-background px-3" 
+                            required
+                          >
+                            <option value="">Selecciona una sección...</option>
+                            {categories?.map(cat => (
+                              <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Descripción</Label>
+                          <Textarea name="description" placeholder="Atrae a tus clientes..." required />
+                        </div>
+                        <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingProduct || isCompressingProduct}>
+                          {isAddingProduct ? <Loader2 className="animate-spin" /> : "Publicar Ahora"}
+                        </Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              )}
+
+              {/* Pill Style Tabs */}
+              <div className="mt-8">
+                <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
+                  <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
+                    <TabsList className="bg-transparent h-auto p-0 flex gap-3">
+                      <TabsTrigger value="all" className="rounded-full px-6 py-2.5 bg-yellow-100 text-yellow-800 data-[state=active]:bg-yellow-500 data-[state=active]:text-white font-bold text-sm shadow-sm transition-all flex items-center gap-2 border-none">
+                        <StoreIcon className="w-4 h-4" /> Todos
+                      </TabsTrigger>
+                      {categories?.map(cat => (
+                        <TabsTrigger key={cat.id} value={cat.id} className="rounded-full px-6 py-2.5 bg-slate-100 text-slate-600 data-[state=active]:bg-slate-900 data-[state=active]:text-white font-bold text-sm shadow-sm transition-all border-none">
+                          {cat.name}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </div>
+
+                  <TabsContent value="all" className="mt-8">
+                    <div className="text-center py-20 bg-slate-50/50 rounded-[32px] border-2 border-dashed border-slate-200">
+                      <Package className="w-12 h-12 mx-auto text-slate-200 mb-4" />
+                      <p className="text-slate-400 font-bold italic">Explora nuestras secciones arriba</p>
+                    </div>
                   </TabsContent>
-                ))}
-              </Tabs>
+
+                  {categories?.map(cat => (
+                    <TabsContent key={cat.id} value={cat.id} className="mt-8">
+                      <ProductsGrid storeId={id} categoryId={cat.id} />
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </div>
+
+              {/* Final CTA Button */}
+              <div className="pt-8 text-center">
+                <Button className="w-full max-w-xs h-16 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white text-xl font-black shadow-xl shadow-orange-500/20 gap-3 group">
+                   Ver Menú Completo <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -373,23 +462,23 @@ function ProductsGrid({ storeId, categoryId }: { storeId: string, categoryId: st
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-64 rounded-2xl" />)}
+      <div className="grid grid-cols-2 gap-4">
+        {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-64 rounded-3xl" />)}
       </div>
     );
   }
 
   if (!products || products.length === 0) {
     return (
-      <div className="text-center py-20 bg-muted/5 rounded-3xl border-2 border-dashed border-muted-foreground/10">
-        <Package className="w-10 h-10 mx-auto text-muted-foreground mb-3 opacity-20" />
-        <p className="text-muted-foreground">Esta sección está vacía por ahora.</p>
+      <div className="text-center py-16 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
+        <Package className="w-10 h-10 mx-auto text-slate-200 mb-2" />
+        <p className="text-slate-400 font-bold text-sm italic">Sin productos en esta sección</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-2 gap-6">
       {products.map(p => (
         <ProductCard key={p.id} product={p as any} />
       ))}
