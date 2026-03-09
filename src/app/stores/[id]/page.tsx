@@ -1,15 +1,16 @@
+
 "use client";
 
-import { useState, use } from 'react';
+import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { ProductCard } from '@/components/product/ProductCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Phone, Info, Star, Plus, Package, ListPlus, Loader2, ArrowLeft, Image as ImageIcon, X } from 'lucide-react';
+import { Phone, Info, Star, Plus, Package, Loader2, ArrowLeft, Image as ImageIcon, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { collection, doc, query, where, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,9 +28,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
 
-export default function StorePage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const id = resolvedParams.id;
+export default function StorePage() {
+  const params = useParams();
+  const id = params.id as string;
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -71,11 +72,11 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
     if (file) {
       setIsCompressingProduct(true);
       try {
-        const compressed = await compressImage(file);
+        const compressed = await compressImage(file, 1200, 1200, 0.85); // Alta calidad
         setProductImage(compressed);
         toast({
-          title: "Foto optimizada",
-          description: "La imagen del producto está lista.",
+          title: "Imagen lista",
+          description: "La foto del producto ha sido optimizada.",
         });
       } catch (error) {
         toast({
@@ -111,18 +112,10 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
       };
 
       setDocumentNonBlocking(catRef, catData, { merge: true });
-      
-      toast({
-        title: "Categoría creada",
-        description: `Se ha añadido "${name}" a tu vitrina.`,
-      });
+      toast({ title: "Categoría creada" });
       setCatDialogOpen(false);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo crear la categoría.",
-        variant: "destructive"
-      });
+      toast({ title: "Error", variant: "destructive" });
     } finally {
       setIsAddingCategory(false);
     }
@@ -149,7 +142,7 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
         name,
         price,
         description,
-        imageUrls: [productImage || `https://picsum.photos/seed/${prodRef.id}/600/400`],
+        imageUrl: productImage || `https://picsum.photos/seed/${prodRef.id}/600/400`,
         status: 'available',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -163,18 +156,11 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
         storeName: store?.name || 'Tienda'
       }, { merge: true });
 
-      toast({
-        title: "Producto añadido",
-        description: `"${name}" ya está disponible en tu vitrina.`,
-      });
+      toast({ title: "Producto publicado" });
       setProdDialogOpen(false);
       setProductImage(null);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo añadir el producto.",
-        variant: "destructive"
-      });
+      toast({ title: "Error", variant: "destructive" });
     } finally {
       setIsAddingProduct(false);
     }
@@ -188,65 +174,62 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
         <div className="relative h-64 md:h-80 w-full overflow-hidden bg-primary/20">
           <Image 
             src={store?.imageUrl || 'https://picsum.photos/seed/store/1920/1080'} 
-            alt={store?.name || 'Cargando...'} 
+            alt={store?.name || 'Vitriniando'} 
             fill 
             className="object-cover" 
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
           <div className="absolute top-4 left-4 z-20">
             <Link href="/">
-               <Button variant="secondary" className="rounded-full gap-2 shadow-lg">
-                 <ArrowLeft className="w-4 h-4" /> Volver
+               <Button variant="secondary" className="rounded-full gap-2 shadow-lg h-10 px-4">
+                 <ArrowLeft className="w-4 h-4" /> Volver al Inicio
                </Button>
             </Link>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 -mt-20 relative z-10 pb-20">
+        <div className="container mx-auto px-4 -mt-16 relative z-10 pb-20">
           <div className="bg-white rounded-3xl p-6 md:p-10 shadow-xl border border-border/50">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <Badge className="bg-secondary text-white uppercase tracking-wider text-[10px] font-bold">
-                  {store?.category || 'Tienda'}
+                  {store?.category || 'Tienda Local'}
                 </Badge>
                 <div className="flex items-center gap-4">
                   <h1 className="text-3xl md:text-5xl font-black text-foreground">{store?.name}</h1>
-                  <div className="hidden sm:flex items-center gap-1 text-yellow-500 bg-yellow-50 px-2 py-1 rounded-lg">
+                  <div className="flex items-center gap-1 text-yellow-500 bg-yellow-50 px-2 py-1 rounded-lg">
                     <Star className="w-4 h-4 fill-current" />
                     <span className="font-bold text-sm">4.9</span>
                   </div>
                 </div>
                 <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">{store?.description}</p>
-                <div className="flex flex-wrap gap-4 pt-2">
-                  <Button className="rounded-full gap-2 font-bold px-6">
-                    <Phone className="w-4 h-4" /> {store?.phoneNumber || 'Contactar Tienda'}
+                
+                <div className="flex flex-wrap gap-3 pt-4">
+                   <Button className="rounded-full gap-2 font-bold px-6 h-12 bg-primary hover:bg-primary/90">
+                    <Phone className="w-4 h-4" /> {store?.phoneNumber || 'Ver WhatsApp'}
                   </Button>
                   
                   {isOwner && (
                     <div className="flex flex-wrap gap-2">
                       <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
                         <DialogTrigger asChild>
-                          <Button variant="outline" className="rounded-full gap-2 border-primary text-primary hover:bg-primary/5 font-bold">
-                            <Plus className="w-4 h-4" /> Categoría
+                          <Button variant="outline" className="rounded-full gap-2 border-primary text-primary h-12 font-bold hover:bg-primary/5">
+                            <Plus className="w-4 h-4" /> Nueva Categoría
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle className="text-2xl font-black">Nueva Categoría</DialogTitle>
-                            <DialogDescription>Organiza tus productos por secciones.</DialogDescription>
+                            <DialogTitle className="text-2xl font-black">Crear Sección</DialogTitle>
+                            <DialogDescription>Organiza tus productos (ej: Desayunos, Almuerzos).</DialogDescription>
                           </DialogHeader>
                           <form onSubmit={handleAddCategory} className="space-y-4 pt-4">
                             <div className="space-y-2">
-                              <Label htmlFor="catName">Nombre de la Sección</Label>
-                              <Input id="catName" name="name" placeholder="Ej: Especiales del Día" required />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="catDesc">Descripción (Opcional)</Label>
-                              <Textarea id="catDesc" name="description" placeholder="Añade detalles sobre esta categoría..." />
+                              <Label>Nombre de la Sección</Label>
+                              <Input name="name" placeholder="Ej: Especiales del Día" required />
                             </div>
                             <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingCategory}>
-                              {isAddingCategory ? <Loader2 className="animate-spin" /> : "Crear Categoría"}
+                              {isAddingCategory ? <Loader2 className="animate-spin" /> : "Guardar Sección"}
                             </Button>
                           </form>
                         </DialogContent>
@@ -254,23 +237,23 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
 
                       <Dialog open={prodDialogOpen} onOpenChange={(v) => { setProdDialogOpen(v); if(!v) setProductImage(null); }}>
                         <DialogTrigger asChild>
-                          <Button className="rounded-full gap-2 bg-secondary hover:bg-secondary/90 font-bold">
-                            <Package className="w-4 h-4" /> Producto
+                          <Button className="rounded-full gap-2 bg-secondary hover:bg-secondary/90 h-12 font-bold">
+                            <Package className="w-4 h-4" /> Agregar Producto
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
-                            <DialogTitle className="text-2xl font-black">Nuevo Producto</DialogTitle>
-                            <DialogDescription>Añade un artículo a tu catálogo digital.</DialogDescription>
+                            <DialogTitle className="text-2xl font-black">Nuevo Ítem</DialogTitle>
+                            <DialogDescription>Publica un nuevo producto en tu vitrina.</DialogDescription>
                           </DialogHeader>
                           <form onSubmit={handleAddProduct} className="space-y-4 pt-4">
                             <div className="space-y-2">
-                              <Label htmlFor="prodName">Nombre del Producto</Label>
-                              <Input id="prodName" name="name" required />
+                              <Label>Nombre</Label>
+                              <Input name="name" required />
                             </div>
 
                             <div className="space-y-2">
-                              <Label>Foto del Producto</Label>
+                              <Label>Foto del Producto (Real)</Label>
                               <div className="flex flex-col gap-3">
                                 {isCompressingProduct ? (
                                   <div className="aspect-video rounded-xl bg-muted animate-pulse flex items-center justify-center">
@@ -292,9 +275,7 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
                                 ) : (
                                   <label className="flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors">
                                     <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
-                                    <span className="text-xs font-medium text-muted-foreground text-center px-4">
-                                      Haz clic para subir una foto real del producto
-                                    </span>
+                                    <span className="text-xs font-medium text-muted-foreground">Toma una foto o sube una imagen</span>
                                     <input type="file" accept="image/*" className="hidden" onChange={handleProductImageUpload} />
                                   </label>
                                 )}
@@ -302,28 +283,28 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
                             </div>
 
                             <div className="space-y-2">
-                              <Label htmlFor="prodPrice">Precio (COP)</Label>
-                              <Input id="prodPrice" name="price" type="number" required />
+                              <Label>Precio (COP)</Label>
+                              <Input name="price" type="number" required />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="prodCat">Seleccionar Categoría</Label>
+                              <Label>Categoría</Label>
                               <select 
                                 name="categoryId" 
-                                className="w-full h-12 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary" 
+                                className="w-full h-12 rounded-lg border border-input bg-background px-3" 
                                 required
                               >
-                                <option value="">¿En qué sección va?</option>
+                                <option value="">Selecciona sección...</option>
                                 {categories?.map(cat => (
                                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                               </select>
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="prodDesc">Descripción</Label>
-                              <Textarea id="prodDesc" name="description" placeholder="Detalla los ingredientes o características..." required />
+                              <Label>Descripción</Label>
+                              <Textarea name="description" required />
                             </div>
                             <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingProduct || isCompressingProduct}>
-                              {isAddingProduct ? <Loader2 className="animate-spin" /> : "Publicar en Vitrina"}
+                              {isAddingProduct ? <Loader2 className="animate-spin" /> : "Publicar Ahora"}
                             </Button>
                           </form>
                         </DialogContent>
@@ -337,25 +318,25 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
             <div className="mt-12">
               <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
                 <TabsList className="bg-muted/50 p-1 rounded-full mb-8 h-12 flex overflow-x-auto min-w-full sm:min-w-0 no-scrollbar">
-                  <TabsTrigger value="all" className="rounded-full px-8 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
-                    Todo
+                  <TabsTrigger value="all" className="rounded-full px-8 data-[state=active]:bg-primary data-[state=active]:text-white font-bold">
+                    Todos los Productos
                   </TabsTrigger>
                   {categories?.map(cat => (
-                    <TabsTrigger key={cat.id} value={cat.id} className="rounded-full px-8 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
+                    <TabsTrigger key={cat.id} value={cat.id} className="rounded-full px-8 data-[state=active]:bg-primary data-[state=active]:text-white font-bold">
                       {cat.name}
                     </TabsTrigger>
                   ))}
                 </TabsList>
 
                 <TabsContent value="all" className="mt-0">
-                  <div className="text-center py-12 bg-muted/10 rounded-3xl border-2 border-dashed border-muted-foreground/10">
-                    <Info className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-20" />
-                    <p className="text-muted-foreground font-medium">Explora las secciones de arriba para ver los productos.</p>
+                  <div className="text-center py-16 bg-muted/5 rounded-3xl border-2 border-dashed border-muted-foreground/10">
+                    <Info className="w-10 h-10 mx-auto text-muted-foreground mb-4 opacity-30" />
+                    <p className="text-muted-foreground">Selecciona una categoría arriba para explorar los productos.</p>
                   </div>
                 </TabsContent>
 
                 {categories?.map(cat => (
-                  <TabsContent key={cat.id} value={cat.id} className="mt-0 focus-visible:outline-none">
+                  <TabsContent key={cat.id} value={cat.id} className="mt-0">
                      <ProductsGrid storeId={id} categoryId={cat.id} />
                   </TabsContent>
                 ))}
@@ -370,7 +351,6 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
 
 function ProductsGrid({ storeId, categoryId }: { storeId: string, categoryId: string }) {
   const firestore = useFirestore();
-  
   const productsQuery = useMemoFirebase(() => {
     return query(
       collection(firestore, 'stores', storeId, 'categories', categoryId, 'products'),
@@ -390,9 +370,9 @@ function ProductsGrid({ storeId, categoryId }: { storeId: string, categoryId: st
 
   if (!products || products.length === 0) {
     return (
-      <div className="text-center py-20 bg-muted/10 rounded-3xl border-2 border-dashed border-muted-foreground/10">
-        <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-20" />
-        <p className="text-muted-foreground font-medium">No hay productos en esta sección todavía.</p>
+      <div className="text-center py-20 bg-muted/5 rounded-3xl border-2 border-dashed border-muted-foreground/10">
+        <Package className="w-10 h-10 mx-auto text-muted-foreground mb-3 opacity-20" />
+        <p className="text-muted-foreground">Esta sección aún no tiene productos disponibles.</p>
       </div>
     );
   }
