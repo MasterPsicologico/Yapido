@@ -45,6 +45,23 @@ export default function CategoryPage() {
     );
   }
 
+  if (!category && !loadingCat) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-1 flex flex-col items-center justify-center p-4">
+          <div className="text-center space-y-4">
+            <LayoutGrid className="w-16 h-16 mx-auto text-slate-200 mb-4" />
+            <h2 className="text-2xl font-black text-slate-400 italic">Categoría no encontrada</h2>
+            <Link href="/">
+              <Button className="rounded-full bg-primary font-bold">Volver al Inicio</Button>
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
@@ -52,7 +69,15 @@ export default function CategoryPage() {
       <main className="flex-1">
         {/* Banner de Categoría */}
         <div className="relative h-96 w-full">
-          <Image src={category?.imageUrl || ""} alt={category?.name || ""} fill className="object-cover" priority />
+          {category?.imageUrl && (
+            <Image 
+              src={category.imageUrl} 
+              alt={category.name || "Categoría"} 
+              fill 
+              className="object-cover" 
+              priority 
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
           
           <div className="absolute top-8 left-8">
