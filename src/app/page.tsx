@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, Sparkles, ShoppingBag, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useUser, useAuth, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { collection, query, where, limit } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -74,7 +74,7 @@ export default function Home() {
 }
 
 function AuthenticatedHome() {
-  const { firestore } = useAuth();
+  const firestore = useFirestore();
   
   const storesQuery = useMemoFirebase(() => {
     return query(collection(firestore, 'stores'), where('status', '==', 'active'), limit(6));
