@@ -5,12 +5,9 @@ service cloud.firestore {
     /**
      * Vitriniando Security Rules - Producción
      * 
-     * Estas reglas permiten el acceso público de lectura a tiendas y productos
-     * para facilitar el descubrimiento, mientras restringen la edición 
-     * exclusivamente a los propietarios autenticados.
+     * Estas reglas permiten el acceso público de lectura a todas las vitrinas
+     * y productos para garantizar el descubrimiento inmediato.
      */
-
-    // --- Funciones de Ayuda ---
 
     function isSignedIn() {
       return request.auth != null;
@@ -20,62 +17,39 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
-    function isUnchanged(field) {
-      return request.resource.data[field] == resource.data[field];
-    }
-
     // --- Reglas de Colecciones ---
 
-    /** Usuarios: Privados por defecto */
+    /** Usuarios: Privados */
     match /users/{userId} {
       allow get, list: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update, delete: if isExistingOwner(userId) && isUnchanged('id');
+      allow update, delete: if isOwner(userId);
     }
 
     /** 
-     * Tiendas: 
-     * Lectura: Pública si es 'active' o si es el dueño.
-     * Escritura: Solo el dueño.
+     * Tiendas: Lectura pública total para evitar errores 404.
+     * Escritura restringida al dueño.
      */
     match /stores/{storeId} {
-      allow get: if resource.data.status == 'active' || isOwner(resource.data.ownerId);
-      allow list: if true; 
-      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid && request.resource.data.id == storeId;
-      allow update: if isExistingOwner(resource.data.ownerId) && isUnchanged('ownerId') && isUnchanged('id');
-      allow delete: if isExistingOwner(resource.data.ownerId);
-    }
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
 
-    /** 
-     * Productos (Raíz):
-     * Permite que la página principal liste productos globales para descubrimiento.
-     */
-    match /products/{productId} {
-      allow get: if resource.data.status == 'available' || isOwner(resource.data.storeOwnerId);
-      allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.storeOwnerId == request.auth.uid;
-      allow update: if isExistingOwner(resource.data.storeOwnerId) && isUnchanged('storeOwnerId');
-      allow delete: if isExistingOwner(resource.data.storeOwnerId);
-    }
+      match /categories/{categoryId} {
+        allow read: if true;
+        allow write: if isSignedIn() && get(/databases/$(database)/documents/stores/$(storeId)).data.ownerId == request.auth.uid;
 
-    /** 
-     * Categorías y Productos Anidados:
-     * Mantiene la estructura jerárquica con herencia de permisos.
-     */
-    match /stores/{storeId}/categories/{categoryId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.storeOwnerId == request.auth.uid;
-      allow update, delete: if isExistingOwner(resource.data.storeOwnerId);
-
-      match /products/{productId} {
-        allow get, list: if true;
-        allow create: if isSignedIn() && request.resource.data.storeOwnerId == request.auth.uid;
-        allow update, delete: if isExistingOwner(resource.data.storeOwnerId);
+        match /products/{productId} {
+          allow read: if true;
+          allow write: if isSignedIn() && get(/databases/$(database)/documents/stores/$(storeId)).data.ownerId == request.auth.uid;
+        }
       }
+    }
+
+    /** Productos Globales: Lectura pública */
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.resource.data.storeOwnerId == request.auth.uid;
     }
   }
 }

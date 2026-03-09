@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -7,10 +6,10 @@ import { ProductCard } from '@/components/product/ProductCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Phone, Info, Star, Plus, Package, Loader2, ArrowLeft, Image as ImageIcon, X } from 'lucide-react';
+import { Phone, Info, Star, Plus, Package, Loader2, ArrowLeft, Image as ImageIcon, X, Store as StoreIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { collection, doc, query, where, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,16 +29,22 @@ import { compressImage } from '@/lib/image-compression';
 
 export default function StorePage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string;
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const storeRef = useMemoFirebase(() => doc(firestore, 'stores', id), [firestore, id]);
+  const storeRef = useMemoFirebase(() => {
+    if (!firestore || !id) return null;
+    return doc(firestore, 'stores', id);
+  }, [firestore, id]);
+  
   const { data: store, isLoading: loadingStore } = useDoc(storeRef);
 
   const categoriesQuery = useMemoFirebase(() => {
+    if (!id) return null;
     return query(collection(firestore, 'stores', id, 'categories'));
   }, [firestore, id]);
+  
   const { data: categories, isLoading: loadingCategories } = useCollection(categoriesQuery);
 
   const [activeTab, setActiveTab] = useState("all");
@@ -63,7 +68,21 @@ export default function StorePage() {
     );
   }
 
-  if (!store && !loadingStore) notFound();
+  if (!store && !loadingStore) {
+    return (
+      <div className="flex flex-col min-h-screen items-center justify-center p-4">
+        <Navbar />
+        <div className="text-center space-y-4">
+          <StoreIcon className="w-16 h-16 mx-auto text-muted-foreground opacity-20" />
+          <h2 className="text-2xl font-bold">Vitrinas en mantenimiento</h2>
+          <p className="text-muted-foreground">No pudimos encontrar la tienda que buscas. Intenta de nuevo.</p>
+          <Link href="/">
+            <Button className="rounded-full">Volver al Inicio</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const isOwner = user?.uid === store?.ownerId;
 
@@ -72,18 +91,11 @@ export default function StorePage() {
     if (file) {
       setIsCompressingProduct(true);
       try {
-        const compressed = await compressImage(file, 1200, 1200, 0.85); // Alta calidad
+        const compressed = await compressImage(file, 1200, 1200, 0.85);
         setProductImage(compressed);
-        toast({
-          title: "Imagen lista",
-          description: "La foto del producto ha sido optimizada.",
-        });
+        toast({ title: "Imagen lista", description: "Foto del producto optimizada." });
       } catch (error) {
-        toast({
-          title: "Error",
-          description: "No se pudo procesar la imagen.",
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: "No se pudo procesar la imagen.", variant: "destructive" });
       } finally {
         setIsCompressingProduct(false);
       }
@@ -92,11 +104,10 @@ export default function StorePage() {
 
   async function handleAddCategory(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!isOwner || !user) return;
+    if (!isOwner || !user || !id) return;
 
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
-    const description = formData.get('description') as string;
 
     setIsAddingCategory(true);
     try {
@@ -106,7 +117,6 @@ export default function StorePage() {
         storeId: id,
         storeOwnerId: user.uid,
         name,
-        description,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -123,7 +133,7 @@ export default function StorePage() {
 
   async function handleAddProduct(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!isOwner || !user) return;
+    if (!isOwner || !user || !id) return;
 
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
@@ -183,7 +193,7 @@ export default function StorePage() {
           <div className="absolute top-4 left-4 z-20">
             <Link href="/">
                <Button variant="secondary" className="rounded-full gap-2 shadow-lg h-10 px-4">
-                 <ArrowLeft className="w-4 h-4" /> Volver al Inicio
+                 <ArrowLeft className="w-4 h-4" /> Inicio
                </Button>
             </Link>
           </div>
@@ -194,7 +204,7 @@ export default function StorePage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div className="space-y-3">
                 <Badge className="bg-secondary text-white uppercase tracking-wider text-[10px] font-bold">
-                  {store?.category || 'Tienda Local'}
+                  {store?.category || 'Vitriniando'}
                 </Badge>
                 <div className="flex items-center gap-4">
                   <h1 className="text-3xl md:text-5xl font-black text-foreground">{store?.name}</h1>
@@ -207,7 +217,7 @@ export default function StorePage() {
                 
                 <div className="flex flex-wrap gap-3 pt-4">
                    <Button className="rounded-full gap-2 font-bold px-6 h-12 bg-primary hover:bg-primary/90">
-                    <Phone className="w-4 h-4" /> {store?.phoneNumber || 'Ver WhatsApp'}
+                    <Phone className="w-4 h-4" /> Contactar
                   </Button>
                   
                   {isOwner && (
@@ -215,18 +225,18 @@ export default function StorePage() {
                       <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
                         <DialogTrigger asChild>
                           <Button variant="outline" className="rounded-full gap-2 border-primary text-primary h-12 font-bold hover:bg-primary/5">
-                            <Plus className="w-4 h-4" /> Nueva Categoría
+                            <Plus className="w-4 h-4" /> Nueva Sección
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle className="text-2xl font-black">Crear Sección</DialogTitle>
+                            <DialogTitle className="text-2xl font-black text-primary">Crear Sección</DialogTitle>
                             <DialogDescription>Organiza tus productos (ej: Desayunos, Almuerzos).</DialogDescription>
                           </DialogHeader>
                           <form onSubmit={handleAddCategory} className="space-y-4 pt-4">
                             <div className="space-y-2">
                               <Label>Nombre de la Sección</Label>
-                              <Input name="name" placeholder="Ej: Especiales del Día" required />
+                              <Input name="name" placeholder="Ej: Especiales del Mes" required />
                             </div>
                             <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingCategory}>
                               {isAddingCategory ? <Loader2 className="animate-spin" /> : "Guardar Sección"}
@@ -237,14 +247,14 @@ export default function StorePage() {
 
                       <Dialog open={prodDialogOpen} onOpenChange={(v) => { setProdDialogOpen(v); if(!v) setProductImage(null); }}>
                         <DialogTrigger asChild>
-                          <Button className="rounded-full gap-2 bg-secondary hover:bg-secondary/90 h-12 font-bold">
-                            <Package className="w-4 h-4" /> Agregar Producto
+                          <Button className="rounded-full gap-2 bg-secondary hover:bg-secondary/90 h-12 font-bold shadow-lg shadow-secondary/20">
+                            <Package className="w-4 h-4" /> Publicar Producto
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
-                            <DialogTitle className="text-2xl font-black">Nuevo Ítem</DialogTitle>
-                            <DialogDescription>Publica un nuevo producto en tu vitrina.</DialogDescription>
+                            <DialogTitle className="text-2xl font-black text-secondary">Nuevo Ítem</DialogTitle>
+                            <DialogDescription>Sube fotos reales para mejores ventas.</DialogDescription>
                           </DialogHeader>
                           <form onSubmit={handleAddProduct} className="space-y-4 pt-4">
                             <div className="space-y-2">
@@ -253,7 +263,7 @@ export default function StorePage() {
                             </div>
 
                             <div className="space-y-2">
-                              <Label>Foto del Producto (Real)</Label>
+                              <Label>Foto Real (Optimización Automática)</Label>
                               <div className="flex flex-col gap-3">
                                 {isCompressingProduct ? (
                                   <div className="aspect-video rounded-xl bg-muted animate-pulse flex items-center justify-center">
@@ -275,7 +285,7 @@ export default function StorePage() {
                                 ) : (
                                   <label className="flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors">
                                     <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
-                                    <span className="text-xs font-medium text-muted-foreground">Toma una foto o sube una imagen</span>
+                                    <span className="text-xs font-medium text-muted-foreground">Toca para subir foto real</span>
                                     <input type="file" accept="image/*" className="hidden" onChange={handleProductImageUpload} />
                                   </label>
                                 )}
@@ -287,21 +297,21 @@ export default function StorePage() {
                               <Input name="price" type="number" required />
                             </div>
                             <div className="space-y-2">
-                              <Label>Categoría</Label>
+                              <Label>Categoría / Sección</Label>
                               <select 
                                 name="categoryId" 
                                 className="w-full h-12 rounded-lg border border-input bg-background px-3" 
                                 required
                               >
-                                <option value="">Selecciona sección...</option>
+                                <option value="">Selecciona donde mostrarlo...</option>
                                 {categories?.map(cat => (
                                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                               </select>
                             </div>
                             <div className="space-y-2">
-                              <Label>Descripción</Label>
-                              <Textarea name="description" required />
+                              <Label>Descripción Corta</Label>
+                              <Textarea name="description" placeholder="Atrae a tus clientes con una buena descripción..." required />
                             </div>
                             <Button type="submit" className="w-full h-12 font-bold" disabled={isAddingProduct || isCompressingProduct}>
                               {isAddingProduct ? <Loader2 className="animate-spin" /> : "Publicar Ahora"}
@@ -319,7 +329,7 @@ export default function StorePage() {
               <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
                 <TabsList className="bg-muted/50 p-1 rounded-full mb-8 h-12 flex overflow-x-auto min-w-full sm:min-w-0 no-scrollbar">
                   <TabsTrigger value="all" className="rounded-full px-8 data-[state=active]:bg-primary data-[state=active]:text-white font-bold">
-                    Todos los Productos
+                    Todo
                   </TabsTrigger>
                   {categories?.map(cat => (
                     <TabsTrigger key={cat.id} value={cat.id} className="rounded-full px-8 data-[state=active]:bg-primary data-[state=active]:text-white font-bold">
@@ -329,9 +339,9 @@ export default function StorePage() {
                 </TabsList>
 
                 <TabsContent value="all" className="mt-0">
-                  <div className="text-center py-16 bg-muted/5 rounded-3xl border-2 border-dashed border-muted-foreground/10">
-                    <Info className="w-10 h-10 mx-auto text-muted-foreground mb-4 opacity-30" />
-                    <p className="text-muted-foreground">Selecciona una categoría arriba para explorar los productos.</p>
+                   <div className="text-center py-20 bg-muted/5 rounded-3xl border-2 border-dashed border-muted-foreground/10">
+                    <Package className="w-10 h-10 mx-auto text-muted-foreground mb-3 opacity-20" />
+                    <p className="text-muted-foreground">Explora por categorías arriba para ver los productos.</p>
                   </div>
                 </TabsContent>
 
@@ -352,6 +362,7 @@ export default function StorePage() {
 function ProductsGrid({ storeId, categoryId }: { storeId: string, categoryId: string }) {
   const firestore = useFirestore();
   const productsQuery = useMemoFirebase(() => {
+    if (!firestore || !storeId || !categoryId) return null;
     return query(
       collection(firestore, 'stores', storeId, 'categories', categoryId, 'products'),
       where('status', '==', 'available')
@@ -372,7 +383,7 @@ function ProductsGrid({ storeId, categoryId }: { storeId: string, categoryId: st
     return (
       <div className="text-center py-20 bg-muted/5 rounded-3xl border-2 border-dashed border-muted-foreground/10">
         <Package className="w-10 h-10 mx-auto text-muted-foreground mb-3 opacity-20" />
-        <p className="text-muted-foreground">Esta sección aún no tiene productos disponibles.</p>
+        <p className="text-muted-foreground">Esta sección está vacía por ahora.</p>
       </div>
     );
   }
