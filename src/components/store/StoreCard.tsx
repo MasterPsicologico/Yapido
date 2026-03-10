@@ -10,18 +10,19 @@ import {
   Zap, 
   Award, 
   Star, 
-  Clock,
-  Sparkles,
-  TrendingUp,
-  ShieldCheck,
-  ChevronDown,
-  Crown,
-  Leaf,
-  Heart,
-  Medal,
-  PlusCircle,
-  Trash2,
-  Check
+  Clock, 
+  Sparkles, 
+  TrendingUp, 
+  ShieldCheck, 
+  ChevronDown, 
+  Crown, 
+  Leaf, 
+  Heart, 
+  Medal, 
+  PlusCircle, 
+  Trash2, 
+  Check,
+  Plus
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -188,35 +189,39 @@ export function StoreCard({ store }: { store: any }) {
             );
           })}
 
-          {/* Botón de Añadir para Administrador */}
+          {/* Botón Verde Circular para Administrador - Siempre al final */}
           {isAdmin && activeBadgeIds.length < 4 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-3 h-8 rounded-xl border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 transition-all group/add">
-                  <PlusCircle className="w-3.5 h-3.5 text-slate-300 group-hover/add:text-primary" />
-                  <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest group-hover/add:text-primary">Asignar Ítem</span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56 rounded-[20px] p-1.5 shadow-2xl border-slate-100 bg-white/98 backdrop-blur-md">
-                {(Object.keys(VALUE_BADGES_CONFIG) as BadgeKey[])
-                  .filter(key => !activeBadgeIds.includes(key))
-                  .map((key) => {
-                    const item = VALUE_BADGES_CONFIG[key];
-                    return (
-                      <DropdownMenuItem 
-                        key={key} 
-                        onClick={() => handleAddBadge(key)}
-                        className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer hover:bg-slate-50 transition-all"
-                      >
-                        <div className={cn("w-7 h-7 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-50", item.color)}>
-                          <item.icon className="w-4 h-4" />
-                        </div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600">{item.label}</span>
-                      </DropdownMenuItem>
-                    );
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex justify-center pt-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    size="icon" 
+                    className="h-8 w-8 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-200 border-none transition-transform active:scale-90"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56 rounded-[20px] p-1.5 shadow-2xl border-slate-100 bg-white/98 backdrop-blur-md">
+                  {(Object.keys(VALUE_BADGES_CONFIG) as BadgeKey[])
+                    .filter(key => !activeBadgeIds.includes(key))
+                    .map((key) => {
+                      const item = VALUE_BADGES_CONFIG[key];
+                      return (
+                        <DropdownMenuItem 
+                          key={key} 
+                          onClick={() => handleAddBadge(key)}
+                          className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer hover:bg-slate-50 transition-all"
+                        >
+                          <div className={cn("w-7 h-7 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-50", item.color)}>
+                            <item.icon className="w-4 h-4" />
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600">{item.label}</span>
+                        </DropdownMenuItem>
+                      );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
 
