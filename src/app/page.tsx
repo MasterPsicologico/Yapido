@@ -67,6 +67,7 @@ function AuthenticatedHome() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [base64Image, setBase64Image] = useState<string | null>(null);
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
 
   const catQ = useMemoFirebase(() => query(collection(firestore, 'mainCategories'), orderBy('createdAt', 'desc')), [firestore]);
   const { data: mainCategories, isLoading: loadingCategories } = useCollection(catQ);
@@ -75,7 +76,11 @@ function AuthenticatedHome() {
     const file = e.target.files?.[0];
     if (file) {
       setIsCompressing(true);
-      try { const comp = await compressImage(file); setBase64Image(comp); }
+      try { 
+        const comp = await compressImage(file); 
+        setBase64Image(comp); 
+        setIsImageRemoved(false);
+      }
       catch (e) { toast({ title: "Error de imagen" }); }
       finally { setIsCompressing(false); }
     }
@@ -101,7 +106,7 @@ function AuthenticatedHome() {
         const ref = doc(collection(firestore, 'mainCategories'));
         setDocumentNonBlocking(ref, { id: ref.id, name, description, imageUrl: base64Image, createdAt: serverTimestamp() }, { merge: true });
       }
-      setOpenCategory(false); setEditingCategory(null); setBase64Image(null);
+      setOpenCategory(false); setEditingCategory(null); setBase64Image(null); setIsImageRemoved(false);
     } catch (e) { toast({ title: "Error" }); }
     finally { setIsRegistering(false); }
   };
@@ -137,12 +142,34 @@ function AuthenticatedHome() {
         <HomeHeader />
         <HomeActions 
           isAdmin={isAdmin}
-          openCategory={openCategory} setOpenCategory={setOpenCategory} openStore={openStore} setOpenStore={setOpenStore}
-          editingCategory={editingCategory} mainCategories={mainCategories} base64Image={base64Image} setBase64Image={setBase64Image}
-          isRegistering={isRegistering} isCompressing={isCompressing} onImageUpload={handleImageUpload} onCategorySubmit={handleCategorySubmit} onStoreSubmit={handleStoreSubmit}
+          openCategory={openCategory} 
+          setOpenCategory={(val) => { setOpenCategory(val); if(!val) setIsImageRemoved(false); }} 
+          openStore={openStore} 
+          setOpenStore={setOpenStore}
+          editingCategory={editingCategory} 
+          mainCategories={mainCategories} 
+          base64Image={base64Image} 
+          setBase64Image={setBase64Image}
+          isImageRemoved={isImageRemoved}
+          setIsImageRemoved={setIsImageRemoved}
+          isRegistering={isRegistering} 
+          isCompressing={isCompressing} 
+          onImageUpload={handleImageUpload} 
+          onCategorySubmit={handleCategorySubmit} 
+          onStoreSubmit={handleStoreSubmit}
         />
       </div>
-      <HomeCategorySection isAdmin={isAdmin} categories={mainCategories} isLoading={loadingCategories} onEdit={(c) => { setEditingCategory(c); setOpenCategory(true); }} />
+      <HomeCategorySection 
+        isAdmin={isAdmin} 
+        categories={mainCategories} 
+        isLoading={loadingCategories} 
+        onEdit={(c) => { 
+          setEditingCategory(c); 
+          setOpenCategory(true); 
+          setIsImageRemoved(false);
+          setBase64Image(null);
+        }} 
+      />
       <HomePromoBanner onAction={() => setOpenStore(true)} />
     </div>
   );

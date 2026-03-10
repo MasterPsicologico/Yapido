@@ -39,6 +39,7 @@ export default function CategoryPage() {
   const [isCompressing, setIsCompressing] = useState(false);
   const [base64Image, setBase64Image] = useState<string | null>(null);
   const [editBase64Image, setEditBase64Image] = useState<string | null>(null);
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
 
   const catRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -60,8 +61,12 @@ export default function CategoryPage() {
       setIsCompressing(true);
       try {
         const compressed = await compressImage(file, 1200, 1200, 0.85);
-        if (isEdit) setEditBase64Image(compressed);
-        else setBase64Image(compressed);
+        if (isEdit) {
+          setEditBase64Image(compressed);
+          setIsImageRemoved(false);
+        } else {
+          setBase64Image(compressed);
+        }
         toast({ title: "Imagen lista" });
       } catch (error) {
         toast({ title: "Error", variant: "destructive" });
@@ -85,12 +90,18 @@ export default function CategoryPage() {
         description,
         updatedAt: serverTimestamp(),
       };
-      if (editBase64Image) data.imageUrl = editBase64Image;
+      if (editBase64Image) {
+        data.imageUrl = editBase64Image;
+      } else if (isImageRemoved) {
+        // Si se removió la imagen y no se subió una nueva, se podría decidir borrarla o dejarla
+        // Para este caso, solo actualizamos si hay una nueva.
+      }
 
       updateDocumentNonBlocking(catRef, data);
       toast({ title: "Categoría actualizada correctamente" });
       setOpenEditCat(false);
       setEditBase64Image(null);
+      setIsImageRemoved(false);
     } catch (e) {
       toast({ title: "Error al actualizar", variant: "destructive" });
     } finally {
@@ -161,6 +172,8 @@ export default function CategoryPage() {
     );
   }
 
+  const currentPreviewImage = editBase64Image || (isImageRemoved ? null : category?.imageUrl);
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <Navbar />
@@ -188,7 +201,7 @@ export default function CategoryPage() {
 
           {isAdmin && (
             <div className="absolute top-4 right-4 z-20">
-              <Dialog open={openEditCat} onOpenChange={setOpenEditCat}>
+              <Dialog open={openEditCat} onOpenChange={(val) => { setOpenEditCat(val); if(!val) setIsImageRemoved(false); }}>
                 <DialogTrigger asChild>
                   <Button variant="secondary" size="sm" className="rounded-full bg-primary text-white font-bold border-none text-xs h-9 px-4 shadow-lg">
                     <Settings className="w-3.5 h-3.5 mr-1" /> Editar Categoría
@@ -207,10 +220,21 @@ export default function CategoryPage() {
                     <div className="space-y-2">
                       <Label>Imagen de Banner</Label>
                       <div className="relative aspect-video rounded-xl bg-slate-100 border-2 border-dashed overflow-hidden">
-                        {(editBase64Image || category?.imageUrl) ? (
+                        {currentPreviewImage ? (
                           <>
-                            <Image src={editBase64Image || category?.imageUrl} alt="Preview" fill className="object-cover" />
-                            <Button type="button" size="icon" variant="destructive" className="absolute top-2 right-2 h-8 w-8" onClick={() => setEditBase64Image(null)}><X className="w-4 h-4" /></Button>
+                            <Image src={currentPreviewImage} alt="Preview" fill className="object-cover" />
+                            <Button 
+                              type="button" 
+                              size="icon" 
+                              variant="destructive" 
+                              className="absolute top-2 right-2 h-8 w-8 rounded-full" 
+                              onClick={() => {
+                                setEditBase64Image(null);
+                                setIsImageRemoved(true);
+                              }}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
                           </>
                         ) : (
                           <label className="flex flex-col items-center justify-center h-full cursor-pointer">

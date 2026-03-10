@@ -20,6 +20,8 @@ interface HomeActionsProps {
   mainCategories: any[] | null;
   base64Image: string | null;
   setBase64Image: (v: string | null) => void;
+  isImageRemoved?: boolean;
+  setIsImageRemoved?: (v: boolean) => void;
   isRegistering: boolean;
   isCompressing: boolean;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -30,8 +32,12 @@ interface HomeActionsProps {
 export function HomeActions({
   isAdmin, openCategory, setOpenCategory, openStore, setOpenStore,
   editingCategory, mainCategories, base64Image, setBase64Image,
+  isImageRemoved, setIsImageRemoved,
   isRegistering, isCompressing, onImageUpload, onCategorySubmit, onStoreSubmit
 }: HomeActionsProps) {
+  
+  const currentPreviewImage = base64Image || (isImageRemoved ? null : editingCategory?.imageUrl);
+
   return (
     <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
       {/* Botón de Categoría: Solo visible para el ADMIN */}
@@ -51,10 +57,21 @@ export function HomeActions({
               <div className="space-y-2">
                 <Label>Imagen Representativa</Label>
                 <div className="relative aspect-video rounded-xl bg-slate-100 border-2 border-dashed overflow-hidden">
-                  {(base64Image || editingCategory?.imageUrl) ? (
+                  {currentPreviewImage ? (
                     <>
-                      <Image src={base64Image || editingCategory!.imageUrl} alt="Preview" fill className="object-cover" />
-                      <Button type="button" size="icon" variant="destructive" className="absolute top-2 right-2 h-8 w-8" onClick={() => setBase64Image(null)}><X className="w-4 h-4" /></Button>
+                      <Image src={currentPreviewImage} alt="Preview" fill className="object-cover" />
+                      <Button 
+                        type="button" 
+                        size="icon" 
+                        variant="destructive" 
+                        className="absolute top-2 right-2 h-8 w-8 rounded-full" 
+                        onClick={() => {
+                          setBase64Image(null);
+                          if(setIsImageRemoved) setIsImageRemoved(true);
+                        }}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
                     </>
                   ) : (
                     <label className="flex flex-col items-center justify-center h-full cursor-pointer">
