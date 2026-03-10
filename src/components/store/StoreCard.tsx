@@ -18,7 +18,10 @@ import {
   Crown,
   Leaf,
   Heart,
-  Medal
+  Medal,
+  PlusCircle,
+  Trash2,
+  Check
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const STATUS_MAP = {
@@ -45,7 +49,18 @@ const STATUS_MAP = {
   local_hero: { label: "Orgullo Local", icon: Heart, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-100" },
 };
 
+const VALUE_BADGES_CONFIG = {
+  express: { label: "Envío Express", icon: Zap, color: "text-primary", bg: "bg-primary/5", border: "border-primary/10", animate: true },
+  eco: { label: "Eco Amigable", icon: Leaf, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100", animate: false },
+  top: { label: "Top Choice", icon: Medal, color: "text-secondary", bg: "bg-secondary/5", border: "border-secondary/10", animate: false },
+  stock: { label: "Stock Vivo", icon: Sparkles, color: "text-green-600", bg: "bg-green-50", border: "border-green-100", animate: true },
+  flash: { label: "Entrega Flash", icon: Zap, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100", animate: true },
+  exclusive: { label: "Exclusivo", icon: Crown, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100", animate: false },
+  hero: { label: "Orgullo Local", icon: Heart, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-100", animate: false },
+};
+
 type StatusKey = keyof typeof STATUS_MAP;
+type BadgeKey = keyof typeof VALUE_BADGES_CONFIG;
 
 export function StoreCard({ store }: { store: any }) {
   const firestore = useFirestore();
@@ -55,31 +70,27 @@ export function StoreCard({ store }: { store: any }) {
   const statusInfo = STATUS_MAP[currentStatusKey] || STATUS_MAP.verified;
   const StatusIcon = statusInfo.icon;
 
-  const productsQuery = useMemoFirebase(() => {
-    if (!firestore || !store.id) return null;
-    return query(
-      collection(firestore, 'products'),
-      where('storeId', '==', store.id),
-      limit(1)
-    );
-  }, [firestore, store.id]);
+  const activeBadgeIds: BadgeKey[] = store.activeBadgeIds || [];
+  
+  const handleAddBadge = (badgeKey: BadgeKey) => {
+    if (!firestore || !store.id || activeBadgeIds.length >= 4) return;
+    const newBadges = [...activeBadgeIds, badgeKey];
+    const storeRef = doc(firestore, 'stores', store.id);
+    updateDocumentNonBlocking(storeRef, { activeBadgeIds: newBadges });
+  };
 
-  const { data: products } = useCollection(productsQuery);
-  const hasProducts = products && products.length > 0;
+  const handleRemoveBadge = (badgeKey: BadgeKey) => {
+    if (!firestore || !store.id) return;
+    const newBadges = activeBadgeIds.filter(id => id !== badgeKey);
+    const storeRef = doc(firestore, 'stores', store.id);
+    updateDocumentNonBlocking(storeRef, { activeBadgeIds: newBadges });
+  };
 
   const handleStatusChange = (newStatus: StatusKey) => {
     if (!firestore || !store.id) return;
     const storeRef = doc(firestore, 'stores', store.id);
     updateDocumentNonBlocking(storeRef, { verificationStatus: newStatus });
   };
-
-  // Lógica para Badges de Valor (Hasta 4 ítems verticales)
-  const valueBadges = [
-    { active: true, label: "Envío Express", icon: Zap, color: "text-primary", bg: "bg-primary/5", border: "border-primary/10", animate: true },
-    { active: store.isPro, label: "Top Choice", icon: Medal, color: "text-secondary", bg: "bg-secondary/5", border: "border-secondary/10", animate: false },
-    { active: hasProducts, label: "Stock Vivo", icon: Sparkles, color: "text-green-600", bg: "bg-green-50", border: "border-green-100", animate: true },
-    { active: false, label: "Eco Friendly", icon: Leaf, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100", animate: false },
-  ].filter(b => b.active).slice(0, 4);
 
   const StatusContent = (
     <div className={cn(
@@ -145,26 +156,69 @@ export function StoreCard({ store }: { store: any }) {
           </div>
         </Link>
 
-        {/* Sistema de Badges Verticales (Hasta 4 ítems) */}
-        {valueBadges.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            {valueBadges.map((badge, idx) => (
+        {/* Sistema de Badges Verticales Dinámicos */}
+        <div className="flex flex-col gap-1.5 min-h-[28px]">
+          {activeBadgeIds.map((id) => {
+            const badge = VALUE_BADGES_CONFIG[id];
+            if (!badge) return null;
+            return (
               <div 
-                key={idx} 
+                key={id} 
                 className={cn(
-                  "flex items-center gap-2 px-3 h-7 rounded-xl border transition-all",
+                  "flex items-center justify-between px-3 h-8 rounded-xl border transition-all",
                   badge.bg,
                   badge.border
                 )}
               >
-                 <badge.icon className={cn("w-3.5 h-3.5", badge.color, badge.animate && "animate-pulse")} />
-                 <span className={cn("text-[9px] font-black uppercase tracking-wider", badge.color)}>
-                  {badge.label}
-                 </span>
+                 <div className="flex items-center gap-2">
+                   <badge.icon className={cn("w-3.5 h-3.5", badge.color, badge.animate && "animate-pulse")} />
+                   <span className={cn("text-[9px] font-black uppercase tracking-wider", badge.color)}>
+                    {badge.label}
+                   </span>
+                 </div>
+                 {isAdmin && (
+                   <button 
+                     onClick={(e) => { e.preventDefault(); handleRemoveBadge(id); }}
+                     className="p-1 hover:bg-red-100 rounded-full transition-colors text-red-500"
+                   >
+                     <Trash2 className="w-3 h-3" />
+                   </button>
+                 )}
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+
+          {/* Botón de Añadir para Administrador */}
+          {isAdmin && activeBadgeIds.length < 4 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 px-3 h-8 rounded-xl border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 transition-all group/add">
+                  <PlusCircle className="w-3.5 h-3.5 text-slate-300 group-hover/add:text-primary" />
+                  <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest group-hover/add:text-primary">Asignar Ítem</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56 rounded-[20px] p-1.5 shadow-2xl border-slate-100 bg-white/98 backdrop-blur-md">
+                {(Object.keys(VALUE_BADGES_CONFIG) as BadgeKey[])
+                  .filter(key => !activeBadgeIds.includes(key))
+                  .map((key) => {
+                    const item = VALUE_BADGES_CONFIG[key];
+                    return (
+                      <DropdownMenuItem 
+                        key={key} 
+                        onClick={() => handleAddBadge(key)}
+                        className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer hover:bg-slate-50 transition-all"
+                      >
+                        <div className={cn("w-7 h-7 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-50", item.color)}>
+                          <item.icon className="w-4 h-4" />
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600">{item.label}</span>
+                      </DropdownMenuItem>
+                    );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
 
         <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed font-medium italic">
           {store.description || 'Explora lo mejor de nuestra vitrina digital.'}
