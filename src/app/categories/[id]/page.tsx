@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { StoreCard } from '@/components/store/StoreCard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Store as StoreIcon, LayoutGrid, Loader2, Plus, ImageIcon, X, Sparkles, Settings, Edit3 } from 'lucide-react';
+import { ArrowLeft, Store as StoreIcon, LayoutGrid, Loader2, ImageIcon, X, Sparkles, Settings, Edit3 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
@@ -93,8 +93,7 @@ export default function CategoryPage() {
       if (editBase64Image) {
         data.imageUrl = editBase64Image;
       } else if (isImageRemoved) {
-        // Si se removió la imagen y no se subió una nueva, se podría decidir borrarla o dejarla
-        // Para este caso, solo actualizamos si hay una nueva.
+        // Logica para remover imagen
       }
 
       updateDocumentNonBlocking(catRef, data);
@@ -148,9 +147,9 @@ export default function CategoryPage() {
         <Skeleton className="h-64 w-full" />
         <div className="w-full p-4 space-y-4">
           <Skeleton className="h-10 w-1/3" />
-          <div className="grid grid-cols-2 gap-3">
-            <Skeleton className="h-40" />
-            <Skeleton className="h-40" />
+          <div className="flex flex-col gap-6">
+            <Skeleton className="h-80 w-full" />
+            <Skeleton className="h-80 w-full" />
           </div>
         </div>
       </div>
@@ -268,7 +267,7 @@ export default function CategoryPage() {
         </div>
 
         <section className="w-full py-8 px-4 sm:px-8 border-b bg-slate-50/50">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 max-w-6xl mx-auto">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
                 <LayoutGrid className="w-5 h-5" />
@@ -327,19 +326,19 @@ export default function CategoryPage() {
           </div>
         </section>
 
-        <section className="w-full p-3 sm:p-8">
+        <section className="w-full p-4 sm:p-12 max-w-4xl mx-auto">
           {loadingStores ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">
-              {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-48 sm:h-80 rounded-none" />)}
+            <div className="flex flex-col gap-10">
+              {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-80 w-full rounded-[32px]" />)}
             </div>
           ) : stores && stores.length > 0 ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">
+            <div className="flex flex-col gap-12">
               {stores.map((store) => (
                 <StoreCard key={store.id} store={store as any} />
               ))}
             </div>
           ) : (
-            <div className="text-center py-20 bg-slate-50 border-2 border-dashed border-slate-200 px-6">
+            <div className="text-center py-20 bg-slate-50 border-2 border-dashed border-slate-200 px-6 rounded-[32px]">
               <StoreIcon className="w-12 h-12 mx-auto text-slate-200 mb-4" />
               <h3 className="text-lg font-black text-slate-400 italic">No hay negocios registrados.</h3>
               <p className="text-slate-400 text-xs mt-2 max-w-xs mx-auto">Sé el primero en destacar tu negocio en esta categoría.</p>
