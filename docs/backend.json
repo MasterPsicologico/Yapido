@@ -2,19 +2,21 @@
 {
   "entities": {
     "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the Vitriniando application.",
+      "description": "Perfil de usuario con roles asignados.",
       "properties": {
         "id": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
-        "role": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "role": { 
+          "type": "string", 
+          "enum": ["admin", "moderador", "dueño", "repartidor", "cliente"],
+          "description": "Define los permisos del usuario en la plataforma."
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "email", "displayName", "role", "createdAt", "updatedAt"]
+      "required": ["id", "email", "role"]
     },
     "MainCategory": {
       "title": "MainCategory",
@@ -35,50 +37,38 @@
       "properties": {
         "id": { "type": "string" },
         "ownerId": { "type": "string" },
-        "mainCategoryId": { "type": "string", "description": "ID de la categoría principal a la que pertenece." },
+        "mainCategoryId": { "type": "string" },
         "name": { "type": "string" },
         "description": { "type": "string" },
         "address": { "type": "string" },
         "phoneNumber": { "type": "string" },
         "imageUrl": { "type": "string" },
         "status": { "type": "string" },
+        "isPro": { "type": "boolean", "description": "Etiqueta universal asignada por el admin." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "ownerId", "mainCategoryId", "name", "status"]
-    },
-    "Product": {
-      "title": "Product",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "storeId": { "type": "string" },
-        "name": { "type": "string" },
-        "price": { "type": "number" },
-        "imageUrl": { "type": "string" },
-        "status": { "type": "string" }
-      },
-      "required": ["id", "storeId", "name", "price"]
     }
   },
   "auth": {
-    "providers": ["password", "google.com"]
+    "providers": ["google.com"]
   },
   "firestore": {
     "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": { "$ref": "#/backend/entities/User" },
+          "description": "Perfiles de usuario y roles."
+        }
+      },
       {
         "path": "/mainCategories/{categoryId}",
         "definition": {
           "entityName": "MainCategory",
           "schema": { "$ref": "#/backend/entities/MainCategory" },
-          "description": "Categorías globales del marketplace."
-        }
-      },
-      {
-        "path": "/stores/{storeId}",
-        "definition": {
-          "entityName": "Store",
-          "schema": { "$ref": "#/backend/entities/Store" },
-          "description": "Tiendas registradas."
+          "description": "Categorías globales controladas por el Admin."
         }
       }
     ]

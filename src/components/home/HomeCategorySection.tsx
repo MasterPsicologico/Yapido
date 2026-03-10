@@ -6,12 +6,13 @@ import { CategoryCard } from '@/components/category/CategoryCard';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface HomeCategorySectionProps {
+  isAdmin: boolean;
   categories: any[] | null;
   isLoading: boolean;
   onEdit: (cat: any) => void;
 }
 
-export function HomeCategorySection({ categories, isLoading, onEdit }: HomeCategorySectionProps) {
+export function HomeCategorySection({ isAdmin, categories, isLoading, onEdit }: HomeCategorySectionProps) {
   return (
     <section className="px-4 sm:px-8">
       <div className="flex items-center gap-2 mb-6">
@@ -26,7 +27,11 @@ export function HomeCategorySection({ categories, isLoading, onEdit }: HomeCateg
       ) : categories && categories.length > 0 ? (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
           {categories.map((cat) => (
-            <CategoryCard key={cat.id} category={cat as any} onEdit={onEdit} />
+            <CategoryCard 
+              key={cat.id} 
+              category={cat as any} 
+              onEdit={isAdmin ? onEdit : undefined} // Solo pasa onEdit si es admin
+            />
           ))}
         </div>
       ) : (

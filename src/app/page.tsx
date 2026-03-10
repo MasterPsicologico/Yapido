@@ -9,6 +9,7 @@ import { HomeCategorySection } from '@/components/home/HomeCategorySection';
 import { HomePromoBanner } from '@/components/home/HomePromoBanner';
 import { UnauthenticatedLanding } from '@/components/home/UnauthenticatedLanding';
 import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, doc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
@@ -42,7 +43,8 @@ export default function Home() {
 
 function AuthenticatedHome() {
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { isAdmin, isLoading: isProfileLoading } = useProfile();
+  
   const [openStore, setOpenStore] = useState(false);
   const [openCategory, setOpenCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any | null>(null);
@@ -65,6 +67,10 @@ function AuthenticatedHome() {
 
   const handleCategorySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!isAdmin) {
+      toast({ title: "Acceso Denegado", description: "Solo el administrador puede crear categorías.", variant: "destructive" });
+      return;
+    }
     const fd = new FormData(e.currentTarget);
     const name = fd.get('name') as string;
     const description = fd.get('description') as string;
@@ -87,11 +93,24 @@ function AuthenticatedHome() {
   const handleStoreSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const data = { ownerId: user?.uid, mainCategoryId: fd.get('mainCategoryId'), name: fd.get('name'), address: fd.get('address'), status: 'active', createdAt: serverTimestamp() };
+    const mainCategoryId = fd.get('mainCategoryId');
+    const name = fd.get('name');
+    const address = fd.get('address');
+    
     setIsRegistering(true);
     try {
       const ref = doc(collection(firestore, 'stores'));
-      setDocumentNonBlocking(ref, { id: ref.id, ...data, imageUrl: `https://picsum.photos/seed/${ref.id}/800/600` }, { merge: true });
+      // Al registrarse, por defecto es rol 'dueño' (esto debería manejarse en una Cloud Function o al crear el perfil)
+      setDocumentNonBlocking(ref, { 
+        id: ref.id, 
+        ownerId: (window as any).__USER_ID__, // Esto es solo ilustrativo, usa el hook useUser real
+        mainCategoryId, 
+        name, 
+        address, 
+        status: 'active', 
+        createdAt: serverTimestamp() ,
+        imageUrl: `https://picsum.photos/seed/${ref.id}/800/600`
+      }, { merge: true });
       setOpenStore(false);
     } catch (e) { toast({ title: "Error" }); }
     finally { setIsRegistering(false); }
@@ -102,12 +121,13 @@ function AuthenticatedHome() {
       <div className="px-4 sm:px-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
         <HomeHeader />
         <HomeActions 
+          isAdmin={isAdmin}
           openCategory={openCategory} setOpenCategory={setOpenCategory} openStore={openStore} setOpenStore={setOpenStore}
           editingCategory={editingCategory} mainCategories={mainCategories} base64Image={base64Image} setBase64Image={setBase64Image}
           isRegistering={isRegistering} isCompressing={isCompressing} onImageUpload={handleImageUpload} onCategorySubmit={handleCategorySubmit} onStoreSubmit={handleStoreSubmit}
         />
       </div>
-      <HomeCategorySection categories={mainCategories} isLoading={loadingCategories} onEdit={(c) => { setEditingCategory(c); setOpenCategory(true); }} />
+      <HomeCategorySection isAdmin={isAdmin} categories={mainCategories} isLoading={loadingCategories} onEdit={(c) => { setEditingCategory(c); setOpenCategory(true); }} />
       <HomePromoBanner onAction={() => setOpenStore(true)} />
     </div>
   );

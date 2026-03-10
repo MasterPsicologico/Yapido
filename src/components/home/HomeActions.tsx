@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Image from 'next/image';
 
 interface HomeActionsProps {
+  isAdmin: boolean;
   openCategory: boolean;
   setOpenCategory: (v: boolean) => void;
   openStore: boolean;
@@ -27,45 +28,48 @@ interface HomeActionsProps {
 }
 
 export function HomeActions({
-  openCategory, setOpenCategory, openStore, setOpenStore,
+  isAdmin, openCategory, setOpenCategory, openStore, setOpenStore,
   editingCategory, mainCategories, base64Image, setBase64Image,
   isRegistering, isCompressing, onImageUpload, onCategorySubmit, onStoreSubmit
 }: HomeActionsProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-      <Dialog open={openCategory} onOpenChange={setOpenCategory}>
-        <DialogTrigger asChild>
-          <Button variant="outline" className="rounded-full h-12 px-6 gap-2 border-primary/20 hover:bg-primary/5 text-primary font-bold w-full sm:w-auto">
-            <LayoutGrid className="w-4 h-4" /> Categoría Pro
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-black italic">{editingCategory ? "Editar" : "Crear"} Categoría</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={onCategorySubmit} className="space-y-4 pt-4">
-            <div className="space-y-2"><Label>Nombre</Label><Input name="name" defaultValue={editingCategory?.name} required /></div>
-            <div className="space-y-2">
-              <Label>Imagen</Label>
-              <div className="relative aspect-video rounded-xl bg-slate-100 border-2 border-dashed overflow-hidden">
-                {(base64Image || editingCategory?.imageUrl) ? (
-                  <>
-                    <Image src={base64Image || editingCategory!.imageUrl} alt="Preview" fill className="object-cover" />
-                    <Button type="button" size="icon" variant="destructive" className="absolute top-2 right-2 h-8 w-8" onClick={() => setBase64Image(null)}><X className="w-4 h-4" /></Button>
-                  </>
-                ) : (
-                  <label className="flex flex-col items-center justify-center h-full cursor-pointer">
-                    <ImageIcon className="w-8 h-8 text-slate-400" />
-                    <input type="file" className="hidden" accept="image/*" onChange={onImageUpload} />
-                  </label>
-                )}
+      {/* Botón de Categoría: Solo visible para el ADMIN */}
+      {isAdmin && (
+        <Dialog open={openCategory} onOpenChange={setOpenCategory}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="rounded-full h-12 px-6 gap-2 border-primary/20 hover:bg-primary/5 text-primary font-bold w-full sm:w-auto">
+              <LayoutGrid className="w-4 h-4" /> Categoría Pro
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black italic">{editingCategory ? "Editar" : "Crear"} Categoría</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={onCategorySubmit} className="space-y-4 pt-4">
+              <div className="space-y-2"><Label>Nombre de la Categoría Global</Label><Input name="name" defaultValue={editingCategory?.name} required /></div>
+              <div className="space-y-2">
+                <Label>Imagen Representativa</Label>
+                <div className="relative aspect-video rounded-xl bg-slate-100 border-2 border-dashed overflow-hidden">
+                  {(base64Image || editingCategory?.imageUrl) ? (
+                    <>
+                      <Image src={base64Image || editingCategory!.imageUrl} alt="Preview" fill className="object-cover" />
+                      <Button type="button" size="icon" variant="destructive" className="absolute top-2 right-2 h-8 w-8" onClick={() => setBase64Image(null)}><X className="w-4 h-4" /></Button>
+                    </>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center h-full cursor-pointer">
+                      <ImageIcon className="w-8 h-8 text-slate-400" />
+                      <input type="file" className="hidden" accept="image/*" onChange={onImageUpload} />
+                    </label>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="space-y-2"><Label>Descripción</Label><Textarea name="description" defaultValue={editingCategory?.description} required /></div>
-            <Button type="submit" className="w-full h-12 font-bold" disabled={isRegistering || isCompressing}>{isRegistering ? <Loader2 className="animate-spin" /> : <Plus className="mr-2" />} Guardar</Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+              <div className="space-y-2"><Label>Descripción Estratégica</Label><Textarea name="description" defaultValue={editingCategory?.description} required /></div>
+              <Button type="submit" className="w-full h-12 font-bold" disabled={isRegistering || isCompressing}>{isRegistering ? <Loader2 className="animate-spin" /> : <Plus className="mr-2" />} Guardar Categoría</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <Dialog open={openStore} onOpenChange={setOpenStore}>
         <DialogTrigger asChild>
