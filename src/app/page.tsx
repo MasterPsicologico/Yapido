@@ -50,7 +50,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
-      <main className="flex-1">
+      <main className="flex-1 overflow-x-hidden">
         {user ? <AuthenticatedHome /> : <UnauthenticatedLanding auth={auth} />}
       </main>
     </div>
@@ -66,7 +66,6 @@ function AuthenticatedHome() {
   const [isCompressing, setIsCompressing] = useState(false);
   const [base64Image, setBase64Image] = useState<string | null>(null);
 
-  // Consulta de Categorías Principales (Globales)
   const categoriesQuery = useMemoFirebase(() => {
     return query(collection(firestore, 'mainCategories'), orderBy('createdAt', 'desc'));
   }, [firestore]);
@@ -78,7 +77,7 @@ function AuthenticatedHome() {
     if (file) {
       setIsCompressing(true);
       try {
-        const compressed = await compressImage(file);
+        const compressed = await compressImage(file, 1200, 1200, 0.85);
         setBase64Image(compressed);
         toast({ title: "Imagen lista", description: "Otimizada con éxito." });
       } catch (error) {
@@ -145,6 +144,7 @@ function AuthenticatedHome() {
         status: 'active',
         imageUrl: base64Image || `https://picsum.photos/seed/${storeRef.id}/800/600`,
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       }, { merge: true });
 
       toast({ title: "¡Vitrina Lanzada!", description: "Tu tienda ya es parte del Marketplace." });
@@ -158,34 +158,33 @@ function AuthenticatedHome() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-10 space-y-12 overflow-x-hidden">
-      {/* Hero Section */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+    <div className="container mx-auto px-4 py-10 space-y-12 max-w-7xl">
+      {/* Header Section Responsivo */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 overflow-hidden">
         <div className="space-y-2 max-w-xl">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tighter leading-tight">Aguachica Digital</h1>
           <p className="text-slate-500 text-lg font-medium">Explora las mejores vitrinas morrocoyeras por categoría.</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-          {/* Admin: Crear Categoría Principal */}
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
           <Dialog open={openCategory} onOpenChange={setOpenCategory}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="rounded-full h-14 px-8 gap-2 border-primary/20 hover:bg-primary/5 text-primary font-bold w-full sm:w-auto text-base">
-                <LayoutGrid className="w-5 h-5" /> Nueva Categoría Pro
+              <Button variant="outline" className="rounded-full h-12 sm:h-14 px-6 sm:px-8 gap-2 border-primary/20 hover:bg-primary/5 text-primary font-bold w-full sm:w-auto text-sm sm:text-base">
+                <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" /> Nueva Categoría Pro
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-black italic">Crear Categoría Principal</DialogTitle>
-                <DialogDescription>Solo el administrador puede definir estos grupos globales.</DialogDescription>
+                <DialogTitle className="text-2xl font-black italic">Crear Categoría Global</DialogTitle>
+                <DialogDescription>Solo el administrador puede definir estos grupos.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreateMainCategory} className="space-y-4 pt-4">
                 <div className="space-y-2">
-                  <Label>Nombre de Categoría</Label>
+                  <Label>Nombre</Label>
                   <Input name="name" placeholder="Ej: Panaderías y Cafés" required />
                 </div>
                 <div className="space-y-2">
-                  <Label>Imagen Representativa</Label>
+                  <Label>Imagen</Label>
                   <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border-2 border-dashed border-slate-300">
                     {base64Image ? (
                       <>
@@ -195,7 +194,7 @@ function AuthenticatedHome() {
                         </Button>
                       </>
                     ) : (
-                      <label className="flex flex-col items-center justify-center h-full cursor-pointer hover:bg-slate-200 transition-colors">
+                      <label className="flex flex-col items-center justify-center h-full cursor-pointer hover:bg-slate-200">
                         <ImageIcon className="w-8 h-8 text-slate-400 mb-2" />
                         <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Subir Imagen</span>
                         <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
@@ -204,8 +203,8 @@ function AuthenticatedHome() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Descripción Corta</Label>
-                  <Textarea name="description" placeholder="Ej: El aroma de nuestra tierra en un solo lugar." required />
+                  <Label>Descripción</Label>
+                  <Textarea name="description" placeholder="Ej: El aroma de nuestra tierra." required />
                 </div>
                 <Button type="submit" className="w-full h-12 font-bold" disabled={isRegistering || isCompressing}>
                   {isRegistering ? <Loader2 className="animate-spin" /> : <Plus className="mr-2" />} Crear Categoría
@@ -214,17 +213,16 @@ function AuthenticatedHome() {
             </DialogContent>
           </Dialog>
 
-          {/* Dueño: Registrar Tienda */}
           <Dialog open={openStore} onOpenChange={setOpenStore}>
             <DialogTrigger asChild>
-              <Button className="rounded-full h-14 px-10 gap-2 bg-primary hover:bg-primary/90 text-white font-black shadow-xl shadow-primary/20 w-full sm:w-auto text-base">
-                <StoreIcon className="w-5 h-5" /> Registrar Mi Vitrina
+              <Button className="rounded-full h-12 sm:h-14 px-8 sm:px-10 gap-2 bg-primary hover:bg-primary/90 text-white font-black shadow-lg shadow-primary/20 w-full sm:w-auto text-sm sm:text-base">
+                <StoreIcon className="w-4 h-4 sm:w-5 sm:h-5" /> Registrar Mi Vitrina
               </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-black">Lanza tu Negocio</DialogTitle>
-                <DialogDescription>Selecciona la categoría principal a la que pertenece tu tienda.</DialogDescription>
+                <DialogDescription>Elige la categoría global de tu tienda.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleRegisterStore} className="space-y-4 pt-4">
                 <div className="space-y-2">
@@ -232,23 +230,20 @@ function AuthenticatedHome() {
                   <Input name="name" placeholder="Ej: Panadería Morrocoy" required />
                 </div>
                 <div className="space-y-2">
-                  <Label>Categoría Principal (Admin)</Label>
+                  <Label>Categoría Global</Label>
                   <Select name="mainCategoryId" required>
                     <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Selecciona a qué grupo perteneces..." />
+                      <SelectValue placeholder="Selecciona el grupo..." />
                     </SelectTrigger>
                     <SelectContent>
                       {mainCategories?.map(cat => (
                         <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                       ))}
-                      {(!mainCategories || mainCategories.length === 0) && (
-                        <p className="p-2 text-xs text-muted-foreground italic">No hay categorías globales creadas.</p>
-                      )}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Foto de Fachada</Label>
+                  <Label>Foto Principal</Label>
                   <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border-2 border-dashed border-slate-300">
                     {base64Image ? (
                       <>
@@ -258,19 +253,19 @@ function AuthenticatedHome() {
                         </Button>
                       </>
                     ) : (
-                      <label className="flex flex-col items-center justify-center h-full cursor-pointer hover:bg-slate-200 transition-colors">
+                      <label className="flex flex-col items-center justify-center h-full cursor-pointer hover:bg-slate-200">
                         <ImageIcon className="w-8 h-8 text-slate-400 mb-2" />
-                        <span className="text-xs font-bold text-slate-400 text-center px-4 uppercase tracking-widest">Subir Foto Real</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Subir Foto Real</span>
                         <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                       </label>
                     )}
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Dirección Física</Label>
+                  <Label>Dirección</Label>
                   <Input name="address" placeholder="Ej: Calle 5 con Carrera 20" required />
                 </div>
-                <Button type="submit" className="w-full h-14 font-black text-lg bg-secondary hover:bg-secondary/90 shadow-xl shadow-secondary/20" disabled={isRegistering || isCompressing}>
+                <Button type="submit" className="w-full h-14 font-black text-lg bg-secondary hover:bg-secondary/90 shadow-lg" disabled={isRegistering || isCompressing}>
                   {isRegistering ? <Loader2 className="animate-spin" /> : <Sparkles className="mr-2" />} Registrar Mi Vitrina
                 </Button>
               </form>
@@ -279,7 +274,6 @@ function AuthenticatedHome() {
         </div>
       </div>
 
-      {/* Grid de Categorías Principales */}
       <section>
         <div className="flex items-center gap-2 mb-8">
           <div className="w-2 h-8 bg-primary rounded-full" />
@@ -299,14 +293,13 @@ function AuthenticatedHome() {
         ) : (
           <div className="text-center py-24 bg-white rounded-[50px] shadow-sm border border-slate-100 px-6">
             <LayoutGrid className="w-16 h-16 mx-auto text-slate-200 mb-4" />
-            <h3 className="text-xl font-bold text-slate-400 italic">No hay categorías creadas aún.</h3>
-            <p className="text-slate-400 text-sm mt-2">Usa el botón "Nueva Categoría Pro" para empezar.</p>
+            <h3 className="text-xl font-bold text-slate-400 italic">No hay categorías globales.</h3>
+            <p className="text-slate-400 text-sm mt-2">Usa "Nueva Categoría Pro" para empezar.</p>
           </div>
         )}
       </section>
 
-      {/* Promo AI Banner */}
-      <div className="bg-slate-900 rounded-[40px] md:rounded-[50px] p-10 md:p-14 flex flex-col lg:flex-row items-center gap-10 overflow-hidden relative group">
+      <div className="bg-slate-900 rounded-[40px] md:rounded-[50px] p-8 md:p-14 flex flex-col lg:flex-row items-center gap-8 md:gap-10 overflow-hidden relative group">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700" />
         <div className="relative z-10 flex-1 space-y-6 text-center lg:text-left">
           <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1 border border-white/10">
