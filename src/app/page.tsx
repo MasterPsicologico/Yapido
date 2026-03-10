@@ -158,23 +158,23 @@ function AuthenticatedHome() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-10 space-y-12">
+    <div className="container mx-auto px-4 py-10 space-y-12 overflow-x-hidden">
       {/* Hero Section */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div>
-          <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2">Aguachica Digital</h1>
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+        <div className="space-y-2 max-w-xl">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tighter leading-tight">Aguachica Digital</h1>
           <p className="text-slate-500 text-lg font-medium">Explora las mejores vitrinas morrocoyeras por categoría.</p>
         </div>
         
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
           {/* Admin: Crear Categoría Principal */}
           <Dialog open={openCategory} onOpenChange={setOpenCategory}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="rounded-full h-12 px-6 gap-2 border-primary/20 hover:bg-primary/5 text-primary font-bold">
+              <Button variant="outline" className="rounded-full h-14 px-8 gap-2 border-primary/20 hover:bg-primary/5 text-primary font-bold w-full sm:w-auto text-base">
                 <LayoutGrid className="w-5 h-5" /> Nueva Categoría Pro
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-black italic">Crear Categoría Principal</DialogTitle>
                 <DialogDescription>Solo el administrador puede definir estos grupos globales.</DialogDescription>
@@ -197,7 +197,7 @@ function AuthenticatedHome() {
                     ) : (
                       <label className="flex flex-col items-center justify-center h-full cursor-pointer hover:bg-slate-200 transition-colors">
                         <ImageIcon className="w-8 h-8 text-slate-400 mb-2" />
-                        <span className="text-xs font-bold text-slate-400">SUBIR FOTO IMPACTANTE</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Subir Imagen</span>
                         <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                       </label>
                     )}
@@ -208,7 +208,7 @@ function AuthenticatedHome() {
                   <Textarea name="description" placeholder="Ej: El aroma de nuestra tierra en un solo lugar." required />
                 </div>
                 <Button type="submit" className="w-full h-12 font-bold" disabled={isRegistering || isCompressing}>
-                  {isRegistering ? <Loader2 className="animate-spin" /> : <Plus className="mr-2" />} Crear Categoría Global
+                  {isRegistering ? <Loader2 className="animate-spin" /> : <Plus className="mr-2" />} Crear Categoría
                 </Button>
               </form>
             </DialogContent>
@@ -217,11 +217,11 @@ function AuthenticatedHome() {
           {/* Dueño: Registrar Tienda */}
           <Dialog open={openStore} onOpenChange={setOpenStore}>
             <DialogTrigger asChild>
-              <Button className="rounded-full h-12 px-8 gap-2 bg-primary hover:bg-primary/90 text-white font-black shadow-xl shadow-primary/20">
+              <Button className="rounded-full h-14 px-10 gap-2 bg-primary hover:bg-primary/90 text-white font-black shadow-xl shadow-primary/20 w-full sm:w-auto text-base">
                 <StoreIcon className="w-5 h-5" /> Registrar Mi Vitrina
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-black">Lanza tu Negocio</DialogTitle>
                 <DialogDescription>Selecciona la categoría principal a la que pertenece tu tienda.</DialogDescription>
@@ -260,7 +260,7 @@ function AuthenticatedHome() {
                     ) : (
                       <label className="flex flex-col items-center justify-center h-full cursor-pointer hover:bg-slate-200 transition-colors">
                         <ImageIcon className="w-8 h-8 text-slate-400 mb-2" />
-                        <span className="text-xs font-bold text-slate-400 text-center px-4">TOMA UNA FOTO REAL DE TU LOCAL</span>
+                        <span className="text-xs font-bold text-slate-400 text-center px-4 uppercase tracking-widest">Subir Foto Real</span>
                         <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                       </label>
                     )}
@@ -287,7 +287,7 @@ function AuthenticatedHome() {
         </div>
 
         {loadingCategories ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-72 rounded-[40px]" />)}
           </div>
         ) : mainCategories && mainCategories.length > 0 ? (
@@ -297,31 +297,31 @@ function AuthenticatedHome() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-24 bg-white rounded-[50px] shadow-sm border border-slate-100">
+          <div className="text-center py-24 bg-white rounded-[50px] shadow-sm border border-slate-100 px-6">
             <LayoutGrid className="w-16 h-16 mx-auto text-slate-200 mb-4" />
-            <h3 className="text-xl font-bold text-slate-400 italic">No hay categorías creadas por el admin aún.</h3>
+            <h3 className="text-xl font-bold text-slate-400 italic">No hay categorías creadas aún.</h3>
             <p className="text-slate-400 text-sm mt-2">Usa el botón "Nueva Categoría Pro" para empezar.</p>
           </div>
         )}
       </section>
 
       {/* Promo AI Banner */}
-      <div className="bg-slate-900 rounded-[50px] p-8 md:p-14 flex flex-col md:flex-row items-center gap-10 overflow-hidden relative group">
+      <div className="bg-slate-900 rounded-[40px] md:rounded-[50px] p-10 md:p-14 flex flex-col lg:flex-row items-center gap-10 overflow-hidden relative group">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700" />
-        <div className="relative z-10 flex-1 space-y-4">
+        <div className="relative z-10 flex-1 space-y-6 text-center lg:text-left">
           <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1 border border-white/10">
             <Sparkles className="w-4 h-4 text-secondary" />
             <span className="text-[10px] font-black text-white uppercase tracking-widest">Tecnología Inteligente</span>
           </div>
-          <h3 className="text-4xl md:text-5xl font-black text-white leading-none tracking-tighter">
-            ¿Tienes un negocio <br /> en Aguachica?
+          <h3 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tighter">
+            ¿Tienes un negocio <br className="hidden md:block" /> en Aguachica?
           </h3>
-          <p className="text-slate-400 text-lg max-w-lg font-medium">
-            Nuestra IA crea descripciones profesionales para tus productos en segundos. ¡Destaca sobre el resto y vende más!
+          <p className="text-slate-400 text-lg max-w-lg font-medium mx-auto lg:mx-0">
+            Nuestra IA crea descripciones profesionales para tus productos en segundos. ¡Vende más hoy!
           </p>
         </div>
-        <div className="relative z-10 shrink-0">
-          <Button onClick={() => setOpenStore(true)} size="lg" className="rounded-full h-16 px-10 text-xl font-black bg-white text-slate-900 hover:bg-slate-100 gap-3 group/btn">
+        <div className="relative z-10 shrink-0 w-full lg:w-auto">
+          <Button onClick={() => setOpenStore(true)} size="lg" className="rounded-full h-16 px-10 text-xl font-black bg-white text-slate-900 hover:bg-slate-100 gap-3 group/btn w-full lg:w-auto">
             Empezar ahora <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-2 transition-transform" />
           </Button>
         </div>
@@ -333,7 +333,7 @@ function AuthenticatedHome() {
 function UnauthenticatedLanding({ auth }: { auth: any }) {
   const handleLogin = () => initiateGoogleSignIn(auth);
   return (
-    <div className="relative h-screen w-full overflow-hidden flex items-center justify-center bg-black">
+    <div className="relative h-[100dvh] w-full overflow-hidden flex items-center justify-center bg-black">
       <div className="absolute inset-0 z-0">
         <Image src="https://picsum.photos/seed/morrocoy/1920/1080" alt="Aguachica Cesar" fill className="object-cover opacity-60" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
@@ -343,17 +343,17 @@ function UnauthenticatedLanding({ auth }: { auth: any }) {
           <Sparkles className="w-4 h-4 text-secondary" />
           <span className="text-[10px] sm:text-xs uppercase tracking-widest font-bold text-white/90">Aguachica • Cesar • Orgullo Morrocoyero</span>
         </div>
-        <h1 className="text-6xl sm:text-8xl md:text-9xl font-black text-white leading-none tracking-tighter uppercase animate-in fade-in zoom-in duration-1000">
+        <h1 className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-white leading-none tracking-tighter uppercase animate-in fade-in zoom-in duration-1000">
           Vitriniando <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_auto] animate-gradient block">Marketplace</span>
         </h1>
-        <p className="text-lg sm:text-2xl text-white/80 font-medium max-w-2xl mx-auto leading-tight animate-in fade-in slide-in-from-bottom-10 duration-1000">
-          Lleva tu negocio de Aguachica al siguiente nivel. <br />
-          <span className="text-secondary font-black italic">¡La vitrina más moderna del Cesar a un solo clic!</span>
+        <p className="text-base sm:text-xl lg:text-2xl text-white/80 font-medium max-w-2xl mx-auto leading-tight animate-in fade-in slide-in-from-bottom-10 duration-1000 px-4">
+          Lleva tu negocio de Aguachica al siguiente nivel. <br className="hidden sm:block" />
+          <span className="text-secondary font-black italic">¡La vitrina más moderna del Cesar!</span>
         </p>
-        <div className="pt-8 animate-in fade-in slide-in-from-bottom-20 duration-1000">
-          <Button onClick={handleLogin} size="lg" className="bg-primary hover:bg-primary/90 text-white font-black px-12 py-10 rounded-full text-2xl shadow-2xl shadow-primary/40 hover:scale-105 transition-all group w-full sm:w-auto">
-            ENTRAR A VITRINIAR <ArrowRight className="ml-4 w-8 h-8 group-hover:translate-x-3 transition-transform" />
+        <div className="pt-8 animate-in fade-in slide-in-from-bottom-20 duration-1000 px-4">
+          <Button onClick={handleLogin} size="lg" className="bg-primary hover:bg-primary/90 text-white font-black h-20 px-12 rounded-full text-xl sm:text-2xl shadow-2xl shadow-primary/40 hover:scale-105 transition-all group w-full sm:w-auto">
+            ENTRAR A VITRINIAR <ArrowRight className="ml-4 w-6 h-6 sm:w-8 sm:h-8 group-hover:translate-x-3 transition-transform" />
           </Button>
         </div>
       </div>
