@@ -500,11 +500,11 @@ export default function StorePage() {
               </div>
 
               {isOwner && (
-                <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="flex flex-col gap-4 pt-4">
                     <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
                         <DialogTrigger asChild>
-                            <Button variant="ghost" className="rounded-full gap-2 border border-dashed border-primary/40 text-primary h-12 font-black text-xs uppercase tracking-widest hover:bg-primary/5">
-                                <Plus className="w-4 h-4" /> Nueva Sección
+                            <Button variant="ghost" className="w-full rounded-full gap-3 border-2 border-dashed border-primary/30 text-primary h-14 font-black text-sm uppercase tracking-widest hover:bg-primary/5 transition-all">
+                                <Plus className="w-5 h-5" /> Nueva Sección
                             </Button>
                         </DialogTrigger>
                         <DialogContent>
@@ -525,8 +525,8 @@ export default function StorePage() {
 
                     <Dialog open={prodDialogOpen} onOpenChange={(v) => { setProdDialogOpen(v); if(!v) setProductImage(null); }}>
                         <DialogTrigger asChild>
-                            <Button className="rounded-full gap-2 bg-slate-900 hover:bg-slate-800 text-white h-12 font-black text-xs uppercase tracking-widest shadow-xl">
-                                <Package className="w-4 h-4" /> Publicar Ítem
+                            <Button className="w-full rounded-full gap-3 bg-slate-900 hover:bg-slate-800 text-white h-14 font-black text-sm uppercase tracking-widest shadow-2xl transition-all">
+                                <Package className="w-5 h-5" /> Publicar Ítem
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-h-[90vh] overflow-y-auto">
