@@ -5,10 +5,11 @@ import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { StoreCard } from '@/components/store/StoreCard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Store as StoreIcon, LayoutGrid, Loader2, Plus, ImageIcon, X, Sparkles } from 'lucide-react';
+import { ArrowLeft, Store as StoreIcon, LayoutGrid, Loader2, Plus, ImageIcon, X, Sparkles, Settings, Edit3 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, doc, query, where, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
@@ -22,19 +23,22 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
 
 export default function CategoryPage() {
   const params = useParams();
   const id = params?.id as string;
-  const { user } = useUser();
+  const { isAdmin, user } = useProfile();
   const firestore = useFirestore();
 
   const [openStore, setOpenStore] = useState(false);
+  const [openEditCat, setOpenEditCat] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [base64Image, setBase64Image] = useState<string | null>(null);
+  const [editBase64Image, setEditBase64Image] = useState<string | null>(null);
 
   const catRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -50,19 +54,47 @@ export default function CategoryPage() {
 
   const { data: stores, isLoading: loadingStores } = useCollection(storesQuery);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
     const file = e.target.files?.[0];
     if (file) {
       setIsCompressing(true);
       try {
         const compressed = await compressImage(file, 1200, 1200, 0.85);
-        setBase64Image(compressed);
+        if (isEdit) setEditBase64Image(compressed);
+        else setBase64Image(compressed);
         toast({ title: "Imagen lista" });
       } catch (error) {
         toast({ title: "Error", variant: "destructive" });
       } finally {
         setIsCompressing(false);
       }
+    }
+  };
+
+  const handleEditCategory = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!isAdmin || !catRef) return;
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const description = formData.get('description') as string;
+
+    setIsRegistering(true);
+    try {
+      const data: any = {
+        name,
+        description,
+        updatedAt: serverTimestamp(),
+      };
+      if (editBase64Image) data.imageUrl = editBase64Image;
+
+      updateDocumentNonBlocking(catRef, data);
+      toast({ title: "Categoría actualizada correctamente" });
+      setOpenEditCat(false);
+      setEditBase64Image(null);
+    } catch (e) {
+      toast({ title: "Error al actualizar", variant: "destructive" });
+    } finally {
+      setIsRegistering(false);
     }
   };
 
@@ -134,7 +166,6 @@ export default function CategoryPage() {
       <Navbar />
       
       <main className="flex-1 w-full">
-        {/* Banner de Categoría Recto con Solución a Desbordamiento */}
         <div className="relative h-[40vh] w-full overflow-hidden">
           {category?.imageUrl && (
             <Image 
@@ -147,13 +178,60 @@ export default function CategoryPage() {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
           
-          <div className="absolute top-4 left-4 z-20">
+          <div className="absolute top-4 left-4 z-20 flex gap-2">
             <Link href="/">
               <Button variant="secondary" size="sm" className="rounded-full bg-white/90 text-slate-800 font-bold border-none text-xs h-9 px-4 shadow-md">
                 <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Inicio
               </Button>
             </Link>
           </div>
+
+          {isAdmin && (
+            <div className="absolute top-4 right-4 z-20">
+              <Dialog open={openEditCat} onOpenChange={setOpenEditCat}>
+                <DialogTrigger asChild>
+                  <Button variant="secondary" size="sm" className="rounded-full bg-primary text-white font-bold border-none text-xs h-9 px-4 shadow-lg">
+                    <Settings className="w-3.5 h-3.5 mr-1" /> Editar Categoría
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-black italic">Ajustes Maestro</DialogTitle>
+                    <DialogDescription>Modifica los detalles globales de esta categoría.</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleEditCategory} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label>Nombre de Categoría</Label>
+                      <Input name="name" defaultValue={category?.name} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Imagen de Banner</Label>
+                      <div className="relative aspect-video rounded-xl bg-slate-100 border-2 border-dashed overflow-hidden">
+                        {(editBase64Image || category?.imageUrl) ? (
+                          <>
+                            <Image src={editBase64Image || category?.imageUrl} alt="Preview" fill className="object-cover" />
+                            <Button type="button" size="icon" variant="destructive" className="absolute top-2 right-2 h-8 w-8" onClick={() => setEditBase64Image(null)}><X className="w-4 h-4" /></Button>
+                          </>
+                        ) : (
+                          <label className="flex flex-col items-center justify-center h-full cursor-pointer">
+                            <ImageIcon className="w-8 h-8 text-slate-400" />
+                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, true)} />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Descripción</Label>
+                      <Textarea name="description" defaultValue={category?.description} required />
+                    </div>
+                    <Button type="submit" className="w-full h-12 font-bold" disabled={isRegistering || isCompressing}>
+                      {isRegistering ? <Loader2 className="animate-spin" /> : <Edit3 className="mr-2" />} Guardar Cambios
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
 
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10">
             <h1 className="text-3xl sm:text-6xl md:text-7xl font-black text-white tracking-tighter uppercase italic leading-[0.9] drop-shadow-lg break-words max-w-full">
@@ -165,7 +243,6 @@ export default function CategoryPage() {
           </div>
         </div>
 
-        {/* Header de Sección Recto */}
         <section className="w-full py-8 px-4 sm:px-8 border-b bg-slate-50/50">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -208,7 +285,7 @@ export default function CategoryPage() {
                         <label className="flex flex-col items-center justify-center h-full cursor-pointer hover:bg-slate-200 transition-colors">
                           <ImageIcon className="w-8 h-8 text-slate-400 mb-2" />
                           <span className="text-xs font-bold text-slate-400 text-center px-4 uppercase tracking-widest">Subir Imagen Real</span>
-                          <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e)} />
                         </label>
                       )}
                     </div>
@@ -226,7 +303,6 @@ export default function CategoryPage() {
           </div>
         </section>
 
-        {/* Grid de Tiendas */}
         <section className="w-full p-3 sm:p-8">
           {loadingStores ? (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">

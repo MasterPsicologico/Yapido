@@ -19,6 +19,7 @@ import {
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, doc, query, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -32,7 +33,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 export default function StorePage() {
   const params = useParams();
   const id = params?.id as string;
-  const { user } = useUser();
+  const { user, isAdmin } = useProfile();
   const firestore = useFirestore();
 
   const storeRef = useMemoFirebase(() => (!firestore || !id) ? null : doc(firestore, 'stores', id), [firestore, id]);
@@ -55,7 +56,7 @@ export default function StorePage() {
   if (loadingStore) return <div className="flex flex-col min-h-screen bg-background"><Navbar /><main className="flex-1"><Skeleton className="h-[40vh] w-full" /><div className="container mx-auto px-4 -mt-20"><Skeleton className="h-64 w-full" /></div></main></div>;
   if (!store && !loadingStore) return <div className="flex flex-col min-h-screen items-center justify-center p-4"><Navbar /><div className="text-center space-y-4"><StoreIcon className="w-16 h-16 mx-auto text-muted-foreground opacity-20" /><h2 className="text-2xl font-bold italic text-slate-400">Vitrina no encontrada</h2><Link href="/"><Button className="rounded-full">Inicio</Button></Link></div></div>;
 
-  const isOwner = user?.uid === store?.ownerId;
+  const canEdit = user?.uid === store?.ownerId || isAdmin;
 
   const handleUpdateImage = async (e: React.ChangeEvent<HTMLInputElement>, field: string, index?: number) => {
     const file = e.target.files?.[0];
@@ -78,7 +79,7 @@ export default function StorePage() {
 
   const handleUpdateInfo = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!isOwner || !storeRef) return;
+    if (!canEdit || !storeRef) return;
     const formData = new FormData(e.currentTarget);
     const data = { name: formData.get('name'), description: formData.get('description'), address: formData.get('address'), phoneNumber: formData.get('phoneNumber'), updatedAt: serverTimestamp() };
     setIsUpdatingInfo(true);
@@ -93,18 +94,18 @@ export default function StorePage() {
       <main className="flex-1 pb-20">
         <StoreHeader 
           imageUrl={store?.imageUrl} name={store?.name} mainCategoryId={store?.mainCategoryId} 
-          isOwner={isOwner} updatingImage={updatingImage} onUpdateImage={handleUpdateImage} onOpenInfo={() => setInfoDialogOpen(true)}
+          isOwner={canEdit} updatingImage={updatingImage} onUpdateImage={handleUpdateImage} onOpenInfo={() => setInfoDialogOpen(true)}
         />
 
         <div className="container mx-auto max-w-xl px-0 -mt-24 relative z-20">
           <div className="bg-white shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.2)] overflow-hidden">
             <div className="p-8 md:p-10 space-y-10">
               <StoreInfo name={store?.name} description={store?.description} />
-              <StoreHighlights highlights={store?.highlights} isOwner={isOwner} updatingImage={updatingImage} onUpdateHighlight={(e, i) => handleUpdateImage(e, 'highlights', i)} />
+              <StoreHighlights highlights={store?.highlights} isOwner={canEdit} updatingImage={updatingImage} onUpdateHighlight={(e, i) => handleUpdateImage(e, 'highlights', i)} />
               <StoreStats />
               <StoreContactContainer address={store?.address} phoneNumber={store?.phoneNumber} onOpenChat={() => setIsChatOpen(true)} />
 
-              {isOwner && (
+              {canEdit && (
                 <StoreOwnerActions 
                   catDialogOpen={catDialogOpen} setCatDialogOpen={setCatDialogOpen}
                   prodDialogOpen={prodDialogOpen} setProdDialogOpen={setProdDialogOpen}
