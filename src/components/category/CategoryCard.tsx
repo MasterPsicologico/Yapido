@@ -3,10 +3,11 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Sparkles, Store as StoreIcon } from 'lucide-react';
+import { ArrowRight, Sparkles, Store as StoreIcon, Edit3 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
+import { Button } from '@/components/ui/button';
 
 export interface MainCategory {
   id: string;
@@ -15,10 +16,15 @@ export interface MainCategory {
   imageUrl: string;
 }
 
-export function CategoryCard({ category }: { category: MainCategory }) {
+interface CategoryCardProps {
+  category: MainCategory;
+  onEdit?: (category: MainCategory) => void;
+}
+
+export function CategoryCard({ category, onEdit }: CategoryCardProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   
-  // Obtenemos conteo de tiendas
   const storesQuery = useMemoFirebase(() => {
     if (!firestore || !category.id) return null;
     return query(collection(firestore, 'stores'), where('mainCategoryId', '==', category.id));
@@ -27,8 +33,8 @@ export function CategoryCard({ category }: { category: MainCategory }) {
   const { data: stores } = useCollection(storesQuery);
 
   return (
-    <Link href={`/categories/${category.id}`}>
-      <Card className="group relative h-40 sm:h-72 w-full overflow-hidden rounded-none border-none shadow-md transition-all duration-500 hover:shadow-xl">
+    <div className="group relative h-40 sm:h-72 w-full overflow-hidden shadow-md transition-all duration-500 hover:shadow-xl">
+      <Link href={`/categories/${category.id}`}>
         {/* Imagen de Fondo */}
         <div className="absolute inset-0 z-0">
           <Image 
@@ -56,11 +62,11 @@ export function CategoryCard({ category }: { category: MainCategory }) {
                 )}
             </div>
             
-            <h3 className="text-xl sm:text-4xl font-black leading-none tracking-tighter uppercase italic">
+            <h3 className="text-xl sm:text-4xl font-black leading-[0.9] tracking-tighter uppercase italic break-words line-clamp-2">
               {category.name}
             </h3>
             
-            <p className="hidden sm:block text-white/70 text-xs font-medium line-clamp-2 pr-4">
+            <p className="hidden sm:block text-white/70 text-xs font-medium line-clamp-2 pr-4 break-words">
               {category.description}
             </p>
 
@@ -72,12 +78,27 @@ export function CategoryCard({ category }: { category: MainCategory }) {
             </div>
           </div>
         </CardContent>
+      </Link>
 
-        {/* Efecto decorativo */}
-        <div className="absolute top-3 right-3 opacity-10">
-          <Sparkles className="w-6 h-6 sm:w-10 sm:h-10 text-white" />
-        </div>
-      </Card>
-    </Link>
+      {/* Botón de Edición (Admin) */}
+      {user && onEdit && (
+        <Button 
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(category);
+          }}
+          size="icon" 
+          variant="secondary" 
+          className="absolute top-2 right-2 z-30 rounded-full h-8 w-8 bg-white/20 backdrop-blur-md hover:bg-white/40 border-none opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <Edit3 className="w-4 h-4 text-white" />
+        </Button>
+      )}
+
+      {/* Efecto decorativo */}
+      <div className="absolute top-3 right-10 opacity-10">
+        <Sparkles className="w-6 h-6 sm:w-10 sm:h-10 text-white" />
+      </div>
+    </div>
   );
 }

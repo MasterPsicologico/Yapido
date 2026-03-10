@@ -23,7 +23,8 @@ import {
   Tag,
   Clock,
   Camera,
-  Edit2
+  Edit2,
+  Settings
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -44,7 +45,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
-import { cn } from '@/lib/utils';
 
 export default function StorePage() {
   const params = useParams();
@@ -69,12 +69,13 @@ export default function StorePage() {
   const [activeTab, setActiveTab] = useState("all");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [isUpdatingInfo, setIsUpdatingInfo] = useState(false);
   const [isCompressingProduct, setIsCompressingProduct] = useState(false);
   const [catDialogOpen, setCatDialogOpen] = useState(false);
   const [prodDialogOpen, setProdDialogOpen] = useState(false);
+  const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [productImage, setProductImage] = useState<string | null>(null);
   
-  // Estados para edición de imágenes de la tienda
   const [updatingImage, setUpdatingImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const highlightInputRef = useRef<HTMLInputElement>(null);
@@ -87,7 +88,7 @@ export default function StorePage() {
         <main className="flex-1">
           <Skeleton className="h-[40vh] w-full" />
           <div className="container mx-auto px-4 -mt-20">
-            <Skeleton className="h-64 w-full rounded-[40px]" />
+            <Skeleton className="h-64 w-full rounded-none" />
           </div>
         </main>
       </div>
@@ -142,6 +143,34 @@ export default function StorePage() {
     }
   };
 
+  const handleUpdateStoreInfo = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!isOwner || !storeRef) return;
+
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const description = formData.get('description') as string;
+    const address = formData.get('address') as string;
+    const phoneNumber = formData.get('phoneNumber') as string;
+
+    setIsUpdatingInfo(true);
+    try {
+      updateDocumentNonBlocking(storeRef, {
+        name,
+        description,
+        address,
+        phoneNumber,
+        updatedAt: serverTimestamp(),
+      });
+      toast({ title: "Información Actualizada" });
+      setInfoDialogOpen(false);
+    } catch (error) {
+      toast({ title: "Error", variant: "destructive" });
+    } finally {
+      setIsUpdatingInfo(false);
+    }
+  };
+
   const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -149,9 +178,9 @@ export default function StorePage() {
       try {
         const compressed = await compressImage(file, 1200, 1200, 0.85);
         setProductImage(compressed);
-        toast({ title: "Imagen lista", description: "Foto del producto optimizada." });
+        toast({ title: "Imagen lista" });
       } catch (error) {
-        toast({ title: "Error", description: "No se pudo procesar la imagen.", variant: "destructive" });
+        toast({ title: "Error", variant: "destructive" });
       } finally {
         setIsCompressingProduct(false);
       }
@@ -168,16 +197,14 @@ export default function StorePage() {
     setIsAddingCategory(true);
     try {
       const catRef = doc(collection(firestore, 'stores', id, 'categories'));
-      const catData = {
+      setDocumentNonBlocking(catRef, {
         id: catRef.id,
         storeId: id,
         storeOwnerId: user.uid,
         name,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      };
-
-      setDocumentNonBlocking(catRef, catData, { merge: true });
+      }, { merge: true });
       toast({ title: "Categoría creada" });
       setCatDialogOpen(false);
     } catch (error) {
@@ -253,9 +280,8 @@ export default function StorePage() {
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent"></div>
           
-          {/* Botón edición imagen principal */}
           {isOwner && (
-            <div className="absolute top-6 right-6 z-30">
+            <div className="absolute top-6 right-6 z-30 flex gap-2">
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -263,33 +289,67 @@ export default function StorePage() {
                 accept="image/*" 
                 onChange={(e) => handleUpdateStoreImage(e, 'imageUrl')} 
               />
+              <Dialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="rounded-full bg-white/20 backdrop-blur-md hover:bg-white/40 text-white border border-white/30 h-11 px-4 gap-2 font-bold shadow-xl">
+                    <Settings className="w-5 h-5" />
+                    Editar Info
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-black italic">Información de Vitrina</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleUpdateStoreInfo} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label>Nombre del Negocio</Label>
+                      <Input name="name" defaultValue={store?.name} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Descripción</Label>
+                      <Textarea name="description" defaultValue={store?.description} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Teléfono</Label>
+                      <Input name="phoneNumber" defaultValue={store?.phoneNumber} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Dirección</Label>
+                      <Input name="address" defaultValue={store?.address} />
+                    </div>
+                    <Button type="submit" className="w-full h-12 font-bold" disabled={isUpdatingInfo}>
+                      {isUpdatingInfo ? <Loader2 className="animate-spin" /> : "Guardar Cambios"}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
               <Button 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={updatingImage === 'main'}
                 className="rounded-full bg-white/20 backdrop-blur-md hover:bg-white/40 text-white border border-white/30 h-11 px-4 gap-2 font-bold shadow-xl"
               >
                 {updatingImage === 'main' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
-                Cambiar Portada
               </Button>
             </div>
           )}
 
           <div className="absolute top-6 left-6 z-30">
-            <Link href="/">
+            <Link href={`/categories/${store?.mainCategoryId}`}>
               <Button size="icon" variant="secondary" className="rounded-full bg-white/95 shadow-lg border-none w-11 h-11">
                 <ArrowLeft className="w-5 h-5 text-slate-700" />
               </Button>
             </Link>
           </div>
 
-          <div className="absolute inset-0 flex flex-col items-center justify-center pt-10">
+          <div className="absolute inset-0 flex flex-col items-center justify-center pt-10 pointer-events-none">
              <div className="relative w-48 h-48 drop-shadow-2xl animate-in fade-in zoom-in duration-700">
                 <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
                         <div className="w-24 h-24 mx-auto bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/20 mb-2">
                             <StoreIcon className="w-12 h-12 text-white" />
                         </div>
-                        <h2 className="text-white font-black text-2xl uppercase tracking-tighter drop-shadow-md">
+                        <h2 className="text-white font-black text-2xl uppercase tracking-tighter drop-shadow-md break-words px-4">
                             {store?.name}
                         </h2>
                     </div>
@@ -299,23 +359,23 @@ export default function StorePage() {
         </div>
 
         <div className="container mx-auto max-w-xl px-0 -mt-24 relative z-20">
-          <div className="bg-white rounded-t-[45px] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.2)] overflow-hidden">
+          <div className="bg-white shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.2)] overflow-hidden">
             <div className="p-8 md:p-10 space-y-10">
               
               <div className="space-y-4">
                 <Badge className="bg-[#00c9db] hover:bg-[#00b5c5] text-white rounded-full px-5 py-1.5 text-xs font-bold border-none">
-                  {store?.category || 'Alimentos'}
+                  Vitriniando
                 </Badge>
-                <h1 className="text-[38px] font-black text-slate-900 leading-tight tracking-tight">
+                <h1 className="text-[38px] font-black text-slate-900 leading-tight tracking-tight break-words">
                     {store?.name}
                 </h1>
-                <p className="text-[#6b7280] text-[17px] leading-snug font-medium max-w-[90%]">
+                <p className="text-[#6b7280] text-[17px] leading-snug font-medium break-words">
                   {store?.description}
                 </p>
               </div>
 
               {/* Grid de Imágenes Destacadas */}
-              <div className="grid grid-cols-3 gap-3 overflow-x-auto no-scrollbar">
+              <div className="grid grid-cols-3 gap-3">
                 <input 
                   type="file" 
                   ref={highlightInputRef} 
@@ -344,35 +404,35 @@ export default function StorePage() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-3 gap-2 px-1">
+              <div className="grid grid-cols-3 gap-2">
                 <div className="flex flex-col items-center gap-2">
-                    <div className="w-11 h-11 rounded-full bg-[#fef3c7] flex items-center justify-center shadow-sm">
+                    <div className="w-11 h-11 rounded-full bg-[#fef3c7] flex items-center justify-center">
                         <Tag className="w-5 h-5 text-[#d97706]" />
                     </div>
                     <span className="text-[11px] font-bold text-slate-800 text-center leading-[1.1]">Promociones<br/>diarias</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                    <div className="w-11 h-11 rounded-full bg-[#ffedd5] flex items-center justify-center shadow-sm">
+                    <div className="w-11 h-11 rounded-full bg-[#ffedd5] flex items-center justify-center">
                         <Zap className="w-5 h-5 text-[#ea580c]" />
                     </div>
                     <span className="text-[11px] font-bold text-slate-800 text-center leading-[1.1]">Productos<br/>frescos</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
-                    <div className="w-11 h-11 rounded-full bg-[#ecfdf5] flex items-center justify-center shadow-sm">
+                    <div className="w-11 h-11 rounded-full bg-[#ecfdf5] flex items-center justify-center">
                         <Clock className="w-5 h-5 text-[#059669]" />
                     </div>
                     <span className="text-[11px] font-bold text-slate-800 text-center leading-[1.1]">Domicilios<br/>rápidos</span>
                 </div>
               </div>
 
-              <div className="bg-[#f5f2eb] rounded-[32px] p-6 space-y-4 border border-[#e5e7eb]/40">
+              <div className="bg-[#f5f2eb] p-6 space-y-4 border border-[#e5e7eb]/40">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Phone className="w-5 h-5 text-[#1f2937]" />
-                        <span className="text-[#1f2937] font-bold text-lg">{store?.phoneNumber || '+57 300 123 4567'}</span>
+                        <span className="text-[#1f2937] font-bold text-lg">{store?.phoneNumber || '+57 300 000 0000'}</span>
                     </div>
-                    <Button size="sm" className="bg-[#f59e0b] hover:bg-[#d97706] text-white rounded-full font-bold h-10 px-6 gap-2 border-none">
-                        Llamar ahora <ChevronRight className="w-4 h-4" />
+                    <Button size="sm" className="bg-[#f59e0b] hover:bg-[#d97706] text-white rounded-full font-bold h-10 px-6 gap-2">
+                        Llamar <ChevronRight className="w-4 h-4" />
                     </Button>
                 </div>
 
@@ -381,12 +441,11 @@ export default function StorePage() {
                         <MapPin className="w-5 h-5 text-[#1f2937] mt-1 shrink-0" />
                         <div className="flex flex-col">
                             <span className="text-[#4b5563] text-sm font-medium leading-tight">
-                                {store?.address || 'Calle Central, Aguachica'}
+                                {store?.address || 'Aguachica, Cesar'}
                             </span>
-                            <span className="text-[#9ca3af] text-[10px] uppercase font-bold mt-0.5 tracking-wider">Aguachica, Cesar</span>
                         </div>
                     </div>
-                    <Button size="sm" variant="outline" className="rounded-full font-bold h-10 px-6 gap-2 border-none bg-white text-[#1f2937] shadow-sm">
+                    <Button size="sm" variant="outline" className="rounded-full font-bold h-10 px-6 gap-2 bg-white text-[#1f2937]">
                         <MessageCircle className="w-4 h-4 text-[#22c55e]" /> WhatsApp
                     </Button>
                 </div>
@@ -510,24 +569,23 @@ export default function StorePage() {
                     </TabsList>
                   </div>
 
-                  <TabsContent value="all" className="mt-8">
-                    <div className="text-center py-20 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200">
-                      <Package className="w-12 h-12 mx-auto text-slate-200 mb-4" />
-                      <p className="text-slate-400 font-bold italic">Selecciona una sección arriba</p>
-                    </div>
-                  </TabsContent>
-
                   {categories?.map(cat => (
                     <TabsContent key={cat.id} value={cat.id} className="mt-8">
                       <ProductsGrid storeId={id} categoryId={cat.id} />
                     </TabsContent>
                   ))}
+                  <TabsContent value="all" className="mt-8">
+                     <div className="text-center py-10 bg-slate-50 border-2 border-dashed border-slate-200">
+                        <Package className="w-10 h-10 mx-auto text-slate-200 mb-2" />
+                        <p className="text-slate-400 font-bold italic text-sm">Selecciona una sección arriba</p>
+                     </div>
+                  </TabsContent>
                 </Tabs>
               </div>
 
               <div className="pt-8 flex justify-center pb-6">
                 <Button className="w-[85%] h-14 rounded-full bg-[#f59e0b] hover:bg-[#d97706] text-white text-xl font-bold shadow-xl shadow-orange-200 border-none gap-2 group">
-                   Ver Catálogo <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                   Ver Menú <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </div>
             </div>
@@ -553,14 +611,14 @@ function ProductsGrid({ storeId, categoryId }: { storeId: string, categoryId: st
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 gap-4">
-        {[1, 2].map(i => <Skeleton key={i} className="h-64 rounded-3xl" />)}
+        {[1, 2].map(i => <Skeleton key={i} className="h-64 rounded-xl" />)}
       </div>
     );
   }
 
   if (!products || products.length === 0) {
     return (
-      <div className="text-center py-16 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
+      <div className="text-center py-16 bg-slate-50 border-2 border-dashed border-slate-200">
         <Package className="w-10 h-10 mx-auto text-slate-200 mb-2" />
         <p className="text-slate-400 font-bold text-sm italic">Sin productos aún</p>
       </div>

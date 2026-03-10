@@ -121,9 +121,9 @@ export default function CategoryPage() {
         <main className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-50">
           <LayoutGrid className="w-16 h-16 text-slate-200 mb-4" />
           <h2 className="text-xl font-bold text-slate-400">Categoría no encontrada</h2>
-          <Link href="/" className="mt-4">
+          <link href="/" className="mt-4">
             <Button variant="default">Volver al Inicio</Button>
-          </Link>
+          </link>
         </main>
       </div>
     );
@@ -134,8 +134,8 @@ export default function CategoryPage() {
       <Navbar />
       
       <main className="flex-1 w-full">
-        {/* Banner de Categoría Recto */}
-        <div className="relative h-[40vh] w-full">
+        {/* Banner de Categoría Recto con Solución a Desbordamiento */}
+        <div className="relative h-[40vh] w-full overflow-hidden">
           {category?.imageUrl && (
             <Image 
               src={category.imageUrl} 
@@ -156,10 +156,10 @@ export default function CategoryPage() {
           </div>
 
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10">
-            <h1 className="text-4xl sm:text-7xl font-black text-white tracking-tighter uppercase italic leading-none drop-shadow-lg">
+            <h1 className="text-3xl sm:text-6xl md:text-7xl font-black text-white tracking-tighter uppercase italic leading-[0.9] drop-shadow-lg break-words max-w-full">
               {category?.name}
             </h1>
-            <p className="text-white/90 text-sm sm:text-lg font-medium max-w-xl mt-3 line-clamp-2 px-4">
+            <p className="text-white/90 text-sm sm:text-lg font-medium max-w-xl mt-3 line-clamp-2 px-4 break-words">
               {category?.description}
             </p>
           </div>
@@ -226,7 +226,7 @@ export default function CategoryPage() {
           </div>
         </section>
 
-        {/* Grid de Tiendas: 2 Columnas en móvil */}
+        {/* Grid de Tiendas */}
         <section className="w-full p-3 sm:p-8">
           {loadingStores ? (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">

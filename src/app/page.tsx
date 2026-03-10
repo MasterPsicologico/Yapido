@@ -3,12 +3,12 @@
 
 import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
-import { CategoryCard } from '@/components/category/CategoryCard';
+import { CategoryCard, MainCategory } from '@/components/category/CategoryCard';
 import { Button } from '@/components/ui/button';
-import { Plus, Store as StoreIcon, Loader2, Image as ImageIcon, X, LayoutGrid, Sparkles, ArrowRight } from 'lucide-react';
+import { Plus, Store as StoreIcon, Loader2, Image as ImageIcon, X, LayoutGrid, Sparkles, ArrowRight, Edit3 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { collection, query, where, limit, doc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -62,6 +62,7 @@ function AuthenticatedHome() {
   const { user } = useUser();
   const [openStore, setOpenStore] = useState(false);
   const [openCategory, setOpenCategory] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<MainCategory | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [base64Image, setBase64Image] = useState<string | null>(null);
@@ -79,7 +80,7 @@ function AuthenticatedHome() {
       try {
         const compressed = await compressImage(file, 1200, 1200, 0.85);
         setBase64Image(compressed);
-        toast({ title: "Imagen lista", description: "Otimizada con éxito." });
+        toast({ title: "Imagen lista", description: "Optimizada con éxito." });
       } catch (error) {
         toast({ title: "Error", description: "No se pudo procesar la imagen.", variant: "destructive" });
       } finally {
@@ -88,30 +89,44 @@ function AuthenticatedHome() {
     }
   };
 
-  const handleCreateMainCategory = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateOrUpdateCategory = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const description = formData.get('description') as string;
 
-    if (!base64Image) {
-      toast({ title: "Imagen requerida", variant: "destructive" });
-      return;
-    }
-
     setIsRegistering(true);
     try {
-      const catRef = doc(collection(firestore, 'mainCategories'));
-      setDocumentNonBlocking(catRef, {
-        id: catRef.id,
-        name,
-        description,
-        imageUrl: base64Image,
-        createdAt: serverTimestamp(),
-      }, { merge: true });
-
-      toast({ title: "Categoría Creada", description: "Ya puedes asignar tiendas aquí." });
+      if (editingCategory) {
+        const catRef = doc(firestore, 'mainCategories', editingCategory.id);
+        const updateData: any = {
+          name,
+          description,
+          updatedAt: serverTimestamp(),
+        };
+        if (base64Image) updateData.imageUrl = base64Image;
+        
+        updateDocumentNonBlocking(catRef, updateData);
+        toast({ title: "Categoría Actualizada" });
+      } else {
+        if (!base64Image) {
+          toast({ title: "Imagen requerida", variant: "destructive" });
+          setIsRegistering(false);
+          return;
+        }
+        const catRef = doc(collection(firestore, 'mainCategories'));
+        setDocumentNonBlocking(catRef, {
+          id: catRef.id,
+          name,
+          description,
+          imageUrl: base64Image,
+          createdAt: serverTimestamp(),
+        }, { merge: true });
+        toast({ title: "Categoría Creada" });
+      }
+      
       setOpenCategory(false);
+      setEditingCategory(null);
       setBase64Image(null);
     } catch (e) {
       toast({ title: "Error", variant: "destructive" });
@@ -167,7 +182,7 @@ function AuthenticatedHome() {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-          <Dialog open={openCategory} onOpenChange={setOpenCategory}>
+          <Dialog open={openCategory} onOpenChange={(v) => { if(!v) { setEditingCategory(null); setBase64Image(null); } setOpenCategory(v); }}>
             <DialogTrigger asChild>
               <Button variant="outline" className="rounded-full h-12 px-6 gap-2 border-primary/20 hover:bg-primary/5 text-primary font-bold w-full sm:w-auto">
                 <LayoutGrid className="w-4 h-4" /> Categoría Pro
@@ -175,21 +190,21 @@ function AuthenticatedHome() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-black italic">Crear Categoría Global</DialogTitle>
-                <DialogDescription>Define un nuevo grupo para el marketplace.</DialogDescription>
+                <DialogTitle className="text-2xl font-black italic">{editingCategory ? "Editar Categoría" : "Crear Categoría Global"}</DialogTitle>
+                <DialogDescription>{editingCategory ? "Modifica los detalles del grupo." : "Define un nuevo grupo para el marketplace."}</DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleCreateMainCategory} className="space-y-4 pt-4">
+              <form onSubmit={handleCreateOrUpdateCategory} className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label>Nombre</Label>
-                  <Input name="name" placeholder="Ej: Panaderías y Cafés" required />
+                  <Input name="name" defaultValue={editingCategory?.name} placeholder="Ej: Panaderías y Cafés" required />
                 </div>
                 <div className="space-y-2">
                   <Label>Imagen</Label>
                   <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border-2 border-dashed border-slate-300">
-                    {base64Image ? (
+                    {(base64Image || editingCategory?.imageUrl) ? (
                       <>
-                        <Image src={base64Image} alt="Preview" fill className="object-cover" />
-                        <Button type="button" size="icon" variant="destructive" className="absolute top-2 right-2 rounded-full h-8 w-8" onClick={() => setBase64Image(null)}>
+                        <Image src={base64Image || editingCategory!.imageUrl} alt="Preview" fill className="object-cover" />
+                        <Button type="button" size="icon" variant="destructive" className="absolute top-2 right-2 rounded-full h-8 w-8" onClick={() => { setBase64Image(null); if(editingCategory) editingCategory.imageUrl = ""; }}>
                           <X className="w-4 h-4" />
                         </Button>
                       </>
@@ -204,10 +219,10 @@ function AuthenticatedHome() {
                 </div>
                 <div className="space-y-2">
                   <Label>Descripción</Label>
-                  <Textarea name="description" placeholder="Ej: El aroma de nuestra tierra." required />
+                  <Textarea name="description" defaultValue={editingCategory?.description} placeholder="Ej: El aroma de nuestra tierra." required />
                 </div>
                 <Button type="submit" className="w-full h-12 font-bold" disabled={isRegistering || isCompressing}>
-                  {isRegistering ? <Loader2 className="animate-spin" /> : <Plus className="mr-2" />} Crear Categoría
+                  {isRegistering ? <Loader2 className="animate-spin" /> : editingCategory ? <Edit3 className="mr-2" /> : <Plus className="mr-2" />} {editingCategory ? "Guardar Cambios" : "Crear Categoría"}
                 </Button>
               </form>
             </DialogContent>
@@ -287,7 +302,14 @@ function AuthenticatedHome() {
         ) : mainCategories && mainCategories.length > 0 ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {mainCategories.map((cat) => (
-              <CategoryCard key={cat.id} category={cat as any} />
+              <CategoryCard 
+                key={cat.id} 
+                category={cat as any} 
+                onEdit={(c) => {
+                  setEditingCategory(c);
+                  setOpenCategory(true);
+                }}
+              />
             ))}
           </div>
         ) : (
