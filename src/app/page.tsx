@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { HomeActions } from '@/components/home/HomeActions';
@@ -18,6 +18,22 @@ import { compressImage } from '@/lib/image-compression';
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
+
+  // EFECTO QUIRÚRGICO: Sincroniza el perfil del usuario con Firestore al iniciar sesión
+  useEffect(() => {
+    if (user && firestore) {
+      const userRef = doc(firestore, 'users', user.uid);
+      // Solo actualizamos datos básicos para no sobreescribir el ROL si ya fue asignado
+      setDocumentNonBlocking(userRef, {
+        id: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        lastLogin: serverTimestamp(),
+      }, { merge: true });
+    }
+  }, [user, firestore]);
 
   if (isUserLoading) return (
     <div className="flex flex-col min-h-screen">
@@ -43,7 +59,7 @@ export default function Home() {
 
 function AuthenticatedHome() {
   const firestore = useFirestore();
-  const { isAdmin, isLoading: isProfileLoading } = useProfile();
+  const { isAdmin } = useProfile();
   
   const [openStore, setOpenStore] = useState(false);
   const [openCategory, setOpenCategory] = useState(false);
@@ -100,10 +116,9 @@ function AuthenticatedHome() {
     setIsRegistering(true);
     try {
       const ref = doc(collection(firestore, 'stores'));
-      // Al registrarse, por defecto es rol 'dueño' (esto debería manejarse en una Cloud Function o al crear el perfil)
       setDocumentNonBlocking(ref, { 
         id: ref.id, 
-        ownerId: (window as any).__USER_ID__, // Esto es solo ilustrativo, usa el hook useUser real
+        ownerId: (window as any).__USER_ID__, 
         mainCategoryId, 
         name, 
         address, 
