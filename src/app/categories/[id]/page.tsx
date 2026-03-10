@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { StoreCard } from '@/components/store/StoreCard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Store as StoreIcon, LayoutGrid, Loader2, ImageIcon, X, Sparkles, Settings, Edit3 } from 'lucide-react';
+import { ArrowLeft, Store as StoreIcon, LayoutGrid, Loader2, ImageIcon, X, Sparkles, Settings, Edit3, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
@@ -93,7 +93,7 @@ export default function CategoryPage() {
       if (editBase64Image) {
         data.imageUrl = editBase64Image;
       } else if (isImageRemoved) {
-        // Logica para remover imagen
+        data.imageUrl = null;
       }
 
       updateDocumentNonBlocking(catRef, data);
