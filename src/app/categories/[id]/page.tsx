@@ -121,9 +121,9 @@ export default function CategoryPage() {
         <main className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-50">
           <LayoutGrid className="w-16 h-16 text-slate-200 mb-4" />
           <h2 className="text-xl font-bold text-slate-400">Categoría no encontrada</h2>
-          <link href="/" className="mt-4">
+          <Link href="/" className="mt-4">
             <Button variant="default">Volver al Inicio</Button>
-          </link>
+          </Link>
         </main>
       </div>
     );
