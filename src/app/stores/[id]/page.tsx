@@ -428,77 +428,71 @@ export default function StorePage() {
                 </div>
               </div>
 
-              {/* Contenedor de Contacto Rediseñado (Horizontal) */}
-              <div className="bg-[#f5f2eb] p-6 rounded-[32px] border border-[#e5e7eb]/40">
-                <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 shrink-0">
-                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
-                            <MapPin className="w-5 h-5 text-slate-700" />
-                        </div>
-                        <span className="text-slate-600 text-sm font-bold max-w-[120px] leading-tight">
-                            {store?.address || 'Aguachica, Cesar'}
-                        </span>
+              {/* Contenedor de Contacto Reorganizado Verticalmente */}
+              <div className="bg-[#f5f2eb] p-6 rounded-[32px] border border-[#e5e7eb]/40 space-y-6">
+                {/* Dirección */}
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
+                        <MapPin className="w-5 h-5 text-slate-700" />
                     </div>
-
-                    <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="flex-1 h-14 bg-[#25d366] hover:bg-[#128c7e] text-white rounded-full font-black text-lg gap-3 shadow-xl shadow-green-200 border-none group transition-all">
-                            <MessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                            {store?.phoneNumber || '+57 300 000 0000'}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="p-0 border-none overflow-hidden max-w-[380px] rounded-[32px]">
-                         {/* WhatsApp Emulator Header */}
-                         <div className="bg-[#075e54] p-4 flex items-center gap-3">
-                            <Avatar className="h-10 w-10 border-2 border-white/20">
-                               <AvatarImage src={store?.imageUrl} />
-                               <AvatarFallback className="bg-white/10 text-white"><StoreIcon className="w-5 h-5" /></AvatarFallback>
-                            </Avatar>
-                            <div>
-                               <h4 className="text-white font-bold text-sm leading-none mb-1">{store?.name}</h4>
-                               <p className="text-white/70 text-[10px] flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" /> en línea
-                               </p>
-                            </div>
-                            <Button variant="ghost" size="icon" className="ml-auto text-white hover:bg-white/10" onClick={() => setIsChatOpen(false)}>
-                               <X className="w-4 h-4" />
-                            </Button>
-                         </div>
-                         
-                         {/* WhatsApp Emulator Body */}
-                         <div className="bg-[#e5ddd5] h-[400px] p-4 space-y-4 overflow-y-auto relative">
-                            <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://i.pinimg.com/originals/8a/3b/b1/8a3bb1356784013110294e09f583f773.jpg')] bg-repeat" />
-                            
-                            <div className="relative bg-white p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%]">
-                               <p className="text-xs font-medium text-slate-800">
-                                  ¡Hola! 👋 Gracias por contactar a <b>{store?.name}</b>. 
-                               </p>
-                               <span className="text-[9px] text-slate-400 block text-right mt-1">10:00 AM</span>
-                            </div>
-
-                            <div className="relative bg-white p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%]">
-                               <p className="text-xs font-medium text-slate-800">
-                                  ¿En qué podemos ayudarte hoy? Tenemos productos frescos esperándote.
-                               </p>
-                               <span className="text-[9px] text-slate-400 block text-right mt-1">10:01 AM</span>
-                            </div>
-                         </div>
-
-                         {/* WhatsApp Emulator Footer */}
-                         <div className="bg-white p-4 flex items-center gap-3 border-t">
-                            <div className="flex-1 bg-slate-100 rounded-full px-4 py-2 flex items-center justify-between">
-                               <span className="text-slate-400 text-sm">Escribe un mensaje...</span>
-                               <Tag className="w-4 h-4 text-slate-400 rotate-90" />
-                            </div>
-                            <Button size="icon" className="bg-[#075e54] hover:bg-[#128c7e] rounded-full h-10 w-10">
-                               <Send className="w-4 h-4 text-white fill-white" />
-                            </Button>
-                         </div>
-                      </DialogContent>
-                    </Dialog>
+                    <span className="text-slate-600 text-sm font-bold leading-tight">
+                        {store?.address || 'Aguachica, Cesar'}
+                    </span>
                 </div>
+
+                {/* Botón de WhatsApp debajo de la dirección */}
+                <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="w-full h-14 bg-[#25d366] hover:bg-[#128c7e] text-white rounded-full font-black text-lg gap-3 shadow-xl shadow-green-200 border-none group transition-all">
+                        <MessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                        {store?.phoneNumber || '+57 300 000 0000'}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="p-0 border-none overflow-hidden max-w-[380px] rounded-[32px]">
+                     <div className="bg-[#075e54] p-4 flex items-center gap-3">
+                        <Avatar className="h-10 w-10 border-2 border-white/20">
+                           <AvatarImage src={store?.imageUrl} />
+                           <AvatarFallback className="bg-white/10 text-white"><StoreIcon className="w-5 h-5" /></AvatarFallback>
+                        </Avatar>
+                        <div>
+                           <h4 className="text-white font-bold text-sm leading-none mb-1">{store?.name}</h4>
+                           <p className="text-white/70 text-[10px] flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" /> en línea
+                           </p>
+                        </div>
+                        <Button variant="ghost" size="icon" className="ml-auto text-white hover:bg-white/10" onClick={() => setIsChatOpen(false)}>
+                           <X className="w-4 h-4" />
+                        </Button>
+                     </div>
+                     <div className="bg-[#e5ddd5] h-[400px] p-4 space-y-4 overflow-y-auto relative">
+                        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://i.pinimg.com/originals/8a/3b/b1/8a3bb1356784013110294e09f583f773.jpg')] bg-repeat" />
+                        <div className="relative bg-white p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%]">
+                           <p className="text-xs font-medium text-slate-800">
+                              ¡Hola! 👋 Gracias por contactar a <b>{store?.name}</b>. 
+                           </p>
+                           <span className="text-[9px] text-slate-400 block text-right mt-1">10:00 AM</span>
+                        </div>
+                        <div className="relative bg-white p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%]">
+                           <p className="text-xs font-medium text-slate-800">
+                              ¿En qué podemos ayudarte hoy? Tenemos productos frescos esperándote.
+                           </p>
+                           <span className="text-[9px] text-slate-400 block text-right mt-1">10:01 AM</span>
+                        </div>
+                     </div>
+                     <div className="bg-white p-4 flex items-center gap-3 border-t">
+                        <div className="flex-1 bg-slate-100 rounded-full px-4 py-2 flex items-center justify-between">
+                           <span className="text-slate-400 text-sm">Escribe un mensaje...</span>
+                           <Tag className="w-4 h-4 text-slate-400 rotate-90" />
+                        </div>
+                        <Button size="icon" className="bg-[#075e54] hover:bg-[#128c7e] rounded-full h-10 w-10">
+                           <Send className="w-4 h-4 text-white fill-white" />
+                        </Button>
+                     </div>
+                  </DialogContent>
+                </Dialog>
               </div>
 
+              {/* Botones de Gestión Apilados Verticalmente */}
               {isOwner && (
                 <div className="flex flex-col gap-4 pt-4">
                     <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
@@ -538,7 +532,6 @@ export default function StorePage() {
                                     <Label>Nombre</Label>
                                     <Input name="name" placeholder="Ej: Pan de Queso" required />
                                 </div>
-                                
                                 <div className="space-y-2">
                                   <Label>Imagen del Producto</Label>
                                   <div className="flex flex-col gap-3">
@@ -570,7 +563,6 @@ export default function StorePage() {
                                     )}
                                   </div>
                                 </div>
-
                                 <div className="space-y-2">
                                     <Label>Precio (COP)</Label>
                                     <Input name="price" type="number" placeholder="Ej: 3000" required />
