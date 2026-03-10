@@ -449,6 +449,10 @@ export default function StorePage() {
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="p-0 border-none overflow-hidden max-w-[380px] rounded-[32px]">
+                     <DialogHeader className="sr-only">
+                        <DialogTitle>Chat con {store?.name}</DialogTitle>
+                        <DialogDescription>Habla directamente con el negocio a través de nuestro simulador de WhatsApp.</DialogDescription>
+                     </DialogHeader>
                      <div className="bg-[#075e54] p-4 flex items-center gap-3">
                         <Avatar className="h-10 w-10 border-2 border-white/20">
                            <AvatarImage src={store?.imageUrl} />
