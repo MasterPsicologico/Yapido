@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,12 +14,12 @@ import {
   CheckCircle2, 
   Package, 
   MessageCircle, 
-  Clock, 
   Loader2,
   Inbox,
   ArrowRight
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -27,29 +27,33 @@ import { es } from 'date-fns/locale';
 
 export default function DeliveryDashboardPage() {
   const { user } = useUser();
+  const { profile, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
   const [activeTab, setActiveTab] = useState("available");
 
-  // Consulta para pedidos disponibles (Listos para recoger y sin repartidor)
+  // Solo realizar consultas si el usuario es repartidor confirmado para evitar errores 403
+  const isConfirmedRepartidor = profile?.role === 'repartidor';
+
+  // Consulta para pedidos disponibles (Listos para recoger)
   const availableOrdersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isConfirmedRepartidor) return null;
     return query(
       collection(firestore, 'orders'),
       where('status', '==', 'ready_for_pickup'),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore]);
+  }, [firestore, isConfirmedRepartidor]);
 
   // Consulta para pedidos aceptados por el repartidor actual
   const myDeliveriesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
     return query(
       collection(firestore, 'orders'),
       where('deliveryDriverId', '==', user.uid),
-      where('status', 'in', ['shipped']),
+      where('status', '==', 'shipped'),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, user?.uid]);
+  }, [firestore, user?.uid, isConfirmedRepartidor]);
 
   const { data: availableOrders, isLoading: loadingAvailable } = useCollection(availableOrdersQuery);
   const { data: myDeliveries, isLoading: loadingMy } = useCollection(myDeliveriesQuery);
@@ -61,7 +65,7 @@ export default function DeliveryDashboardPage() {
     updateDocumentNonBlocking(orderRef, {
       deliveryDriverId: user.uid,
       deliveryDriverName: user.displayName || 'Repartidor Vitriniando',
-      status: 'shipped', // Cambia a "Enviado/En camino"
+      status: 'shipped',
     });
 
     toast({
@@ -84,6 +88,35 @@ export default function DeliveryDashboardPage() {
       description: "Buen trabajo, el pedido ha sido entregado.",
     });
   };
+
+  if (loadingProfile) {
+    return (
+      <div className="flex flex-col min-h-screen bg-slate-50">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!isConfirmedRepartidor) {
+    return (
+      <div className="flex flex-col min-h-screen bg-slate-50">
+        <Navbar />
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
+          <div className="w-20 h-20 bg-slate-200 rounded-full flex items-center justify-center text-slate-400">
+            <Truck className="w-10 h-10" />
+          </div>
+          <h2 className="text-2xl font-black italic uppercase">Acceso Restringido</h2>
+          <p className="text-slate-500 max-w-sm">Esta consola es exclusiva para repartidores autorizados. Por favor, regístrate primero.</p>
+          <Button variant="default" className="rounded-full h-12 px-8" asChild>
+            <a href="/delivery/register">Ir a Registro</a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
@@ -119,7 +152,7 @@ export default function DeliveryDashboardPage() {
             ) : availableOrders && availableOrders.length > 0 ? (
               <div className="grid gap-4">
                 {availableOrders.map(order => (
-                  <Card key={order.id} className="border-none rounded-[28px] shadow-sm overflow-hidden group hover:shadow-md transition-all">
+                  <Card key={order.id} className="border-none rounded-[28px] shadow-sm overflow-hidden group hover:shadow-md transition-all bg-white">
                     <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                       <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-2">
@@ -133,12 +166,12 @@ export default function DeliveryDashboardPage() {
                           <div className="flex items-center gap-1.5 text-xs font-bold text-primary">
                             <MapPin className="w-3.5 h-3.5" /> {order.storeName}
                           </div>
-                          <p className="text-[10px] text-slate-400 font-medium">Pedido realizado hace {order.createdAt ? format(order.createdAt.toDate(), "HH:mm") : 'un momento'}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">Pedido: {order.createdAt ? format(order.createdAt.toDate(), "HH:mm") : 'un momento'}</p>
                         </div>
                       </div>
                       <Button 
                         onClick={() => handleAcceptOrder(order.id)}
-                        className="rounded-full h-12 px-8 bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest gap-2 w-full sm:w-auto"
+                        className="rounded-full h-12 px-8 bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest gap-2 w-full sm:w-auto shadow-lg shadow-primary/20"
                       >
                         Aceptar Ruta <ArrowRight className="w-4 h-4" />
                       </Button>
@@ -156,7 +189,12 @@ export default function DeliveryDashboardPage() {
           </TabsContent>
 
           <TabsContent value="my-deliveries">
-            {myDeliveries && myDeliveries.length > 0 ? (
+            {loadingMy ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Cargando tus rutas...</p>
+              </div>
+            ) : myDeliveries && myDeliveries.length > 0 ? (
               <div className="grid gap-6">
                 {myDeliveries.map(order => (
                   <Card key={order.id} className="border-none rounded-[32px] shadow-lg overflow-hidden bg-white">
@@ -170,12 +208,12 @@ export default function DeliveryDashboardPage() {
                        </Badge>
                     </div>
                     <CardContent className="p-8 space-y-6">
-                      <div className="flex justify-between items-start">
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                          <div>
                             <h3 className="text-2xl font-black text-slate-900 italic tracking-tighter leading-none">{order.productName}</h3>
                             <p className="text-sm font-bold text-slate-400 mt-2 uppercase tracking-widest">Cliente: <span className="text-primary">{order.customerName}</span></p>
                          </div>
-                         <div className="text-right">
+                         <div className="text-left sm:text-right">
                             <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Total a cobrar</p>
                             <span className="text-2xl font-black text-slate-900 tracking-tighter">
                                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice)}

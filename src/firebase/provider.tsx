@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -6,13 +7,6 @@ import { Firestore, doc, serverTimestamp } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { setDocumentNonBlocking } from './non-blocking-updates';
-
-interface FirebaseProviderProps {
-  children: ReactNode;
-  firebaseApp: FirebaseApp;
-  firestore: Firestore;
-  auth: Auth;
-}
 
 interface UserAuthState {
   user: User | null;
@@ -47,6 +41,13 @@ export interface UserHookResult {
 
 export const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
 
+interface FirebaseProviderProps {
+  children: ReactNode;
+  firebaseApp: FirebaseApp;
+  firestore: Firestore;
+  auth: Auth;
+}
+
 export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   children,
   firebaseApp,
@@ -59,22 +60,18 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     userError: null,
   });
 
-  // Efecto Maestro: Maneja la suscripción de Auth y sincroniza perfiles
   useEffect(() => {
     if (!auth) return;
 
-    // 1. Manejar resultados de redireccionamiento (importante para móviles)
     getRedirectResult(auth).catch((error) => {
       console.error("Error al procesar redirección de login:", error);
     });
 
-    // 2. Suscribirse a cambios de estado
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => {
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
         
-        // 3. Sincronización Global de Perfil (Garantiza que el usuario exista en Firestore)
         if (firebaseUser && firestore) {
           const userRef = doc(firestore, 'users', firebaseUser.uid);
           setDocumentNonBlocking(userRef, {
@@ -83,7 +80,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             displayName: firebaseUser.displayName,
             photoURL: firebaseUser.photoURL,
             lastLogin: serverTimestamp(),
-            // No sobreescribimos el rol aquí si ya existe, usamos merge
+            // Garantizar un rol por defecto si no existe para las reglas de seguridad
+            role: 'cliente' 
           }, { merge: true });
         }
       },

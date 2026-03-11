@@ -7,15 +7,18 @@ service cloud.firestore {
     }
 
     function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let path = /databases/$(database)/documents/users/$(request.auth.uid);
+      return exists(path) ? get(path).data : null;
     }
 
     function isAdmin() {
-      return isSignedIn() && getUserData().role == 'admin';
+      let data = getUserData();
+      return isSignedIn() && data != null && data.role == 'admin';
     }
 
     function isRepartidor() {
-      return isSignedIn() && getUserData().role == 'repartidor';
+      let data = getUserData();
+      return isSignedIn() && data != null && data.role == 'repartidor';
     }
 
     match /users/{userId} {
@@ -53,7 +56,8 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         resource.data.customerId == request.auth.uid || 
         resource.data.storeOwnerId == request.auth.uid ||
-        isRepartidor() || 
+        resource.data.deliveryDriverId == request.auth.uid ||
+        (resource.data.status == 'ready_for_pickup' && isRepartidor()) ||
         isAdmin()
       );
       allow create: if isSignedIn();
