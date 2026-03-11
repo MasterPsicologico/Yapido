@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, doc, query, serverTimestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -88,6 +88,85 @@ export default function StorePage() {
     finally { setIsUpdatingInfo(false); }
   };
 
+  const handleAddCategory = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!id || !firestore) return;
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    
+    setIsAddingCategory(true);
+    try {
+      const catColRef = collection(firestore, 'stores', id, 'categories');
+      addDocumentNonBlocking(catColRef, {
+        name,
+        createdAt: serverTimestamp(),
+      });
+      toast({ title: "Sección creada exitosamente" });
+      setCatDialogOpen(false);
+    } catch (e) {
+      toast({ title: "Error al crear sección", variant: "destructive" });
+    } finally {
+      setIsAddingCategory(false);
+    }
+  };
+
+  const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsCompressingProduct(true);
+      try {
+        const comp = await compressImage(file);
+        setProductImage(comp);
+        toast({ title: "Imagen lista para publicar" });
+      } catch (err) {
+        toast({ title: "Error al procesar imagen", variant: "destructive" });
+      } finally {
+        setIsCompressingProduct(false);
+      }
+    }
+  };
+
+  const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!id || !firestore) return;
+    if (!productImage) {
+      toast({ title: "Falta la imagen", description: "Sube una foto del producto antes de continuar.", variant: "destructive" });
+      return;
+    }
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const price = Number(formData.get('price'));
+    const description = formData.get('description') as string;
+    const categoryId = formData.get('categoryId') as string;
+
+    if (!categoryId) {
+      toast({ title: "Selecciona una sección", variant: "destructive" });
+      return;
+    }
+
+    setIsAddingProduct(true);
+    try {
+      const prodColRef = collection(firestore, 'stores', id, 'categories', categoryId, 'products');
+      addDocumentNonBlocking(prodColRef, {
+        name,
+        price,
+        description,
+        imageUrl: productImage,
+        status: 'available',
+        storeId: id,
+        categoryId: categoryId,
+        createdAt: serverTimestamp(),
+      });
+      toast({ title: "Producto publicado en tu vitrina" });
+      setProdDialogOpen(false);
+      setProductImage(null);
+    } catch (e) {
+      toast({ title: "Error al publicar producto", variant: "destructive" });
+    } finally {
+      setIsAddingProduct(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-[#f3f4f6]">
       <Navbar />
@@ -111,7 +190,10 @@ export default function StorePage() {
                   prodDialogOpen={prodDialogOpen} setProdDialogOpen={setProdDialogOpen}
                   isAddingCategory={isAddingCategory} isAddingProduct={isAddingProduct} isCompressingProduct={isCompressingProduct}
                   productImage={productImage} setProductImage={setProductImage}
-                  categories={categories} onAddCategory={() => {}} onAddProduct={() => {}} onProductImageUpload={() => {}}
+                  categories={categories} 
+                  onAddCategory={handleAddCategory} 
+                  onAddProduct={handleAddProduct} 
+                  onProductImageUpload={handleProductImageUpload}
                 />
               )}
 
