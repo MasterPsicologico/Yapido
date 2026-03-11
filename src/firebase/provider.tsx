@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -6,7 +5,7 @@ import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
-import { setDocumentNonBlocking } from './non-blocking-updates';
+import { setDocumentNonBlocking, updateDocumentNonBlocking } from './non-blocking-updates';
 
 interface UserAuthState {
   user: User | null;
@@ -64,7 +63,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     if (!auth) return;
 
     getRedirectResult(auth).catch((error) => {
-      console.error("Error al procesar redirección de login:", error);
+      // Silenciar errores de redirección comunes
     });
 
     const unsubscribe = onAuthStateChanged(
@@ -75,30 +74,31 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         if (firebaseUser && firestore) {
           const userRef = doc(firestore, 'users', firebaseUser.uid);
           
-          // Verificamos si el usuario ya existe para no sobreescribir roles especiales
-          const docSnap = await getDoc(userRef);
-          
-          if (!docSnap.exists()) {
-            // Solo creamos el perfil con rol cliente si no existe
-            setDocumentNonBlocking(userRef, {
-              id: firebaseUser.uid,
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName,
-              photoURL: firebaseUser.photoURL,
-              createdAt: serverTimestamp(),
-              lastLogin: serverTimestamp(),
-              role: 'cliente' 
-            }, { merge: true });
-          } else {
-            // Actualizamos solo el último login
-            setDocumentNonBlocking(userRef, {
-              lastLogin: serverTimestamp(),
-            }, { merge: true });
+          try {
+            const docSnap = await getDoc(userRef);
+            if (!docSnap.exists()) {
+              // Crear perfil inicial si no existe
+              setDocumentNonBlocking(userRef, {
+                id: firebaseUser.uid,
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName,
+                photoURL: firebaseUser.photoURL,
+                createdAt: serverTimestamp(),
+                lastLogin: serverTimestamp(),
+                role: 'cliente' 
+              }, { merge: true });
+            } else {
+              // Actualizar último login de forma segura
+              updateDocumentNonBlocking(userRef, {
+                lastLogin: serverTimestamp(),
+              });
+            }
+          } catch (e) {
+            // Error silencioso en la sincronización inicial del perfil
           }
         }
       },
       (error) => {
-        console.error("FirebaseProvider: onAuthStateChanged error:", error);
         setUserAuthState({ user: null, isUserLoading: false, userError: error });
       }
     );
