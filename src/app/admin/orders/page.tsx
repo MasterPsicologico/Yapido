@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -12,14 +11,16 @@ import {
   CheckCircle2, 
   Truck, 
   MessageCircle, 
-  ChevronRight,
-  Package,
-  Search,
-  Loader2,
-  Calendar,
-  Zap
+  Package, 
+  Search, 
+  Loader2, 
+  Calendar, 
+  Zap,
+  User as UserIcon,
+  Store as StoreIcon
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -36,18 +37,37 @@ const STATUS_CONFIG = {
 
 export default function OrdersManagementPage() {
   const { user } = useUser();
+  const { profile, isAdmin } = useProfile();
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Consulta optimizada para reglas de seguridad: consulta por storeOwnerId directamente
+  // Consulta inteligente basada en el ROL del usuario
   const ordersQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !user?.uid || !profile) return null;
+    
+    const ordersRef = collection(firestore, 'orders');
+
+    // 1. Si es Admin, ve TODO el sistema
+    if (profile.role === 'admin') {
+      return query(ordersRef, orderBy('createdAt', 'desc'));
+    }
+    
+    // 2. Si es Dueño, ve sus VENTAS
+    if (profile.role === 'dueño') {
+      return query(
+        ordersRef, 
+        where('storeOwnerId', '==', user.uid),
+        orderBy('createdAt', 'desc')
+      );
+    }
+    
+    // 3. Por defecto (Cliente), ve sus COMPRAS
     return query(
-      collection(firestore, 'orders'), 
-      where('storeOwnerId', '==', user.uid),
+      ordersRef, 
+      where('customerId', '==', user.uid),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, user?.uid]);
+  }, [firestore, user?.uid, profile]);
 
   const { data: orders, isLoading } = useCollection(ordersQuery);
 
@@ -74,15 +94,19 @@ export default function OrdersManagementPage() {
               <ClipboardList className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">Gestión de Pedidos</h1>
-              <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Control de ventas en tiempo real</p>
+              <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">
+                {profile?.role === 'admin' ? 'Consola Maestro' : profile?.role === 'dueño' ? 'Mis Ventas' : 'Mis Pedidos'}
+              </h1>
+              <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">
+                {profile?.role === 'admin' ? 'Control global del ecosistema' : 'Historial y seguimiento en tiempo real'}
+              </p>
             </div>
           </div>
 
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input 
-              placeholder="Buscar por cliente o producto..." 
+              placeholder="Buscar pedido..." 
               className="pl-10 h-12 rounded-2xl border-none bg-white shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -93,7 +117,7 @@ export default function OrdersManagementPage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Sincronizando Vitrina...</p>
+            <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Sincronizando Pedidos...</p>
           </div>
         ) : filteredOrders && filteredOrders.length > 0 ? (
           <div className="grid gap-6">
@@ -118,61 +142,56 @@ export default function OrdersManagementPage() {
                             <Calendar className="w-3 h-3" />
                             {formattedDate}
                           </div>
-                          {order.deliveryDriverName && (
-                            <div className="flex items-center gap-1.5 text-secondary font-bold text-[10px] uppercase tracking-wider bg-secondary/10 px-3 py-1 rounded-full">
-                              <Truck className="w-3 h-3" />
-                              Repartidor: {order.deliveryDriverName}
-                            </div>
-                          )}
                         </div>
 
                         <div>
                           <h3 className="text-2xl font-black text-slate-900 leading-tight tracking-tighter italic">
                             {order.productName}
                           </h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Cliente:</span>
-                            <span className="text-sm font-black text-primary">{order.customerName}</span>
-                            <span className="text-xs font-bold text-slate-300">x{order.quantity} unidades</span>
+                          <div className="flex flex-col gap-1 mt-1">
+                            <div className="flex items-center gap-2">
+                              <UserIcon className="w-3.5 h-3.5 text-primary" />
+                              <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Cliente:</span>
+                              <span className="text-sm font-black text-slate-700">{order.customerName}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <StoreIcon className="w-3.5 h-3.5 text-secondary" />
+                              <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Tienda:</span>
+                              <span className="text-sm font-black text-slate-700">{order.storeName}</span>
+                            </div>
                           </div>
                         </div>
 
                         <div className="text-3xl font-black text-slate-900 tracking-tighter">
                           {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice)}
+                          <span className="text-xs font-bold text-slate-300 ml-2">x{order.quantity} un.</span>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                        <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-                          {order.status === 'pending' && (
-                            <Button 
-                              onClick={() => handleUpdateStatus(order.id, 'preparing')}
-                              className="rounded-full h-12 px-6 bg-blue-500 hover:bg-blue-600 text-white font-black text-xs uppercase tracking-widest gap-2"
-                            >
-                              <Package className="w-4 h-4" /> Preparar
-                            </Button>
-                          )}
-                          {order.status === 'preparing' && (
-                            <Button 
-                              onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')}
-                              className="rounded-full h-12 px-6 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-widest gap-2 shadow-lg shadow-orange-200"
-                            >
-                              <Zap className="w-4 h-4" /> Listo para Delivery
-                            </Button>
-                          )}
-                          {order.status !== 'delivered' && order.status !== 'cancelled' && (
-                            <Button 
-                              variant="outline"
-                              onClick={() => handleUpdateStatus(order.id, 'cancelled')}
-                              className="rounded-full h-12 px-6 border-slate-100 text-slate-400 hover:text-red-500 font-black text-xs uppercase tracking-widest"
-                            >
-                              Cancelar
-                            </Button>
-                          )}
-                        </div>
+                        {(profile?.role === 'admin' || profile?.role === 'dueño') && (
+                          <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+                            {order.status === 'pending' && (
+                              <Button 
+                                onClick={() => handleUpdateStatus(order.id, 'preparing')}
+                                className="rounded-full h-12 px-6 bg-blue-500 hover:bg-blue-600 text-white font-black text-xs uppercase tracking-widest gap-2"
+                              >
+                                <Package className="w-4 h-4" /> Preparar
+                              </Button>
+                            )}
+                            {order.status === 'preparing' && (
+                              <Button 
+                                onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')}
+                                className="rounded-full h-12 px-6 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-widest gap-2 shadow-lg shadow-orange-200"
+                              >
+                                <Zap className="w-4 h-4" /> Listo para Reparto
+                              </Button>
+                            )}
+                          </div>
+                        )}
                         
-                        <Button className="rounded-full h-12 px-6 bg-[#25d366] hover:bg-[#128c7e] text-white font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto">
-                          <MessageCircle className="w-4 h-4" /> WhatsApp
+                        <Button className="rounded-full h-12 px-6 bg-[#25d366] hover:bg-[#128c7e] text-white font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto shadow-lg shadow-green-100 border-none">
+                          <MessageCircle className="w-4 h-4" /> Chat WhatsApp
                         </Button>
                       </div>
                     </CardContent>
@@ -184,8 +203,8 @@ export default function OrdersManagementPage() {
         ) : (
           <div className="bg-white border-2 border-dashed border-slate-200 rounded-[40px] py-24 text-center px-6">
             <ClipboardList className="w-20 h-20 mx-auto text-slate-100 mb-6" />
-            <h3 className="text-2xl font-black text-slate-300 italic uppercase tracking-tighter">Sin pedidos aún</h3>
-            <p className="text-slate-400 text-sm font-medium mt-2 max-w-xs mx-auto">Cuando los clientes soliciten tus productos, aparecerán aquí con todo el detalle de venta.</p>
+            <h3 className="text-2xl font-black text-slate-300 italic uppercase tracking-tighter">Sin historial</h3>
+            <p className="text-slate-400 text-sm font-medium mt-2 max-w-xs mx-auto">Cuando realices o recibas pedidos, aparecerán aquí con todo el detalle de la transacción.</p>
           </div>
         )}
       </main>
