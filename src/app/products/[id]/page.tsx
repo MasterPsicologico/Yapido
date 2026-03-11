@@ -73,7 +73,7 @@ export default function ProductPage() {
   }).format(totalPrice);
 
   const handlePlaceOrder = async () => {
-    if (!user) {
+    if (!user || !firestore) {
       toast({ title: "Inicia sesión", description: "Debes estar logueado para realizar un pedido.", variant: "destructive" });
       return;
     }
@@ -86,6 +86,7 @@ export default function ProductPage() {
         customerName: user.displayName || 'Cliente Vitriniando',
         storeId: product.storeId,
         storeName: product.storeName || 'Tienda Local',
+        storeOwnerId: product.storeOwnerId, // Importante para reglas de seguridad
         productId: product.id,
         productName: product.name,
         quantity: quantity,

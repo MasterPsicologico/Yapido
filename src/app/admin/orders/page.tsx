@@ -20,7 +20,6 @@ import {
   Zap
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
-import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -40,22 +39,15 @@ export default function OrdersManagementPage() {
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const storesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return query(collection(firestore, 'stores'), where('ownerId', '==', user.uid));
-  }, [firestore, user?.uid]);
-
-  const { data: myStores } = useCollection(storesQuery);
-  const myStoreIds = myStores?.map(s => s.id) || [];
-
+  // Consulta optimizada para reglas de seguridad: consulta por storeOwnerId directamente
   const ordersQuery = useMemoFirebase(() => {
-    if (!firestore || myStoreIds.length === 0) return null;
+    if (!firestore || !user?.uid) return null;
     return query(
       collection(firestore, 'orders'), 
-      where('storeId', 'in', myStoreIds),
+      where('storeOwnerId', '==', user.uid),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, myStoreIds]);
+  }, [firestore, user?.uid]);
 
   const { data: orders, isLoading } = useCollection(ordersQuery);
 

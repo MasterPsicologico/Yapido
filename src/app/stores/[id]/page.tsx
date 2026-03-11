@@ -128,7 +128,7 @@ export default function StorePage() {
 
   const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!id || !firestore) return;
+    if (!id || !firestore || !store) return;
     if (!productImage) {
       toast({ title: "Falta la imagen", description: "Sube una foto del producto antes de continuar.", variant: "destructive" });
       return;
@@ -154,7 +154,8 @@ export default function StorePage() {
         imageUrl: productImage,
         status: 'available',
         storeId: id,
-        storeName: store?.name || 'Negocio Local',
+        storeName: store.name || 'Negocio Local',
+        storeOwnerId: store.ownerId,
         categoryId: categoryId,
         createdAt: serverTimestamp(),
       });
