@@ -16,7 +16,8 @@ import {
   Package,
   Search,
   Loader2,
-  Calendar
+  Calendar,
+  Zap
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -28,18 +29,17 @@ import { Input } from '@/components/ui/input';
 const STATUS_CONFIG = {
   pending: { label: "Pendiente", color: "bg-yellow-500", icon: Clock },
   preparing: { label: "Preparando", color: "bg-blue-500", icon: Package },
-  shipped: { label: "Enviado", color: "bg-purple-500", icon: Truck },
+  ready_for_pickup: { label: "Listo para Reparto", color: "bg-orange-500", icon: Zap },
+  shipped: { label: "En Camino", color: "bg-purple-500", icon: Truck },
   delivered: { label: "Entregado", color: "bg-green-500", icon: CheckCircle2 },
   cancelled: { label: "Cancelado", color: "bg-red-500", icon: CheckCircle2 }
 };
 
 export default function OrdersManagementPage() {
   const { user } = useUser();
-  const { isAdmin } = useProfile();
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Primero obtenemos la tienda del usuario para filtrar sus pedidos
   const storesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'stores'), where('ownerId', '==', user.uid));
@@ -48,7 +48,6 @@ export default function OrdersManagementPage() {
   const { data: myStores } = useCollection(storesQuery);
   const myStoreIds = myStores?.map(s => s.id) || [];
 
-  // Obtenemos los pedidos de sus tiendas
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || myStoreIds.length === 0) return null;
     return query(
@@ -114,7 +113,6 @@ export default function OrdersManagementPage() {
               return (
                 <Card key={order.id} className="border-none rounded-[32px] overflow-hidden shadow-md bg-white group hover:shadow-xl transition-all duration-500">
                   <div className="flex flex-col lg:flex-row">
-                    {/* Barra de estado lateral/superior */}
                     <div className={`w-full lg:w-2 ${status.color}`} />
                     
                     <CardContent className="flex-1 p-6 lg:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
@@ -128,6 +126,12 @@ export default function OrdersManagementPage() {
                             <Calendar className="w-3 h-3" />
                             {formattedDate}
                           </div>
+                          {order.deliveryDriverName && (
+                            <div className="flex items-center gap-1.5 text-secondary font-bold text-[10px] uppercase tracking-wider bg-secondary/10 px-3 py-1 rounded-full">
+                              <Truck className="w-3 h-3" />
+                              Repartidor: {order.deliveryDriverName}
+                            </div>
+                          )}
                         </div>
 
                         <div>
@@ -158,18 +162,10 @@ export default function OrdersManagementPage() {
                           )}
                           {order.status === 'preparing' && (
                             <Button 
-                              onClick={() => handleUpdateStatus(order.id, 'shipped')}
-                              className="rounded-full h-12 px-6 bg-purple-500 hover:bg-purple-600 text-white font-black text-xs uppercase tracking-widest gap-2"
+                              onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')}
+                              className="rounded-full h-12 px-6 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-widest gap-2 shadow-lg shadow-orange-200"
                             >
-                              <Truck className="w-4 h-4" /> Enviar
-                            </Button>
-                          )}
-                          {(order.status === 'shipped' || order.status === 'preparing') && (
-                            <Button 
-                              onClick={() => handleUpdateStatus(order.id, 'delivered')}
-                              className="rounded-full h-12 px-6 bg-green-500 hover:bg-green-600 text-white font-black text-xs uppercase tracking-widest gap-2"
-                            >
-                              <CheckCircle2 className="w-4 h-4" /> Entregado
+                              <Zap className="w-4 h-4" /> Listo para Delivery
                             </Button>
                           )}
                           {order.status !== 'delivered' && order.status !== 'cancelled' && (

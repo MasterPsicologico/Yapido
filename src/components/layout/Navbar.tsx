@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Store, ShoppingBag, User, Search, Menu, Info, Home as HomeIcon, LogOut, ClipboardList } from 'lucide-react';
+import { Store, ShoppingBag, User, Search, Menu, Info, Home as HomeIcon, LogOut, ClipboardList, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,6 +15,7 @@ import {
 import { useUser, useAuth } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useProfile } from '@/firebase/auth/use-profile';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,10 +27,13 @@ import {
 
 export function Navbar() {
   const { user, isUserLoading } = useUser();
+  const { profile } = useProfile();
   const auth = useAuth();
 
   const handleLogin = () => initiateGoogleSignIn(auth);
   const handleLogout = () => auth.signOut();
+
+  const isRepartidor = profile?.role === 'repartidor';
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b">
@@ -70,6 +74,17 @@ export function Navbar() {
                       <Store className="w-5 h-5 text-primary" />
                       Inventario y Tienda
                     </Link>
+                    {isRepartidor ? (
+                      <Link href="/delivery/dashboard" className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-muted rounded-lg transition-colors">
+                        <Truck className="w-5 h-5 text-secondary" />
+                        Consola Delivery
+                      </Link>
+                    ) : (
+                      <Link href="/delivery/register" className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-muted rounded-lg transition-colors">
+                        <Truck className="w-5 h-5 text-secondary" />
+                        Quiero ser Repartidor
+                      </Link>
+                    )}
                   </>
                 )}
               </nav>
@@ -103,6 +118,14 @@ export function Navbar() {
                       Pedidos
                     </Button>
                   </Link>
+                  {isRepartidor && (
+                    <Link href="/delivery/dashboard">
+                      <Button variant="secondary" className="hidden lg:flex items-center gap-2 bg-secondary/10 text-secondary border-none hover:bg-secondary/20 rounded-full h-9">
+                        <Truck className="w-4 h-4" />
+                        Delivery
+                      </Button>
+                    </Link>
+                  )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -126,6 +149,15 @@ export function Navbar() {
                           <span>Mis Pedidos</span>
                         </Link>
                       </DropdownMenuItem>
+                      {isRepartidor && (
+                        <DropdownMenuItem asChild>
+                          <Link href="/delivery/dashboard">
+                            <Truck className="mr-2 h-4 w-4 text-secondary" />
+                            <span>Dashboard Delivery</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Cerrar Sesión</span>

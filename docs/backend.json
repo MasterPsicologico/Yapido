@@ -18,37 +18,6 @@
       },
       "required": ["id", "email", "role"]
     },
-    "MainCategory": {
-      "title": "MainCategory",
-      "type": "object",
-      "description": "Categoría global creada por el admin para agrupar tiendas.",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "description": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "name", "imageUrl"]
-    },
-    "Store": {
-      "title": "Store",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "ownerId": { "type": "string" },
-        "mainCategoryId": { "type": "string" },
-        "name": { "type": "string" },
-        "description": { "type": "string" },
-        "address": { "type": "string" },
-        "phoneNumber": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "status": { "type": "string" },
-        "isPro": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "ownerId", "mainCategoryId", "name", "status"]
-    },
     "Order": {
       "title": "Order",
       "type": "object",
@@ -66,8 +35,10 @@
         "totalPrice": { "type": "number" },
         "status": { 
           "type": "string", 
-          "enum": ["pending", "preparing", "shipped", "delivered", "cancelled"] 
+          "enum": ["pending", "preparing", "ready_for_pickup", "shipped", "delivered", "cancelled"] 
         },
+        "deliveryDriverId": { "type": "string" },
+        "deliveryDriverName": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "customerId", "storeId", "productId", "quantity", "totalPrice", "status"]
@@ -87,19 +58,11 @@
         }
       },
       {
-        "path": "/mainCategories/{categoryId}",
-        "definition": {
-          "entityName": "MainCategory",
-          "schema": { "$ref": "#/backend/entities/MainCategory" },
-          "description": "Categorías globales controladas por el Admin."
-        }
-      },
-      {
         "path": "/orders/{orderId}",
         "definition": {
           "entityName": "Order",
           "schema": { "$ref": "#/backend/entities/Order" },
-          "description": "Historial de pedidos para clientes y vendedores."
+          "description": "Historial de pedidos para clientes, vendedores y repartidores."
         }
       }
     ]
