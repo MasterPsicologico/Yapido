@@ -15,6 +15,9 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase';
+import { toast } from '@/hooks/use-toast';
 
 interface StoreOwnerActionsProps {
   catDialogOpen: boolean;
