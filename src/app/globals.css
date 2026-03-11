@@ -64,6 +64,24 @@
   100% { background-position: 0% 50%; }
 }
 
+@keyframes progress-loading {
+  0% { width: 0%; transform: translateX(-100%); }
+  50% { width: 70%; transform: translateX(0%); }
+  100% { width: 100%; transform: translateX(100%); }
+}
+
 .animate-gradient {
   animation: gradient 3s ease infinite;
+}
+
+.animate-progress-loading {
+  animation: progress-loading 2s ease-in-out infinite;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
