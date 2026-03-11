@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -52,11 +53,12 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      // Permitimos listar a cualquier usuario autenticado. 
-      // La privacidad se garantiza mediante los filtros en el cliente y la regla 'get' de abajo.
+      // Regla vital para evitar error 403 en consultas (list): 
+      // Permitimos listar si está autenticado. La privacidad se maneja en el cliente con filtros 
+      // y se refuerza en la regla 'get' individual.
       allow list: if isSignedIn();
       
-      // La seguridad real ocurre aquí: solo el cliente, el dueño o el repartidor ven el detalle.
+      // Seguridad estricta para el acceso individual al documento.
       allow get: if isSignedIn() && (
         resource.data.customerId == request.auth.uid || 
         resource.data.storeOwnerId == request.auth.uid || 

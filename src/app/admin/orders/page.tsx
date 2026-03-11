@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +18,9 @@ import {
   Calendar, 
   Zap,
   User as UserIcon,
-  Store as StoreIcon
+  Store as StoreIcon,
+  ShoppingBag,
+  ArrowRight
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -25,13 +28,14 @@ import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
+import Link from 'next/link';
 
 const STATUS_CONFIG = {
   pending: { label: "Pendiente", color: "bg-yellow-500", icon: Clock },
   preparing: { label: "Preparando", color: "bg-blue-500", icon: Package },
   ready_for_pickup: { label: "Listo para Reparto", color: "bg-orange-500", icon: Zap },
   shipped: { label: "En Camino", color: "bg-purple-500", icon: Truck },
-  delivered: { label: "Entregado", color: "bg-green-50", icon: CheckCircle2 },
+  delivered: { label: "Entregado", color: "bg-green-500", icon: CheckCircle2 },
   cancelled: { label: "Cancelado", color: "bg-red-500", icon: CheckCircle2 }
 };
 
@@ -42,8 +46,8 @@ export default function OrdersManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Consulta inteligente basada en el ROL del usuario
-  // Solo se dispara si el perfil está cargado y coincide con el usuario autenticado
   const ordersQuery = useMemoFirebase(() => {
+    // IMPORTANTE: Solo disparamos la consulta si el perfil está cargado y coincide con el usuario
     if (!firestore || !user?.uid || !profile || profile.id !== user.uid) return null;
     
     const ordersRef = collection(firestore, 'orders');
@@ -55,22 +59,31 @@ export default function OrdersManagementPage() {
     
     // 2. Si es Dueño, ve sus VENTAS
     if (profile.role === 'dueño') {
+      // Simplificamos eliminando orderBy en el servidor para evitar requerir índices compuestos manuales
       return query(
         ordersRef, 
-        where('storeOwnerId', '==', user.uid),
-        orderBy('createdAt', 'desc')
+        where('storeOwnerId', '==', user.uid)
       );
     }
     
     // 3. Por defecto (Cliente), ve sus COMPRAS
     return query(
       ordersRef, 
-      where('customerId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('customerId', '==', user.uid)
     );
   }, [firestore, user?.uid, profile]);
 
-  const { data: orders, isLoading: loadingOrders } = useCollection(ordersQuery);
+  const { data: ordersData, isLoading: loadingOrders } = useCollection(ordersQuery);
+
+  // Ordenamos en el cliente para máxima compatibilidad y evitar errores 403 por índices faltantes
+  const orders = useMemo(() => {
+    if (!ordersData) return [];
+    return [...ordersData].sort((a, b) => {
+      const dateA = a.createdAt?.toDate?.() || new Date(0);
+      const dateB = b.createdAt?.toDate?.() || new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [ordersData]);
 
   const handleUpdateStatus = (orderId: string, newStatus: string) => {
     if (!firestore) return;
@@ -120,7 +133,7 @@ export default function OrdersManagementPage() {
         {isGlobalLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Sincronizando Pedidos...</p>
+            <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Sincronizando Vitrina...</p>
           </div>
         ) : filteredOrders && filteredOrders.length > 0 ? (
           <div className="grid gap-6">
@@ -187,7 +200,7 @@ export default function OrdersManagementPage() {
                                 onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')}
                                 className="rounded-full h-12 px-6 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-widest gap-2 shadow-lg shadow-orange-200"
                               >
-                                <Zap className="w-4 h-4" /> Listo para Reparto
+                                <Zap className="w-4 h-4" /> Listo para Delivery
                               </Button>
                             )}
                           </div>
@@ -204,10 +217,25 @@ export default function OrdersManagementPage() {
             })}
           </div>
         ) : (
-          <div className="bg-white border-2 border-dashed border-slate-200 rounded-[40px] py-24 text-center px-6">
-            <ClipboardList className="w-20 h-20 mx-auto text-slate-100 mb-6" />
-            <h3 className="text-2xl font-black text-slate-300 italic uppercase tracking-tighter">Sin historial</h3>
-            <p className="text-slate-400 text-sm font-medium mt-2 max-w-xs mx-auto">Cuando realices o recibas pedidos, aparecerán aquí con todo el detalle de la transacción.</p>
+          <div className="bg-white border-none rounded-[40px] py-24 text-center px-6 shadow-sm flex flex-col items-center justify-center animate-in fade-in zoom-in duration-500">
+            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-8">
+              <ShoppingBag className="w-12 h-12 text-slate-200" />
+            </div>
+            <h3 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter leading-none">
+              {profile?.role === 'dueño' ? 'Aún no tienes ventas' : '¿Qué vas a pedir hoy?'}
+            </h3>
+            <p className="text-slate-400 text-sm font-bold mt-4 max-w-sm mx-auto uppercase tracking-widest leading-relaxed">
+              {profile?.role === 'dueño' 
+                ? 'Cuando tus clientes empiecen a vitrinear y comprar, sus pedidos aparecerán aquí para que los gestiones.'
+                : 'Tu historial de compras está vacío. ¡Es un excelente momento para descubrir productos increíbles en las tiendas de tu ciudad!'}
+            </p>
+            {profile?.role !== 'dueño' && (
+              <Link href="/" className="mt-10">
+                <Button className="h-14 px-10 rounded-full bg-primary hover:bg-primary/90 text-white font-black text-lg gap-3 shadow-xl shadow-primary/20">
+                  Explorar Vitrinas <ArrowRight className="w-5 h-5" />
+                </Button>
+              </Link>
+            )}
           </div>
         )}
       </main>
