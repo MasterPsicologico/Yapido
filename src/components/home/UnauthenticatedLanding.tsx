@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { Camera, Loader2, LogIn } from 'lucide-react';
+import { Camera, Loader2, LogIn, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { useDoc, useFirestore, updateDocumentNonBlocking, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
@@ -18,14 +18,34 @@ interface UnauthenticatedLandingProps {
   isEditor?: boolean;
 }
 
+const CACHE_KEY = 'vitriniando_cover_cache';
+
 export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }: UnauthenticatedLandingProps) {
   const firestore = useFirestore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [localCoverImage, setLocalCoverImage] = useState<string | null>(null);
 
   // Obtener la configuración de la app (Imagen de Portada)
   const configRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'home'), [firestore]);
-  const { data: appConfig, isLoading } = useDoc(configRef);
+  const { data: appConfig } = useDoc(configRef);
+
+  // Sistema de Caché Inteligente
+  useEffect(() => {
+    // 1. Intentar cargar desde el dispositivo inmediatamente
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      setLocalCoverImage(cached);
+    }
+  }, []);
+
+  useEffect(() => {
+    // 2. Si la nube tiene una imagen nueva, actualizar el caché
+    if (appConfig?.coverImageUrl && appConfig.coverImageUrl !== localCoverImage) {
+      setLocalCoverImage(appConfig.coverImageUrl);
+      localStorage.setItem(CACHE_KEY, appConfig.coverImageUrl);
+    }
+  }, [appConfig?.coverImageUrl, localCoverImage]);
 
   const handleLogin = () => initiateGoogleSignIn(auth);
 
@@ -51,6 +71,10 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
         }, { merge: true });
       }
       
+      // Actualizar localmente también
+      setLocalCoverImage(compressed);
+      localStorage.setItem(CACHE_KEY, compressed);
+      
       toast({ title: "Portada actualizada con éxito" });
     } catch (error) {
       toast({ title: "Error al actualizar portada", variant: "destructive" });
@@ -59,37 +83,36 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
     }
   };
 
-  // NATIVAMENTE: Si no hay imagen en la DB, no mostramos el paisaje antiguo. 
-  // Se prefiere un placeholder coherente o nada hasta que cargue.
-  const coverImage = appConfig?.coverImageUrl || null;
+  const coverImage = localCoverImage || appConfig?.coverImageUrl || null;
 
   return (
     <div className={`relative ${isEditor ? 'h-full' : 'h-[100dvh]'} w-full overflow-hidden flex items-center justify-center bg-[#0a0a0a]`}>
-      {/* Portada Universal */}
+      {/* Portada Universal con Caché */}
       <div className="absolute inset-0 z-0">
         {coverImage && (
           <Image 
             src={coverImage} 
             alt="Portada Vitriniando" 
             fill 
-            className="object-cover opacity-100 transition-opacity duration-700" 
+            className="object-cover opacity-100 transition-opacity duration-1000" 
             priority 
           />
         )}
         <div className="absolute inset-0 bg-black/5"></div>
       </div>
 
-      {/* Botón de Login Superior Derecho (90% Transparente) */}
+      {/* Acceso Superior Derecho Minimalista (Evita obstrucción) */}
       {!user && !isEditor && (
-        <div className="absolute top-8 right-8 z-30">
-          <Button 
-            onClick={handleLogin}
-            variant="ghost"
-            className="bg-white/10 backdrop-blur-xl border border-white/10 text-white rounded-full px-8 h-14 font-black hover:bg-white/20 gap-3 transition-all shadow-2xl tracking-widest text-sm uppercase italic"
-          >
-            <LogIn className="w-5 h-5" />
+        <div 
+          onClick={handleLogin}
+          className="absolute top-6 right-6 z-30 flex items-center gap-3 cursor-pointer group"
+        >
+          <span className="text-white/40 group-hover:text-white/90 transition-colors text-[11px] font-black uppercase tracking-[0.3em] italic">
             INGRESAR
-          </Button>
+          </span>
+          <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-2xl group-hover:bg-white/20 transition-all">
+            <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white" />
+          </div>
         </div>
       )}
 
@@ -106,14 +129,14 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
           <Button 
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="pointer-events-auto w-32 h-32 rounded-full bg-white/10 backdrop-blur-2xl border-2 border-white/20 text-white hover:bg-white/30 transition-all flex flex-col items-center justify-center gap-2 shadow-2xl group border-dashed"
+            className="pointer-events-auto w-24 h-24 rounded-full bg-white/5 backdrop-blur-2xl border border-white/10 text-white/50 hover:bg-white/10 transition-all flex flex-col items-center justify-center gap-2 shadow-2xl group border-dashed"
           >
             {isUploading ? (
-              <Loader2 className="w-10 h-10 animate-spin" />
+              <Loader2 className="w-8 h-8 animate-spin" />
             ) : (
               <>
-                <Camera className="w-10 h-10 group-hover:scale-110 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Portada</span>
+                <Camera className="w-8 h-8 group-hover:scale-110 transition-transform" />
+                <span className="text-[8px] font-black uppercase tracking-[0.2em]">Portada</span>
               </>
             )}
           </Button>
