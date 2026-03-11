@@ -37,12 +37,13 @@ const STATUS_CONFIG = {
 
 export default function OrdersManagementPage() {
   const { user } = useUser();
-  const { profile, isAdmin } = useProfile();
+  const { profile, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
 
   // Consulta inteligente basada en el ROL del usuario
   const ordersQuery = useMemoFirebase(() => {
+    // Es crítico esperar a que el perfil esté cargado para evitar errores de permisos
     if (!firestore || !user?.uid || !profile) return null;
     
     const ordersRef = collection(firestore, 'orders');
@@ -69,7 +70,7 @@ export default function OrdersManagementPage() {
     );
   }, [firestore, user?.uid, profile]);
 
-  const { data: orders, isLoading } = useCollection(ordersQuery);
+  const { data: orders, isLoading: loadingOrders } = useCollection(ordersQuery);
 
   const handleUpdateStatus = (orderId: string, newStatus: string) => {
     if (!firestore) return;
@@ -82,6 +83,8 @@ export default function OrdersManagementPage() {
     o.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     o.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const isGlobalLoading = loadingProfile || loadingOrders;
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
@@ -114,7 +117,7 @@ export default function OrdersManagementPage() {
           </div>
         </div>
 
-        {isLoading ? (
+        {isGlobalLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
             <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Sincronizando Pedidos...</p>

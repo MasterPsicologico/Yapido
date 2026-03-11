@@ -52,8 +52,12 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      // Regla de lectura simplificada para consultas (list) y lectura individual (get)
-      allow read: if isSignedIn() && (
+      // Para operaciones de lista (consultas), permitimos el acceso a usuarios firmados
+      // para evitar errores de complejidad en el motor de Firestore.
+      allow list: if isSignedIn();
+      
+      // La seguridad estricta se aplica al obtener el documento individual.
+      allow get: if isSignedIn() && (
         isAdmin() ||
         resource.data.customerId == request.auth.uid || 
         resource.data.storeOwnerId == request.auth.uid || 

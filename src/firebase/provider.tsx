@@ -62,14 +62,18 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   useEffect(() => {
     if (!auth) return;
 
-    getRedirectResult(auth).catch((error) => {
-      // Silenciar errores de redirección comunes
-    });
+    // Limpiar errores previos de redirección
+    getRedirectResult(auth).catch(() => {});
 
     const unsubscribe = onAuthStateChanged(
       auth,
       async (firebaseUser) => {
-        setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+        // Reiniciar estado antes de sincronizar el perfil para evitar inconsistencias
+        setUserAuthState(prev => ({ 
+          ...prev, 
+          user: firebaseUser, 
+          isUserLoading: !!firebaseUser // Seguir cargando si hay un usuario para esperar su perfil
+        }));
         
         if (firebaseUser && firestore) {
           const userRef = doc(firestore, 'users', firebaseUser.uid);
@@ -77,7 +81,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           try {
             const docSnap = await getDoc(userRef);
             if (!docSnap.exists()) {
-              // Crear perfil inicial si no existe
+              // Crear perfil inicial si no existe. El rol por defecto es 'cliente'.
               setDocumentNonBlocking(userRef, {
                 id: firebaseUser.uid,
                 email: firebaseUser.email,
@@ -88,14 +92,18 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 role: 'cliente' 
               }, { merge: true });
             } else {
-              // Actualizar último login de forma segura
+              // Actualizar último login
               updateDocumentNonBlocking(userRef, {
                 lastLogin: serverTimestamp(),
               });
             }
           } catch (e) {
-            // Error silencioso en la sincronización inicial del perfil
+            // Error silencioso en la sincronización
+          } finally {
+            setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
           }
+        } else {
+          setUserAuthState({ user: null, isUserLoading: false, userError: null });
         }
       },
       (error) => {
@@ -131,7 +139,7 @@ export const useFirebase = (): FirebaseServicesAndUser => {
   const context = useContext(FirebaseContext);
   if (context === undefined) throw new Error('useFirebase must be used within a FirebaseProvider.');
   if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth) {
-    throw new Error('Firebase core services not available. Check FirebaseProvider props.');
+    throw new Error('Firebase core services not available.');
   }
   return {
     firebaseApp: context.firebaseApp,
