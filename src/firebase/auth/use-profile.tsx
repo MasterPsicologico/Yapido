@@ -19,7 +19,8 @@ export function useProfile() {
   const { data: profileData, isLoading: isProfileLoading } = useDoc(userDocRef);
 
   // Validación crítica: asegurar que el perfil cargado pertenezca al UID actual
-  const profile = profileData?.id === user?.uid ? profileData : null;
+  // Si el perfil es nulo o no coincide con el usuario logueado, devolvemos null para evitar inconsistencias
+  const profile = (profileData && profileData.id === user?.uid) ? profileData : null;
 
   return {
     profile,

@@ -84,7 +84,7 @@ export default function OrdersManagementPage() {
     o.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const isGlobalLoading = loadingProfile || loadingOrders;
+  const isGlobalLoading = loadingProfile || (ordersQuery !== null && loadingOrders);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
