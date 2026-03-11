@@ -20,7 +20,8 @@ import {
   User as UserIcon,
   Store as StoreIcon,
   ShoppingBag,
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -47,8 +48,8 @@ export default function OrdersManagementPage() {
 
   // Consulta inteligente basada en el ROL del usuario
   const ordersQuery = useMemoFirebase(() => {
-    // IMPORTANTE: Solo disparamos la consulta si el perfil está cargado y coincide con el usuario
-    if (!firestore || !user?.uid || !profile || profile.id !== user.uid) return null;
+    // IMPORTANTE: Solo disparamos la consulta si el perfil está totalmente cargado y tiene un rol
+    if (!firestore || !user?.uid || !profile || !profile.role || profile.id !== user.uid) return null;
     
     const ordersRef = collection(firestore, 'orders');
 
@@ -59,7 +60,6 @@ export default function OrdersManagementPage() {
     
     // 2. Si es Dueño, ve sus VENTAS
     if (profile.role === 'dueño') {
-      // Simplificamos eliminando orderBy en el servidor para evitar requerir índices compuestos manuales
       return query(
         ordersRef, 
         where('storeOwnerId', '==', user.uid)
@@ -75,7 +75,7 @@ export default function OrdersManagementPage() {
 
   const { data: ordersData, isLoading: loadingOrders } = useCollection(ordersQuery);
 
-  // Ordenamos en el cliente para máxima compatibilidad y evitar errores 403 por índices faltantes
+  // Ordenamos en el cliente para máxima compatibilidad
   const orders = useMemo(() => {
     if (!ordersData) return [];
     return [...ordersData].sort((a, b) => {
@@ -119,15 +119,17 @@ export default function OrdersManagementPage() {
             </div>
           </div>
 
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input 
-              placeholder="Buscar pedido..." 
-              className="pl-10 h-12 rounded-2xl border-none bg-white shadow-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+          {(profile?.role === 'admin' || (orders && orders.length > 0)) && (
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input 
+                placeholder="Buscar pedido..." 
+                className="pl-10 h-12 rounded-2xl border-none bg-white shadow-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          )}
         </div>
 
         {isGlobalLoading ? (
@@ -217,22 +219,28 @@ export default function OrdersManagementPage() {
             })}
           </div>
         ) : (
-          <div className="bg-white border-none rounded-[40px] py-24 text-center px-6 shadow-sm flex flex-col items-center justify-center animate-in fade-in zoom-in duration-500">
-            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-8">
-              <ShoppingBag className="w-12 h-12 text-slate-200" />
+          <div className="bg-white border-none rounded-[40px] py-20 text-center px-6 shadow-sm flex flex-col items-center justify-center animate-in fade-in zoom-in duration-700">
+            <div className="relative mb-8">
+              <div className="absolute inset-0 bg-primary/10 rounded-full animate-ping duration-[3000ms]" />
+              <div className="relative w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center">
+                <ShoppingBag className="w-12 h-12 text-primary/30" />
+              </div>
             </div>
-            <h3 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter leading-none">
-              {profile?.role === 'dueño' ? 'Aún no tienes ventas' : '¿Qué vas a pedir hoy?'}
+            
+            <h3 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter leading-none mb-4">
+              {profile?.role === 'dueño' ? 'Aún no tienes ventas' : '¿Listo para tu primer pedido?'}
             </h3>
-            <p className="text-slate-400 text-sm font-bold mt-4 max-w-sm mx-auto uppercase tracking-widest leading-relaxed">
+            
+            <p className="text-slate-400 text-sm font-bold max-w-sm mx-auto uppercase tracking-widest leading-relaxed mb-10">
               {profile?.role === 'dueño' 
                 ? 'Cuando tus clientes empiecen a vitrinear y comprar, sus pedidos aparecerán aquí para que los gestiones.'
-                : 'Tu historial de compras está vacío. ¡Es un excelente momento para descubrir productos increíbles en las tiendas de tu ciudad!'}
+                : 'Tu historial de compras está vacío. ¡Es el momento perfecto para descubrir productos increíbles en las mejores vitrinas de tu ciudad!'}
             </p>
+            
             {profile?.role !== 'dueño' && (
-              <Link href="/" className="mt-10">
-                <Button className="h-14 px-10 rounded-full bg-primary hover:bg-primary/90 text-white font-black text-lg gap-3 shadow-xl shadow-primary/20">
-                  Explorar Vitrinas <ArrowRight className="w-5 h-5" />
+              <Link href="/">
+                <Button className="h-16 px-12 rounded-full bg-primary hover:bg-primary/90 text-white font-black text-lg gap-3 shadow-2xl shadow-primary/30 transition-all hover:scale-105">
+                  <Sparkles className="w-6 h-6 text-yellow-300" /> Empezar a Vitrinear
                 </Button>
               </Link>
             )}
