@@ -1,7 +1,7 @@
 
 "use client";
 
-import { LayoutGrid, Store as StoreIcon, Plus, Loader2, ImageIcon, X, Sparkles } from 'lucide-react';
+import { LayoutGrid, Store as StoreIcon, Plus, Loader2, ImageIcon, X, Sparkles, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from 'next/image';
+import { UnauthenticatedLanding } from './UnauthenticatedLanding';
+import { useAuth, useUser } from '@/firebase';
 
 interface HomeActionsProps {
   isAdmin: boolean;
@@ -36,10 +38,28 @@ export function HomeActions({
   isRegistering, isCompressing, onImageUpload, onCategorySubmit, onStoreSubmit
 }: HomeActionsProps) {
   
+  const auth = useAuth();
+  const { user } = useUser();
   const currentPreviewImage = base64Image || (isImageRemoved ? null : editingCategory?.imageUrl);
 
   return (
     <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+      {/* Botón de Gestión de Portada: Solo para ADMIN */}
+      {isAdmin && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="rounded-full h-12 px-6 gap-2 border-primary/20 hover:bg-primary/5 text-primary font-bold w-full sm:w-auto">
+              <Camera className="w-4 h-4" /> Portada App
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl p-0 overflow-hidden border-none bg-black">
+            <div className="h-[70vh]">
+              <UnauthenticatedLanding auth={auth} isAdmin={true} user={user} isEditor={true} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Botón de Categoría: Solo visible para el ADMIN */}
       {isAdmin && (
         <Dialog open={openCategory} onOpenChange={setOpenCategory}>

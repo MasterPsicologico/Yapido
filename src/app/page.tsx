@@ -17,8 +17,8 @@ import { compressImage } from '@/lib/image-compression';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
-  const { isAdmin } = useProfile();
   const auth = useAuth();
+  const { isAdmin } = useProfile();
 
   if (isUserLoading) return (
     <div className="flex flex-col min-h-screen">
@@ -34,15 +34,10 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-      <Navbar />
+      {user && <Navbar />}
       <main className="flex-1 w-full overflow-x-hidden">
-        {/* Si no hay usuario, mostramos el Landing. Si es Admin, el Landing tiene controles. */}
         {user ? (
-          <div className="flex flex-col">
-            {/* El Admin puede ver el Landing para editar la portada incluso logueado */}
-            {isAdmin && <UnauthenticatedLanding auth={auth} isAdmin={isAdmin} user={user} />}
-            <AuthenticatedHome />
-          </div>
+          <AuthenticatedHome />
         ) : (
           <UnauthenticatedLanding auth={auth} isAdmin={false} user={null} />
         )}
