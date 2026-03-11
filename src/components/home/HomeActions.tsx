@@ -53,6 +53,10 @@ export function HomeActions({
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl p-0 overflow-hidden border-none bg-black">
+            <DialogHeader className="sr-only">
+              <DialogTitle>Gestión de Portada</DialogTitle>
+              <DialogDescription>Editor de la imagen de bienvenida de la aplicación para el administrador.</DialogDescription>
+            </DialogHeader>
             <div className="h-[70vh]">
               <UnauthenticatedLanding auth={auth} isAdmin={true} user={user} isEditor={true} />
             </div>
@@ -71,6 +75,7 @@ export function HomeActions({
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle className="text-2xl font-black italic">{editingCategory ? "Editar" : "Crear"} Categoría</DialogTitle>
+              <DialogDescription>Configura los detalles de la categoría global para el marketplace.</DialogDescription>
             </DialogHeader>
             <form onSubmit={onCategorySubmit} className="space-y-4 pt-4">
               <div className="space-y-2"><Label>Nombre de la Categoría Global</Label><Input name="name" defaultValue={editingCategory?.name} required /></div>
@@ -115,7 +120,10 @@ export function HomeActions({
           </Button>
         </DialogTrigger>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
-          <DialogHeader><DialogTitle className="text-2xl font-black">Lanza tu Negocio</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black">Lanza tu Negocio</DialogTitle>
+            <DialogDescription>Completa el registro para destacar tu negocio en el marketplace local.</DialogDescription>
+          </DialogHeader>
           <form onSubmit={onStoreSubmit} className="space-y-4 pt-4">
             <div className="space-y-2"><Label>Nombre del Negocio</Label><Input name="name" required /></div>
             <div className="space-y-2">
