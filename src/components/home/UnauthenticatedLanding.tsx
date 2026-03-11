@@ -25,7 +25,7 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
 
   // Obtener la configuración de la app (Imagen de Portada)
   const configRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'home'), [firestore]);
-  const { data: appConfig } = useDoc(configRef);
+  const { data: appConfig, isLoading } = useDoc(configRef);
 
   const handleLogin = () => initiateGoogleSignIn(auth);
 
@@ -59,29 +59,33 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
     }
   };
 
-  const coverImage = appConfig?.coverImageUrl || "https://picsum.photos/seed/morrocoy/1920/1080";
+  // NATIVAMENTE: Si no hay imagen en la DB, no mostramos el paisaje antiguo. 
+  // Se prefiere un placeholder coherente o nada hasta que cargue.
+  const coverImage = appConfig?.coverImageUrl || null;
 
   return (
-    <div className={`relative ${isEditor ? 'h-full' : 'h-[100dvh]'} w-full overflow-hidden flex items-center justify-center bg-black`}>
+    <div className={`relative ${isEditor ? 'h-full' : 'h-[100dvh]'} w-full overflow-hidden flex items-center justify-center bg-[#0a0a0a]`}>
       {/* Portada Universal */}
       <div className="absolute inset-0 z-0">
-        <Image 
-          src={coverImage} 
-          alt="Portada Vitriniando" 
-          fill 
-          className="object-cover opacity-90 transition-opacity duration-1000" 
-          priority 
-        />
-        <div className="absolute inset-0 bg-black/10"></div>
+        {coverImage && (
+          <Image 
+            src={coverImage} 
+            alt="Portada Vitriniando" 
+            fill 
+            className="object-cover opacity-100 transition-opacity duration-700" 
+            priority 
+          />
+        )}
+        <div className="absolute inset-0 bg-black/5"></div>
       </div>
 
-      {/* Botón de Login Superior Derecho (Solo si no hay usuario) */}
+      {/* Botón de Login Superior Derecho (90% Transparente) */}
       {!user && !isEditor && (
         <div className="absolute top-8 right-8 z-30">
           <Button 
             onClick={handleLogin}
             variant="ghost"
-            className="bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full px-8 h-14 font-black hover:bg-white/20 gap-3 transition-all shadow-xl tracking-widest text-xs"
+            className="bg-white/10 backdrop-blur-xl border border-white/10 text-white rounded-full px-8 h-14 font-black hover:bg-white/20 gap-3 transition-all shadow-2xl tracking-widest text-sm uppercase italic"
           >
             <LogIn className="w-5 h-5" />
             INGRESAR
@@ -102,7 +106,7 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
           <Button 
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="pointer-events-auto w-32 h-32 rounded-full bg-white/10 backdrop-blur-2xl border-2 border-white/30 text-white hover:bg-white/30 transition-all flex flex-col items-center justify-center gap-2 shadow-2xl group border-dashed"
+            className="pointer-events-auto w-32 h-32 rounded-full bg-white/10 backdrop-blur-2xl border-2 border-white/20 text-white hover:bg-white/30 transition-all flex flex-col items-center justify-center gap-2 shadow-2xl group border-dashed"
           >
             {isUploading ? (
               <Loader2 className="w-10 h-10 animate-spin" />
