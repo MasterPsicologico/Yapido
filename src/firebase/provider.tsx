@@ -3,7 +3,7 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, doc, serverTimestamp } from 'firebase/firestore';
+import { Firestore, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { setDocumentNonBlocking } from './non-blocking-updates';
@@ -69,20 +69,32 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
     const unsubscribe = onAuthStateChanged(
       auth,
-      (firebaseUser) => {
+      async (firebaseUser) => {
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
         
         if (firebaseUser && firestore) {
           const userRef = doc(firestore, 'users', firebaseUser.uid);
-          setDocumentNonBlocking(userRef, {
-            id: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-            lastLogin: serverTimestamp(),
-            // Garantizar un rol por defecto si no existe para las reglas de seguridad
-            role: 'cliente' 
-          }, { merge: true });
+          
+          // Verificamos si el usuario ya existe para no sobreescribir roles especiales
+          const docSnap = await getDoc(userRef);
+          
+          if (!docSnap.exists()) {
+            // Solo creamos el perfil con rol cliente si no existe
+            setDocumentNonBlocking(userRef, {
+              id: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              photoURL: firebaseUser.photoURL,
+              createdAt: serverTimestamp(),
+              lastLogin: serverTimestamp(),
+              role: 'cliente' 
+            }, { merge: true });
+          } else {
+            // Actualizamos solo el último login
+            setDocumentNonBlocking(userRef, {
+              lastLogin: serverTimestamp(),
+            }, { merge: true });
+          }
         }
       },
       (error) => {

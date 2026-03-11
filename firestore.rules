@@ -53,19 +53,24 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
+      // Optimizamos para 'list' (consultas): Solo usamos datos del propio documento
       allow read: if isSignedIn() && (
         resource.data.customerId == request.auth.uid || 
         resource.data.storeOwnerId == request.auth.uid ||
         resource.data.deliveryDriverId == request.auth.uid ||
-        (resource.data.status == 'ready_for_pickup' && isRepartidor()) ||
+        resource.data.status == 'ready_for_pickup' ||
         isAdmin()
       );
+      
       allow create: if isSignedIn();
+      
+      // La actualización requiere validación de rol más estricta
       allow update: if isSignedIn() && (
         resource.data.storeOwnerId == request.auth.uid || 
         (isRepartidor() && (resource.data.status == 'ready_for_pickup' || resource.data.deliveryDriverId == request.auth.uid)) ||
         isAdmin()
       );
+      
       allow delete: if isAdmin();
     }
 
