@@ -31,19 +31,19 @@ const STATUS_CONFIG = {
   preparing: { label: "Preparando", color: "bg-blue-500", icon: Package },
   ready_for_pickup: { label: "Listo para Reparto", color: "bg-orange-500", icon: Zap },
   shipped: { label: "En Camino", color: "bg-purple-500", icon: Truck },
-  delivered: { label: "Entregado", color: "bg-green-500", icon: CheckCircle2 },
+  delivered: { label: "Entregado", color: "bg-green-50", icon: CheckCircle2 },
   cancelled: { label: "Cancelado", color: "bg-red-500", icon: CheckCircle2 }
 };
 
 export default function OrdersManagementPage() {
-  const { user } = useUser();
+  const { user, isUserLoading: isAuthLoading } = useUser();
   const { profile, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
 
   // Consulta inteligente basada en el ROL del usuario
+  // Solo se dispara si el perfil está cargado y coincide con el usuario autenticado
   const ordersQuery = useMemoFirebase(() => {
-    // Es crítico esperar a que el perfil esté cargado y sincronizado con el usuario actual
     if (!firestore || !user?.uid || !profile || profile.id !== user.uid) return null;
     
     const ordersRef = collection(firestore, 'orders');
@@ -84,7 +84,7 @@ export default function OrdersManagementPage() {
     o.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const isGlobalLoading = loadingProfile || (ordersQuery !== null && loadingOrders);
+  const isGlobalLoading = isAuthLoading || loadingProfile || (ordersQuery !== null && loadingOrders);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">

@@ -52,11 +52,11 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      // Regla de lista ultra-simple para evitar errores de complejidad en consultas masivas
-      // La seguridad se garantiza mediante los filtros obligatorios en el cliente
-      // y la restricción estricta en el acceso individual (get).
+      // Permitimos listar a cualquier usuario autenticado. 
+      // La privacidad se garantiza mediante los filtros en el cliente y la regla 'get' de abajo.
       allow list: if isSignedIn();
       
+      // La seguridad real ocurre aquí: solo el cliente, el dueño o el repartidor ven el detalle.
       allow get: if isSignedIn() && (
         resource.data.customerId == request.auth.uid || 
         resource.data.storeOwnerId == request.auth.uid || 

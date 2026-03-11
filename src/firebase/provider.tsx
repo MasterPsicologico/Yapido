@@ -68,13 +68,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     const unsubscribe = onAuthStateChanged(
       auth,
       async (firebaseUser) => {
-        // Reiniciar estado antes de sincronizar el perfil para evitar inconsistencias
-        setUserAuthState(prev => ({ 
-          ...prev, 
-          user: firebaseUser, 
-          isUserLoading: !!firebaseUser // Seguir cargando si hay un usuario para esperar su perfil
-        }));
-        
         if (firebaseUser && firestore) {
           const userRef = doc(firestore, 'users', firebaseUser.uid);
           
@@ -82,6 +75,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             const docSnap = await getDoc(userRef);
             if (!docSnap.exists()) {
               // Crear perfil inicial si no existe. El rol por defecto es 'cliente'.
+              // Importante: No bloqueamos el estado de carga por esto, 
+              // pero aseguramos que se intente crear.
               setDocumentNonBlocking(userRef, {
                 id: firebaseUser.uid,
                 email: firebaseUser.email,
@@ -100,6 +95,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           } catch (e) {
             // Error silencioso en la sincronización
           } finally {
+            // Aseguramos que el estado se actualice al final de la sincronización inicial
             setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
           }
         } else {
@@ -130,7 +126,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
-      {children}
+      {/* Usamos el uid como key para forzar el remontaje de componentes hijos al cambiar de cuenta */}
+      <div key={userAuthState.user?.uid || 'anonymous'}>
+        {children}
+      </div>
     </FirebaseContext.Provider>
   );
 };
