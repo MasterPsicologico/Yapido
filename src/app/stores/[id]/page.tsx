@@ -146,7 +146,7 @@ export default function StorePage() {
 
     setIsAddingProduct(true);
     try {
-      const prodColRef = collection(firestore, 'stores', id, 'categories', categoryId, 'products');
+      const prodColRef = collection(firestore, 'products');
       addDocumentNonBlocking(prodColRef, {
         name,
         price,
@@ -154,6 +154,7 @@ export default function StorePage() {
         imageUrl: productImage,
         status: 'available',
         storeId: id,
+        storeName: store?.name || 'Negocio Local',
         categoryId: categoryId,
         createdAt: serverTimestamp(),
       });

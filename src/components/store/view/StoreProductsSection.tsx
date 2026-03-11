@@ -59,7 +59,7 @@ function ProductsGrid({ storeId, categoryId }: { storeId: string, categoryId: st
   const q = useMemoFirebase(() => {
     if (!firestore || !storeId) return null;
     
-    // Consulta global a la colección de productos para evitar el error 404
+    // Consulta global a la colección de productos para sincronización total
     let baseQuery = query(
       collection(firestore, 'products'), 
       where('storeId', '==', storeId), 
@@ -76,7 +76,14 @@ function ProductsGrid({ storeId, categoryId }: { storeId: string, categoryId: st
   const { data: products, isLoading } = useCollection(q);
 
   if (isLoading) return <div className="grid grid-cols-2 gap-4"><Skeleton className="h-64 rounded-xl" /><Skeleton className="h-64 rounded-xl" /></div>;
-  if (!products || products.length === 0) return <div className="text-center py-16 bg-slate-50 border-dashed border-2 rounded-[32px]"><Package className="w-10 h-10 mx-auto text-slate-200 mb-2" /><p className="text-slate-400 font-bold text-sm italic">Sin productos en esta sección</p></div>;
+  
+  if (!products || products.length === 0) return (
+    <div className="text-center py-16 bg-slate-50 border-dashed border-2 rounded-[32px]">
+      <Package className="w-10 h-10 mx-auto text-slate-200 mb-2" />
+      <p className="text-slate-400 font-bold text-sm italic">Sin productos en esta vitrina</p>
+      <p className="text-slate-300 text-[10px] uppercase tracking-widest mt-1">Sigue publicando ítems</p>
+    </div>
+  );
 
   return (
     <div className="grid grid-cols-2 gap-6">
