@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -16,6 +17,7 @@ import { compressImage } from '@/lib/image-compression';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
+  const { isAdmin } = useProfile();
   const auth = useAuth();
 
   if (isUserLoading) return (
@@ -34,7 +36,16 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
       <main className="flex-1 w-full overflow-x-hidden">
-        {user ? <AuthenticatedHome /> : <UnauthenticatedLanding auth={auth} />}
+        {/* Si no hay usuario, mostramos el Landing. Si es Admin, el Landing tiene controles. */}
+        {user ? (
+          <div className="flex flex-col">
+            {/* El Admin puede ver el Landing para editar la portada incluso logueado */}
+            {isAdmin && <UnauthenticatedLanding auth={auth} isAdmin={isAdmin} user={user} />}
+            <AuthenticatedHome />
+          </div>
+        ) : (
+          <UnauthenticatedLanding auth={auth} isAdmin={false} user={null} />
+        )}
       </main>
     </div>
   );
