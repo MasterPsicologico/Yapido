@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Auth,
@@ -6,20 +5,16 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
 } from 'firebase/auth';
 
 /** 
  * Maneja los errores comunes de Firebase Auth de forma centralizada.
  */
 function handleAuthError(error: any) {
-  // El error popup-closed-by-user es una acción esperada del usuario (cancelación)
-  // No queremos que dispare una pantalla de error en Next.js
   if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-by-user') {
     return;
   }
-  
-  // Para otros errores, los registramos en la consola o podrías usar un toast si estuviera disponible
   console.warn("Error de autenticación:", error.code, error.message);
 }
 
@@ -38,11 +33,12 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
   signInWithEmailAndPassword(authInstance, email, password).catch(handleAuthError);
 }
 
-/** Initiate Google sign-in (non-blocking). */
+/** 
+ * Initiate Google sign-in using Redirect (more robust for mobile/frames).
+ */
 export function initiateGoogleSignIn(authInstance: Auth): void {
   const provider = new GoogleAuthProvider();
-  // Configuramos parámetros adicionales si fuera necesario
   provider.setCustomParameters({ prompt: 'select_account' });
-  
-  signInWithPopup(authInstance, provider).catch(handleAuthError);
+  // Usamos Redirect en lugar de Popup para mayor compatibilidad en móviles
+  signInWithRedirect(authInstance, provider).catch(handleAuthError);
 }

@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { HomeActions } from '@/components/home/HomeActions';
@@ -18,22 +17,6 @@ import { compressImage } from '@/lib/image-compression';
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const firestore = useFirestore();
-
-  // EFECTO QUIRÚRGICO: Sincroniza el perfil del usuario con Firestore al iniciar sesión
-  useEffect(() => {
-    if (user && firestore) {
-      const userRef = doc(firestore, 'users', user.uid);
-      // Solo actualizamos datos básicos para no sobreescribir el ROL si ya fue asignado
-      setDocumentNonBlocking(userRef, {
-        id: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        lastLogin: serverTimestamp(),
-      }, { merge: true });
-    }
-  }, [user, firestore]);
 
   if (isUserLoading) return (
     <div className="flex flex-col min-h-screen">
@@ -59,6 +42,7 @@ export default function Home() {
 
 function AuthenticatedHome() {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { isAdmin } = useProfile();
   
   const [openStore, setOpenStore] = useState(false);
@@ -113,6 +97,7 @@ function AuthenticatedHome() {
 
   const handleStoreSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!user) return;
     const fd = new FormData(e.currentTarget);
     const mainCategoryId = fd.get('mainCategoryId');
     const name = fd.get('name');
@@ -123,16 +108,17 @@ function AuthenticatedHome() {
       const ref = doc(collection(firestore, 'stores'));
       setDocumentNonBlocking(ref, { 
         id: ref.id, 
-        ownerId: (window as any).__USER_ID__, 
+        ownerId: user.uid, 
         mainCategoryId, 
         name, 
         address, 
         status: 'active', 
-        createdAt: serverTimestamp() ,
+        createdAt: serverTimestamp(),
         imageUrl: `https://picsum.photos/seed/${ref.id}/800/600`
       }, { merge: true });
       setOpenStore(false);
-    } catch (e) { toast({ title: "Error" }); }
+      toast({ title: "Vitrina registrada con éxito" });
+    } catch (e) { toast({ title: "Error al registrar vitrina" }); }
     finally { setIsRegistering(false); }
   };
 
