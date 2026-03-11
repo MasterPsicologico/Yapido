@@ -43,8 +43,8 @@ export default function OrdersManagementPage() {
 
   // Consulta inteligente basada en el ROL del usuario
   const ordersQuery = useMemoFirebase(() => {
-    // Es crítico esperar a que el perfil esté cargado para evitar errores de permisos
-    if (!firestore || !user?.uid || !profile) return null;
+    // Es crítico esperar a que el perfil esté cargado y sincronizado con el usuario actual
+    if (!firestore || !user?.uid || !profile || profile.id !== user.uid) return null;
     
     const ordersRef = collection(firestore, 'orders');
 
