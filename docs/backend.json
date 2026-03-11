@@ -44,10 +44,33 @@
         "phoneNumber": { "type": "string" },
         "imageUrl": { "type": "string" },
         "status": { "type": "string" },
-        "isPro": { "type": "boolean", "description": "Etiqueta universal asignada por el admin." },
+        "isPro": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "ownerId", "mainCategoryId", "name", "status"]
+    },
+    "Order": {
+      "title": "Order",
+      "type": "object",
+      "description": "Registro de un pedido realizado por un cliente.",
+      "properties": {
+        "id": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "storeId": { "type": "string" },
+        "storeName": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "quantity": { "type": "number" },
+        "unitPrice": { "type": "number" },
+        "totalPrice": { "type": "number" },
+        "status": { 
+          "type": "string", 
+          "enum": ["pending", "preparing", "shipped", "delivered", "cancelled"] 
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "customerId", "storeId", "productId", "quantity", "totalPrice", "status"]
     }
   },
   "auth": {
@@ -69,6 +92,14 @@
           "entityName": "MainCategory",
           "schema": { "$ref": "#/backend/entities/MainCategory" },
           "description": "Categorías globales controladas por el Admin."
+        }
+      },
+      {
+        "path": "/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": { "$ref": "#/backend/entities/Order" },
+          "description": "Historial de pedidos para clientes y vendedores."
         }
       }
     ]

@@ -10,6 +10,10 @@ service cloud.firestore {
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function isStoreOwner(storeId) {
+      return isSignedIn() && (get(/databases/$(database)/documents/stores/$(storeId)).data.ownerId == request.auth.uid);
+    }
+
     match /users/{userId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && request.auth.uid == userId;
@@ -17,7 +21,7 @@ service cloud.firestore {
 
     match /mainCategories/{categoryId} {
       allow read: if true;
-      allow write: if isAdmin(); // SOLO EL ADMIN puede crear/editar categorías globales
+      allow write: if isAdmin();
     }
 
     match /stores/{storeId} {
@@ -39,6 +43,13 @@ service cloud.firestore {
     match /products/{productId} {
       allow read: if true;
       allow write: if isSignedIn();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && (resource.data.customerId == request.auth.uid || isStoreOwner(resource.data.storeId) || isAdmin());
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isStoreOwner(resource.data.storeId) || isAdmin());
+      allow delete: if isAdmin();
     }
 
     match /appConfig/{configId} {

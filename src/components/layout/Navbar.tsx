@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Store, ShoppingBag, User, Search, Menu, Info, Home as HomeIcon, LogOut } from 'lucide-react';
+import { Store, ShoppingBag, User, Search, Menu, Info, Home as HomeIcon, LogOut, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -61,10 +61,16 @@ export function Navbar() {
                   Sobre Nosotros
                 </Link>
                 {user && (
-                  <Link href="/admin/manage" className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-muted rounded-lg transition-colors">
-                    <Store className="w-5 h-5 text-primary" />
-                    Mi Tienda
-                  </Link>
+                  <>
+                    <Link href="/admin/orders" className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-muted rounded-lg transition-colors">
+                      <ClipboardList className="w-5 h-5 text-primary" />
+                      Gestionar Pedidos
+                    </Link>
+                    <Link href="/admin/manage" className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-muted rounded-lg transition-colors">
+                      <Store className="w-5 h-5 text-primary" />
+                      Inventario y Tienda
+                    </Link>
+                  </>
                 )}
               </nav>
             </SheetContent>
@@ -91,10 +97,10 @@ export function Navbar() {
             <>
               {user ? (
                 <div className="flex items-center gap-4">
-                  <Link href="/admin/manage">
+                  <Link href="/admin/orders">
                     <Button variant="ghost" className="hidden lg:flex items-center gap-2">
-                      <Store className="w-4 h-4" />
-                      Mi Tienda
+                      <ClipboardList className="w-4 h-4" />
+                      Pedidos
                     </Button>
                   </Link>
                   <DropdownMenu>
@@ -114,6 +120,12 @@ export function Navbar() {
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/orders">
+                          <ClipboardList className="mr-2 h-4 w-4" />
+                          <span>Mis Pedidos</span>
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Cerrar Sesión</span>
