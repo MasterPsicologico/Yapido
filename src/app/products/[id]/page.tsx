@@ -110,15 +110,24 @@ export default function ProductPage() {
             </div>
 
             <div className="mt-auto space-y-4 pt-8 border-t border-slate-100">
-              <div className="flex gap-4">
-                <Button size="lg" className="flex-1 h-16 rounded-full text-lg font-black gap-3 bg-[#25d366] hover:bg-[#128c7e] text-white shadow-lg shadow-green-100 border-none transition-all hover:scale-[1.02]">
+              <div className="flex flex-col gap-3">
+                <Button 
+                  size="lg" 
+                  className="w-full h-16 rounded-full text-lg font-black gap-3 bg-[#25d366] hover:bg-[#128c7e] text-white shadow-lg shadow-green-100 border-none transition-all hover:scale-[1.02]"
+                >
                   <MessageCircle className="w-6 h-6" />
                   Pedir por WhatsApp
                 </Button>
-                <Button variant="outline" size="icon" className="h-16 w-16 rounded-full border-slate-100 hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all">
-                  <Heart className="w-6 h-6" />
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full h-14 rounded-full border-slate-100 hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all font-bold gap-2"
+                >
+                  <Heart className="w-5 h-5" />
+                  Favorito
                 </Button>
               </div>
+
               <Button variant="ghost" className="w-full gap-2 text-slate-400 font-bold hover:text-primary hover:bg-transparent transition-colors">
                 <Share2 className="w-4 h-4" /> Compartir este tesoro
               </Button>
