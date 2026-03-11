@@ -5,7 +5,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  signInWithRedirect,
+  signInWithPopup,
 } from 'firebase/auth';
 
 /** 
@@ -34,11 +34,11 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 }
 
 /** 
- * Initiate Google sign-in using Redirect (more robust for mobile/frames).
+ * Inicia sesión con Google mediante ventana emergente (Popup).
+ * Este método es más fiable en entornos de desarrollo y evita errores 403 de redirección.
  */
 export function initiateGoogleSignIn(authInstance: Auth): void {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-  // Usamos Redirect en lugar de Popup para mayor compatibilidad en móviles
-  signInWithRedirect(authInstance, provider).catch(handleAuthError);
+  signInWithPopup(authInstance, provider).catch(handleAuthError);
 }
