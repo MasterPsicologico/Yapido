@@ -21,14 +21,54 @@ import {
   Search,
   Trash2,
   AlertTriangle,
-  Sparkles,
-  Settings2
+  Sparkles
 } from 'lucide-react';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { Loader } from '@googlemaps/js-api-loader';
+
+/**
+ * Función de limpieza agresiva para eliminar cualquier rastro de Google Maps
+ * que se haya inyectado en el body y persista al navegar.
+ */
+function cleanGoogleMapsOverlays() {
+  if (typeof document === 'undefined') return;
+
+  // 1. Selectores conocidos de Google Maps para errores y overlays
+  const selectors = [
+    '.gm-err-container', 
+    '.gm-err-content', 
+    '.gm-style-cc', 
+    '.gm-style-moc', 
+    '.gm-style-mtc',
+    '.gm-err-autocomplete',
+    '.pac-container'
+  ];
+  
+  selectors.forEach(selector => {
+    document.querySelectorAll(selector).forEach(el => el.remove());
+  });
+
+  // 2. Escaneo de divs huérfanos con alto z-index (típico del backdrop de error de Google)
+  const bodyDivs = Array.from(document.querySelectorAll('body > div'));
+  bodyDivs.forEach(div => {
+    if (div instanceof HTMLElement) {
+      const style = window.getComputedStyle(div);
+      const zIndex = parseInt(style.zIndex);
+      const isFixed = style.position === 'fixed' || style.position === 'absolute';
+      
+      // Si es un div inyectado con mucho peso visual y contiene texto de error
+      if (zIndex > 1000 && isFixed && (div.innerText.includes('Google') || div.innerText.includes('Maps'))) {
+        div.remove();
+      }
+    }
+  });
+
+  // 3. Eliminar clases que Google Maps añade al body
+  document.body.classList.remove('map-error');
+}
 
 // Componente individual para cada input de dirección con Autocomplete opcional
 function AddressAutocompleteInput({ 
@@ -49,9 +89,11 @@ function AddressAutocompleteInput({
   const [mapsError, setMapsError] = useState(false);
 
   useEffect(() => {
-    // Si los mapas no están activados o no hay clave, no intentamos nada
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!mapsEnabled || !apiKey || !inputRef.current) return;
+    if (!mapsEnabled || !apiKey || !inputRef.current) {
+      if (!mapsEnabled) cleanGoogleMapsOverlays();
+      return;
+    }
 
     const loader = new Loader({
       apiKey: apiKey,
@@ -77,15 +119,16 @@ function AddressAutocompleteInput({
         });
       } catch (error) {
         setMapsError(true);
+        cleanGoogleMapsOverlays();
       }
     }).catch(() => {
       setMapsError(true);
+      cleanGoogleMapsOverlays();
     });
 
-    // Limpieza al desmontar: Eliminar avisos de Google que quedan en el body
     return () => {
-      const overlays = document.querySelectorAll('.gm-err-container, .gm-style-cc, .gm-style-moc');
-      overlays.forEach(el => el.remove());
+      // Limpieza específica al desmontar el input
+      cleanGoogleMapsOverlays();
     };
   }, [mapsEnabled, onChange]);
 
@@ -133,17 +176,28 @@ export default function ProfilePage() {
   const [showCamera, setShowCamera] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [mapsEnabled, setMapsEnabled] = useState(false); // Por defecto desactivado para evitar el aviso molesto
+  const [mapsEnabled, setMapsEnabled] = useState(false);
 
-  // Limpieza global al entrar y salir para asegurar que no hay avisos de Google Maps
+  // Limpieza global y persistente de overlays de Google Maps
   useEffect(() => {
-    const cleanOverlays = () => {
-      const overlays = document.querySelectorAll('.gm-err-container, .gm-style-cc, .gm-style-moc');
-      overlays.forEach(el => el.remove());
+    // Limpiar al entrar
+    cleanGoogleMapsOverlays();
+
+    // Crear un intervalo corto de limpieza para asegurar que los elementos inyectados se borren
+    const interval = setInterval(cleanGoogleMapsOverlays, 1000);
+
+    return () => {
+      // Limpiar al salir (Crítico para que el error no te persiga)
+      clearInterval(interval);
+      cleanGoogleMapsOverlays();
     };
-    
-    cleanOverlays();
-    return () => cleanOverlays();
+  }, []);
+
+  // Limpiar si el usuario apaga manualmente el interruptor
+  useEffect(() => {
+    if (!mapsEnabled) {
+      cleanGoogleMapsOverlays();
+    }
   }, [mapsEnabled]);
 
   useEffect(() => {
@@ -386,7 +440,10 @@ export default function ProfilePage() {
                       <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">Modo Mapa</span>
                       <Switch 
                         checked={mapsEnabled} 
-                        onCheckedChange={setMapsEnabled}
+                        onCheckedChange={(val) => {
+                          setMapsEnabled(val);
+                          if (!val) cleanGoogleMapsOverlays();
+                        }}
                         className="data-[state=checked]:bg-primary"
                       />
                     </div>
