@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -43,6 +42,13 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Emitir evento de "chat abierto" para detener alarmas de notificación
+  useEffect(() => {
+    if (orderId) {
+      window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId } }));
+    }
+  }, [orderId]);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !orderId) return null;
