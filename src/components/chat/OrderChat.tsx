@@ -41,7 +41,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Emitir evento de "chat abierto" para detener alarmas de notificación
   useEffect(() => {
@@ -57,12 +57,15 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
 
   const { data: messages, isLoading: loadingMessages } = useCollection(messagesQuery);
 
-  // Auto-scroll al final de los mensajes
+  // Auto-scroll QUIRÚRGICO al final de los mensajes
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+    // Scroll inmediato cuando cargan los mensajes o llega uno nuevo
+    scrollToBottom();
+  }, [messages, isSending]);
 
   // Manejar la conexión del stream al elemento video una vez montado
   useEffect(() => {
@@ -86,6 +89,8 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
         createdAt: serverTimestamp(),
       });
       setText('');
+      // Forzar scroll después de enviar
+      setTimeout(scrollToBottom, 100);
     } catch (e) {
       toast({ title: "Error al enviar", variant: "destructive" });
     } finally {
@@ -177,7 +182,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4 bg-slate-50" ref={scrollRef}>
+      <ScrollArea className="flex-1 p-4 bg-slate-50">
         <div className="space-y-4">
           {loadingMessages ? (
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
@@ -209,6 +214,8 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
               </div>
             );
           })}
+          {/* El Ancla Invisible para el Scroll */}
+          <div ref={messagesEndRef} className="h-2 w-full" />
         </div>
       </ScrollArea>
 
