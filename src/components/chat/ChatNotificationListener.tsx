@@ -11,7 +11,7 @@ import { ToastAction } from '@/components/ui/toast';
  * ChatNotificationListener
  * 
  * Un componente invisible que monitorea nuevos mensajes en todos los pedidos del usuario.
- * Proporciona alertas visuales (vibración) y auditivas que se repiten.
+ * Proporciona alertas visuales (vibración), auditivas y físicas (vibración del hardware).
  */
 export function ChatNotificationListener() {
   const { user } = useUser();
@@ -23,8 +23,9 @@ export function ChatNotificationListener() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    // Inicializar el sonido de notificación
     audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-    audioRef.current.volume = 0.6;
+    audioRef.current.volume = 0.8;
   }, []);
 
   const ordersQuery = useMemoFirebase(() => {
@@ -55,12 +56,16 @@ export function ChatNotificationListener() {
             const msg = change.doc.data();
             const msgId = change.doc.id;
             
+            // Ignorar mensajes enviados por mí
             if (msg.senderId === user.uid) return;
+            
+            // Evitar duplicados
             if (notifiedMessageIds.current.has(msgId)) return;
 
+            // Solo notificar mensajes nuevos (último minuto)
             const now = Date.now();
             const msgTime = msg.createdAt?.toMillis?.() || now;
-            if (now - msgTime > 60000) { // Reducido a 1 minuto para mayor frescura
+            if (now - msgTime > 60000) {
                 notifiedMessageIds.current.add(msgId);
                 return;
             }
@@ -83,22 +88,43 @@ export function ChatNotificationListener() {
     return () => unsubscribers.forEach(unsub => unsub());
   }, [orders, user, firestore]);
 
+  /**
+   * Dispara la alarma triple: Sonido, Vibración Física y Aviso Visual.
+   */
   const triggerAlarm = (orderId: string, title: string) => {
+    // 1. Alarma Auditiva
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {});
+      audioRef.current.play().catch(() => {
+        // Fallback si el navegador bloquea el audio sin interacción previa
+      });
     }
 
+    // 2. Alarma Física (Vibración del Hardware del teléfono)
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      // Patrón de vibración: 500ms vibra, 200ms pausa, 500ms vibra
+      navigator.vibrate([500, 200, 500]);
+    }
+
+    // 3. Alarma Visual con efecto de vibración CSS
     toast({
-      title: "🚨 ¡MENSAJE PENDIENTE!",
-      description: `Tienes una comunicación importante en el pedido de "${title}".`,
+      title: "🚨 ¡MENSAJE CRÍTICO!",
+      description: `Tienes una comunicación importante en "${title}".`,
       variant: "default",
-      className: "bg-primary text-white border-none shadow-2xl animate-vibrate cursor-pointer",
+      className: "bg-primary text-white border-none shadow-2xl animate-vibrate cursor-pointer h-24",
       action: (
         <ToastAction 
-          altText="Ir al chat" 
-          onClick={() => router.push(`/admin/orders?chat=${orderId}`)}
-          className="bg-white text-primary hover:bg-white/90 font-black border-none rounded-full h-8 px-4"
+          altText="Atender" 
+          onClick={() => {
+            // Al atender, redirigimos y limpiamos el ID de la lista de no leídos
+            setUnreadOrders(prev => {
+              const next = new Map(prev);
+              next.delete(orderId);
+              return next;
+            });
+            router.push(`/admin/orders?chat=${orderId}`);
+          }}
+          className="bg-white text-primary hover:bg-white/90 font-black border-none rounded-full h-10 px-6"
         >
           ATENDER
         </ToastAction>
@@ -108,20 +134,28 @@ export function ChatNotificationListener() {
     lastAlarmTime.current = Date.now();
   };
 
+  /**
+   * Sistema de repetición persistente.
+   * Si hay mensajes no leídos, la alarma vuelve a sonar cada 10 segundos.
+   */
   useEffect(() => {
     const interval = setInterval(() => {
       if (unreadOrders.size > 0) {
         const now = Date.now();
-        if (now - lastAlarmTime.current > 15000) {
+        // Repetir alarma cada 10 segundos si el usuario no ha respondido
+        if (now - lastAlarmTime.current > 10000) {
             const [orderId, orderName] = Array.from(unreadOrders.entries())[0];
             triggerAlarm(orderId, orderName);
         }
       }
-    }, 5000);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [unreadOrders]);
 
+  /**
+   * Escuchar cuando el chat se abre físicamente para detener la alarma de ese pedido.
+   */
   useEffect(() => {
     const handleChatOpened = (e: any) => {
       const { orderId } = e.detail;
