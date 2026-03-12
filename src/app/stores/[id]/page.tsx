@@ -162,6 +162,9 @@ export default function StorePage() {
     setIsAddingProduct(true);
     try {
       const prodColRef = collection(firestore, 'products');
+      // ASEGURAMOS QUE EL DUEÑO ESTÉ SIEMPRE PRESENTE
+      const ownerId = store.ownerId || user?.uid;
+      
       addDocumentNonBlocking(prodColRef, {
         name,
         price,
@@ -170,7 +173,7 @@ export default function StorePage() {
         status: 'available',
         storeId: id,
         storeName: store.name || 'Negocio Local',
-        storeOwnerId: store.ownerId || user?.uid,
+        storeOwnerId: ownerId, // Campo crítico
         categoryId: categoryId,
         createdAt: serverTimestamp(),
       });

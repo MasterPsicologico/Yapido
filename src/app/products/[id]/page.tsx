@@ -99,22 +99,34 @@ export default function ProductPage() {
       return;
     }
 
-    // Validación crítica del vendedor
-    const ownerId = product.storeOwnerId || product.ownerId;
-    if (!ownerId) {
-      toast({ 
-        title: "Vendedor no identificado", 
-        description: "Este producto no tiene un dueño asignado. Contacta al soporte.", 
-        variant: "destructive" 
-      });
-      return;
-    }
-
     setIsOrdering(true);
     try {
-      // 1. Verificar si el VENDEDOR tiene perfil y teléfono (para alertar si no es así)
-      const sellerDoc = await getDoc(doc(firestore, 'users', ownerId));
-      const sellerData = sellerDoc.exists() ? sellerDoc.data() : null;
+      // SISTEMA DE CURACIÓN DE DUEÑO
+      let ownerId = product.storeOwnerId || product.ownerId;
+      
+      // Si el producto no tiene dueño (producto huérfano), intentamos buscar al dueño de la tienda
+      if (!ownerId && product.storeId) {
+        console.log("Intentando curación de producto huérfano...");
+        const storeSnap = await getDoc(doc(firestore, 'stores', product.storeId));
+        if (storeSnap.exists()) {
+          ownerId = storeSnap.data().ownerId;
+          // Reparamos el producto para el futuro de forma silenciosa
+          updateDocumentNonBlocking(doc(firestore, 'products', product.id), { 
+            storeOwnerId: ownerId,
+            updatedAt: serverTimestamp() 
+          });
+        }
+      }
+
+      if (!ownerId) {
+        toast({ 
+          title: "Vendedor no identificado", 
+          description: "Este producto no tiene un dueño asignado. Contacta al soporte.", 
+          variant: "destructive" 
+        });
+        setIsOrdering(false);
+        return;
+      }
 
       // 2. Actualizar perfil del CLIENTE si es necesario
       if (tempPhone !== profile?.phoneNumber) {
