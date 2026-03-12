@@ -4,11 +4,12 @@
     "User": {
       "title": "User",
       "type": "object",
-      "description": "Perfil de usuario con roles asignados.",
+      "description": "Perfil de usuario con roles asignados y contacto.",
       "properties": {
         "id": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
+        "phoneNumber": { "type": "string", "description": "Número de WhatsApp del usuario para contacto." },
         "role": { 
           "type": "string", 
           "enum": ["admin", "moderador", "dueño", "repartidor", "cliente"],
@@ -26,8 +27,10 @@
         "id": { "type": "string" },
         "customerId": { "type": "string" },
         "customerName": { "type": "string" },
+        "customerPhone": { "type": "string", "description": "WhatsApp del cliente para que la tienda contacte." },
         "storeId": { "type": "string" },
         "storeName": { "type": "string" },
+        "storeOwnerId": { "type": "string" },
         "productId": { "type": "string" },
         "productName": { "type": "string" },
         "quantity": { "type": "number" },
@@ -41,7 +44,7 @@
         "deliveryDriverName": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "customerId", "storeId", "productId", "quantity", "totalPrice", "status"]
+      "required": ["id", "customerId", "customerName", "customerPhone", "storeId", "productId", "quantity", "totalPrice", "status"]
     }
   },
   "auth": {
@@ -54,7 +57,7 @@
         "definition": {
           "entityName": "User",
           "schema": { "$ref": "#/backend/entities/User" },
-          "description": "Perfiles de usuario y roles."
+          "description": "Perfiles de usuario, roles y WhatsApp."
         }
       },
       {
@@ -62,7 +65,7 @@
         "definition": {
           "entityName": "Order",
           "schema": { "$ref": "#/backend/entities/Order" },
-          "description": "Historial de pedidos para clientes, vendedores y repartidores."
+          "description": "Historial de pedidos con contacto de cliente."
         }
       }
     ]

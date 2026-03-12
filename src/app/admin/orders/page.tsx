@@ -20,7 +20,6 @@ import {
   User as UserIcon,
   Store as StoreIcon,
   ShoppingBag,
-  ArrowRight,
   Sparkles
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
@@ -48,17 +47,14 @@ export default function OrdersManagementPage() {
 
   // Consulta inteligente basada en el ROL del usuario
   const ordersQuery = useMemoFirebase(() => {
-    // IMPORTANTE: Solo disparamos la consulta si el perfil está totalmente cargado y tiene un rol
     if (!firestore || !user?.uid || !profile || !profile.role || profile.id !== user.uid) return null;
     
     const ordersRef = collection(firestore, 'orders');
 
-    // 1. Si es Admin, ve TODO el sistema
     if (profile.role === 'admin') {
       return query(ordersRef, orderBy('createdAt', 'desc'));
     }
     
-    // 2. Si es Dueño, ve sus VENTAS
     if (profile.role === 'dueño') {
       return query(
         ordersRef, 
@@ -66,7 +62,6 @@ export default function OrdersManagementPage() {
       );
     }
     
-    // 3. Por defecto (Cliente), ve sus COMPRAS
     return query(
       ordersRef, 
       where('customerId', '==', user.uid)
@@ -75,7 +70,6 @@ export default function OrdersManagementPage() {
 
   const { data: ordersData, isLoading: loadingOrders } = useCollection(ordersQuery);
 
-  // Ordenamos en el cliente para máxima compatibilidad
   const orders = useMemo(() => {
     if (!ordersData) return [];
     return [...ordersData].sort((a, b) => {
@@ -89,6 +83,14 @@ export default function OrdersManagementPage() {
     if (!firestore) return;
     const orderRef = doc(firestore, 'orders', orderId);
     updateDocumentNonBlocking(orderRef, { status: newStatus });
+  };
+
+  const handleWhatsAppChat = (phone: string, productName: string, orderId: string) => {
+    if (!phone) return;
+    // Limpiar el número para WhatsApp (solo números)
+    const cleanPhone = phone.replace(/\D/g, '');
+    const message = encodeURIComponent(`¡Hola! Te contacto de Vitriniando sobre tu pedido de "${productName}" (ID: ${orderId.slice(-6)}).`);
+    window.open(`https://wa.me/57${cleanPhone}?text=${message}`, '_blank');
   };
 
   const filteredOrders = orders?.filter(o => 
@@ -171,6 +173,11 @@ export default function OrdersManagementPage() {
                               <UserIcon className="w-3.5 h-3.5 text-primary" />
                               <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Cliente:</span>
                               <span className="text-sm font-black text-slate-700">{order.customerName}</span>
+                              {order.customerPhone && (
+                                <Badge variant="outline" className="text-[9px] border-primary/20 text-primary rounded-md">
+                                  {order.customerPhone}
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
                               <StoreIcon className="w-3.5 h-3.5 text-secondary" />
@@ -208,9 +215,14 @@ export default function OrdersManagementPage() {
                           </div>
                         )}
                         
-                        <Button className="rounded-full h-12 px-6 bg-[#25d366] hover:bg-[#128c7e] text-white font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto shadow-lg shadow-green-100 border-none">
-                          <MessageCircle className="w-4 h-4" /> Chat WhatsApp
-                        </Button>
+                        {order.customerPhone && (
+                          <Button 
+                            onClick={() => handleWhatsAppChat(order.customerPhone, order.productName, order.id)}
+                            className="rounded-full h-12 px-6 bg-[#25d366] hover:bg-[#128c7e] text-white font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto shadow-lg shadow-green-100 border-none"
+                          >
+                            <MessageCircle className="w-4 h-4" /> Chat WhatsApp
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </div>
