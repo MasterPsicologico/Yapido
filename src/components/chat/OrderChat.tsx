@@ -38,6 +38,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   const [text, setText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -50,11 +51,19 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
 
   const { data: messages, isLoading: loadingMessages } = useCollection(messagesQuery);
 
+  // Auto-scroll al final de los mensajes
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Manejar la conexión del stream al elemento video una vez montado
+  useEffect(() => {
+    if (isCameraOpen && stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [isCameraOpen, stream]);
 
   const handleSendMessage = async (payload: { text?: string; imageUrl?: string; type: 'text' | 'image' }) => {
     if (!user || !firestore || (!payload.text && !payload.imageUrl)) return;
@@ -88,36 +97,58 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+      setStream(mediaStream);
       setHasCameraPermission(true);
       setIsCameraOpen(true);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
     } catch (error) {
       setHasCameraPermission(false);
-      toast({ title: "Acceso a cámara denegado", variant: "destructive" });
+      toast({ 
+        title: "Acceso a cámara denegado", 
+        description: "Asegúrate de permitir el acceso en tu navegador.", 
+        variant: "destructive" 
+      });
     }
   };
 
   const stopCamera = () => {
-    const stream = videoRef.current?.srcObject as MediaStream;
-    stream?.getTracks().forEach(track => track.stop());
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
     setIsCameraOpen(false);
   };
 
   const capturePhoto = () => {
-    if (videoRef.current) {
+    if (videoRef.current && stream) {
       const canvas = document.createElement('canvas');
       canvas.width = videoRef.current.videoWidth;
       canvas.height = videoRef.current.videoHeight;
       const ctx = canvas.getContext('2d');
-      ctx?.drawImage(videoRef.current, 0, 0);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-      handleSendMessage({ imageUrl: dataUrl, type: 'image' });
-      stopCamera();
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        handleSendMessage({ imageUrl: dataUrl, type: 'image' });
+        stopCamera();
+        toast({ title: "Evidencia enviada" });
+      }
     }
   };
+
+  // Limpiar stream al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
 
   return (
     <div className="flex flex-col h-[600px] max-h-[80vh] bg-white rounded-[32px] shadow-2xl overflow-hidden border">
@@ -144,10 +175,15 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
         <div className="space-y-4">
           {loadingMessages ? (
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
+          ) : messages?.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center opacity-30">
+               <MessageCircle className="w-10 h-10 mb-2" />
+               <p className="text-xs font-black uppercase tracking-widest">Inicia la conversación</p>
+            </div>
           ) : messages?.map((msg) => {
             const isMe = msg.senderId === user?.uid;
             return (
-              <div key={msg.id} className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
+              <div key={msg.id} className={cn("flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300", isMe ? "items-end" : "items-start")}>
                 <div className={cn(
                   "max-w-[80%] p-3 rounded-2xl shadow-sm",
                   isMe ? "bg-primary text-white rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none"
@@ -156,12 +192,12 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
                   {msg.type === 'text' ? (
                     <p className="text-sm font-medium">{msg.text}</p>
                   ) : (
-                    <div className="relative aspect-square w-48 rounded-lg overflow-hidden border border-black/5">
+                    <div className="relative aspect-square w-48 rounded-lg overflow-hidden border border-black/5 bg-slate-100">
                       <Image src={msg.imageUrl} alt="Evidencia" fill className="object-cover" />
                     </div>
                   )}
                   <p className={cn("text-[8px] mt-1 font-bold uppercase opacity-40", isMe ? "text-right" : "text-left")}>
-                    {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), "HH:mm") : '...'}
+                    {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), "HH:mm") : 'Enviando...'}
                   </p>
                 </div>
               </div>
@@ -174,13 +210,41 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
       {isCameraOpen && (
         <div className="absolute inset-0 z-50 bg-black flex flex-col p-4 animate-in fade-in duration-300">
           <div className="flex justify-between items-center mb-4">
-            <h4 className="text-white font-black uppercase text-xs italic">Cámara de Evidencia</h4>
-            <Button variant="ghost" size="icon" onClick={stopCamera} className="text-white"><X /></Button>
+            <div className="flex items-center gap-2">
+              <Camera className="w-4 h-4 text-primary" />
+              <h4 className="text-white font-black uppercase text-[10px] tracking-widest italic">Cámara de Evidencia</h4>
+            </div>
+            <Button variant="ghost" size="icon" onClick={stopCamera} className="text-white hover:bg-white/10 rounded-full">
+              <X className="w-5 h-5" />
+            </Button>
           </div>
-          <video ref={videoRef} autoPlay playsInline className="flex-1 rounded-2xl bg-slate-900 object-cover" />
-          <div className="py-6 flex justify-center">
-            <Button onClick={capturePhoto} className="w-20 h-20 rounded-full bg-white text-black hover:bg-slate-200 shadow-2xl border-4 border-slate-300">
-              <Camera className="w-8 h-8" />
+          
+          <div className="flex-1 relative rounded-2xl overflow-hidden bg-slate-900 shadow-inner flex items-center justify-center">
+            <video 
+              ref={videoRef} 
+              autoPlay 
+              muted 
+              playsInline 
+              className="w-full h-full object-cover" 
+            />
+            {(!hasCameraPermission && hasCameraPermission !== null) && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white bg-slate-900/90">
+                <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                <p className="font-bold text-sm uppercase tracking-tighter">Acceso Denegado</p>
+                <p className="text-[10px] text-slate-400 mt-2">Habilita los permisos de cámara en tu navegador.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="py-8 flex justify-center">
+            <Button 
+              onClick={capturePhoto} 
+              disabled={!stream}
+              className="w-20 h-20 rounded-full bg-white text-black hover:bg-slate-200 shadow-[0_0_30px_rgba(255,255,255,0.3)] border-4 border-slate-300 transition-transform active:scale-90"
+            >
+              <div className="w-14 h-14 rounded-full border-2 border-slate-900 flex items-center justify-center">
+                <Camera className="w-8 h-8" />
+              </div>
             </Button>
           </div>
         </div>
@@ -194,7 +258,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
             variant="outline" 
             size="icon" 
             onClick={() => fileInputRef.current?.click()} 
-            className="rounded-full h-10 w-10 border-slate-200"
+            className="rounded-full h-10 w-10 border-slate-200 shrink-0"
             title="Subir de Galería"
           >
             <ImageIcon className="w-5 h-5 text-slate-400" />
@@ -203,7 +267,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
             variant="outline" 
             size="icon" 
             onClick={startCamera} 
-            className="rounded-full h-10 w-10 border-slate-200"
+            className="rounded-full h-10 w-10 border-slate-200 shrink-0"
             title="Tomar Foto Evidencia"
           >
             <Camera className="w-5 h-5 text-slate-400" />
@@ -213,8 +277,8 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
               placeholder="Escribe un mensaje..." 
               value={text}
               onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage({ text, type: 'text' })}
-              className="rounded-full h-10 bg-slate-100 border-none pl-4 pr-10"
+              onKeyDown={(e) => e.key === 'Enter' && !isSending && handleSendMessage({ text, type: 'text' })}
+              className="rounded-full h-10 bg-slate-100 border-none pl-4 pr-10 text-sm font-medium"
             />
             <Button 
               onClick={() => handleSendMessage({ text, type: 'text' })} 
@@ -223,7 +287,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
               size="icon" 
               className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full h-8 w-8 text-primary hover:bg-transparent"
             >
-              <Send className="w-4 h-4" />
+              {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </Button>
           </div>
         </div>
