@@ -9,7 +9,7 @@ import { ShoppingCart, ArrowLeft, Heart, Loader2, MessageCircle, Minus, Plus, Ch
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useFirestore, useDoc, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { doc, serverTimestamp, collection, addDoc, getDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -101,21 +101,15 @@ export default function ProductPage() {
 
     setIsOrdering(true);
     try {
-      // SISTEMA DE CURACIÓN DE DUEÑO
+      // 1. Obtener datos de la tienda para el teléfono del vendedor
+      const storeSnap = await getDoc(doc(firestore, 'stores', product.storeId));
+      let storePhone = "";
       let ownerId = product.storeOwnerId || product.ownerId;
       
-      // Si el producto no tiene dueño (producto huérfano), intentamos buscar al dueño de la tienda
-      if (!ownerId && product.storeId) {
-        console.log("Intentando curación de producto huérfano...");
-        const storeSnap = await getDoc(doc(firestore, 'stores', product.storeId));
-        if (storeSnap.exists()) {
-          ownerId = storeSnap.data().ownerId;
-          // Reparamos el producto para el futuro de forma silenciosa
-          updateDocumentNonBlocking(doc(firestore, 'products', product.id), { 
-            storeOwnerId: ownerId,
-            updatedAt: serverTimestamp() 
-          });
-        }
+      if (storeSnap.exists()) {
+        const storeData = storeSnap.data();
+        storePhone = storeData.phoneNumber || "";
+        if (!ownerId) ownerId = storeData.ownerId;
       }
 
       if (!ownerId) {
@@ -145,6 +139,7 @@ export default function ProductPage() {
         customerPhone: tempPhone,
         storeId: product.storeId,
         storeName: product.storeName || 'Tienda Local',
+        storePhone: storePhone, // Guardamos el teléfono de la tienda para que el cliente contacte
         storeOwnerId: ownerId,
         productId: product.id,
         productName: product.name,

@@ -20,7 +20,10 @@ import {
   User as UserIcon,
   Store as StoreIcon,
   ShoppingBag,
-  Sparkles
+  Sparkles,
+  ArrowRightLeft,
+  ShoppingBasket,
+  Tags
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -29,6 +32,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 const STATUS_CONFIG = {
   pending: { label: "Pendiente", color: "bg-yellow-500", icon: Clock },
@@ -45,39 +49,40 @@ export default function OrdersManagementPage() {
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Consulta inteligente basada en el ROL del usuario
-  const ordersQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !profile || !profile.role || profile.id !== user.uid) return null;
+  // Consulta para COMPRAS (Donde soy el cliente)
+  const purchasesQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, 'orders'), where('customerId', '==', user.uid));
+  }, [firestore, user?.uid]);
+
+  // Consulta para VENTAS (Donde soy el dueño de la tienda)
+  const salesQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid || !profile || (profile.role !== 'dueño' && profile.role !== 'admin')) return null;
     
     const ordersRef = collection(firestore, 'orders');
-
-    if (profile.role === 'admin') {
-      return query(ordersRef, orderBy('createdAt', 'desc'));
-    }
+    if (profile.role === 'admin') return query(ordersRef, orderBy('createdAt', 'desc'));
     
-    if (profile.role === 'dueño') {
-      return query(
-        ordersRef, 
-        where('storeOwnerId', '==', user.uid)
-      );
-    }
-    
-    return query(
-      ordersRef, 
-      where('customerId', '==', user.uid)
-    );
+    return query(ordersRef, where('storeOwnerId', '==', user.uid));
   }, [firestore, user?.uid, profile]);
 
-  const { data: ordersData, isLoading: loadingOrders } = useCollection(ordersQuery);
+  const { data: purchasesData, isLoading: loadingPurchases } = useCollection(purchasesQuery);
+  const { data: salesData, isLoading: loadingSales } = useCollection(salesQuery);
 
   const orders = useMemo(() => {
-    if (!ordersData) return [];
-    return [...ordersData].sort((a, b) => {
+    const all = [];
+    if (purchasesData) all.push(...purchasesData.map(o => ({ ...o, type: 'compra' })));
+    if (salesData) {
+      // Evitar duplicados si soy admin y cliente al mismo tiempo
+      const purchaseIds = new Set(all.map(o => o.id));
+      all.push(...salesData.filter(o => !purchaseIds.has(o.id)).map(o => ({ ...o, type: 'venta' })));
+    }
+    
+    return all.sort((a, b) => {
       const dateA = a.createdAt?.toDate?.() || new Date(0);
       const dateB = b.createdAt?.toDate?.() || new Date(0);
       return dateB.getTime() - dateA.getTime();
     });
-  }, [ordersData]);
+  }, [purchasesData, salesData]);
 
   const handleUpdateStatus = (orderId: string, newStatus: string) => {
     if (!firestore) return;
@@ -85,11 +90,16 @@ export default function OrdersManagementPage() {
     updateDocumentNonBlocking(orderRef, { status: newStatus });
   };
 
-  const handleWhatsAppChat = (phone: string, productName: string, orderId: string) => {
-    if (!phone) return;
-    // Limpiar el número para WhatsApp (solo números)
+  const handleWhatsAppChat = (order: any) => {
+    // Si soy el cliente (compra), chateo con el vendedor
+    // Si soy el vendedor (venta), chateo con el cliente
+    const phone = order.type === 'compra' ? (order.storePhone || '') : (order.customerPhone || '');
+    if (!phone) {
+        toast({ title: "Sin número", description: "No hay un número de contacto registrado para este chat.", variant: "destructive" });
+        return;
+    }
     const cleanPhone = phone.replace(/\D/g, '');
-    const message = encodeURIComponent(`¡Hola! Te contacto de Vitriniando sobre tu pedido de "${productName}" (ID: ${orderId.slice(-6)}).`);
+    const message = encodeURIComponent(`¡Hola! Te contacto de Vitriniando sobre el pedido de "${order.productName}" (ID: ${order.id.slice(-6)}).`);
     window.open(`https://wa.me/57${cleanPhone}?text=${message}`, '_blank');
   };
 
@@ -99,7 +109,7 @@ export default function OrdersManagementPage() {
     o.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const isGlobalLoading = isAuthLoading || loadingProfile || (ordersQuery !== null && loadingOrders);
+  const isGlobalLoading = isAuthLoading || loadingProfile || loadingPurchases || (salesQuery !== null && loadingSales);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
@@ -113,10 +123,10 @@ export default function OrdersManagementPage() {
             </div>
             <div>
               <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">
-                {profile?.role === 'admin' ? 'Consola Maestro' : profile?.role === 'dueño' ? 'Mis Ventas' : 'Mis Pedidos'}
+                Gestión de Pedidos
               </h1>
               <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">
-                {profile?.role === 'admin' ? 'Control global del ecosistema' : 'Historial y seguimiento en tiempo real'}
+                {profile?.role === 'admin' ? 'Control Maestro Global' : 'Historial de Compras y Ventas'}
               </p>
             </div>
           </div>
@@ -137,7 +147,7 @@ export default function OrdersManagementPage() {
         {isGlobalLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Sincronizando Vitrina...</p>
+            <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Sincronizando Pedidos...</p>
           </div>
         ) : filteredOrders && filteredOrders.length > 0 ? (
           <div className="grid gap-6">
@@ -145,15 +155,20 @@ export default function OrdersManagementPage() {
               const status = STATUS_CONFIG[order.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
               const StatusIcon = status.icon;
               const formattedDate = order.createdAt ? format(order.createdAt.toDate(), "d 'de' MMMM, HH:mm", { locale: es }) : 'Recién pedido';
+              const isVenta = order.type === 'venta';
               
               return (
                 <Card key={order.id} className="border-none rounded-[32px] overflow-hidden shadow-md bg-white group hover:shadow-xl transition-all duration-500">
                   <div className="flex flex-col lg:flex-row">
-                    <div className={`w-full lg:w-2 ${status.color}`} />
+                    <div className={cn("w-full lg:w-2", isVenta ? "bg-secondary" : "bg-primary")} />
                     
                     <CardContent className="flex-1 p-6 lg:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
                       <div className="space-y-4 flex-1">
                         <div className="flex flex-wrap items-center gap-3">
+                          <Badge className={cn("text-white border-none rounded-full px-4 h-7 text-[10px] font-black uppercase tracking-widest", isVenta ? "bg-secondary" : "bg-primary")}>
+                            {isVenta ? <Tags className="w-3 h-3 mr-1.5" /> : <ShoppingBasket className="w-3 h-3 mr-1.5" />}
+                            {isVenta ? "Venta Recibida" : "Mi Compra"}
+                          </Badge>
                           <Badge className={`${status.color} text-white border-none rounded-full px-4 h-7 text-[10px] font-black uppercase tracking-widest`}>
                             <StatusIcon className="w-3 h-3 mr-1.5" />
                             {status.label}
@@ -171,18 +186,19 @@ export default function OrdersManagementPage() {
                           <div className="flex flex-col gap-1 mt-1">
                             <div className="flex items-center gap-2">
                               <UserIcon className="w-3.5 h-3.5 text-primary" />
-                              <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Cliente:</span>
-                              <span className="text-sm font-black text-slate-700">{order.customerName}</span>
-                              {order.customerPhone && (
-                                <Badge variant="outline" className="text-[9px] border-primary/20 text-primary rounded-md">
-                                  {order.customerPhone}
-                                </Badge>
-                              )}
+                              <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                                {isVenta ? "Cliente:" : "Vendedor:"}
+                              </span>
+                              <span className="text-sm font-black text-slate-700">
+                                {isVenta ? order.customerName : order.storeName}
+                              </span>
                             </div>
                             <div className="flex items-center gap-2">
                               <StoreIcon className="w-3.5 h-3.5 text-secondary" />
-                              <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Tienda:</span>
-                              <span className="text-sm font-black text-slate-700">{order.storeName}</span>
+                              <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Ubicación:</span>
+                              <span className="text-sm font-black text-slate-700">
+                                {isVenta ? "WhatsApp Cliente" : "Tienda Local"}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -194,7 +210,7 @@ export default function OrdersManagementPage() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                        {(profile?.role === 'admin' || profile?.role === 'dueño') && (
+                        {isVenta && (
                           <div className="flex flex-wrap gap-2 w-full lg:w-auto">
                             {order.status === 'pending' && (
                               <Button 
@@ -215,14 +231,12 @@ export default function OrdersManagementPage() {
                           </div>
                         )}
                         
-                        {order.customerPhone && (
-                          <Button 
-                            onClick={() => handleWhatsAppChat(order.customerPhone, order.productName, order.id)}
-                            className="rounded-full h-12 px-6 bg-[#25d366] hover:bg-[#128c7e] text-white font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto shadow-lg shadow-green-100 border-none"
-                          >
-                            <MessageCircle className="w-4 h-4" /> Chat WhatsApp
-                          </Button>
-                        )}
+                        <Button 
+                          onClick={() => handleWhatsAppChat(order)}
+                          className="rounded-full h-12 px-6 bg-[#25d366] hover:bg-[#128c7e] text-white font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto shadow-lg shadow-green-100 border-none"
+                        >
+                          <MessageCircle className="w-4 h-4" /> {isVenta ? "Chat Cliente" : "Chat Vendedor"}
+                        </Button>
                       </div>
                     </CardContent>
                   </div>
@@ -240,22 +254,18 @@ export default function OrdersManagementPage() {
             </div>
             
             <h3 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter leading-none mb-4">
-              {profile?.role === 'dueño' ? 'Aún no tienes ventas' : '¿Listo para tu primer pedido?'}
+              ¿Listo para tu primer pedido?
             </h3>
             
             <p className="text-slate-400 text-sm font-bold max-w-sm mx-auto uppercase tracking-widest leading-relaxed mb-10">
-              {profile?.role === 'dueño' 
-                ? 'Cuando tus clientes empiecen a vitrinear y comprar, sus pedidos aparecerán aquí para que los gestiones.'
-                : 'Tu historial de compras está vacío. ¡Es el momento perfecto para descubrir productos increíbles en las mejores vitrinas de tu ciudad!'}
+              Tu historial está vacío. ¡Es el momento perfecto para descubrir productos increíbles en las mejores vitrinas de tu ciudad!
             </p>
             
-            {profile?.role !== 'dueño' && (
-              <Link href="/">
-                <Button className="h-16 px-12 rounded-full bg-primary hover:bg-primary/90 text-white font-black text-lg gap-3 shadow-2xl shadow-primary/30 transition-all hover:scale-105">
-                  <Sparkles className="w-6 h-6 text-yellow-300" /> Empezar a Vitrinear
-                </Button>
-              </Link>
-            )}
+            <Link href="/">
+              <Button className="h-16 px-12 rounded-full bg-primary hover:bg-primary/90 text-white font-black text-lg gap-3 shadow-2xl shadow-primary/30 transition-all hover:scale-105">
+                <Sparkles className="w-6 h-6 text-yellow-300" /> Empezar a Vitrinear
+              </Button>
+            </Link>
           </div>
         )}
       </main>
