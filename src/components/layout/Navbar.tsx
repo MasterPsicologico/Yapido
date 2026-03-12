@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Store, ShoppingBag, User, Search, Menu, Info, Home as HomeIcon, LogOut, ClipboardList, Truck } from 'lucide-react';
+import { Store, ShoppingBag, User, Search, Menu, Info, Home as HomeIcon, LogOut, ClipboardList, Truck, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -59,6 +59,10 @@ export function Navbar() {
                 <Link href="/" className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-muted rounded-lg transition-colors">
                   <HomeIcon className="w-5 h-5 text-primary" />
                   Inicio
+                </Link>
+                <Link href="/profile" className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-muted rounded-lg transition-colors">
+                  <UserCircle className="w-5 h-5 text-primary" />
+                  Mi Perfil
                 </Link>
                 <Link href="/about" className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-muted rounded-lg transition-colors">
                   <Info className="w-5 h-5 text-primary" />
@@ -129,38 +133,44 @@ export function Navbar() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={user.photoURL || ''} alt={user.displayName || ''} />
+                        <Avatar className="h-10 w-10 border-2 border-primary/20">
+                          <AvatarImage src={profile?.photoURL || user.photoURL || ''} alt={user.displayName || ''} />
                           <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuContent className="w-64 p-2 rounded-[24px] shadow-2xl" align="end" forceMount>
                       <DropdownMenuLabel className="font-normal">
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">{user.displayName}</p>
-                          <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                        <div className="flex flex-col space-y-1 p-2">
+                          <p className="text-sm font-black italic">{profile?.displayName || user.displayName}</p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{user.email}</p>
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
+                      <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer">
+                        <Link href="/profile">
+                          <UserCircle className="mr-2 h-4 w-4 text-primary" />
+                          <span className="font-bold">Mi Perfil Morrocoy</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer">
                         <Link href="/admin/orders">
-                          <ClipboardList className="mr-2 h-4 w-4" />
-                          <span>Mis Pedidos</span>
+                          <ClipboardList className="mr-2 h-4 w-4 text-primary" />
+                          <span className="font-bold">Mis Pedidos</span>
                         </Link>
                       </DropdownMenuItem>
                       {isRepartidor && (
-                        <DropdownMenuItem asChild>
+                        <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer">
                           <Link href="/delivery/dashboard">
                             <Truck className="mr-2 h-4 w-4 text-secondary" />
-                            <span>Dashboard Delivery</span>
+                            <span className="font-bold text-secondary">Dashboard Delivery</span>
                           </Link>
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
+                      <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500 rounded-xl h-11 cursor-pointer">
                         <LogOut className="mr-2 h-4 w-4" />
-                        <span>Cerrar Sesión</span>
+                        <span className="font-bold">Cerrar Sesión</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

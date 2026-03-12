@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { doc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, collection, addDoc, getDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,7 +38,6 @@ export default function ProductPage() {
 
   const { data: product, isLoading } = useDoc(productRef);
 
-  // Sincronizar el teléfono del perfil al estado local
   useEffect(() => {
     if (profile?.phoneNumber) {
       setTempPhone(profile.phoneNumber);
@@ -100,12 +99,12 @@ export default function ProductPage() {
       return;
     }
 
-    // Validación crítica de storeOwnerId para evitar error undefined
+    // Validación crítica del vendedor
     const ownerId = product.storeOwnerId || product.ownerId;
     if (!ownerId) {
       toast({ 
-        title: "Error de Datos", 
-        description: "Este producto tiene información incompleta (falta dueño). Contacta al soporte.", 
+        title: "Vendedor no identificado", 
+        description: "Este producto no tiene un dueño asignado. Contacta al soporte.", 
         variant: "destructive" 
       });
       return;
@@ -113,8 +112,12 @@ export default function ProductPage() {
 
     setIsOrdering(true);
     try {
-      // Actualizar perfil si no tenía teléfono o cambió
-      if (user && tempPhone && (!profile?.phoneNumber || profile.phoneNumber !== tempPhone)) {
+      // 1. Verificar si el VENDEDOR tiene perfil y teléfono (para alertar si no es así)
+      const sellerDoc = await getDoc(doc(firestore, 'users', ownerId));
+      const sellerData = sellerDoc.exists() ? sellerDoc.data() : null;
+
+      // 2. Actualizar perfil del CLIENTE si es necesario
+      if (tempPhone !== profile?.phoneNumber) {
         const userRef = doc(firestore, 'users', user.uid);
         updateDocumentNonBlocking(userRef, { 
           phoneNumber: tempPhone,
@@ -122,15 +125,15 @@ export default function ProductPage() {
         });
       }
 
-      // Crear el pedido usando addDoc directamente para manejo de errores más específico
+      // 3. Crear el pedido
       const ordersRef = collection(firestore, 'orders');
       const orderData = {
         customerId: user.uid,
-        customerName: user.displayName || 'Cliente Vitriniando',
+        customerName: profile?.displayName || user.displayName || 'Cliente Vitriniando',
         customerPhone: tempPhone,
         storeId: product.storeId,
         storeName: product.storeName || 'Tienda Local',
-        storeOwnerId: ownerId, // Usamos el ID validado
+        storeOwnerId: ownerId,
         productId: product.id,
         productName: product.name,
         quantity: quantity,
@@ -169,7 +172,6 @@ export default function ProductPage() {
     }
   };
 
-  // Determinar si debemos mostrar la sección de WhatsApp
   const showPhoneInput = !profile?.phoneNumber || profile.phoneNumber.length < 10;
 
   return (
@@ -231,11 +233,10 @@ export default function ProductPage() {
             ) : (
               <div className="mt-auto space-y-6 pt-8 border-t border-slate-100">
                 
-                {/* Sección de WhatsApp: Llamativa en ROJO si falta el número */}
                 {showPhoneInput && (
-                  <div className="space-y-3 bg-red-50 p-5 rounded-3xl border-2 border-red-200 animate-in fade-in slide-in-from-bottom-2">
-                    <Label htmlFor="phone" className="text-[12px] font-black uppercase tracking-widest text-red-600 flex items-center gap-2 drop-shadow-sm">
-                      <AlertCircle className="w-5 h-5 animate-pulse" /> ¡PASO OBLIGATORIO! TU WHATSAPP
+                  <div className="space-y-3 bg-red-50 p-5 rounded-3xl border-2 border-red-500 shadow-xl shadow-red-100 animate-bounce-subtle">
+                    <Label htmlFor="phone" className="text-[14px] font-black uppercase tracking-widest text-red-600 flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5" /> ¡TU WHATSAPP ES OBLIGATORIO!
                     </Label>
                     <Input 
                       id="phone"
@@ -243,18 +244,11 @@ export default function ProductPage() {
                       placeholder="Ej: 300 123 4567"
                       value={tempPhone}
                       onChange={(e) => setTempPhone(e.target.value)}
-                      className="h-12 rounded-2xl border-none bg-white shadow-md font-black text-slate-700 placeholder:text-slate-300 focus:ring-2 focus:ring-red-500"
+                      className="h-14 rounded-2xl border-none bg-white shadow-md font-black text-slate-800 focus:ring-4 focus:ring-red-200"
                     />
-                    <p className="text-[10px] text-red-500 font-black uppercase italic">
-                      * El vendedor lo usará para coordinar la entrega contigo ahora mismo.
+                    <p className="text-[10px] text-red-500 font-black uppercase italic leading-tight">
+                      * El vendedor te escribirá por aquí para cerrar el negocio.
                     </p>
-                  </div>
-                )}
-
-                {!showPhoneInput && profile?.phoneNumber && (
-                  <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full w-fit border border-green-100">
-                    <Phone className="w-3 h-3 text-green-600" />
-                    <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">Contacto Confirmado: {profile.phoneNumber}</span>
                   </div>
                 )}
 
@@ -290,14 +284,6 @@ export default function ProductPage() {
                   >
                     {isOrdering ? <Loader2 className="w-6 h-6 animate-spin" /> : <ShoppingCart className="w-6 h-6" />}
                     Solicitar Pedido
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full h-12 rounded-full border-slate-100 font-bold gap-2 text-slate-400 hover:text-red-500"
-                  >
-                    <Heart className="w-5 h-5" />
-                    Favorito
                   </Button>
                 </div>
               </div>
