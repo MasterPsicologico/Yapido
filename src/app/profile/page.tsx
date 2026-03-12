@@ -16,15 +16,17 @@ import {
   Save, 
   Loader2, 
   X, 
-  CheckCircle2,
-  RefreshCw,
-  AlertCircle
+  Plus,
+  Search,
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { cn } from '@/lib/utils';
 
 export default function ProfilePage() {
   const { profile, user, isLoading } = useProfile();
@@ -32,7 +34,7 @@ export default function ProfilePage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   
   const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
+  const [addresses, setAddresses] = useState<string[]>([""]);
   const [phone, setPhone] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
@@ -43,13 +45,20 @@ export default function ProfilePage() {
   useEffect(() => {
     if (profile) {
       setName(profile.displayName || "");
-      setAddress(profile.address || "");
       setPhone(profile.phoneNumber || "");
       setCapturedImage(profile.photoURL || null);
+      
+      // Cargar direcciones guardadas o inicializar con una vacía
+      if (profile.addresses && Array.isArray(profile.addresses) && profile.addresses.length > 0) {
+        setAddresses(profile.addresses);
+      } else if (profile.address) {
+        setAddresses([profile.address]);
+      } else {
+        setAddresses([""]);
+      }
     }
   }, [profile]);
 
-  // Manejador para conectar el stream al video cuando se abre la cámara
   useEffect(() => {
     if (showCamera && videoRef.current && stream) {
       videoRef.current.srcObject = stream;
@@ -91,26 +100,36 @@ export default function ProfilePage() {
     if (videoRef.current) {
       const canvas = document.createElement('canvas');
       const video = videoRef.current;
-      
-      // Ajustar canvas al tamaño del video real
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        // Dibujar el frame actual
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        // Comprimir a JPEG con calidad 0.8 (Balance perfecto)
         const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         setCapturedImage(dataUrl);
         stopCamera();
-        toast({ 
-          title: "¡Foto Capturada!", 
-          description: "La imagen se ha procesado y optimizado correctamente." 
-        });
+        toast({ title: "¡Foto Capturada!", description: "Imagen optimizada correctamente." });
       }
     }
+  };
+
+  const handleAddAddress = () => {
+    setAddresses([...addresses, ""]);
+  };
+
+  const handleRemoveAddress = (index: number) => {
+    if (addresses.length > 1) {
+      const newAddresses = addresses.filter((_, i) => i !== index);
+      setAddresses(newAddresses);
+    } else {
+      setAddresses([""]);
+    }
+  };
+
+  const handleAddressChange = (index: number, value: string) => {
+    const newAddresses = [...addresses];
+    newAddresses[index] = value;
+    setAddresses(newAddresses);
   };
 
   const handleSave = async () => {
@@ -120,7 +139,7 @@ export default function ProfilePage() {
       toast({
         variant: "destructive",
         title: "Número Inválido",
-        description: "El número de WhatsApp debe tener al menos 10 dígitos.",
+        description: "El número debe tener al menos 10 dígitos.",
       });
       return;
     }
@@ -128,9 +147,12 @@ export default function ProfilePage() {
     setIsSaving(true);
     try {
       const userRef = doc(firestore, 'users', user.uid);
+      const cleanAddresses = addresses.filter(a => a.trim() !== "");
+      
       const data: any = {
         displayName: name,
-        address: address,
+        addresses: cleanAddresses,
+        address: cleanAddresses[0] || "", // Compatibilidad con versiones anteriores
         phoneNumber: phone,
         updatedAt: serverTimestamp(),
       };
@@ -142,13 +164,13 @@ export default function ProfilePage() {
       updateDocumentNonBlocking(userRef, data);
       toast({
         title: "Perfil Actualizado",
-        description: "Tus datos han sido guardados en la nube con éxito.",
+        description: "Tus datos han sido sincronizados en la nube.",
       });
     } catch (e) {
       toast({
         variant: "destructive",
         title: "Error al Guardar",
-        description: "No se pudieron actualizar los datos del perfil.",
+        description: "No se pudieron actualizar los datos.",
       });
     } finally {
       setIsSaving(false);
@@ -206,7 +228,7 @@ export default function ProfilePage() {
             <CardContent className="space-y-6 p-8 pt-4">
               
               {showCamera && (
-                <div className="space-y-4 animate-in fade-in zoom-in duration-500 bg-slate-900 p-4 rounded-[32px]">
+                <div className="space-y-4 animate-in fade-in zoom-in duration-500 bg-slate-900 p-4 rounded-[32px] mb-6">
                   <div className="relative aspect-square max-w-[320px] mx-auto rounded-3xl overflow-hidden bg-black shadow-2xl border-4 border-white/10">
                     <video 
                       ref={videoRef} 
@@ -215,82 +237,91 @@ export default function ProfilePage() {
                       muted 
                       playsInline 
                     />
-                    <div className="absolute inset-0 border-[12px] border-white/5 rounded-3xl pointer-events-none" />
                   </div>
-                  
-                  {hasCameraPermission === false && (
-                    <Alert variant="destructive" className="rounded-2xl border-none bg-red-500/10 text-red-500">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Cámara No Disponible</AlertTitle>
-                      <AlertDescription>Habilita los permisos en el candado de la barra de direcciones.</AlertDescription>
-                    </Alert>
-                  )}
-                  
                   <div className="flex gap-3 justify-center">
-                    <Button 
-                      onClick={capturePhoto} 
-                      className="rounded-full bg-green-500 hover:bg-green-600 text-white font-black px-10 h-14 gap-2 shadow-lg shadow-green-500/20"
-                    >
+                    <Button onClick={capturePhoto} className="rounded-full bg-green-500 hover:bg-green-600 text-white font-black px-10 h-14 gap-2 shadow-lg shadow-green-500/20">
                       <Camera className="w-5 h-5" /> Capturar Foto
                     </Button>
-                    <Button 
-                      onClick={stopCamera} 
-                      variant="outline" 
-                      className="rounded-full px-8 h-14 border-white/10 text-white hover:bg-white/10"
-                    >
+                    <Button onClick={stopCamera} variant="outline" className="rounded-full px-8 h-14 border-white/10 text-white hover:bg-white/10">
                       Cancelar
                     </Button>
                   </div>
                 </div>
               )}
 
-              <div className="grid gap-6">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Nombre de Exhibición</Label>
+              <div className="grid gap-8">
+                <div className="space-y-3">
+                  <Label className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400 ml-1">Nombre de Exhibición</Label>
                   <div className="relative">
-                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+                    <UserIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
                     <Input 
                       value={name} 
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Tu nombre para la vitrina"
-                      className="h-14 rounded-2xl bg-slate-50 border-none pl-12 font-bold focus:ring-2 focus:ring-primary/20"
+                      className="h-16 rounded-[24px] bg-slate-50 border-none pl-14 font-black text-slate-800 focus:ring-4 focus:ring-primary/10 transition-all text-base"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">WhatsApp (Contacto de Ventas)</Label>
+                <div className="space-y-3">
+                  <Label className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400 ml-1">WhatsApp (Contacto de Ventas)</Label>
                   <div className="relative">
-                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                    <Phone className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
                     <Input 
                       value={phone} 
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="Ej: 3001234567"
-                      className="h-14 rounded-2xl bg-slate-50 border-none pl-12 font-bold focus:ring-2 focus:ring-green-500/20"
+                      placeholder="Ej: 318 992 5503"
+                      className="h-16 rounded-[24px] bg-slate-50 border-none pl-14 font-black text-slate-800 focus:ring-4 focus:ring-green-500/10 transition-all text-base"
                     />
                   </div>
-                  <p className="text-[9px] text-slate-400 ml-4 font-bold uppercase italic">* Este número se usará para que los clientes te contacten.</p>
+                  <p className="text-[10px] text-slate-400 ml-1 font-bold uppercase italic leading-tight">* Este número se usará para que los clientes te contacten.</p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Dirección Física / Despacho</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />
-                    <Input 
-                      value={address} 
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Calle, Barrio, Ciudad..."
-                      className="h-14 rounded-2xl bg-slate-50 border-none pl-12 font-bold focus:ring-2 focus:ring-red-500/20"
-                    />
+                <div className="space-y-4">
+                  <Label className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400 ml-1">Dirección Física / Despacho</Label>
+                  <div className="space-y-4">
+                    {addresses.map((addr, idx) => (
+                      <div key={idx} className="relative group animate-in slide-in-from-left-2 duration-300">
+                        <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500 z-10" />
+                        <Input 
+                          value={addr} 
+                          onChange={(e) => handleAddressChange(idx, e.target.value)}
+                          placeholder="Ej: Calle 50 No 23-22, Aguachica"
+                          className="h-16 rounded-[24px] bg-slate-50 border-none pl-14 pr-12 font-black text-slate-800 focus:ring-4 focus:ring-red-500/10 transition-all text-base"
+                        />
+                        {addresses.length > 1 && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleRemoveAddress(idx)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-200 pointer-events-none group-focus-within:text-primary transition-colors mr-10" />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Botón Verde Circular para añadir direcciones */}
+                  <div className="flex justify-center pt-2">
+                    <Button 
+                      onClick={handleAddAddress}
+                      size="icon"
+                      className="h-12 w-12 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-100 border-none transition-transform active:scale-90"
+                    >
+                      <Plus className="w-6 h-6" />
+                    </Button>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-8 border-t border-slate-100">
+              <div className="pt-10">
                 <Button 
                   onClick={handleSave} 
                   disabled={isSaving}
-                  className="w-full h-16 rounded-[24px] bg-primary hover:bg-primary/90 text-white text-lg font-black gap-3 shadow-2xl shadow-primary/20 transition-all hover:scale-[1.01] active:scale-95"
+                  className="w-full h-16 rounded-[28px] bg-primary hover:bg-primary/90 text-white text-lg font-black gap-3 shadow-2xl shadow-primary/20 transition-all hover:scale-[1.01] active:scale-95"
                 >
                   {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Save className="w-6 h-6" /> Sincronizar Mi Perfil</>}
                 </Button>
