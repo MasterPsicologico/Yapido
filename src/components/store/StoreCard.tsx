@@ -117,8 +117,8 @@ export function StoreCard({ store }: { store: any }) {
   );
 
   return (
-    <Card className="group flex flex-col h-full border-none rounded-[28px] shadow-sm hover:shadow-xl transition-all duration-500 bg-white overflow-hidden border-b sm:border">
-      <Link href={`/stores/${store.id}`} className="block relative aspect-[5/4] w-full overflow-hidden bg-slate-50">
+    <Card className="group flex flex-col h-full border-none rounded-[32px] shadow-sm hover:shadow-2xl transition-all duration-500 bg-white overflow-hidden border-b sm:border">
+      <Link href={`/stores/${store.id}`} className="block relative aspect-[4/3] w-full overflow-hidden bg-slate-50">
         <Image
           src={store.imageUrl || 'https://picsum.photos/seed/store/800/600'}
           alt={store.name}
@@ -126,36 +126,47 @@ export function StoreCard({ store }: { store: any }) {
           className="object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
           data-ai-hint="store image"
         />
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+        
+        {/* Overlay Superior de Badges */}
+        <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-20">
           {store.isPro && (
             <Badge className="bg-secondary text-white border-none text-[8px] h-5 px-2.5 rounded-full uppercase font-black tracking-widest shadow-lg">
               PRO
             </Badge>
           )}
+          <div className="flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 shadow-sm">
+            <Star className="w-2.5 h-2.5 text-yellow-500 fill-yellow-500" />
+            <span className="text-[9px] font-black text-slate-900">4.9</span>
+          </div>
         </div>
-        <div className="absolute bottom-0 inset-x-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 shadow-sm">
-          <Star className="w-2.5 h-2.5 text-yellow-500 fill-yellow-500" />
-          <span className="text-[9px] font-black text-slate-900">4.9</span>
+
+        {/* Gradiente de Contraste Inferior */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10" />
+
+        {/* Información Dinámica sobre la Imagen */}
+        <div className="absolute bottom-5 left-5 right-5 z-20 text-white space-y-2">
+          <h3 className="text-2xl sm:text-3xl font-black text-white italic leading-[0.9] tracking-tighter uppercase drop-shadow-md break-words">
+            {store.name}
+          </h3>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 opacity-90 max-w-[70%]">
+              <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest truncate">{store.address || 'Aguachica'}</span>
+            </div>
+            <div className="flex items-center gap-1.5 opacity-90 shrink-0 bg-white/10 backdrop-blur-sm px-2 py-1 rounded-lg">
+              <Clock className="w-3 h-3 text-secondary" />
+              <span className="text-[10px] font-black uppercase tracking-tighter">15-30 MIN</span>
+            </div>
+          </div>
         </div>
       </Link>
 
-      <CardContent className="p-4 sm:p-6 flex flex-col flex-1 space-y-4">
-        <Link href={`/stores/${store.id}`} className="space-y-1 block overflow-hidden">
-          <h3 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 group-hover:text-primary transition-colors leading-[1.1] tracking-tighter italic break-words hyphens-auto">
-            {store.name}
-          </h3>
-          <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-1 max-w-[60%]">
-              <MapPin className="w-3 h-3 text-primary/60 shrink-0" />
-              <span className="text-[10px] font-bold text-slate-400 line-clamp-1 truncate">{store.address || 'Aguachica'}</span>
-            </div>
-            <div className="flex items-center gap-1 text-slate-300">
-              <Clock className="w-2.5 h-2.5" />
-              <span className="text-[9px] font-black uppercase tracking-tighter">15-30 min</span>
-            </div>
-          </div>
-        </Link>
+      <CardContent className="p-6 flex flex-col flex-1 space-y-5">
+        
+        {/* Descripción Estratégica */}
+        <p className="text-[12px] text-slate-500 line-clamp-2 leading-relaxed font-medium italic">
+          {store.description || 'Explora lo mejor de nuestra vitrina digital.'}
+        </p>
 
         {/* Sistema de Badges Verticales Dinámicos */}
         <div className="flex flex-col gap-1.5 min-h-[28px]">
@@ -166,13 +177,13 @@ export function StoreCard({ store }: { store: any }) {
               <div 
                 key={id} 
                 className={cn(
-                  "flex items-center justify-between px-3 h-8 rounded-xl border transition-all",
+                  "flex items-center justify-between px-3 h-9 rounded-xl border transition-all shadow-sm",
                   badge.bg,
                   badge.border
                 )}
               >
-                 <div className="flex items-center gap-2">
-                   <badge.icon className={cn("w-3.5 h-3.5", badge.color, badge.animate && "animate-pulse")} />
+                 <div className="flex items-center gap-2.5">
+                   <badge.icon className={cn("w-4 h-4", badge.color, badge.animate && "animate-pulse")} />
                    <span className={cn("text-[9px] font-black uppercase tracking-wider", badge.color)}>
                     {badge.label}
                    </span>
@@ -182,26 +193,26 @@ export function StoreCard({ store }: { store: any }) {
                      onClick={(e) => { e.preventDefault(); handleRemoveBadge(id); }}
                      className="p-1 hover:bg-red-100 rounded-full transition-colors text-red-500"
                    >
-                     <Trash2 className="w-3 h-3" />
+                     <Trash2 className="w-3.5 h-3.5" />
                    </button>
                  )}
               </div>
             );
           })}
 
-          {/* Botón Verde Circular para Administrador - Siempre al final */}
+          {/* Botón de Administrador para añadir Badges */}
           {isAdmin && activeBadgeIds.length < 4 && (
             <div className="flex justify-center pt-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button 
                     size="icon" 
-                    className="h-8 w-8 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-200 border-none transition-transform active:scale-90"
+                    className="h-9 w-9 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-200 border-none transition-transform active:scale-90"
                   >
                     <Plus className="w-5 h-5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-56 rounded-[20px] p-1.5 shadow-2xl border-slate-100 bg-white/98 backdrop-blur-md">
+                <DropdownMenuContent align="center" className="w-56 rounded-[24px] p-2 shadow-2xl border-slate-100 bg-white/98 backdrop-blur-md">
                   {(Object.keys(VALUE_BADGES_CONFIG) as BadgeKey[])
                     .filter(key => !activeBadgeIds.includes(key))
                     .map((key) => {
@@ -210,9 +221,9 @@ export function StoreCard({ store }: { store: any }) {
                         <DropdownMenuItem 
                           key={key} 
                           onClick={() => handleAddBadge(key)}
-                          className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer hover:bg-slate-50 transition-all"
+                          className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer hover:bg-slate-50 transition-all mb-1"
                         >
-                          <div className={cn("w-7 h-7 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-50", item.color)}>
+                          <div className={cn("w-8 h-8 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-50", item.color)}>
                             <item.icon className="w-4 h-4" />
                           </div>
                           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600">{item.label}</span>
@@ -225,17 +236,14 @@ export function StoreCard({ store }: { store: any }) {
           )}
         </div>
 
-        <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed font-medium italic">
-          {store.description || 'Explora lo mejor de nuestra vitrina digital.'}
-        </p>
-
+        {/* Estatus Maestro al final */}
         <div className="mt-auto pt-2">
           {isAdmin ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 {StatusContent}
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 rounded-[20px] p-1.5 shadow-2xl border-slate-100 bg-white/98 backdrop-blur-md">
+              <DropdownMenuContent align="end" className="w-64 rounded-[24px] p-2 shadow-2xl border-slate-100 bg-white/98 backdrop-blur-md">
                 {(Object.keys(STATUS_MAP) as StatusKey[]).map((key) => {
                   const item = STATUS_MAP[key];
                   const ItemIcon = item.icon;
@@ -244,11 +252,11 @@ export function StoreCard({ store }: { store: any }) {
                       key={key} 
                       onClick={() => handleStatusChange(key)}
                       className={cn(
-                        "flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all mb-0.5",
+                        "flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all mb-1",
                         currentStatusKey === key ? "bg-slate-50 font-black" : "hover:bg-slate-50"
                       )}
                     >
-                      <div className={cn("w-7 h-7 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-50", item.color)}>
+                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-50", item.color)}>
                         <ItemIcon className="w-4 h-4" />
                       </div>
                       <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600">{item.label}</span>
