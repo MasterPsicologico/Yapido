@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,15 +18,83 @@ import {
   X, 
   Plus,
   Search,
-  AlertCircle,
   Trash2
 } from 'lucide-react';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { cn } from '@/lib/utils';
+import { Loader } from '@googlemaps/js-api-loader';
+
+// Componente individual para cada input de dirección con Autocomplete
+function AddressAutocompleteInput({ 
+  value, 
+  onChange, 
+  onRemove, 
+  canRemove,
+  index 
+}: { 
+  value: string; 
+  onChange: (value: string) => void; 
+  onRemove: () => void; 
+  canRemove: boolean;
+  index: number;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey || !inputRef.current) return;
+
+    const loader = new Loader({
+      apiKey: apiKey,
+      version: "weekly",
+      libraries: ["places"]
+    });
+
+    loader.load().then(() => {
+      if (!inputRef.current) return;
+      
+      autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
+        componentRestrictions: { country: "co" }, // Restringido a Colombia
+        fields: ["formatted_address", "geometry"],
+        types: ["address"]
+      });
+
+      autocompleteRef.current.addListener("place_changed", () => {
+        const place = autocompleteRef.current?.getPlace();
+        if (place?.formatted_address) {
+          onChange(place.formatted_address);
+        }
+      });
+    }).catch(e => console.error("Error loading Google Maps", e));
+  }, [onChange]);
+
+  return (
+    <div className="relative group animate-in slide-in-from-left-2 duration-300">
+      <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500 z-10" />
+      <Input 
+        ref={inputRef}
+        value={value} 
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Busca tu dirección exacta..."
+        className="h-16 rounded-[24px] bg-slate-50 border-none pl-14 pr-12 font-black text-slate-800 focus:ring-4 focus:ring-red-500/10 transition-all text-base"
+      />
+      {canRemove && (
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onRemove}
+          className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      )}
+      <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-200 pointer-events-none group-focus-within:text-primary transition-colors mr-10" />
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const { profile, user, isLoading } = useProfile();
@@ -38,7 +106,6 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
 
@@ -48,7 +115,6 @@ export default function ProfilePage() {
       setPhone(profile.phoneNumber || "");
       setCapturedImage(profile.photoURL || null);
       
-      // Cargar direcciones guardadas o inicializar con una vacía
       if (profile.addresses && Array.isArray(profile.addresses) && profile.addresses.length > 0) {
         setAddresses(profile.addresses);
       } else if (profile.address) {
@@ -75,11 +141,9 @@ export default function ProfilePage() {
         } 
       });
       setStream(mediaStream);
-      setHasCameraPermission(true);
       setShowCamera(true);
     } catch (error) {
       console.error('Error accessing camera:', error);
-      setHasCameraPermission(false);
       toast({
         variant: 'destructive',
         title: 'Acceso a Cámara Denegado',
@@ -126,11 +190,13 @@ export default function ProfilePage() {
     }
   };
 
-  const handleAddressChange = (index: number, value: string) => {
-    const newAddresses = [...addresses];
-    newAddresses[index] = value;
-    setAddresses(newAddresses);
-  };
+  const handleAddressChange = useCallback((index: number, value: string) => {
+    setAddresses(prev => {
+      const newAddresses = [...prev];
+      newAddresses[index] = value;
+      return newAddresses;
+    });
+  }, []);
 
   const handleSave = async () => {
     if (!user || !firestore) return;
@@ -152,7 +218,7 @@ export default function ProfilePage() {
       const data: any = {
         displayName: name,
         addresses: cleanAddresses,
-        address: cleanAddresses[0] || "", // Compatibilidad con versiones anteriores
+        address: cleanAddresses[0] || "",
         phoneNumber: phone,
         updatedAt: serverTimestamp(),
       };
@@ -274,37 +340,23 @@ export default function ProfilePage() {
                       className="h-16 rounded-[24px] bg-slate-50 border-none pl-14 font-black text-slate-800 focus:ring-4 focus:ring-green-500/10 transition-all text-base"
                     />
                   </div>
-                  <p className="text-[10px] text-slate-400 ml-1 font-bold uppercase italic leading-tight">* Este número se usará para que los clientes te contacten.</p>
                 </div>
 
                 <div className="space-y-4">
-                  <Label className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400 ml-1">Dirección Física / Despacho</Label>
+                  <Label className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-400 ml-1">Dirección Física / Despacho (Google Maps)</Label>
                   <div className="space-y-4">
                     {addresses.map((addr, idx) => (
-                      <div key={idx} className="relative group animate-in slide-in-from-left-2 duration-300">
-                        <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500 z-10" />
-                        <Input 
-                          value={addr} 
-                          onChange={(e) => handleAddressChange(idx, e.target.value)}
-                          placeholder="Ej: Calle 50 No 23-22, Aguachica"
-                          className="h-16 rounded-[24px] bg-slate-50 border-none pl-14 pr-12 font-black text-slate-800 focus:ring-4 focus:ring-red-500/10 transition-all text-base"
-                        />
-                        {addresses.length > 1 && (
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => handleRemoveAddress(idx)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                        <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-200 pointer-events-none group-focus-within:text-primary transition-colors mr-10" />
-                      </div>
+                      <AddressAutocompleteInput 
+                        key={idx}
+                        index={idx}
+                        value={addr}
+                        onChange={(val) => handleAddressChange(idx, val)}
+                        onRemove={() => handleRemoveAddress(idx)}
+                        canRemove={addresses.length > 1}
+                      />
                     ))}
                   </div>
 
-                  {/* Botón Verde Circular para añadir direcciones */}
                   <div className="flex justify-center pt-2">
                     <Button 
                       onClick={handleAddAddress}
