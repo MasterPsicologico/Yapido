@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Store, ShoppingBag, User, Search, Menu, Info, Home as HomeIcon, LogOut, ClipboardList, Truck, UserCircle } from 'lucide-react';
+import { Store, ShoppingBag, User, Search, Menu, Info, Home as HomeIcon, LogOut, ClipboardList, Truck, UserCircle, Bell, MessageSquareText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,6 +24,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ActivityCenter } from './ActivityCenter';
+import { MessageCenter } from './MessageCenter';
 
 export function Navbar() {
   const { user, isUserLoading } = useUser();
@@ -111,28 +113,21 @@ export function Navbar() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-3">
+          {!isUserLoading && user && (
+            <div className="flex items-center gap-1 sm:gap-2 mr-2">
+              <ActivityCenter />
+              <MessageCenter />
+            </div>
+          )}
+
           {!isUserLoading && (
             <>
               {user ? (
-                <div className="flex items-center gap-4">
-                  <Link href="/admin/orders">
-                    <Button variant="ghost" className="hidden lg:flex items-center gap-2">
-                      <ClipboardList className="w-4 h-4" />
-                      Pedidos
-                    </Button>
-                  </Link>
-                  {isRepartidor && (
-                    <Link href="/delivery/dashboard">
-                      <Button variant="secondary" className="hidden lg:flex items-center gap-2 bg-secondary/10 text-secondary border-none hover:bg-secondary/20 rounded-full h-9">
-                        <Truck className="w-4 h-4" />
-                        Delivery
-                      </Button>
-                    </Link>
-                  )}
+                <div className="flex items-center gap-2">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                      <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
                         <Avatar className="h-10 w-10 border-2 border-primary/20">
                           <AvatarImage src={profile?.photoURL || user.photoURL || ''} alt={user.displayName || ''} />
                           <AvatarFallback>{user.displayName?.charAt(0) || 'U'}</AvatarFallback>
