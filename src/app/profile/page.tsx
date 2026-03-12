@@ -18,7 +18,8 @@ import {
   X, 
   Plus,
   Search,
-  Trash2
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
@@ -42,6 +43,7 @@ function AddressAutocompleteInput({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const [mapsError, setMapsError] = useState(false);
 
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -56,29 +58,37 @@ function AddressAutocompleteInput({
     loader.load().then(() => {
       if (!inputRef.current) return;
       
-      autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
-        componentRestrictions: { country: "co" }, // Restringido a Colombia
-        fields: ["formatted_address", "geometry"],
-        types: ["address"]
-      });
+      try {
+        autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
+          componentRestrictions: { country: "co" }, // Restringido a Colombia
+          fields: ["formatted_address", "geometry"],
+          types: ["address"]
+        });
 
-      autocompleteRef.current.addListener("place_changed", () => {
-        const place = autocompleteRef.current?.getPlace();
-        if (place?.formatted_address) {
-          onChange(place.formatted_address);
-        }
-      });
-    }).catch(e => console.error("Error loading Google Maps", e));
+        autocompleteRef.current.addListener("place_changed", () => {
+          const place = autocompleteRef.current?.getPlace();
+          if (place?.formatted_address) {
+            onChange(place.formatted_address);
+          }
+        });
+      } catch (error) {
+        console.error("Error initializing Autocomplete:", error);
+        setMapsError(true);
+      }
+    }).catch(e => {
+      console.error("Error loading Google Maps API:", e);
+      setMapsError(true);
+    });
   }, [onChange]);
 
   return (
     <div className="relative group animate-in slide-in-from-left-2 duration-300">
-      <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500 z-10" />
+      <MapPin className={`absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 z-10 ${mapsError ? 'text-slate-400' : 'text-red-500'}`} />
       <Input 
         ref={inputRef}
         value={value} 
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Busca tu dirección exacta..."
+        placeholder={mapsError ? "Escribe tu dirección manualmente..." : "Busca tu dirección exacta..."}
         className="h-16 rounded-[24px] bg-slate-50 border-none pl-14 pr-12 font-black text-slate-800 focus:ring-4 focus:ring-red-500/10 transition-all text-base"
       />
       {canRemove && (
@@ -91,7 +101,13 @@ function AddressAutocompleteInput({
           <Trash2 className="w-4 h-4" />
         </Button>
       )}
-      <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-200 pointer-events-none group-focus-within:text-primary transition-colors mr-10" />
+      {mapsError ? (
+        <div className="absolute right-14 top-1/2 -translate-y-1/2" title="Google Maps no está disponible (Activa la facturación en Google Cloud)">
+          <AlertTriangle className="w-4 h-4 text-orange-400" />
+        </div>
+      ) : (
+        <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-200 pointer-events-none group-focus-within:text-primary transition-colors mr-10" />
+      )}
     </div>
   );
 }
