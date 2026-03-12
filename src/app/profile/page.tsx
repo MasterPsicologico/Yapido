@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
 import { 
   Camera, 
   User as UserIcon, 
@@ -20,36 +21,37 @@ import {
   Search,
   Trash2,
   AlertTriangle,
-  Map as MapIcon
+  Sparkles,
+  Settings2
 } from 'lucide-react';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { Loader } from '@googlemaps/js-api-loader';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Componente individual para cada input de dirección con Autocomplete
+// Componente individual para cada input de dirección con Autocomplete opcional
 function AddressAutocompleteInput({ 
   value, 
   onChange, 
   onRemove, 
   canRemove,
-  index 
+  mapsEnabled
 }: { 
   value: string; 
   onChange: (value: string) => void; 
   onRemove: () => void; 
   canRemove: boolean;
-  index: number;
+  mapsEnabled: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [mapsError, setMapsError] = useState(false);
 
   useEffect(() => {
+    // Si los mapas no están activados o no hay clave, no intentamos nada
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!apiKey || !inputRef.current) return;
+    if (!mapsEnabled || !apiKey || !inputRef.current) return;
 
     const loader = new Loader({
       apiKey: apiKey,
@@ -58,11 +60,11 @@ function AddressAutocompleteInput({
     });
 
     loader.load().then(() => {
-      if (!inputRef.current) return;
+      if (!inputRef.current || !mapsEnabled) return;
       
       try {
         autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
-          componentRestrictions: { country: "co" }, // Restringido a Colombia
+          componentRestrictions: { country: "co" },
           fields: ["formatted_address", "geometry"],
           types: ["address"]
         });
@@ -74,25 +76,28 @@ function AddressAutocompleteInput({
           }
         });
       } catch (error) {
-        console.error("Error initializing Autocomplete:", error);
         setMapsError(true);
       }
-    }).catch(e => {
-      // Captura errores de red o de facturación
-      console.error("Error loading Google Maps API:", e);
+    }).catch(() => {
       setMapsError(true);
     });
-  }, [onChange]);
+
+    // Limpieza al desmontar: Eliminar avisos de Google que quedan en el body
+    return () => {
+      const overlays = document.querySelectorAll('.gm-err-container, .gm-style-cc, .gm-style-moc');
+      overlays.forEach(el => el.remove());
+    };
+  }, [mapsEnabled, onChange]);
 
   return (
     <div className="relative group animate-in slide-in-from-left-2 duration-300">
-      <MapPin className={`absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 z-10 ${mapsError ? 'text-slate-400' : 'text-primary'}`} />
+      <MapPin className={`absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 z-10 ${mapsEnabled && !mapsError ? 'text-primary' : 'text-slate-400'}`} />
       <Input 
         ref={inputRef}
         value={value} 
         onChange={(e) => onChange(e.target.value)}
-        placeholder={mapsError ? "Escribe tu dirección (Modo Manual)..." : "Busca tu dirección exacta..."}
-        className={`h-16 rounded-[24px] bg-slate-50 border-none pl-14 pr-12 font-black text-slate-800 focus:ring-4 transition-all text-base ${mapsError ? 'focus:ring-slate-200' : 'focus:ring-primary/10'}`}
+        placeholder={mapsEnabled && !mapsError ? "Busca tu dirección exacta..." : "Escribe tu dirección (Modo Manual)..."}
+        className={`h-16 rounded-[24px] bg-slate-50 border-none pl-14 pr-12 font-black text-slate-800 focus:ring-4 transition-all text-base ${mapsEnabled && !mapsError ? 'focus:ring-primary/10' : 'focus:ring-slate-200'}`}
       />
       {canRemove && (
         <Button 
@@ -104,12 +109,12 @@ function AddressAutocompleteInput({
           <Trash2 className="w-4 h-4" />
         </Button>
       )}
-      {mapsError && (
-        <div className="absolute right-12 top-1/2 -translate-y-1/2" title="Google Maps requiere facturación activa. Escribe manualmente.">
+      {mapsEnabled && mapsError && (
+        <div className="absolute right-12 top-1/2 -translate-y-1/2" title="Error de Google Maps. Revisa tu facturación.">
           <AlertTriangle className="w-4 h-4 text-amber-500" />
         </div>
       )}
-      {!mapsError && (
+      {mapsEnabled && !mapsError && (
         <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-200 pointer-events-none group-focus-within:text-primary transition-colors" />
       )}
     </div>
@@ -128,7 +133,18 @@ export default function ProfilePage() {
   const [showCamera, setShowCamera] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [hasMapsError, setHasMapsError] = useState(false);
+  const [mapsEnabled, setMapsEnabled] = useState(false); // Por defecto desactivado para evitar el aviso molesto
+
+  // Limpieza global al entrar y salir para asegurar que no hay avisos de Google Maps
+  useEffect(() => {
+    const cleanOverlays = () => {
+      const overlays = document.querySelectorAll('.gm-err-container, .gm-style-cc, .gm-style-moc');
+      overlays.forEach(el => el.remove());
+    };
+    
+    cleanOverlays();
+    return () => cleanOverlays();
+  }, [mapsEnabled]);
 
   useEffect(() => {
     if (profile) {
@@ -164,11 +180,10 @@ export default function ProfilePage() {
       setStream(mediaStream);
       setShowCamera(true);
     } catch (error) {
-      console.error('Error accessing camera:', error);
       toast({
         variant: 'destructive',
         title: 'Acceso a Cámara Denegado',
-        description: 'Por favor permite el acceso a la cámara en tu navegador para tomar la foto.',
+        description: 'Por favor permite el acceso a la cámara.',
       });
     }
   };
@@ -190,22 +205,19 @@ export default function ProfilePage() {
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85); // Calidad optimizada
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
         setCapturedImage(dataUrl);
         stopCamera();
-        toast({ title: "¡Foto Capturada!", description: "Imagen optimizada correctamente." });
+        toast({ title: "¡Foto Capturada!" });
       }
     }
   };
 
-  const handleAddAddress = () => {
-    setAddresses([...addresses, ""]);
-  };
+  const handleAddAddress = () => setAddresses([...addresses, ""]);
 
   const handleRemoveAddress = (index: number) => {
     if (addresses.length > 1) {
-      const newAddresses = addresses.filter((_, i) => i !== index);
-      setAddresses(newAddresses);
+      setAddresses(addresses.filter((_, i) => i !== index));
     } else {
       setAddresses([""]);
     }
@@ -251,7 +263,7 @@ export default function ProfilePage() {
       updateDocumentNonBlocking(userRef, data);
       toast({
         title: "Perfil Actualizado",
-        description: "Tus datos han sido sincronizados en la vitrina.",
+        description: "Tus datos han sido sincronizados.",
       });
     } catch (e) {
       toast({
@@ -286,7 +298,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Mi Perfil</h1>
-            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2 ml-1">Configuración Maestra</p>
+            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2 ml-1">Personaliza tu experiencia</p>
           </div>
         </div>
 
@@ -365,19 +377,30 @@ export default function ProfilePage() {
 
                 <div className="space-y-6">
                   <div className="flex items-center justify-between px-2">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Direcciones de Despacho</Label>
-                    <div className="h-[1px] flex-1 bg-slate-100 mx-4" />
+                    <div className="flex items-center gap-2">
+                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Direcciones de Despacho</Label>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full border">
+                      <Sparkles className={`w-3 h-3 ${mapsEnabled ? 'text-primary' : 'text-slate-300'}`} />
+                      <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">Modo Mapa</span>
+                      <Switch 
+                        checked={mapsEnabled} 
+                        onCheckedChange={setMapsEnabled}
+                        className="data-[state=checked]:bg-primary"
+                      />
+                    </div>
                   </div>
                   
                   <div className="space-y-4">
                     {addresses.map((addr, idx) => (
                       <AddressAutocompleteInput 
                         key={idx}
-                        index={idx}
                         value={addr}
                         onChange={(val) => handleAddressChange(idx, val)}
                         onRemove={() => handleRemoveAddress(idx)}
                         canRemove={addresses.length > 1}
+                        mapsEnabled={mapsEnabled}
                       />
                     ))}
                   </div>
