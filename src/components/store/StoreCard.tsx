@@ -203,7 +203,7 @@ export function StoreCard({ store }: { store: any }) {
           {/* Botón de Administrador para añadir Badges */}
           {isAdmin && activeBadgeIds.length < 4 && (
             <div className="flex justify-center pt-2">
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button 
                     size="icon" 
@@ -212,7 +212,7 @@ export function StoreCard({ store }: { store: any }) {
                     <Plus className="w-5 h-5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-56 rounded-[24px] p-2 shadow-2xl border-slate-100 bg-white/98 backdrop-blur-md">
+                <DropdownMenuContent align="center" className="w-56 rounded-[32px] p-2 shadow-2xl border-slate-100 bg-white ring-1 ring-black/5 z-[100]">
                   {(Object.keys(VALUE_BADGES_CONFIG) as BadgeKey[])
                     .filter(key => !activeBadgeIds.includes(key))
                     .map((key) => {
@@ -239,11 +239,11 @@ export function StoreCard({ store }: { store: any }) {
         {/* Estatus Maestro al final */}
         <div className="mt-auto pt-2">
           {isAdmin ? (
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 {StatusContent}
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 rounded-[24px] p-2 shadow-2xl border-slate-100 bg-white/98 backdrop-blur-md">
+              <DropdownMenuContent align="end" className="w-64 rounded-[32px] p-2 shadow-2xl border-slate-100 bg-white ring-1 ring-black/5 z-[100]">
                 {(Object.keys(STATUS_MAP) as StatusKey[]).map((key) => {
                   const item = STATUS_MAP[key];
                   const ItemIcon = item.icon;
@@ -252,14 +252,16 @@ export function StoreCard({ store }: { store: any }) {
                       key={key} 
                       onClick={() => handleStatusChange(key)}
                       className={cn(
-                        "flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all mb-1",
-                        currentStatusKey === key ? "bg-slate-50 font-black" : "hover:bg-slate-50"
+                        "flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all mb-1.5",
+                        currentStatusKey === key ? "bg-slate-50 font-black shadow-inner" : "hover:bg-slate-50"
                       )}
                     >
-                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-50", item.color)}>
-                        <ItemIcon className="w-4 h-4" />
+                      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-100", item.color)}>
+                        <ItemIcon className="w-5 h-5" />
                       </div>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600">{item.label}</span>
+                      <span className={cn("text-[11px] font-black uppercase tracking-widest", currentStatusKey === key ? item.color : "text-slate-600")}>
+                        {item.label}
+                      </span>
                     </DropdownMenuItem>
                   );
                 })}
