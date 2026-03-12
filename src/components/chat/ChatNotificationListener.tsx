@@ -125,7 +125,8 @@ export function ChatNotificationListener() {
               next.delete(orderId);
               return next;
             });
-            router.push(`/admin/orders?chat=${orderId}`);
+            // Ahora navega al ancla del pedido, no al chat directamente
+            router.push(`/admin/orders#${orderId}`);
           }}
           className="bg-white text-primary hover:bg-white/90 font-black border-none rounded-full h-10 px-6"
         >

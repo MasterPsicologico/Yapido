@@ -22,22 +22,17 @@ export function MessageCenter() {
 
   // Escuchamos el evento personalizado emitido por ChatNotificationListener
   useEffect(() => {
-    const updateMessages = () => {
-      // Intentamos recuperar del evento si fuera necesario o simplemente usamos una comunicación vía window
-      const handleSync = (e: any) => {
-        if (e.detail && e.detail.unreadMap) {
-            const map = e.detail.unreadMap as Map<string, string>;
-            const list = Array.from(map.entries());
-            setUnreadOrders(list);
-            setCount(list.length);
-        }
-      };
-      
-      window.addEventListener('unread-messages-sync' as any, handleSync);
-      return () => window.removeEventListener('unread-messages-sync' as any, handleSync);
+    const handleSync = (e: any) => {
+      if (e.detail && e.detail.unreadMap) {
+          const map = e.detail.unreadMap as Map<string, string>;
+          const list = Array.from(map.entries());
+          setUnreadOrders(list);
+          setCount(list.length);
+      }
     };
-
-    updateMessages();
+    
+    window.addEventListener('unread-messages-sync' as any, handleSync);
+    return () => window.removeEventListener('unread-messages-sync' as any, handleSync);
   }, []);
 
   return (
@@ -63,7 +58,7 @@ export function MessageCenter() {
         <div className="max-h-[400px] overflow-y-auto p-1 space-y-1">
           {unreadOrders.length > 0 ? unreadOrders.map(([id, name]) => (
             <DropdownMenuItem key={id} asChild className="rounded-2xl p-3 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all">
-              <Link href={`/admin/orders?chat=${id}`} className="flex items-center gap-3">
+              <Link href={`/admin/orders#${id}`} className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary shrink-0">
                   <UserIcon className="w-5 h-5" />
                 </div>

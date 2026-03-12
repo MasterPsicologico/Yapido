@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +59,7 @@ export default function OrdersManagementPage() {
   const router = useRouter();
   const pathname = usePathname();
   const chatParam = searchParams.get('chat');
+  const manuallyClosedId = useRef<string | null>(null);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrderForChat, setSelectedOrderForChat] = useState<any | null>(null);
@@ -97,23 +98,47 @@ export default function OrdersManagementPage() {
     });
   }, [purchasesData, salesData]);
 
-  // Efecto para abrir el chat automáticamente si viene por URL
+  // Sincronizar chat basado en URL (solo si no fue cerrado manualmente)
   useEffect(() => {
-    if (chatParam && orders.length > 0 && !selectedOrderForChat) {
-      const targetOrder = orders.find(o => o.id === chatParam);
-      if (targetOrder) {
-        setSelectedOrderForChat(targetOrder);
+    if (chatParam && orders.length > 0) {
+      if (manuallyClosedId.current !== chatParam && (!selectedOrderForChat || selectedOrderForChat.id !== chatParam)) {
+        const targetOrder = orders.find(o => o.id === chatParam);
+        if (targetOrder) {
+          setSelectedOrderForChat(targetOrder);
+        }
       }
+    } else {
+      manuallyClosedId.current = null;
     }
   }, [chatParam, orders, selectedOrderForChat]);
 
+  // Efecto para scroll automático al ancla (#orderId)
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && orders.length > 0) {
+      const id = hash.replace('#', '');
+      const element = document.getElementById(id);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      }
+    }
+  }, [orders]);
+
   const handleCloseChat = () => {
+    if (selectedOrderForChat) {
+      manuallyClosedId.current = selectedOrderForChat.id;
+    }
     setSelectedOrderForChat(null);
-    // Limpiar el parámetro de la URL de forma quirúrgica para evitar que el useEffect lo reabra
+    
+    // Limpiar el parámetro de la URL de forma quirúrgica
     const params = new URLSearchParams(searchParams.toString());
-    params.delete('chat');
-    const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
-    router.replace(newUrl, { scroll: false });
+    if (params.has('chat')) {
+      params.delete('chat');
+      const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+      router.replace(newUrl, { scroll: false });
+    }
   };
 
   const handleUpdateStatus = (orderId: string, newStatus: string) => {
@@ -185,11 +210,12 @@ export default function OrdersManagementPage() {
               const StatusIcon = status.icon;
               const formattedDate = order.createdAt ? format(order.createdAt.toDate(), "d 'de' MMMM, HH:mm", { locale: es }) : 'Recién pedido';
               const isVenta = order.type === 'venta';
+              const isTargeted = chatParam === order.id;
               
               return (
                 <Card key={order.id} id={order.id} className={cn(
                   "border-none rounded-[32px] overflow-hidden shadow-md bg-white group hover:shadow-xl transition-all duration-500",
-                  chatParam === order.id && "ring-2 ring-primary ring-offset-4"
+                  isTargeted && "ring-2 ring-primary ring-offset-4"
                 )}>
                   <div className="flex flex-col lg:flex-row">
                     <div className={cn("w-full lg:w-2", isVenta ? "bg-secondary" : "bg-primary")} />

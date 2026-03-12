@@ -101,7 +101,7 @@ export function ActivityCenter() {
         <div className="max-h-[400px] overflow-y-auto p-1 space-y-1">
           {activities.length > 0 ? activities.map((act, i) => (
             <DropdownMenuItem key={i} asChild className="rounded-2xl p-3 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all">
-              <Link href={`/admin/orders?chat=${act.orderId}`} className="flex items-start gap-3">
+              <Link href={`/admin/orders#${act.orderId}`} className="flex items-start gap-3">
                 <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm", act.bg, act.color)}>
                   <act.icon className="w-5 h-5" />
                 </div>
