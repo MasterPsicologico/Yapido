@@ -147,6 +147,7 @@ export default function StorePage() {
     setIsAddingProduct(true);
     try {
       const prodColRef = collection(firestore, 'products');
+      // Importante: Aseguramos que storeOwnerId esté estampado correctamente
       addDocumentNonBlocking(prodColRef, {
         name,
         price,
@@ -155,7 +156,7 @@ export default function StorePage() {
         status: 'available',
         storeId: id,
         storeName: store.name || 'Negocio Local',
-        storeOwnerId: store.ownerId,
+        storeOwnerId: store.ownerId || user?.uid, // Blindaje contra undefined
         categoryId: categoryId,
         createdAt: serverTimestamp(),
       });
