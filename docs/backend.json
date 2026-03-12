@@ -27,24 +27,36 @@
         "id": { "type": "string" },
         "customerId": { "type": "string" },
         "customerName": { "type": "string" },
-        "customerPhone": { "type": "string", "description": "WhatsApp del cliente para que la tienda contacte." },
+        "customerPhone": { "type": "string" },
         "storeId": { "type": "string" },
         "storeName": { "type": "string" },
         "storeOwnerId": { "type": "string" },
         "productId": { "type": "string" },
         "productName": { "type": "string" },
         "quantity": { "type": "number" },
-        "unitPrice": { "type": "number" },
         "totalPrice": { "type": "number" },
         "status": { 
           "type": "string", 
           "enum": ["pending", "preparing", "ready_for_pickup", "shipped", "delivered", "cancelled"] 
         },
-        "deliveryDriverId": { "type": "string" },
-        "deliveryDriverName": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "customerId", "customerName", "customerPhone", "storeId", "productId", "quantity", "totalPrice", "status"]
+      "required": ["id", "customerId", "storeId", "status"]
+    },
+    "Message": {
+      "title": "Message",
+      "type": "object",
+      "description": "Mensaje individual dentro del chat de un pedido.",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "imageUrl": { "type": "string", "description": "URL de la imagen o base64 de la evidencia." },
+        "type": { "type": "string", "enum": ["text", "image"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "senderName", "type", "createdAt"]
     }
   },
   "auth": {
@@ -57,7 +69,7 @@
         "definition": {
           "entityName": "User",
           "schema": { "$ref": "#/backend/entities/User" },
-          "description": "Perfiles de usuario, roles y WhatsApp."
+          "description": "Perfiles de usuario."
         }
       },
       {
@@ -65,7 +77,15 @@
         "definition": {
           "entityName": "Order",
           "schema": { "$ref": "#/backend/entities/Order" },
-          "description": "Historial de pedidos con contacto de cliente."
+          "description": "Pedidos principales."
+        }
+      },
+      {
+        "path": "/orders/{orderId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": { "$ref": "#/backend/entities/Message" },
+          "description": "Chat interno del pedido."
         }
       }
     ]

@@ -13,12 +13,7 @@ service cloud.firestore {
 
     function isAdmin() {
       let data = getUserData();
-      return isSignedIn() && data != null && data.role == 'admin';
-    }
-
-    function isRepartidor() {
-      let data = getUserData();
-      return isSignedIn() && data != null && data.role == 'repartidor';
+      return isSignedIn() && data != null && (data.role == 'admin' || data.role == 'moderador');
     }
 
     match /users/{userId} {
@@ -53,28 +48,26 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      // Permitimos listar a cualquier usuario autenticado para evitar errores 403 
-      // al cambiar de cuenta o en usuarios nuevos. La privacidad real se 
-      // refuerza en la regla 'get' y mediante filtros en el cliente.
       allow list: if isSignedIn();
-      
       allow get: if isSignedIn() && (
         resource.data.customerId == request.auth.uid || 
         resource.data.storeOwnerId == request.auth.uid || 
-        resource.data.deliveryDriverId == request.auth.uid ||
         isAdmin()
       );
-      
       allow create: if isSignedIn();
-      
       allow update: if isSignedIn() && (
         resource.data.storeOwnerId == request.auth.uid || 
-        resource.data.deliveryDriverId == request.auth.uid ||
-        (resource.data.status == 'ready_for_pickup' && isRepartidor()) ||
         isAdmin()
       );
-      
       allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read, write: if isSignedIn() && (
+          get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid || 
+          get(/databases/$(database)/documents/orders/$(orderId)).data.storeOwnerId == request.auth.uid || 
+          isAdmin()
+        );
+      }
     }
 
     match /appConfig/{configId} {

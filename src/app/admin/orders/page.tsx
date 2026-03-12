@@ -21,9 +21,10 @@ import {
   Store as StoreIcon,
   ShoppingBag,
   Sparkles,
-  ArrowRightLeft,
   ShoppingBasket,
-  Tags
+  Tags,
+  ShieldCheck,
+  ChevronRight
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -33,6 +34,14 @@ import { es } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
+import { OrderChat } from '@/components/chat/OrderChat';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const STATUS_CONFIG = {
   pending: { label: "Pendiente", color: "bg-yellow-500", icon: Clock },
@@ -45,9 +54,10 @@ const STATUS_CONFIG = {
 
 export default function OrdersManagementPage() {
   const { user, isUserLoading: isAuthLoading } = useUser();
-  const { profile, isLoading: loadingProfile } = useProfile();
+  const { profile, isAdmin, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedOrderForChat, setSelectedOrderForChat] = useState<any | null>(null);
 
   // Consulta para COMPRAS (Donde soy el cliente)
   const purchasesQuery = useMemoFirebase(() => {
@@ -55,14 +65,20 @@ export default function OrdersManagementPage() {
     return query(collection(firestore, 'orders'), where('customerId', '==', user.uid));
   }, [firestore, user?.uid]);
 
-  // Consulta para VENTAS (Donde soy el dueño de la tienda)
+  // Consulta para VENTAS (Donde soy el dueño de la tienda o ADMIN)
   const salesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !profile || (profile.role !== 'dueño' && profile.role !== 'admin')) return null;
+    if (!firestore || !user?.uid || !profile) return null;
     
     const ordersRef = collection(firestore, 'orders');
-    if (profile.role === 'admin') return query(ordersRef, orderBy('createdAt', 'desc'));
+    if (profile.role === 'admin' || profile.role === 'moderador') {
+      return query(ordersRef, orderBy('createdAt', 'desc'));
+    }
     
-    return query(ordersRef, where('storeOwnerId', '==', user.uid));
+    if (profile.role === 'dueño') {
+      return query(ordersRef, where('storeOwnerId', '==', user.uid));
+    }
+    
+    return null;
   }, [firestore, user?.uid, profile]);
 
   const { data: purchasesData, isLoading: loadingPurchases } = useCollection(purchasesQuery);
@@ -72,7 +88,6 @@ export default function OrdersManagementPage() {
     const all = [];
     if (purchasesData) all.push(...purchasesData.map(o => ({ ...o, type: 'compra' })));
     if (salesData) {
-      // Evitar duplicados si soy admin y cliente al mismo tiempo
       const purchaseIds = new Set(all.map(o => o.id));
       all.push(...salesData.filter(o => !purchaseIds.has(o.id)).map(o => ({ ...o, type: 'venta' })));
     }
@@ -88,18 +103,17 @@ export default function OrdersManagementPage() {
     if (!firestore) return;
     const orderRef = doc(firestore, 'orders', orderId);
     updateDocumentNonBlocking(orderRef, { status: newStatus });
+    toast({ title: "Estado actualizado" });
   };
 
   const handleWhatsAppChat = (order: any) => {
-    // Si soy el cliente (compra), chateo con el vendedor
-    // Si soy el vendedor (venta), chateo con el cliente
     const phone = order.type === 'compra' ? (order.storePhone || '') : (order.customerPhone || '');
     if (!phone) {
-        toast({ title: "Sin número", description: "No hay un número de contacto registrado para este chat.", variant: "destructive" });
+        toast({ title: "Sin número", description: "No hay contacto registrado.", variant: "destructive" });
         return;
     }
     const cleanPhone = phone.replace(/\D/g, '');
-    const message = encodeURIComponent(`¡Hola! Te contacto de Vitriniando sobre el pedido de "${order.productName}" (ID: ${order.id.slice(-6)}).`);
+    const message = encodeURIComponent(`¡Hola! Te contacto de Vitriniando sobre el pedido de "${order.productName}". ¿Podrías confirmarme la orden para proceder con la entrega? 🚀`);
     window.open(`https://wa.me/57${cleanPhone}?text=${message}`, '_blank');
   };
 
@@ -126,28 +140,26 @@ export default function OrdersManagementPage() {
                 Gestión de Pedidos
               </h1>
               <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">
-                {profile?.role === 'admin' ? 'Control Maestro Global' : 'Historial de Compras y Ventas'}
+                {isAdmin ? 'Panel de Control Maestro' : 'Historial y Seguimiento'}
               </p>
             </div>
           </div>
 
-          {(profile?.role === 'admin' || (orders && orders.length > 0)) && (
-            <div className="relative w-full md:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input 
-                placeholder="Buscar pedido..." 
-                className="pl-10 h-12 rounded-2xl border-none bg-white shadow-sm"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          )}
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input 
+              placeholder="Buscar pedido o cliente..." 
+              className="pl-10 h-12 rounded-2xl border-none bg-white shadow-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
 
         {isGlobalLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Sincronizando Pedidos...</p>
+            <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Sincronizando Vitrina...</p>
           </div>
         ) : filteredOrders && filteredOrders.length > 0 ? (
           <div className="grid gap-6">
@@ -166,38 +178,36 @@ export default function OrdersManagementPage() {
                       <div className="space-y-4 flex-1">
                         <div className="flex flex-wrap items-center gap-3">
                           <Badge className={cn("text-white border-none rounded-full px-4 h-7 text-[10px] font-black uppercase tracking-widest", isVenta ? "bg-secondary" : "bg-primary")}>
-                            {isVenta ? <Tags className="w-3 h-3 mr-1.5" /> : <ShoppingBasket className="w-3 h-3 mr-1.5" />}
+                            {isVenta ? <Tags className="w-3.5 h-3.5 mr-1.5" /> : <ShoppingBasket className="w-3.5 h-3.5 mr-1.5" />}
                             {isVenta ? "Venta Recibida" : "Mi Compra"}
                           </Badge>
                           <Badge className={`${status.color} text-white border-none rounded-full px-4 h-7 text-[10px] font-black uppercase tracking-widest`}>
-                            <StatusIcon className="w-3 h-3 mr-1.5" />
+                            <StatusIcon className="w-3.5 h-3.5 mr-1.5" />
                             {status.label}
                           </Badge>
                           <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase tracking-wider bg-slate-50 px-3 py-1 rounded-full">
-                            <Calendar className="w-3 h-3" />
+                            <Calendar className="w-3.5 h-3.5" />
                             {formattedDate}
                           </div>
+                          {isAdmin && (
+                            <Badge className="bg-slate-900 text-white border-none rounded-full px-4 h-7 text-[10px] font-black uppercase tracking-widest">
+                               <ShieldCheck className="w-3 h-3 mr-1.5 text-primary" /> Moderador
+                            </Badge>
+                          )}
                         </div>
 
                         <div>
-                          <h3 className="text-2xl font-black text-slate-900 leading-tight tracking-tighter italic">
+                          <h3 className="text-2xl font-black text-slate-900 leading-tight tracking-tighter italic uppercase">
                             {order.productName}
                           </h3>
-                          <div className="flex flex-col gap-1 mt-1">
+                          <div className="flex flex-col gap-1 mt-2">
                             <div className="flex items-center gap-2">
-                              <UserIcon className="w-3.5 h-3.5 text-primary" />
+                              <UserIcon className="w-4 h-4 text-primary" />
                               <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">
                                 {isVenta ? "Cliente:" : "Vendedor:"}
                               </span>
                               <span className="text-sm font-black text-slate-700">
                                 {isVenta ? order.customerName : order.storeName}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <StoreIcon className="w-3.5 h-3.5 text-secondary" />
-                              <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Ubicación:</span>
-                              <span className="text-sm font-black text-slate-700">
-                                {isVenta ? "WhatsApp Cliente" : "Tienda Local"}
                               </span>
                             </div>
                           </div>
@@ -210,33 +220,38 @@ export default function OrdersManagementPage() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                        {isVenta && (
-                          <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-                            {order.status === 'pending' && (
-                              <Button 
-                                onClick={() => handleUpdateStatus(order.id, 'preparing')}
-                                className="rounded-full h-12 px-6 bg-blue-500 hover:bg-blue-600 text-white font-black text-xs uppercase tracking-widest gap-2"
-                              >
-                                <Package className="w-4 h-4" /> Preparar
-                              </Button>
-                            )}
-                            {order.status === 'preparing' && (
-                              <Button 
-                                onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')}
-                                className="rounded-full h-12 px-6 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-widest gap-2 shadow-lg shadow-orange-200"
-                              >
-                                <Zap className="w-4 h-4" /> Listo para Delivery
-                              </Button>
-                            )}
-                          </div>
-                        )}
+                        <Button 
+                          onClick={() => setSelectedOrderForChat(order)}
+                          className="rounded-full h-12 px-6 bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto border-none shadow-sm"
+                        >
+                          <MessageCircle className="w-4 h-4 text-primary" /> Chat Interno
+                        </Button>
                         
                         <Button 
                           onClick={() => handleWhatsAppChat(order)}
                           className="rounded-full h-12 px-6 bg-[#25d366] hover:bg-[#128c7e] text-white font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto shadow-lg shadow-green-100 border-none"
                         >
-                          <MessageCircle className="w-4 h-4" /> {isVenta ? "Chat Cliente" : "Chat Vendedor"}
+                          <MessageCircle className="w-4 h-4 fill-white" /> WhatsApp
                         </Button>
+
+                        {isVenta && order.status === 'pending' && (
+                          <Button 
+                            onClick={() => handleUpdateStatus(order.id, 'preparing')}
+                            className="rounded-full h-12 px-6 bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto"
+                          >
+                            <Package className="w-4 h-4" /> Preparar
+                          </Button>
+                        )}
+                        
+                        {isAdmin && (
+                           <Button 
+                             variant="ghost" 
+                             className="text-slate-300 hover:text-red-500 rounded-full w-12 h-12 p-0"
+                             onClick={() => toast({ title: "Solo administrador principal puede borrar." })}
+                           >
+                             <Tags className="w-5 h-5" />
+                           </Button>
+                        )}
                       </div>
                     </CardContent>
                   </div>
@@ -269,6 +284,22 @@ export default function OrdersManagementPage() {
           </div>
         )}
       </main>
+
+      {/* Chat Dialog */}
+      <Dialog open={!!selectedOrderForChat} onOpenChange={(val) => !val && setSelectedOrderForChat(null)}>
+        <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-[450px]">
+          <DialogHeader className="sr-only">
+             <DialogTitle>Chat Interno del Pedido</DialogTitle>
+          </DialogHeader>
+          {selectedOrderForChat && (
+            <OrderChat 
+              orderId={selectedOrderForChat.id} 
+              orderData={selectedOrderForChat} 
+              onClose={() => setSelectedOrderForChat(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
