@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -70,12 +69,24 @@
   100% { width: 100%; transform: translateX(100%); }
 }
 
+@keyframes vibrate {
+  0% { transform: translate(0); }
+  25% { transform: translate(-2px, 2px); }
+  50% { transform: translate(2px, -2px); }
+  75% { transform: translate(-2px, -2px); }
+  100% { transform: translate(0); }
+}
+
 .animate-gradient {
   animation: gradient 3s ease infinite;
 }
 
 .animate-progress-loading {
   animation: progress-loading 2s ease-in-out infinite;
+}
+
+.animate-vibrate {
+  animation: vibrate 0.2s linear infinite;
 }
 
 .no-scrollbar::-webkit-scrollbar {

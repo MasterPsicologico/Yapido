@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,13 +17,11 @@ import {
   Calendar, 
   Zap,
   User as UserIcon,
-  Store as StoreIcon,
   ShoppingBag,
   Sparkles,
   ShoppingBasket,
   Tags,
-  ShieldCheck,
-  ChevronRight
+  ShieldCheck
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -32,6 +29,7 @@ import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -48,7 +46,7 @@ const STATUS_CONFIG = {
   preparing: { label: "Preparando", color: "bg-blue-500", icon: Package },
   ready_for_pickup: { label: "Listo para Reparto", color: "bg-orange-500", icon: Zap },
   shipped: { label: "En Camino", color: "bg-purple-500", icon: Truck },
-  delivered: { label: "Entregado", color: "bg-green-500", icon: CheckCircle2 },
+  delivered: { label: "Entregado", color: "bg-green-50", icon: CheckCircle2 },
   cancelled: { label: "Cancelado", color: "bg-red-500", icon: CheckCircle2 }
 };
 
@@ -56,28 +54,26 @@ export default function OrdersManagementPage() {
   const { user, isUserLoading: isAuthLoading } = useUser();
   const { profile, isAdmin, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
+  const searchParams = useSearchParams();
+  const chatParam = searchParams.get('chat');
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrderForChat, setSelectedOrderForChat] = useState<any | null>(null);
 
-  // Consulta para COMPRAS (Donde soy el cliente)
   const purchasesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'orders'), where('customerId', '==', user.uid));
   }, [firestore, user?.uid]);
 
-  // Consulta para VENTAS (Donde soy el dueño de la tienda o ADMIN)
   const salesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !profile) return null;
-    
     const ordersRef = collection(firestore, 'orders');
     if (profile.role === 'admin' || profile.role === 'moderador') {
       return query(ordersRef, orderBy('createdAt', 'desc'));
     }
-    
     if (profile.role === 'dueño') {
       return query(ordersRef, where('storeOwnerId', '==', user.uid));
     }
-    
     return null;
   }, [firestore, user?.uid, profile]);
 
@@ -91,13 +87,23 @@ export default function OrdersManagementPage() {
       const purchaseIds = new Set(all.map(o => o.id));
       all.push(...salesData.filter(o => !purchaseIds.has(o.id)).map(o => ({ ...o, type: 'venta' })));
     }
-    
     return all.sort((a, b) => {
       const dateA = a.createdAt?.toDate?.() || new Date(0);
       const dateB = b.createdAt?.toDate?.() || new Date(0);
       return dateB.getTime() - dateA.getTime();
     });
   }, [purchasesData, salesData]);
+
+  // Efecto para abrir el chat automáticamente si viene por URL
+  useEffect(() => {
+    if (chatParam && orders.length > 0 && !selectedOrderForChat) {
+      const targetOrder = orders.find(o => o.id === chatParam);
+      if (targetOrder) {
+        setSelectedOrderForChat(targetOrder);
+        // Desplazarse al pedido si es necesario
+      }
+    }
+  }, [chatParam, orders, selectedOrderForChat]);
 
   const handleUpdateStatus = (orderId: string, newStatus: string) => {
     if (!firestore) return;
@@ -170,7 +176,10 @@ export default function OrdersManagementPage() {
               const isVenta = order.type === 'venta';
               
               return (
-                <Card key={order.id} className="border-none rounded-[32px] overflow-hidden shadow-md bg-white group hover:shadow-xl transition-all duration-500">
+                <Card key={order.id} id={order.id} className={cn(
+                  "border-none rounded-[32px] overflow-hidden shadow-md bg-white group hover:shadow-xl transition-all duration-500",
+                  chatParam === order.id && "ring-2 ring-primary ring-offset-4"
+                )}>
                   <div className="flex flex-col lg:flex-row">
                     <div className={cn("w-full lg:w-2", isVenta ? "bg-secondary" : "bg-primary")} />
                     
@@ -242,16 +251,6 @@ export default function OrdersManagementPage() {
                             <Package className="w-4 h-4" /> Preparar
                           </Button>
                         )}
-                        
-                        {isAdmin && (
-                           <Button 
-                             variant="ghost" 
-                             className="text-slate-300 hover:text-red-500 rounded-full w-12 h-12 p-0"
-                             onClick={() => toast({ title: "Solo administrador principal puede borrar." })}
-                           >
-                             <Tags className="w-5 h-5" />
-                           </Button>
-                        )}
                       </div>
                     </CardContent>
                   </div>
@@ -267,15 +266,12 @@ export default function OrdersManagementPage() {
                 <ShoppingBag className="w-12 h-12 text-primary/30" />
               </div>
             </div>
-            
             <h3 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter leading-none mb-4">
               ¿Listo para tu primer pedido?
             </h3>
-            
             <p className="text-slate-400 text-sm font-bold max-w-sm mx-auto uppercase tracking-widest leading-relaxed mb-10">
               Tu historial está vacío. ¡Es el momento perfecto para descubrir productos increíbles en las mejores vitrinas de tu ciudad!
             </p>
-            
             <Link href="/">
               <Button className="h-16 px-12 rounded-full bg-primary hover:bg-primary/90 text-white font-black text-lg gap-3 shadow-2xl shadow-primary/30 transition-all hover:scale-105">
                 <Sparkles className="w-6 h-6 text-yellow-300" /> Empezar a Vitrinear
@@ -285,7 +281,6 @@ export default function OrdersManagementPage() {
         )}
       </main>
 
-      {/* Chat Dialog */}
       <Dialog open={!!selectedOrderForChat} onOpenChange={(val) => !val && setSelectedOrderForChat(null)}>
         <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-[450px]">
           <DialogHeader className="sr-only">
