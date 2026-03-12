@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, ArrowLeft, Heart, Loader2, MessageCircle, Minus, Plus, CheckCircle2, Phone } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Heart, Loader2, MessageCircle, Minus, Plus, CheckCircle2, Phone, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -36,7 +36,7 @@ export default function ProductPage() {
 
   const { data: product, isLoading } = useDoc(productRef);
 
-  // Sincronizar el teléfono del perfil al estado local si existe
+  // Sincronizar el teléfono del perfil al estado local
   useEffect(() => {
     if (profile?.phoneNumber) {
       setTempPhone(profile.phoneNumber);
@@ -89,19 +89,27 @@ export default function ProductPage() {
       return;
     }
 
-    if (!tempPhone || tempPhone.length < 10) {
-      toast({ title: "WhatsApp Requerido", description: "Por favor ingresa tu número de WhatsApp para que la tienda te contacte.", variant: "destructive" });
+    if (!tempPhone || tempPhone.trim().length < 10) {
+      toast({ 
+        title: "WhatsApp Requerido", 
+        description: "Por favor ingresa tu número de WhatsApp para que la tienda te contacte.", 
+        variant: "destructive" 
+      });
       return;
     }
 
     setIsOrdering(true);
     try {
       // Actualizar perfil si no tenía teléfono o cambió
-      if (profile && profile.phoneNumber !== tempPhone) {
+      if (user && tempPhone && (!profile?.phoneNumber || profile.phoneNumber !== tempPhone)) {
         const userRef = doc(firestore, 'users', user.uid);
-        updateDocumentNonBlocking(userRef, { phoneNumber: tempPhone });
+        updateDocumentNonBlocking(userRef, { 
+          phoneNumber: tempPhone,
+          updatedAt: serverTimestamp() 
+        });
       }
 
+      // Crear el pedido
       const ordersCol = doc(firestore, 'orders', `${user.uid}_${Date.now()}`);
       addDocumentNonBlocking(ordersCol.parent, {
         customerId: user.uid,
@@ -120,13 +128,24 @@ export default function ProductPage() {
       });
 
       setOrderConfirmed(true);
-      toast({ title: "¡Pedido Solicitado!", description: "El vendedor ha sido notificado y te contactará por WhatsApp." });
+      toast({ 
+        title: "¡Pedido Solicitado!", 
+        description: "El vendedor ha sido notificado y te contactará por WhatsApp." 
+      });
     } catch (e) {
-      toast({ title: "Error", description: "No se pudo procesar el pedido.", variant: "destructive" });
+      console.error("Order Error:", e);
+      toast({ 
+        title: "Error de Sistema", 
+        description: "No se pudo procesar el pedido. Intenta de nuevo.", 
+        variant: "destructive" 
+      });
     } finally {
       setIsOrdering(false);
     }
   };
+
+  // Determinar si debemos mostrar la sección de WhatsApp
+  const showPhoneInput = !profile?.phoneNumber || profile.phoneNumber.length < 10;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f3f4f6]">
@@ -180,27 +199,37 @@ export default function ProductPage() {
                 <CheckCircle2 className="w-12 h-12 text-green-500" />
                 <h3 className="text-xl font-black text-green-900 italic">¡Pedido en Marcha!</h3>
                 <p className="text-green-700 text-sm font-medium">Hemos registrado tu solicitud. El vendedor se pondrá en contacto pronto a tu WhatsApp.</p>
-                <Link href="/" className="mt-2 w-full">
-                  <Button className="w-full rounded-full font-bold h-12">Seguir Vitrineando</Button>
+                <Link href="/admin/orders" className="mt-2 w-full">
+                  <Button className="w-full rounded-full font-bold h-12">Ver mis Pedidos</Button>
                 </Link>
               </div>
             ) : (
               <div className="mt-auto space-y-6 pt-8 border-t border-slate-100">
                 
-                {/* Campo de WhatsApp si no está registrado */}
-                <div className="space-y-2 bg-primary/5 p-4 rounded-3xl border border-primary/10">
-                  <Label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                    <Phone className="w-3 h-3" /> Tu WhatsApp para contactarte
-                  </Label>
-                  <Input 
-                    id="phone"
-                    type="tel"
-                    placeholder="Ej: 300 123 4567"
-                    value={tempPhone}
-                    onChange={(e) => setTempPhone(e.target.value)}
-                    className="h-12 rounded-2xl border-none bg-white shadow-sm font-bold text-slate-700"
-                  />
-                </div>
+                {/* Sección de WhatsApp: Solo si no tiene número registrado */}
+                {showPhoneInput && (
+                  <div className="space-y-3 bg-red-50 p-5 rounded-3xl border border-red-100 animate-in fade-in slide-in-from-bottom-2">
+                    <Label htmlFor="phone" className="text-[11px] font-black uppercase tracking-widest text-red-600 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" /> ¡REQUERIDO! TU WHATSAPP PARA EL DOMICILIO
+                    </Label>
+                    <Input 
+                      id="phone"
+                      type="tel"
+                      placeholder="Ej: 300 123 4567"
+                      value={tempPhone}
+                      onChange={(e) => setTempPhone(e.target.value)}
+                      className="h-12 rounded-2xl border-none bg-white shadow-sm font-black text-slate-700 placeholder:text-slate-300"
+                    />
+                    <p className="text-[9px] text-red-400 font-bold uppercase italic">* La tienda lo necesita para coordinar la entrega contigo.</p>
+                  </div>
+                )}
+
+                {!showPhoneInput && profile?.phoneNumber && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full w-fit border border-green-100">
+                    <Phone className="w-3 h-3 text-green-600" />
+                    <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">Contacto: {profile.phoneNumber}</span>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
                   <span className="text-sm font-black uppercase text-slate-400">Cantidad</span>
