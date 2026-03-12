@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -29,7 +30,7 @@ import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -55,6 +56,8 @@ export default function OrdersManagementPage() {
   const { profile, isAdmin, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const chatParam = searchParams.get('chat');
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -100,10 +103,18 @@ export default function OrdersManagementPage() {
       const targetOrder = orders.find(o => o.id === chatParam);
       if (targetOrder) {
         setSelectedOrderForChat(targetOrder);
-        // Desplazarse al pedido si es necesario
       }
     }
   }, [chatParam, orders, selectedOrderForChat]);
+
+  const handleCloseChat = () => {
+    setSelectedOrderForChat(null);
+    // Limpiar el parámetro de la URL de forma quirúrgica para evitar que el useEffect lo reabra
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('chat');
+    const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+    router.replace(newUrl, { scroll: false });
+  };
 
   const handleUpdateStatus = (orderId: string, newStatus: string) => {
     if (!firestore) return;
@@ -281,7 +292,7 @@ export default function OrdersManagementPage() {
         )}
       </main>
 
-      <Dialog open={!!selectedOrderForChat} onOpenChange={(val) => !val && setSelectedOrderForChat(null)}>
+      <Dialog open={!!selectedOrderForChat} onOpenChange={(val) => !val && handleCloseChat()}>
         <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-[450px]">
           <DialogHeader className="sr-only">
              <DialogTitle>Chat Interno del Pedido</DialogTitle>
@@ -290,7 +301,7 @@ export default function OrdersManagementPage() {
             <OrderChat 
               orderId={selectedOrderForChat.id} 
               orderData={selectedOrderForChat} 
-              onClose={() => setSelectedOrderForChat(null)}
+              onClose={handleCloseChat}
             />
           )}
         </DialogContent>
