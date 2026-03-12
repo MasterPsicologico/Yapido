@@ -14,7 +14,9 @@ import { StoreProductsSection } from '@/components/store/view/StoreProductsSecti
 import { 
   ChevronRight,
   Loader2, 
-  Store as StoreIcon
+  Store as StoreIcon,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -29,6 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from '@/lib/utils';
 
 export default function StorePage() {
   const params = useParams();
@@ -86,6 +89,18 @@ export default function StorePage() {
     try { updateDocumentNonBlocking(storeRef, data); toast({ title: "Info Actualizada" }); setInfoDialogOpen(false); }
     catch (e) { toast({ title: "Error", variant: "destructive" }); }
     finally { setIsUpdatingInfo(false); }
+  };
+
+  const handleToggleFeatures = () => {
+    if (!canEdit || !storeRef) return;
+    updateDocumentNonBlocking(storeRef, {
+      featuresHidden: !store?.featuresHidden,
+      updatedAt: serverTimestamp()
+    });
+    toast({ 
+      title: store?.featuresHidden ? "Sección Visible" : "Sección Oculta",
+      description: store?.featuresHidden ? "Tus clientes ahora verán los destacados." : "Esta sección ahora solo es visible para ti."
+    });
   };
 
   const handleAddCategory = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -147,7 +162,6 @@ export default function StorePage() {
     setIsAddingProduct(true);
     try {
       const prodColRef = collection(firestore, 'products');
-      // Importante: Aseguramos que storeOwnerId esté estampado correctamente
       addDocumentNonBlocking(prodColRef, {
         name,
         price,
@@ -156,7 +170,7 @@ export default function StorePage() {
         status: 'available',
         storeId: id,
         storeName: store.name || 'Negocio Local',
-        storeOwnerId: store.ownerId || user?.uid, // Blindaje contra undefined
+        storeOwnerId: store.ownerId || user?.uid,
         categoryId: categoryId,
         createdAt: serverTimestamp(),
       });
@@ -183,8 +197,41 @@ export default function StorePage() {
           <div className="bg-white shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.2)] overflow-hidden">
             <div className="p-8 md:p-10 space-y-10">
               <StoreInfo name={store?.name} description={store?.description} />
-              <StoreHighlights highlights={store?.highlights} isOwner={canEdit} updatingImage={updatingImage} onUpdateHighlight={(e, i) => handleUpdateImage(e, 'highlights', i)} />
-              <StoreStats />
+              
+              {/* Contenedor de Características (Highlights + Stats) */}
+              <div className="relative group/features space-y-10">
+                {canEdit && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={handleToggleFeatures}
+                    className="absolute -top-6 right-0 z-30 h-8 w-8 rounded-full bg-slate-100/50 backdrop-blur-sm border border-slate-200 text-slate-500 hover:bg-primary hover:text-white transition-all shadow-sm"
+                    title={store?.featuresHidden ? "Mostrar sección" : "Ocultar sección"}
+                  >
+                    {store?.featuresHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                )}
+
+                {(!store?.featuresHidden || canEdit) && (
+                  <div className={cn(
+                    "space-y-10 transition-all duration-500",
+                    store?.featuresHidden && "opacity-40 grayscale blur-[2px] pointer-events-none"
+                  )}>
+                    <StoreHighlights 
+                      highlights={store?.highlights} 
+                      isOwner={canEdit} 
+                      updatingImage={updatingImage} 
+                      onUpdateHighlight={(e, i) => handleUpdateImage(e, 'highlights', i)} 
+                    />
+                    <StoreStats 
+                      stats={store?.customStats} 
+                      isOwner={canEdit} 
+                      storeId={id}
+                    />
+                  </div>
+                )}
+              </div>
+
               <StoreContactContainer address={store?.address} phoneNumber={store?.phoneNumber} onOpenChat={() => setIsChatOpen(true)} />
 
               {canEdit && (
