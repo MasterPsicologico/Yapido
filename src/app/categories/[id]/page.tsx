@@ -130,6 +130,10 @@ export default function CategoryPage() {
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
+      // Sincronizar automáticamente el rol de dueño
+      const userRef = doc(firestore, 'users', user.uid);
+      updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
+
       toast({ title: "¡Vitrina Lanzada!", description: "Negocio registrado." });
       setOpenStore(false);
       setBase64Image(null);

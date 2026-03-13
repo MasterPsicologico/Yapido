@@ -22,16 +22,18 @@ import {
   Sparkles,
   ShoppingBasket,
   Tags,
-  ShieldCheck
+  ShieldCheck,
+  Timer,
+  AlertTriangle,
+  ChevronRight
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, orderBy, doc } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { collection, query, where, orderBy, doc, serverTimestamp } from 'firebase/firestore';
+import { format, differenceInMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { OrderChat } from '@/components/chat/OrderChat';
@@ -43,13 +45,49 @@ import {
 } from "@/components/ui/dialog";
 
 const STATUS_CONFIG = {
-  pending: { label: "Pendiente", color: "bg-yellow-500", icon: Clock },
+  pending: { label: "Por Confirmar", color: "bg-orange-500", icon: Timer },
   preparing: { label: "Preparando", color: "bg-blue-500", icon: Package },
-  ready_for_pickup: { label: "Listo para Reparto", color: "bg-orange-500", icon: Zap },
-  shipped: { label: "En Camino", color: "bg-purple-500", icon: Truck },
-  delivered: { label: "Entregado", color: "bg-green-50", icon: CheckCircle2 },
-  cancelled: { label: "Cancelado", color: "bg-red-500", icon: CheckCircle2 }
+  ready_for_pickup: { label: "Listo / Esperando", color: "bg-indigo-500", icon: Zap },
+  shipped: { label: "En Reparto", color: "bg-purple-500", icon: Truck },
+  delivered: { label: "Entregado", color: "bg-green-500", icon: CheckCircle2 },
+  cancelled: { label: "Cancelado", color: "bg-red-500", icon: AlertTriangle }
 };
+
+function OrderTimer({ createdAt, status, orderId, firestore }: { createdAt: any, status: string, orderId: string, firestore: any }) {
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (status !== 'pending' || !createdAt) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const created = createdAt.toDate();
+      const diff = 20 - differenceInMinutes(now, created);
+      
+      if (diff <= 0) {
+        setTimeLeft(0);
+        clearInterval(interval);
+        // Aquí podríamos disparar el auto-cancelado
+      } else {
+        setTimeLeft(diff);
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [createdAt, status]);
+
+  if (status !== 'pending' || timeLeft === null) return null;
+
+  return (
+    <div className={cn(
+      "flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+      timeLeft <= 5 ? "bg-red-100 text-red-600 animate-pulse" : "bg-orange-100 text-orange-600"
+    )}>
+      <Clock className="w-3 h-3" />
+      {timeLeft > 0 ? `${timeLeft}m para expirar` : "EXPIRADO"}
+    </div>
+  );
+}
 
 export default function OrdersManagementPage() {
   const { user, isUserLoading: isAuthLoading } = useUser();
@@ -98,65 +136,33 @@ export default function OrdersManagementPage() {
     });
   }, [purchasesData, salesData]);
 
-  // Sincronizar chat basado en URL (solo si no fue cerrado manualmente)
-  useEffect(() => {
-    if (chatParam && orders.length > 0) {
-      if (manuallyClosedId.current !== chatParam && (!selectedOrderForChat || selectedOrderForChat.id !== chatParam)) {
-        const targetOrder = orders.find(o => o.id === chatParam);
-        if (targetOrder) {
-          setSelectedOrderForChat(targetOrder);
-        }
-      }
-    } else {
-      manuallyClosedId.current = null;
-    }
-  }, [chatParam, orders, selectedOrderForChat]);
-
-  // Efecto para scroll automático al ancla (#orderId)
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash && orders.length > 0) {
-      const id = hash.replace('#', '');
-      const element = document.getElementById(id);
-      if (element) {
-        setTimeout(() => {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 300);
-      }
-    }
-  }, [orders]);
-
-  const handleCloseChat = () => {
-    if (selectedOrderForChat) {
-      manuallyClosedId.current = selectedOrderForChat.id;
-    }
-    setSelectedOrderForChat(null);
-    
-    // Limpiar el parámetro de la URL de forma quirúrgica
-    const params = new URLSearchParams(searchParams.toString());
-    if (params.has('chat')) {
-      params.delete('chat');
-      const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
-      router.replace(newUrl, { scroll: false });
-    }
-  };
-
   const handleUpdateStatus = (orderId: string, newStatus: string) => {
     if (!firestore) return;
     const orderRef = doc(firestore, 'orders', orderId);
-    updateDocumentNonBlocking(orderRef, { status: newStatus });
-    toast({ title: "Estado actualizado" });
+    updateDocumentNonBlocking(orderRef, { status: newStatus, updatedAt: serverTimestamp() });
+    
+    if (newStatus === 'ready_for_pickup') {
+      toast({ title: "¡Alerta enviada!", description: "Los repartidores han sido notificados." });
+    } else {
+      toast({ title: "Estado actualizado" });
+    }
+  };
+
+  const handleCancelOrder = (orderId: string) => {
+    if (!firestore) return;
+    const orderRef = doc(firestore, 'orders', orderId);
+    updateDocumentNonBlocking(orderRef, { status: 'cancelled', updatedAt: serverTimestamp() });
+    toast({ title: "Pedido Cancelado", variant: "destructive" });
   };
 
   const handleWhatsAppChat = (order: any) => {
     const phone = order.type === 'compra' ? (order.storePhone || '') : (order.customerPhone || '');
     if (!phone) {
-        toast({ title: "Sin número", description: "No hay contacto registrado.", variant: "destructive" });
+        toast({ title: "Sin número", variant: "destructive" });
         return;
     }
     const cleanPhone = phone.replace(/\D/g, '');
-    const message = encodeURIComponent(`¡Hola! Te contacto de Vitriniando sobre el pedido de "${order.productName}". ¿Podrías confirmarme la orden para proceder con la entrega? 🚀`);
-    window.open(`https://wa.me/57${cleanPhone}?text=${message}`, '_blank');
+    window.open(`https://wa.me/57${cleanPhone}`, '_blank');
   };
 
   const filteredOrders = orders?.filter(o => 
@@ -178,30 +184,21 @@ export default function OrdersManagementPage() {
               <ClipboardList className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">
-                Gestión de Pedidos
-              </h1>
-              <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">
-                {isAdmin ? 'Panel de Control Maestro' : 'Historial y Seguimiento'}
-              </p>
+              <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">Gestión de Pedidos</h1>
+              <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Órdenes en tiempo real</p>
             </div>
           </div>
 
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input 
-              placeholder="Buscar pedido o cliente..." 
-              className="pl-10 h-12 rounded-2xl border-none bg-white shadow-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <Input placeholder="Buscar pedido..." className="pl-10 h-12 rounded-2xl border-none bg-white shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
         </div>
 
         {isGlobalLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Sincronizando Vitrina...</p>
+            <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Sincronizando órdenes...</p>
           </div>
         ) : filteredOrders && filteredOrders.length > 0 ? (
           <div className="grid gap-6">
@@ -210,13 +207,9 @@ export default function OrdersManagementPage() {
               const StatusIcon = status.icon;
               const formattedDate = order.createdAt ? format(order.createdAt.toDate(), "d 'de' MMMM, HH:mm", { locale: es }) : 'Recién pedido';
               const isVenta = order.type === 'venta';
-              const isTargeted = chatParam === order.id;
               
               return (
-                <Card key={order.id} id={order.id} className={cn(
-                  "border-none rounded-[32px] overflow-hidden shadow-md bg-white group hover:shadow-xl transition-all duration-500",
-                  isTargeted && "ring-2 ring-primary ring-offset-4"
-                )}>
+                <Card key={order.id} id={order.id} className="border-none rounded-[32px] overflow-hidden shadow-md bg-white hover:shadow-xl transition-all duration-500">
                   <div className="flex flex-col lg:flex-row">
                     <div className={cn("w-full lg:w-2", isVenta ? "bg-secondary" : "bg-primary")} />
                     
@@ -224,38 +217,23 @@ export default function OrdersManagementPage() {
                       <div className="space-y-4 flex-1">
                         <div className="flex flex-wrap items-center gap-3">
                           <Badge className={cn("text-white border-none rounded-full px-4 h-7 text-[10px] font-black uppercase tracking-widest", isVenta ? "bg-secondary" : "bg-primary")}>
-                            {isVenta ? <Tags className="w-3.5 h-3.5 mr-1.5" /> : <ShoppingBasket className="w-3.5 h-3.5 mr-1.5" />}
                             {isVenta ? "Venta Recibida" : "Mi Compra"}
                           </Badge>
                           <Badge className={`${status.color} text-white border-none rounded-full px-4 h-7 text-[10px] font-black uppercase tracking-widest`}>
                             <StatusIcon className="w-3.5 h-3.5 mr-1.5" />
                             {status.label}
                           </Badge>
-                          <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase tracking-wider bg-slate-50 px-3 py-1 rounded-full">
-                            <Calendar className="w-3.5 h-3.5" />
-                            {formattedDate}
-                          </div>
-                          {isAdmin && (
-                            <Badge className="bg-slate-900 text-white border-none rounded-full px-4 h-7 text-[10px] font-black uppercase tracking-widest">
-                               <ShieldCheck className="w-3 h-3 mr-1.5 text-primary" /> Moderador
-                            </Badge>
-                          )}
+                          <OrderTimer createdAt={order.createdAt} status={order.status} orderId={order.id} firestore={firestore} />
                         </div>
 
                         <div>
-                          <h3 className="text-2xl font-black text-slate-900 leading-tight tracking-tighter italic uppercase">
-                            {order.productName}
-                          </h3>
+                          <h3 className="text-2xl font-black text-slate-900 italic uppercase">{order.productName}</h3>
                           <div className="flex flex-col gap-1 mt-2">
                             <div className="flex items-center gap-2">
                               <UserIcon className="w-4 h-4 text-primary" />
-                              <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-                                {isVenta ? "Cliente:" : "Vendedor:"}
-                              </span>
-                              <span className="text-sm font-black text-slate-700">
-                                {isVenta ? order.customerName : order.storeName}
-                              </span>
+                              <span className="text-sm font-black text-slate-700">{isVenta ? order.customerName : order.storeName}</span>
                             </div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formattedDate}</div>
                           </div>
                         </div>
 
@@ -266,27 +244,32 @@ export default function OrdersManagementPage() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                        <Button 
-                          onClick={() => setSelectedOrderForChat(order)}
-                          className="rounded-full h-12 px-6 bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto border-none shadow-sm"
-                        >
-                          <MessageCircle className="w-4 h-4 text-primary" /> Chat Interno
+                        <Button onClick={() => setSelectedOrderForChat(order)} className="rounded-full h-12 px-6 bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto">
+                          <MessageCircle className="w-4 h-4 text-primary" /> Chat
                         </Button>
                         
-                        <Button 
-                          onClick={() => handleWhatsAppChat(order)}
-                          className="rounded-full h-12 px-6 bg-[#25d366] hover:bg-[#128c7e] text-white font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto shadow-lg shadow-green-100 border-none"
-                        >
-                          <MessageCircle className="w-4 h-4 fill-white" /> WhatsApp
-                        </Button>
-
                         {isVenta && order.status === 'pending' && (
-                          <Button 
-                            onClick={() => handleUpdateStatus(order.id, 'preparing')}
-                            className="rounded-full h-12 px-6 bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto"
-                          >
-                            <Package className="w-4 h-4" /> Preparar
+                          <div className="flex gap-2 w-full lg:w-auto">
+                            <Button onClick={() => handleUpdateStatus(order.id, 'preparing')} className="flex-1 rounded-full h-12 px-6 bg-primary text-white font-black text-xs uppercase tracking-widest gap-2">
+                              <Package className="w-4 h-4" /> Preparar
+                            </Button>
+                            <Button onClick={() => handleCancelOrder(order.id)} variant="destructive" className="rounded-full h-12 px-4">
+                              <AlertTriangle className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+
+                        {isVenta && order.status === 'preparing' && (
+                          <Button onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')} className="rounded-full h-12 px-8 bg-green-500 hover:bg-green-600 text-white font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto">
+                            <CheckCircle2 className="w-4 h-4" /> Finalizar Pedido
                           </Button>
+                        )}
+
+                        {order.status === 'ready_for_pickup' && (
+                          <div className="flex items-center gap-2 bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100">
+                            <Truck className="w-4 h-4 text-indigo-600 animate-bounce" />
+                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Esperando Repartidor</span>
+                          </div>
                         )}
                       </div>
                     </CardContent>
@@ -296,40 +279,19 @@ export default function OrdersManagementPage() {
             })}
           </div>
         ) : (
-          <div className="bg-white border-none rounded-[40px] py-20 text-center px-6 shadow-sm flex flex-col items-center justify-center animate-in fade-in zoom-in duration-700">
-            <div className="relative mb-8">
-              <div className="absolute inset-0 bg-primary/10 rounded-full animate-ping duration-[3000ms]" />
-              <div className="relative w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center">
-                <ShoppingBag className="w-12 h-12 text-primary/30" />
-              </div>
-            </div>
-            <h3 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter leading-none mb-4">
-              ¿Listo para tu primer pedido?
-            </h3>
-            <p className="text-slate-400 text-sm font-bold max-w-sm mx-auto uppercase tracking-widest leading-relaxed mb-10">
-              Tu historial está vacío. ¡Es el momento perfecto para descubrir productos increíbles en las mejores vitrinas de tu ciudad!
-            </p>
-            <Link href="/">
-              <Button className="h-16 px-12 rounded-full bg-primary hover:bg-primary/90 text-white font-black text-lg gap-3 shadow-2xl shadow-primary/30 transition-all hover:scale-105">
-                <Sparkles className="w-6 h-6 text-yellow-300" /> Empezar a Vitrinear
-              </Button>
+          <div className="bg-white border-none rounded-[40px] py-20 text-center px-6 shadow-sm flex flex-col items-center justify-center">
+            <ShoppingBag className="w-12 h-12 text-primary/30 mb-4" />
+            <h3 className="text-2xl font-black text-slate-900 italic uppercase">Sin historial de órdenes</h3>
+            <Link href="/" className="mt-6">
+              <Button className="rounded-full h-12 px-10 font-black">Empezar a Vitrinear</Button>
             </Link>
           </div>
         )}
       </main>
 
-      <Dialog open={!!selectedOrderForChat} onOpenChange={(val) => !val && handleCloseChat()}>
+      <Dialog open={!!selectedOrderForChat} onOpenChange={(val) => !val && setSelectedOrderForChat(null)}>
         <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-[450px]">
-          <DialogHeader className="sr-only">
-             <DialogTitle>Chat Interno del Pedido</DialogTitle>
-          </DialogHeader>
-          {selectedOrderForChat && (
-            <OrderChat 
-              orderId={selectedOrderForChat.id} 
-              orderData={selectedOrderForChat} 
-              onClose={handleCloseChat}
-            />
-          )}
+          {selectedOrderForChat && <OrderChat orderId={selectedOrderForChat.id} orderData={selectedOrderForChat} onClose={() => setSelectedOrderForChat(null)} />}
         </DialogContent>
       </Dialog>
     </div>

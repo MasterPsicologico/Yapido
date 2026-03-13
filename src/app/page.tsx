@@ -137,6 +137,11 @@ function AuthenticatedHome() {
         createdAt: serverTimestamp(),
         imageUrl: `https://picsum.photos/seed/${ref.id}/800/600`
       }, { merge: true });
+
+      // Sincronizar automáticamente el rol de dueño
+      const userRef = doc(firestore, 'users', user.uid);
+      updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
+
       setOpenStore(false);
       toast({ title: "Vitrina registrada con éxito" });
     } catch (e) { toast({ title: "Error al registrar vitrina" }); }
