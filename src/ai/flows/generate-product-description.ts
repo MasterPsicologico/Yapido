@@ -32,19 +32,23 @@ const prompt = ai.definePrompt({
   name: 'generateProductDescriptionPrompt',
   input: {schema: GenerateProductDescriptionInputSchema},
   output: {schema: GenerateProductDescriptionOutputSchema},
-  prompt: `Eres un experto en marketing y redacción de copias, especializado en crear descripciones de productos atractivas y optimizadas para la venta en español.
+  prompt: `Eres un experto en neuro-copywriting y ventas de respuesta directa. Tu misión es crear una descripción de producto QUIRÚRGICA: breve, potente y diseñada para cerrar la venta de inmediato.
 
-Genera una descripción detallada y persuasiva para el siguiente producto. La descripción debe resaltar las características clave y convencer al cliente de la calidad y el valor del producto.
+ESTRUCTURA OBLIGATORIA:
+1. El Gancho: Una primera frase que destaque el mayor beneficio emocional o práctico.
+2. El Valor: Una segunda frase corta que resalte la calidad o exclusividad.
+3. Límite: Máximo 30 palabras en total.
 
 Producto: {{{productName}}}
 
-Características clave:
+{{#if keyFeatures}}Atributos clave:
 {{#each keyFeatures}}- {{{this}}}
 {{/each}}
+{{/if}}
 
-{{#if existingDescription}}Descripción existente (a mejorar y expandir): {{{existingDescription}}}{{/if}}
+{{#if existingDescription}}Base: {{{existingDescription}}}{{/if}}
 
-Crea una descripción que capture la atención y motive la compra, utilizando un lenguaje vibrante y centrado en los beneficios para el cliente.`,
+Evita adjetivos vacíos. Usa palabras que activen la decisión de compra. El cliente debe sentir que es la mejor opción de la tienda ahora mismo.`,
 });
 
 const generateProductDescriptionFlow = ai.defineFlow(
