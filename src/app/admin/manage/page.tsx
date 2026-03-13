@@ -11,14 +11,18 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AIDescriptionButton } from '@/components/product/AIDescriptionButton';
 import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
   Plus, 
   Trash2, 
-  Save, 
   Store as StoreIcon, 
-  ChevronDown, 
   ChevronUp, 
   Package, 
-  TrendingUp, 
   Clock, 
   Star, 
   Eye, 
@@ -27,9 +31,9 @@ import {
   Loader2,
   Sparkles,
   LayoutGrid,
-  Zap,
   ArrowUpRight,
-  Info
+  Info,
+  Layers
 } from 'lucide-react';
 import { 
   Collapsible,
@@ -60,30 +64,49 @@ export default function ManagePage() {
   const [productImage, setProductImage] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   const [aiProductName, setAiProductName] = useState("");
+  const [selectedStoreId, setSelectedStoreId] = useState<string>("");
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
-  // Consulta de la tienda del usuario
-  const storeQuery = useMemoFirebase(() => {
+  // Consulta de todas las tiendas del usuario
+  const storesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'stores'), where('ownerId', '==', user.uid));
   }, [firestore, user?.uid]);
 
-  const { data: stores, isLoading: loadingStore } = useCollection(storeQuery);
-  const myStore = stores?.[0];
+  const { data: stores, isLoading: loadingStore } = useCollection(storesQuery);
 
-  // Consulta de productos
+  // Seleccionar automáticamente la primera tienda si no hay ninguna seleccionada
+  useEffect(() => {
+    if (stores && stores.length > 0 && !selectedStoreId) {
+      setSelectedStoreId(stores[0].id);
+    }
+  }, [stores, selectedStoreId]);
+
+  const currentStore = useMemo(() => {
+    return stores?.find(s => s.id === selectedStoreId) || stores?.[0];
+  }, [stores, selectedStoreId]);
+
+  // Consulta de categorías de la tienda seleccionada
+  const categoriesQuery = useMemoFirebase(() => {
+    if (!firestore || !selectedStoreId) return null;
+    return collection(firestore, 'stores', selectedStoreId, 'categories');
+  }, [firestore, selectedStoreId]);
+
+  const { data: storeCategories } = useCollection(categoriesQuery);
+
+  // Consulta de productos de la tienda actual
   const productsQuery = useMemoFirebase(() => {
-    if (!firestore || !myStore?.id) return null;
-    return query(collection(firestore, 'products'), where('storeId', '==', myStore.id));
-  }, [firestore, myStore?.id]);
+    if (!firestore || !selectedStoreId) return null;
+    return query(collection(firestore, 'products'), where('storeId', '==', selectedStoreId));
+  }, [firestore, selectedStoreId]);
 
   const { data: products } = useCollection(productsQuery);
 
-  // Consulta de pedidos para estadísticas
+  // Consulta de pedidos para estadísticas globales o de la tienda seleccionada
   const ordersQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !myStore?.id) return null;
+    if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'orders'), where('storeOwnerId', '==', user.uid));
-  }, [firestore, user?.uid, myStore?.id]);
+  }, [firestore, user?.uid]);
 
   const { data: orders } = useCollection(ordersQuery);
 
@@ -114,7 +137,7 @@ export default function ManagePage() {
 
   const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user || !myStore || !productImage) {
+    if (!user || !currentStore || !productImage) {
       toast({ title: "Completa los datos", description: "Asegúrate de subir una foto.", variant: "destructive" });
       return;
     }
@@ -123,6 +146,12 @@ export default function ManagePage() {
     const name = fd.get('name') as string;
     const price = Number(fd.get('price'));
     const description = fd.get('description') as string;
+    const categoryId = fd.get('categoryId') as string;
+
+    if (!categoryId) {
+      toast({ title: "Selecciona una categoría", description: "Es necesario clasificar el producto.", variant: "destructive" });
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -131,15 +160,16 @@ export default function ManagePage() {
         name,
         price,
         description,
+        categoryId,
         imageUrl: productImage,
-        storeId: myStore.id,
-        storeName: myStore.name,
+        storeId: currentStore.id,
+        storeName: currentStore.name,
         storeOwnerId: user.uid,
         status: 'available',
         createdAt: serverTimestamp()
       });
 
-      toast({ title: "¡Producto Publicado!", description: "Ya está visible en tu vitrina." });
+      toast({ title: "¡Producto Publicado!", description: `Añadido con éxito a ${currentStore.name}.` });
       setIsFormOpen(false);
       setProductImage(null);
       setAiProductName("");
@@ -162,7 +192,7 @@ export default function ManagePage() {
     );
   }
 
-  if (!myStore && !loadingStore) {
+  if ((!stores || stores.length === 0) && !loadingStore) {
     return (
       <div className="flex flex-col min-h-screen bg-slate-50">
         <Navbar />
@@ -194,15 +224,30 @@ export default function ManagePage() {
               <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">
                 Consola de Negocio
               </h1>
-              <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+              <div className="flex items-center gap-2 mt-2">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                {myStore?.name} • Online
-              </p>
+                {stores && stores.length > 1 ? (
+                  <Select value={selectedStoreId} onValueChange={setSelectedStoreId}>
+                    <SelectTrigger className="h-8 bg-transparent border-none p-0 text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em] hover:text-primary transition-colors focus:ring-0">
+                      <SelectValue placeholder="Selecciona Tienda" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-none shadow-2xl">
+                      {stores.map(s => (
+                        <SelectItem key={s.id} value={s.id} className="text-[10px] font-black uppercase tracking-widest">{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]">
+                    {currentStore?.name} • Online
+                  </p>
+                )}
+              </div>
             </div>
           </div>
           
           <Button variant="outline" className="rounded-full h-12 px-6 border-slate-200 font-black text-xs uppercase tracking-widest gap-2 hover:bg-white shadow-sm" asChild>
-            <Link href={`/stores/${myStore?.id}`}>
+            <Link href={`/stores/${selectedStoreId || currentStore?.id}`}>
               Ver Vitrina Real <ArrowUpRight className="w-4 h-4" />
             </Link>
           </Button>
@@ -241,21 +286,67 @@ export default function ManagePage() {
               <CardContent className="p-8">
                 <form onSubmit={handleSaveProduct} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                   <div className="space-y-8">
-                    <div className="space-y-3">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Nombre del Producto</Label>
-                      <Input 
-                        name="name" 
-                        placeholder="Ej: Croissant de Almendras" 
-                        className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg" 
-                        value={aiProductName}
-                        onChange={(e) => setAiProductName(e.target.value)}
-                        required 
-                      />
-                      <p className="flex items-start gap-2 text-[10px] text-slate-400 font-medium leading-tight px-2">
-                        <Info className="w-3 h-3 shrink-0 text-primary" />
-                        Usa un nombre corto y descriptivo. Esto facilitará que tus clientes encuentren el artículo al buscar en la vitrina.
-                      </p>
+                    {/* Selector de Tienda (Solo si tiene varias) */}
+                    {stores && stores.length > 1 && (
+                      <div className="space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">¿En qué vitrina publicarás?</Label>
+                        <Select value={selectedStoreId} onValueChange={setSelectedStoreId} name="storeId">
+                          <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg">
+                            <SelectValue placeholder="Selecciona una tienda" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-2xl border-none shadow-2xl">
+                            {stores.map(s => (
+                              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="flex items-start gap-2 text-[10px] text-slate-400 font-medium leading-tight px-2">
+                          <Info className="w-3 h-3 shrink-0 text-primary" />
+                          Como tienes múltiples negocios, asegúrate de elegir el lugar correcto para este artículo.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Nombre del Producto</Label>
+                        <Input 
+                          name="name" 
+                          placeholder="Ej: Croissant de Almendras" 
+                          className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg" 
+                          value={aiProductName}
+                          onChange={(e) => setAiProductName(e.target.value)}
+                          required 
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Categorización</Label>
+                        <Select name="categoryId" required>
+                          <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold">
+                            <SelectValue placeholder="Elegir Sección..." />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-2xl border-none shadow-2xl">
+                            {storeCategories && storeCategories.length > 0 ? (
+                              storeCategories.map(cat => (
+                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                              ))
+                            ) : (
+                              <div className="p-4 text-center">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Sin secciones creadas</p>
+                                <Button variant="link" className="h-auto p-0 text-[10px] font-black text-primary uppercase underline" asChild>
+                                  <Link href={`/stores/${selectedStoreId}`}>Crear sección en vitrina</Link>
+                                </Button>
+                              </div>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
+                    <p className="flex items-start gap-2 text-[10px] text-slate-400 font-medium leading-tight px-2">
+                      <Layers className="w-3 h-3 shrink-0 text-primary" />
+                      Clasifica tu producto para que aparezca en el menú correcto de tu tienda. Si no ves la sección, créala en la configuración de tu vitrina.
+                    </p>
 
                     <div className="space-y-3">
                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Precio Sugerido (COP)</Label>
@@ -409,36 +500,36 @@ export default function ManagePage() {
                 <p className="text-[10px] font-medium text-slate-400 mt-1 px-4">Actualiza tu logo, banner y contacto oficial.</p>
               </div>
               <Button variant="outline" className="rounded-full h-9 px-6 text-[10px] font-black uppercase tracking-widest w-full" asChild>
-                <Link href={`/stores/${myStore?.id}`}>Configurar Vitrina</Link>
+                <Link href={`/stores/${selectedStoreId || currentStore?.id}`}>Configurar Vitrina</Link>
               </Button>
             </CardContent>
           </Card>
 
           <Card className={cn(
             "border-none rounded-[32px] shadow-sm overflow-hidden group hover:shadow-xl transition-all",
-            myStore?.featuresHidden ? "bg-slate-100" : "bg-gradient-to-br from-primary to-secondary text-white"
+            currentStore?.featuresHidden ? "bg-slate-100" : "bg-gradient-to-br from-primary to-secondary text-white"
           )}>
             <CardContent className="p-8 flex flex-col items-center text-center gap-4 h-full">
               <div className={cn(
                 "w-14 h-14 rounded-full flex items-center justify-center shadow-xl group-hover:rotate-12 transition-transform",
-                myStore?.featuresHidden ? "bg-white text-slate-400" : "bg-white/20 text-white backdrop-blur-md"
+                currentStore?.featuresHidden ? "bg-white text-slate-400" : "bg-white/20 text-white backdrop-blur-md"
               )}>
-                <Eye className="w-6 h-6" />
+                {currentStore?.featuresHidden ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
               </div>
               <div>
                 <h3 className="text-sm font-black uppercase tracking-widest italic">Modo Vitrina</h3>
                 <p className={cn(
                   "text-[10px] font-medium mt-1 px-4",
-                  myStore?.featuresHidden ? "text-slate-400" : "text-white/70"
+                  currentStore?.featuresHidden ? "text-slate-400" : "text-white/70"
                 )}>
-                  {myStore?.featuresHidden ? "Tus destacados están ocultos." : "Toda tu artillería visual es pública."}
+                  {currentStore?.featuresHidden ? "Tus destacados están ocultos." : "Toda tu artillería visual es pública."}
                 </p>
               </div>
               <Button className={cn(
                 "rounded-full h-10 px-8 text-[10px] font-black uppercase tracking-widest w-full mt-auto",
-                myStore?.featuresHidden ? "bg-slate-900 text-white" : "bg-white text-primary"
+                currentStore?.featuresHidden ? "bg-slate-900 text-white" : "bg-white text-primary"
               )} asChild>
-                <Link href={`/stores/${myStore?.id}`}>Gestionar Visibilidad</Link>
+                <Link href={`/stores/${selectedStoreId || currentStore?.id}`}>Gestionar Visibilidad</Link>
               </Button>
             </CardContent>
           </Card>
@@ -488,3 +579,7 @@ export default function ManagePage() {
     </div>
   );
 }
+
+const EyeOff = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+);
