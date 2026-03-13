@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -51,6 +52,8 @@ export default function ManagePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [productImage, setProductImage] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
+  const [aiProductName, setAiProductName] = useState("");
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   // Consulta de la tienda del usuario
   const storeQuery = useMemoFirebase(() => {
@@ -71,9 +74,9 @@ export default function ManagePage() {
 
   // Consulta de pedidos para estadísticas
   const ordersQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
+    if (!firestore || !user?.uid || !myStore?.id) return null;
     return query(collection(firestore, 'orders'), where('storeOwnerId', '==', user.uid));
-  }, [firestore, user?.uid]);
+  }, [firestore, user?.uid, myStore?.id]);
 
   const { data: orders } = useCollection(ordersQuery);
 
@@ -117,7 +120,7 @@ export default function ManagePage() {
     setIsSaving(true);
     try {
       const prodRef = collection(firestore, 'products');
-      await addDocumentNonBlocking(prodRef, {
+      addDocumentNonBlocking(prodRef, {
         name,
         price,
         description,
@@ -132,6 +135,7 @@ export default function ManagePage() {
       toast({ title: "¡Producto Publicado!", description: "Ya está visible en tu vitrina." });
       setIsFormOpen(false);
       setProductImage(null);
+      setAiProductName("");
       (e.target as HTMLFormElement).reset();
     } catch (e) {
       toast({ title: "Error al guardar", variant: "destructive" });
@@ -225,7 +229,14 @@ export default function ManagePage() {
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Nombre del Producto</Label>
-                      <Input name="name" placeholder="Ej: Croissant de Almendras" className="h-14 rounded-2xl bg-slate-50 border-none font-bold" required />
+                      <Input 
+                        name="name" 
+                        placeholder="Ej: Croissant de Almendras" 
+                        className="h-14 rounded-2xl bg-slate-50 border-none font-bold" 
+                        value={aiProductName}
+                        onChange={(e) => setAiProductName(e.target.value)}
+                        required 
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Precio Sugerido (COP)</Label>
@@ -234,9 +245,23 @@ export default function ManagePage() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Descripción Estratégica</Label>
-                        <AIDescriptionButton productName="" keyFeatures={[]} onGenerated={() => {}} />
+                        <AIDescriptionButton 
+                          productName={aiProductName} 
+                          keyFeatures={[]} 
+                          onGenerated={(desc) => {
+                            if (descriptionRef.current) {
+                              descriptionRef.current.value = desc;
+                            }
+                          }} 
+                        />
                       </div>
-                      <Textarea name="description" placeholder="Describe el sabor, ingredientes o beneficios..." className="min-h-[120px] rounded-2xl bg-slate-50 border-none font-medium leading-relaxed" required />
+                      <Textarea 
+                        ref={descriptionRef}
+                        name="description" 
+                        placeholder="Describe el sabor, ingredientes o beneficios..." 
+                        className="min-h-[120px] rounded-2xl bg-slate-50 border-none font-medium leading-relaxed" 
+                        required 
+                      />
                     </div>
                   </div>
 

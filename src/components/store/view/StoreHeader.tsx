@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Camera, Loader2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface StoreHeaderProps {
   imageUrl?: string;
@@ -27,6 +28,7 @@ export function StoreHeader({
   onOpenInfo 
 }: StoreHeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   return (
     <div className="relative h-[48vh] w-full">
@@ -66,11 +68,20 @@ export function StoreHeader({
       )}
 
       <div className="absolute top-6 left-6 z-30">
-        <Link href={`/categories/${mainCategoryId}`}>
-          <Button size="icon" variant="secondary" className="rounded-full bg-white/95 shadow-lg border-none w-11 h-11">
-            <ArrowLeft className="w-5 h-5 text-slate-700" />
-          </Button>
-        </Link>
+        <Button 
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push(mainCategoryId ? `/categories/${mainCategoryId}` : '/');
+            }
+          }}
+          size="icon" 
+          variant="secondary" 
+          className="rounded-full bg-white/95 shadow-lg border-none w-11 h-11 transition-transform active:scale-90"
+        >
+          <ArrowLeft className="w-5 h-5 text-slate-700" />
+        </Button>
       </div>
     </div>
   );
