@@ -213,11 +213,13 @@ export default function ManagePage() {
         >
           <CollapsibleTrigger asChild>
             <Button className={cn(
-              "w-full h-16 rounded-[24px] font-black text-sm uppercase tracking-[0.2em] gap-3 transition-all shadow-xl",
+              "w-full h-16 rounded-[24px] font-black text-[10px] sm:text-xs md:text-sm uppercase tracking-widest gap-3 transition-all shadow-xl px-4",
               isFormOpen ? "bg-slate-900 text-white" : "bg-white text-slate-900 hover:bg-slate-50 border-none"
             )}>
               {isFormOpen ? <ChevronUp className="w-5 h-5" /> : <Plus className="w-5 h-5 text-primary" />}
-              {isFormOpen ? "Cerrar Publicador" : "Publicar Nuevo Ítem en Vitrina"}
+              <span className="truncate">
+                {isFormOpen ? "Cerrar Publicador" : "Publicar Nuevo Artículo en la Tienda"}
+              </span>
             </Button>
           </CollapsibleTrigger>
           
