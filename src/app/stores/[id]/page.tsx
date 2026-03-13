@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { StoreHeader } from '@/components/store/view/StoreHeader';
 import { StoreInfo } from '@/components/store/view/StoreInfo';
@@ -38,6 +38,11 @@ export default function StorePage() {
   const id = params?.id as string;
   const { user, isAdmin } = useProfile();
   const firestore = useFirestore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const storeRef = useMemoFirebase(() => (!firestore || !id) ? null : doc(firestore, 'stores', id), [firestore, id]);
   const { data: store, isLoading: loadingStore } = useDoc(storeRef);
@@ -56,7 +61,8 @@ export default function StorePage() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [updatingImage, setUpdatingImage] = useState<string | null>(null);
 
-  if (loadingStore) return (
+  // Lógica de carga unificada para evitar Hydration Error y flashes visuales
+  if (!mounted || loadingStore) return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md">
       <div className="flex flex-col items-center gap-4">
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
@@ -65,7 +71,18 @@ export default function StorePage() {
     </div>
   );
 
-  if (!store && !loadingStore) return <div className="flex flex-col min-h-screen items-center justify-center p-4"><Navbar /><div className="text-center space-y-4"><StoreIcon className="w-16 h-16 mx-auto text-muted-foreground opacity-20" /><h2 className="text-2xl font-bold italic text-slate-400">Vitrina no encontrada</h2><Link href="/"><Button className="rounded-full">Inicio</Button></Link></div></div>;
+  if (!store && !loadingStore) return (
+    <div className="flex flex-col min-h-screen items-center justify-center p-4">
+      <Navbar />
+      <div className="text-center space-y-4">
+        <StoreIcon className="w-16 h-16 mx-auto text-muted-foreground opacity-20" />
+        <h2 className="text-2xl font-bold italic text-slate-400">Vitrina no encontrada</h2>
+        <Link href="/">
+          <Button className="rounded-full">Volver al Inicio</Button>
+        </Link>
+      </div>
+    </div>
+  );
 
   const canEdit = user?.uid === store?.ownerId || isAdmin;
 
@@ -170,7 +187,6 @@ export default function StorePage() {
     setIsAddingProduct(true);
     try {
       const prodColRef = collection(firestore, 'products');
-      // ASEGURAMOS QUE EL DUEÑO ESTÉ SIEMPRE PRESENTE
       const ownerId = store.ownerId || user?.uid;
       
       addDocumentNonBlocking(prodColRef, {
@@ -181,7 +197,7 @@ export default function StorePage() {
         status: 'available',
         storeId: id,
         storeName: store.name || 'Negocio Local',
-        storeOwnerId: ownerId, // Campo crítico
+        storeOwnerId: ownerId,
         categoryId: categoryId,
         createdAt: serverTimestamp(),
       });
@@ -209,7 +225,6 @@ export default function StorePage() {
             <div className="p-8 md:p-10 space-y-10">
               <StoreInfo name={store?.name} description={store?.description} />
               
-              {/* Contenedor de Características (Highlights + Stats) */}
               <div className="relative group/features space-y-10">
                 {canEdit && (
                   <Button 

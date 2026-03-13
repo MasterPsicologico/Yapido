@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,6 +47,11 @@ export default function ManagePage() {
   const { user } = useUser();
   const { profile, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -144,7 +149,7 @@ export default function ManagePage() {
     }
   };
 
-  if (loadingProfile || loadingStore) {
+  if (!mounted || loadingProfile || loadingStore) {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md">
         <div className="flex flex-col items-center gap-4">
@@ -178,7 +183,6 @@ export default function ManagePage() {
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-8 max-w-6xl">
-        {/* Header de la Consola */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div className="flex items-center gap-5">
             <div className="w-16 h-16 bg-primary rounded-[24px] flex items-center justify-center text-white shadow-2xl shadow-primary/20">
@@ -202,7 +206,6 @@ export default function ManagePage() {
           </Button>
         </div>
 
-        {/* Publicador Relámpago Collapsible */}
         <Collapsible 
           open={isFormOpen} 
           onOpenChange={setIsFormOpen}
@@ -301,10 +304,7 @@ export default function ManagePage() {
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Rejilla de 7 Ítems de Gestión */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          
-          {/* 1. Dashboard de Ingresos */}
           <Card className="border-none rounded-[32px] shadow-sm bg-white overflow-hidden group hover:shadow-xl transition-all">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between mb-2">
@@ -325,7 +325,6 @@ export default function ManagePage() {
             </CardContent>
           </Card>
 
-          {/* 2. Monitor de Pedidos */}
           <Card className="border-none rounded-[32px] shadow-sm bg-white overflow-hidden group hover:shadow-xl transition-all border-l-4 border-l-orange-500">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between mb-2">
@@ -346,7 +345,6 @@ export default function ManagePage() {
             </CardContent>
           </Card>
 
-          {/* 3. Inventario Vivo */}
           <Card className="border-none rounded-[32px] shadow-sm bg-white overflow-hidden group hover:shadow-xl transition-all">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between mb-2">
@@ -372,7 +370,6 @@ export default function ManagePage() {
             </CardContent>
           </Card>
 
-          {/* 4. Perfil de Vitrina */}
           <Card className="border-none rounded-[32px] shadow-sm bg-white overflow-hidden group hover:shadow-xl transition-all cursor-pointer">
             <CardContent className="p-8 flex flex-col items-center text-center gap-4">
               <div className="w-14 h-14 bg-slate-900 rounded-full flex items-center justify-center text-white shadow-xl group-hover:scale-110 transition-transform">
@@ -388,7 +385,6 @@ export default function ManagePage() {
             </CardContent>
           </Card>
 
-          {/* 5. Vitriniando Pro (Estrategia Visual) */}
           <Card className={cn(
             "border-none rounded-[32px] shadow-sm overflow-hidden group hover:shadow-xl transition-all",
             myStore?.featuresHidden ? "bg-slate-100" : "bg-gradient-to-br from-primary to-secondary text-white"
@@ -418,7 +414,6 @@ export default function ManagePage() {
             </CardContent>
           </Card>
 
-          {/* 6. Reputación */}
           <Card className="border-none rounded-[32px] shadow-sm bg-white overflow-hidden group hover:shadow-xl transition-all">
             <CardHeader className="pb-2">
               <div className="w-10 h-10 bg-yellow-50 rounded-xl flex items-center justify-center text-yellow-600 mb-2">
@@ -439,7 +434,6 @@ export default function ManagePage() {
             </CardContent>
           </Card>
 
-          {/* 7. Alcance Digital */}
           <Card className="border-none rounded-[32px] shadow-sm bg-white overflow-hidden group hover:shadow-xl transition-all">
             <CardHeader className="pb-2">
               <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 mb-2">
@@ -460,7 +454,6 @@ export default function ManagePage() {
               </div>
             </CardContent>
           </Card>
-
         </div>
       </main>
     </div>
