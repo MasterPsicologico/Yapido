@@ -41,6 +41,7 @@ import { collection, query, where, serverTimestamp, doc } from 'firebase/firesto
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
 import Image from 'next/image';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 export default function ManagePage() {
@@ -171,7 +172,7 @@ export default function ManagePage() {
           <h2 className="text-3xl font-black italic uppercase tracking-tighter">Sin Vitrina Activa</h2>
           <p className="text-slate-400 max-w-sm font-medium">Registra tu primer negocio para acceder a la consola de administración.</p>
           <Button asChild className="rounded-full h-14 px-10 text-lg font-black bg-primary">
-            <a href="/">Ir a Registrar Mi Vitrina</a>
+            <Link href="/">Ir a Registrar Mi Vitrina</Link>
           </Button>
         </div>
       </div>
@@ -200,9 +201,9 @@ export default function ManagePage() {
           </div>
           
           <Button variant="outline" className="rounded-full h-12 px-6 border-slate-200 font-black text-xs uppercase tracking-widest gap-2 hover:bg-white shadow-sm" asChild>
-            <a href={`/stores/${myStore?.id}`} target="_blank">
+            <Link href={`/stores/${myStore?.id}`}>
               Ver Vitrina Real <ArrowUpRight className="w-4 h-4" />
-            </a>
+            </Link>
           </Button>
         </div>
 
@@ -341,7 +342,7 @@ export default function ManagePage() {
               <div className="flex items-center justify-between">
                 <span className="text-5xl font-black tracking-tighter text-orange-600">{stats.pending}</span>
                 <Button variant="ghost" size="sm" className="rounded-full font-black text-[10px] uppercase tracking-widest h-8" asChild>
-                  <a href="/admin/orders">Atender Ahora</a>
+                  <Link href="/admin/orders">Atender Ahora</Link>
                 </Button>
               </div>
             </CardContent>
@@ -382,7 +383,7 @@ export default function ManagePage() {
                 <p className="text-[10px] font-medium text-slate-400 mt-1 px-4">Actualiza tu logo, banner y contacto oficial.</p>
               </div>
               <Button variant="outline" className="rounded-full h-9 px-6 text-[10px] font-black uppercase tracking-widest w-full" asChild>
-                <a href={`/stores/${myStore?.id}`}>Configurar Vitrina</a>
+                <Link href={`/stores/${myStore?.id}`}>Configurar Vitrina</Link>
               </Button>
             </CardContent>
           </Card>
@@ -411,7 +412,7 @@ export default function ManagePage() {
                 "rounded-full h-10 px-8 text-[10px] font-black uppercase tracking-widest w-full mt-auto",
                 myStore?.featuresHidden ? "bg-slate-900 text-white" : "bg-white text-primary"
               )} asChild>
-                <a href={`/stores/${myStore?.id}`}>Gestionar Visibilidad</a>
+                <Link href={`/stores/${myStore?.id}`}>Gestionar Visibilidad</Link>
               </Button>
             </CardContent>
           </Card>
