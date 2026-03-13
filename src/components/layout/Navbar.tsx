@@ -29,13 +29,16 @@ import { MessageCenter } from './MessageCenter';
 
 export function Navbar() {
   const { user, isUserLoading } = useUser();
-  const { profile } = useProfile();
+  const { profile, isOwner, isAdmin } = useProfile();
   const auth = useAuth();
 
   const handleLogin = () => initiateGoogleSignIn(auth);
   const handleLogout = () => auth.signOut();
 
   const isRepartidor = profile?.role === 'repartidor';
+  
+  // Solo mostramos el panel de gestión si ya tiene una tienda o es administrador
+  const canAccessManage = isOwner || isAdmin;
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b">
@@ -76,10 +79,12 @@ export function Navbar() {
                       <ClipboardList className="w-5 h-5 text-primary" />
                       Gestionar Pedidos
                     </Link>
-                    <Link href="/admin/manage" className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-muted rounded-lg transition-colors">
-                      <Store className="w-5 h-5 text-primary" />
-                      Inventario y Tienda
-                    </Link>
+                    {canAccessManage && (
+                      <Link href="/admin/manage" className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-muted rounded-lg transition-colors">
+                        <Store className="w-5 h-5 text-primary" />
+                        Inventario y Tienda
+                      </Link>
+                    )}
                     {isRepartidor ? (
                       <Link href="/delivery/dashboard" className="flex items-center gap-3 px-4 py-2 text-lg font-medium hover:bg-muted rounded-lg transition-colors">
                         <Truck className="w-5 h-5 text-secondary" />
@@ -154,6 +159,14 @@ export function Navbar() {
                           <span className="font-bold">Mis Pedidos</span>
                         </Link>
                       </DropdownMenuItem>
+                      {canAccessManage && (
+                        <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer">
+                          <Link href="/admin/manage">
+                            <Store className="mr-2 h-4 w-4 text-primary" />
+                            <span className="font-bold">Gestionar Mi Negocio</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       {isRepartidor && (
                         <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer">
                           <Link href="/delivery/dashboard">
