@@ -25,7 +25,8 @@ import {
   ShieldCheck,
   Timer,
   AlertTriangle,
-  ChevronRight
+  ChevronRight,
+  Info
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -45,12 +46,12 @@ import {
 } from "@/components/ui/dialog";
 
 const STATUS_CONFIG = {
-  pending: { label: "Por Confirmar", color: "bg-orange-500", icon: Timer },
-  preparing: { label: "Preparando", color: "bg-blue-500", icon: Package },
-  ready_for_pickup: { label: "Listo / Esperando", color: "bg-indigo-500", icon: Zap },
-  shipped: { label: "En Reparto", color: "bg-purple-500", icon: Truck },
-  delivered: { label: "Entregado", color: "bg-green-500", icon: CheckCircle2 },
-  cancelled: { label: "Cancelado", color: "bg-red-500", icon: AlertTriangle }
+  pending: { label: "Por Confirmar", color: "bg-orange-500", icon: Timer, desc: "Tienes 20 min para aceptar" },
+  preparing: { label: "Preparando", color: "bg-blue-500", icon: Package, desc: "Repartidores avisados" },
+  ready_for_pickup: { label: "Listo en Tienda", color: "bg-indigo-500", icon: CheckCircle2, desc: "Esperando recolección" },
+  shipped: { label: "En Reparto", color: "bg-purple-500", icon: Truck, desc: "Producto en camino" },
+  delivered: { label: "Entregado", color: "bg-green-500", icon: CheckCircle2, desc: "Venta finalizada" },
+  cancelled: { label: "Cancelado", color: "bg-red-500", icon: AlertTriangle, desc: "Orden anulada" }
 };
 
 function OrderTimer({ createdAt, status, orderId, firestore }: { createdAt: any, status: string, orderId: string, firestore: any }) {
@@ -67,7 +68,6 @@ function OrderTimer({ createdAt, status, orderId, firestore }: { createdAt: any,
       if (diff <= 0) {
         setTimeLeft(0);
         clearInterval(interval);
-        // Aquí podríamos disparar el auto-cancelado
       } else {
         setTimeLeft(diff);
       }
@@ -80,11 +80,11 @@ function OrderTimer({ createdAt, status, orderId, firestore }: { createdAt: any,
 
   return (
     <div className={cn(
-      "flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-      timeLeft <= 5 ? "bg-red-100 text-red-600 animate-pulse" : "bg-orange-100 text-orange-600"
+      "flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
+      timeLeft <= 5 ? "bg-red-50 text-red-600 border-red-100 animate-pulse" : "bg-orange-50 text-orange-600 border-orange-100"
     )}>
       <Clock className="w-3 h-3" />
-      {timeLeft > 0 ? `${timeLeft}m para expirar` : "EXPIRADO"}
+      {timeLeft > 0 ? `${timeLeft}m para confirmar` : "EXPIRADO - CANCELAR"}
     </div>
   );
 }
@@ -94,10 +94,6 @@ export default function OrdersManagementPage() {
   const { profile, isAdmin, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-  const chatParam = searchParams.get('chat');
-  const manuallyClosedId = useRef<string | null>(null);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrderForChat, setSelectedOrderForChat] = useState<any | null>(null);
@@ -141,8 +137,10 @@ export default function OrdersManagementPage() {
     const orderRef = doc(firestore, 'orders', orderId);
     updateDocumentNonBlocking(orderRef, { status: newStatus, updatedAt: serverTimestamp() });
     
-    if (newStatus === 'ready_for_pickup') {
-      toast({ title: "¡Alerta enviada!", description: "Los repartidores han sido notificados." });
+    if (newStatus === 'preparing') {
+      toast({ title: "¡Preparación Iniciada!", description: "Se ha enviado la alarma a los repartidores." });
+    } else if (newStatus === 'ready_for_pickup') {
+      toast({ title: "¡Pedido Terminado!", description: "El cliente ha sido notificado." });
     } else {
       toast({ title: "Estado actualizado" });
     }
@@ -152,17 +150,7 @@ export default function OrdersManagementPage() {
     if (!firestore) return;
     const orderRef = doc(firestore, 'orders', orderId);
     updateDocumentNonBlocking(orderRef, { status: 'cancelled', updatedAt: serverTimestamp() });
-    toast({ title: "Pedido Cancelado", variant: "destructive" });
-  };
-
-  const handleWhatsAppChat = (order: any) => {
-    const phone = order.type === 'compra' ? (order.storePhone || '') : (order.customerPhone || '');
-    if (!phone) {
-        toast({ title: "Sin número", variant: "destructive" });
-        return;
-    }
-    const cleanPhone = phone.replace(/\D/g, '');
-    window.open(`https://wa.me/57${cleanPhone}`, '_blank');
+    toast({ title: "Pedido Cancelado", description: "Se ha informado al cliente.", variant: "destructive" });
   };
 
   const filteredOrders = orders?.filter(o => 
@@ -174,7 +162,7 @@ export default function OrdersManagementPage() {
   const isGlobalLoading = isAuthLoading || loadingProfile || loadingPurchases || (salesQuery !== null && loadingSales);
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
+    <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-8 max-w-6xl">
@@ -185,20 +173,20 @@ export default function OrdersManagementPage() {
             </div>
             <div>
               <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">Gestión de Pedidos</h1>
-              <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Órdenes en tiempo real</p>
+              <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Control logístico en vivo</p>
             </div>
           </div>
 
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input placeholder="Buscar pedido..." className="pl-10 h-12 rounded-2xl border-none bg-white shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <Input placeholder="Buscar por cliente o ID..." className="pl-10 h-12 rounded-2xl border-none bg-white shadow-sm font-medium" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
         </div>
 
         {isGlobalLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Sincronizando órdenes...</p>
+            <p className="font-bold text-slate-400 uppercase tracking-widest text-[10px]">Sincronizando con la red...</p>
           </div>
         ) : filteredOrders && filteredOrders.length > 0 ? (
           <div className="grid gap-6">
@@ -209,66 +197,80 @@ export default function OrdersManagementPage() {
               const isVenta = order.type === 'venta';
               
               return (
-                <Card key={order.id} id={order.id} className="border-none rounded-[32px] overflow-hidden shadow-md bg-white hover:shadow-xl transition-all duration-500">
+                <Card key={order.id} id={order.id} className="border-none rounded-[36px] overflow-hidden shadow-sm bg-white hover:shadow-2xl transition-all duration-500 border border-slate-100">
                   <div className="flex flex-col lg:flex-row">
                     <div className={cn("w-full lg:w-2", isVenta ? "bg-secondary" : "bg-primary")} />
                     
-                    <CardContent className="flex-1 p-6 lg:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-                      <div className="space-y-4 flex-1">
+                    <CardContent className="flex-1 p-6 lg:p-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+                      <div className="space-y-5 flex-1">
                         <div className="flex flex-wrap items-center gap-3">
-                          <Badge className={cn("text-white border-none rounded-full px-4 h-7 text-[10px] font-black uppercase tracking-widest", isVenta ? "bg-secondary" : "bg-primary")}>
+                          <Badge className={cn("text-white border-none rounded-full px-4 h-7 text-[9px] font-black uppercase tracking-widest", isVenta ? "bg-secondary" : "bg-primary")}>
                             {isVenta ? "Venta Recibida" : "Mi Compra"}
                           </Badge>
-                          <Badge className={`${status.color} text-white border-none rounded-full px-4 h-7 text-[10px] font-black uppercase tracking-widest`}>
-                            <StatusIcon className="w-3.5 h-3.5 mr-1.5" />
+                          <Badge className={`${status.color} text-white border-none rounded-full px-4 h-7 text-[9px] font-black uppercase tracking-widest gap-1.5`}>
+                            <StatusIcon className="w-3.5 h-3.5" />
                             {status.label}
                           </Badge>
                           <OrderTimer createdAt={order.createdAt} status={order.status} orderId={order.id} firestore={firestore} />
                         </div>
 
                         <div>
-                          <h3 className="text-2xl font-black text-slate-900 italic uppercase">{order.productName}</h3>
-                          <div className="flex flex-col gap-1 mt-2">
+                          <div className="flex items-center gap-2 mb-1">
+                             <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">ID: #{order.id.slice(-6)}</span>
+                             <span className="text-[10px] font-bold text-primary uppercase bg-primary/5 px-2 rounded-md">{status.desc}</span>
+                          </div>
+                          <h3 className="text-3xl font-black text-slate-900 italic uppercase leading-none">{order.productName}</h3>
+                          <div className="flex flex-col gap-1 mt-3">
                             <div className="flex items-center gap-2">
-                              <UserIcon className="w-4 h-4 text-primary" />
+                              <div className="w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center"><UserIcon className="w-3 h-3 text-slate-500" /></div>
                               <span className="text-sm font-black text-slate-700">{isVenta ? order.customerName : order.storeName}</span>
                             </div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formattedDate}</div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-8">{formattedDate}</div>
                           </div>
                         </div>
 
-                        <div className="text-3xl font-black text-slate-900 tracking-tighter">
+                        <div className="text-4xl font-black text-slate-900 tracking-tighter flex items-baseline gap-2">
                           {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice)}
-                          <span className="text-xs font-bold text-slate-300 ml-2">x{order.quantity} un.</span>
+                          <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">x{order.quantity} un.</span>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                        <Button onClick={() => setSelectedOrderForChat(order)} className="rounded-full h-12 px-6 bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto">
-                          <MessageCircle className="w-4 h-4 text-primary" /> Chat
+                        <Button onClick={() => setSelectedOrderForChat(order)} className="rounded-full h-14 px-8 bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto shadow-sm">
+                          <MessageCircle className="w-5 h-5 text-primary" /> Chat Directo
                         </Button>
                         
                         {isVenta && order.status === 'pending' && (
                           <div className="flex gap-2 w-full lg:w-auto">
-                            <Button onClick={() => handleUpdateStatus(order.id, 'preparing')} className="flex-1 rounded-full h-12 px-6 bg-primary text-white font-black text-xs uppercase tracking-widest gap-2">
-                              <Package className="w-4 h-4" /> Preparar
+                            <Button onClick={() => handleUpdateStatus(order.id, 'preparing')} className="flex-1 lg:flex-none rounded-full h-14 px-10 bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest gap-2 shadow-xl shadow-primary/20">
+                              <Zap className="w-5 h-5 text-yellow-300" /> Preparar
                             </Button>
-                            <Button onClick={() => handleCancelOrder(order.id)} variant="destructive" className="rounded-full h-12 px-4">
-                              <AlertTriangle className="w-4 h-4" />
+                            <Button onClick={() => handleCancelOrder(order.id)} variant="outline" className="rounded-full h-14 px-5 border-red-100 text-red-500 hover:bg-red-50">
+                              <AlertTriangle className="w-5 h-5" />
                             </Button>
                           </div>
                         )}
 
                         {isVenta && order.status === 'preparing' && (
-                          <Button onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')} className="rounded-full h-12 px-8 bg-green-500 hover:bg-green-600 text-white font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto">
-                            <CheckCircle2 className="w-4 h-4" /> Finalizar Pedido
+                          <Button onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')} className="rounded-full h-14 px-10 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest gap-2 w-full lg:w-auto shadow-xl">
+                            <CheckCircle2 className="w-5 h-5" /> Terminar Producto
                           </Button>
                         )}
 
-                        {order.status === 'ready_for_pickup' && (
-                          <div className="flex items-center gap-2 bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100">
-                            <Truck className="w-4 h-4 text-indigo-600 animate-bounce" />
-                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Esperando Repartidor</span>
+                        {(order.status === 'preparing' || order.status === 'ready_for_pickup') && (
+                          <div className="flex flex-col gap-2 w-full lg:w-auto">
+                            <div className={cn(
+                              "flex items-center gap-3 px-6 py-3 rounded-full border transition-all",
+                              order.status === 'ready_for_pickup' ? "bg-green-50 border-green-100" : "bg-indigo-50 border-indigo-100"
+                            )}>
+                              <Truck className={cn("w-5 h-5", order.status === 'ready_for_pickup' ? "text-green-600" : "text-indigo-600 animate-bounce")} />
+                              <div className="flex flex-col">
+                                <span className={cn("text-[9px] font-black uppercase tracking-widest", order.status === 'ready_for_pickup' ? "text-green-600" : "text-indigo-600")}>
+                                  {order.status === 'ready_for_pickup' ? "LISTO EN MOSTRADOR" : "REPARTIDOR AVISADO"}
+                                </span>
+                                <span className="text-[8px] font-bold text-slate-400 uppercase">Sincronizando ruta...</span>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -279,11 +281,14 @@ export default function OrdersManagementPage() {
             })}
           </div>
         ) : (
-          <div className="bg-white border-none rounded-[40px] py-20 text-center px-6 shadow-sm flex flex-col items-center justify-center">
-            <ShoppingBag className="w-12 h-12 text-primary/30 mb-4" />
-            <h3 className="text-2xl font-black text-slate-900 italic uppercase">Sin historial de órdenes</h3>
-            <Link href="/" className="mt-6">
-              <Button className="rounded-full h-12 px-10 font-black">Empezar a Vitrinear</Button>
+          <div className="bg-white border-none rounded-[48px] py-24 text-center px-10 shadow-sm flex flex-col items-center justify-center border border-slate-100">
+            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+              <ShoppingBag className="w-10 h-10 text-slate-200" />
+            </div>
+            <h3 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter">Sin actividad reciente</h3>
+            <p className="text-slate-400 font-medium mt-2 max-w-xs mx-auto text-sm">Tus pedidos y ventas aparecerán aquí en tiempo real cuando se realicen nuevas transacciones.</p>
+            <Link href="/" className="mt-8">
+              <Button className="rounded-full h-12 px-10 font-black bg-primary">Empezar a Vitrinear</Button>
             </Link>
           </div>
         )}
