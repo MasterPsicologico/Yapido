@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -33,7 +32,8 @@ import {
   LayoutGrid,
   ArrowUpRight,
   Info,
-  Layers
+  Layers,
+  Zap
 } from 'lucide-react';
 import { 
   Collapsible,
