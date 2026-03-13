@@ -28,7 +28,8 @@ import {
   Sparkles,
   LayoutGrid,
   Zap,
-  ArrowUpRight
+  ArrowUpRight,
+  Info
 } from 'lucide-react';
 import { 
   Collapsible,
@@ -227,27 +228,44 @@ export default function ManagePage() {
           <CollapsibleContent className="mt-4 animate-in slide-in-from-top-4 duration-500">
             <Card className="border-none shadow-2xl rounded-[32px] overflow-hidden bg-white">
               <CardHeader className="bg-slate-50 border-b p-8">
-                <CardTitle className="text-2xl font-black italic uppercase">Nuevo Tesoro</CardTitle>
-                <CardDescription className="text-slate-400 font-medium">Completa los detalles para atraer a tus clientes morrocoyeros.</CardDescription>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <CardTitle className="text-2xl font-black italic uppercase tracking-tighter">Publicador de Artículos</CardTitle>
+                </div>
+                <CardDescription className="text-slate-500 font-medium text-sm leading-relaxed max-w-2xl">
+                  Sigue las instrucciones a continuación para digitalizar tu inventario. Una ficha de producto bien diligenciada puede <b>aumentar tus ventas hasta en un 40%</b> al generar mayor confianza en el cliente.
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-8">
                 <form onSubmit={handleSaveProduct} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                  <div className="space-y-6">
-                    <div className="space-y-2">
+                  <div className="space-y-8">
+                    <div className="space-y-3">
                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Nombre del Producto</Label>
                       <Input 
                         name="name" 
                         placeholder="Ej: Croissant de Almendras" 
-                        className="h-14 rounded-2xl bg-slate-50 border-none font-bold" 
+                        className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg" 
                         value={aiProductName}
                         onChange={(e) => setAiProductName(e.target.value)}
                         required 
                       />
+                      <p className="flex items-start gap-2 text-[10px] text-slate-400 font-medium leading-tight px-2">
+                        <Info className="w-3 h-3 shrink-0 text-primary" />
+                        Usa un nombre corto y descriptivo. Esto facilitará que tus clientes encuentren el artículo al buscar en la vitrina.
+                      </p>
                     </div>
-                    <div className="space-y-2">
+
+                    <div className="space-y-3">
                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Precio Sugerido (COP)</Label>
                       <Input name="price" type="number" placeholder="Ej: 15000" className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-primary text-xl" required />
+                      <p className="flex items-start gap-2 text-[10px] text-slate-400 font-medium leading-tight px-2">
+                        <Info className="w-3 h-3 shrink-0 text-primary" />
+                        Define un precio competitivo. Los clientes prefieren ver el valor real desde el inicio para tomar una decisión de compra rápida.
+                      </p>
                     </div>
+
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Descripción Estratégica</Label>
@@ -268,6 +286,10 @@ export default function ManagePage() {
                         className="min-h-[120px] rounded-2xl bg-slate-50 border-none font-medium leading-relaxed" 
                         required 
                       />
+                      <p className="flex items-start gap-2 text-[10px] text-slate-400 font-medium leading-tight px-2">
+                        <Info className="w-3 h-3 shrink-0 text-primary" />
+                        Cuéntale al cliente por qué este producto es especial. Usa nuestra <b>IA</b> para crear un texto que resalte los beneficios y cierre la venta por ti.
+                      </p>
                     </div>
                   </div>
 
@@ -297,6 +319,10 @@ export default function ManagePage() {
                         </label>
                       )}
                     </div>
+                    <p className="flex items-start gap-2 text-[10px] text-slate-400 font-medium leading-tight px-2 mb-4">
+                      <Info className="w-3 h-3 shrink-0 text-primary" />
+                      Los clientes compran con los ojos. Una foto real, nítida y bien iluminada es el factor número uno para recibir nuevos pedidos.
+                    </p>
                     <Button type="submit" disabled={isSaving || isCompressing} className="h-16 rounded-[24px] bg-primary hover:bg-primary/90 text-white font-black text-lg gap-3 shadow-2xl shadow-primary/20">
                       {isSaving ? <Loader2 className="animate-spin" /> : <><Sparkles className="w-6 h-6 text-yellow-300" /> Publicar en Vitrina</>}
                     </Button>
