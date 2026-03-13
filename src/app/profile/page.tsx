@@ -332,11 +332,11 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        </main>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 animate-spin text-primary" />
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60">Sincronizando Perfil</p>
+        </div>
       </div>
     );
   }

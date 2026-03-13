@@ -146,10 +146,10 @@ export default function ManagePage() {
 
   if (loadingProfile || loadingStore) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 animate-spin text-primary" />
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60">Cargando Consola</p>
         </div>
       </div>
     );
@@ -383,7 +383,7 @@ export default function ManagePage() {
                 <p className="text-[10px] font-medium text-slate-400 mt-1 px-4">Actualiza tu logo, banner y contacto oficial.</p>
               </div>
               <Button variant="outline" className="rounded-full h-9 px-6 text-[10px] font-black uppercase tracking-widest w-full" asChild>
-                <a href={`/stores/${myStore?.id}`}>Editar Perfil</a>
+                <a href={`/stores/${myStore?.id}`}>Configurar Vitrina</a>
               </Button>
             </CardContent>
           </Card>

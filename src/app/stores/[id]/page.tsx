@@ -56,7 +56,15 @@ export default function StorePage() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [updatingImage, setUpdatingImage] = useState<string | null>(null);
 
-  if (loadingStore) return <div className="flex flex-col min-h-screen bg-background"><Navbar /><main className="flex-1"><Skeleton className="h-[40vh] w-full" /><div className="container mx-auto px-4 -mt-20"><Skeleton className="h-64 w-full" /></div></main></div>;
+  if (loadingStore) return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60">Cargando Vitrina</p>
+      </div>
+    </div>
+  );
+
   if (!store && !loadingStore) return <div className="flex flex-col min-h-screen items-center justify-center p-4"><Navbar /><div className="text-center space-y-4"><StoreIcon className="w-16 h-16 mx-auto text-muted-foreground opacity-20" /><h2 className="text-2xl font-bold italic text-slate-400">Vitrina no encontrada</h2><Link href="/"><Button className="rounded-full">Inicio</Button></Link></div></div>;
 
   const canEdit = user?.uid === store?.ownerId || isAdmin;
