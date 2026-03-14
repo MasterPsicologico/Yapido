@@ -19,7 +19,9 @@ import {
   User as UserIcon,
   Timer,
   AlertTriangle,
-  ArrowRight
+  ArrowRight,
+  Calendar,
+  MapPin
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -34,12 +36,12 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import Link from 'next/link';
 
 const STATUS_CONFIG = {
-  pending: { label: "Por Confirmar", color: "bg-orange-500", icon: Timer, desc: "Tienes 20 min para aceptar" },
-  preparing: { label: "Preparando", color: "bg-blue-500", icon: Package, desc: "Avisando a la red de despacho" },
-  ready_for_pickup: { label: "Listo en Tienda", color: "bg-indigo-500", icon: CheckCircle2, desc: "Esperando recolección" },
-  shipped: { label: "En Reparto", color: "bg-purple-500", icon: Truck, desc: "Producto en camino" },
-  delivered: { label: "Entregado", color: "bg-green-500", icon: CheckCircle2, desc: "Venta finalizada" },
-  cancelled: { label: "Cancelado", color: "bg-red-500", icon: AlertTriangle, desc: "Orden anulada" }
+  pending: { label: "PENDIENTE", color: "bg-orange-500", icon: Timer, desc: "Tienes 20 min para aceptar" },
+  preparing: { label: "PREPARANDO", color: "bg-blue-500", icon: Package, desc: "Avisando a la red de despacho" },
+  ready_for_pickup: { label: "LISTO PARA REPARTO", color: "bg-indigo-500", icon: CheckCircle2, desc: "Esperando recolección" },
+  shipped: { label: "EN REPARTO", color: "bg-purple-500", icon: Truck, desc: "Producto en camino" },
+  delivered: { label: "ENTREGADO", color: "bg-green-500", icon: CheckCircle2, desc: "Venta finalizada" },
+  cancelled: { label: "CANCELADO", color: "bg-red-500", icon: AlertTriangle, desc: "Orden anulada" }
 };
 
 function OrderTimer({ createdAt, status }: { createdAt: any, status: string }) {
@@ -77,8 +79,6 @@ export default function OrdersManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrderForChat, setSelectedOrderForChat] = useState<any | null>(null);
 
-  // CONSULTA PROTEGIDA: Removido orderBy para evitar errores de permisos/índices al cambiar de cuenta.
-  // El ordenamiento se realiza en memoria (JS) para máxima fiabilidad.
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || profileLoading) return null;
     return query(
@@ -89,7 +89,6 @@ export default function OrdersManagementPage() {
 
   const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
 
-  // Ordenamiento en memoria para evitar requerir índices compuestos en Firestore
   const orders = useMemo(() => {
     if (!rawOrders) return null;
     return [...rawOrders].sort((a, b) => {
@@ -108,6 +107,16 @@ export default function OrdersManagementPage() {
     
     updateDocumentNonBlocking(orderRef, updateData);
     toast({ title: "Estado Actualizado" });
+  };
+
+  const handleWhatsAppChat = (phone: string, productName: string) => {
+    if (!phone) {
+      toast({ title: "Sin número", description: "No se encontró teléfono de contacto.", variant: "destructive" });
+      return;
+    }
+    const cleanPhone = phone.replace(/\D/g, '');
+    const message = `Hola, te hablo de Vitriniando sobre tu pedido de ${productName}.`;
+    window.open(`https://wa.me/57${cleanPhone.startsWith('57') ? cleanPhone.slice(2) : cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const filteredOrders = orders?.filter(o => 
@@ -131,8 +140,8 @@ export default function OrdersManagementPage() {
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
       
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-6xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+      <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
+        <div className="flex flex-col gap-6 mb-10">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-primary rounded-[22px] flex items-center justify-center text-white shadow-xl shadow-primary/20">
               <ClipboardList className="w-7 h-7" />
@@ -143,7 +152,7 @@ export default function OrdersManagementPage() {
             </div>
           </div>
 
-          <div className="relative w-full md:w-80">
+          <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input 
               placeholder="Buscar cliente o producto..." 
@@ -155,80 +164,102 @@ export default function OrdersManagementPage() {
         </div>
 
         {filteredOrders && filteredOrders.length > 0 ? (
-          <div className="grid gap-6">
+          <div className="grid gap-8">
             {filteredOrders.map((order) => {
               const status = STATUS_CONFIG[order.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
-              const StatusIcon = status.icon;
               const isVenta = order.storeOwnerId === user?.uid;
               const dateStr = order.createdAt ? format(order.createdAt.toDate(), "d 'de' MMMM, HH:mm", { locale: es }) : 'Cargando...';
               
               return (
-                <Card key={order.id} id={order.id} className="border-none rounded-[36px] overflow-hidden shadow-sm bg-white hover:shadow-2xl transition-all duration-500 border border-slate-100">
-                  <div className="flex flex-col lg:flex-row">
-                    <div className={cn("w-full lg:w-2", isVenta ? "bg-secondary" : "bg-primary")} />
-                    
-                    <CardContent className="flex-1 p-6 lg:p-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-                      <div className="space-y-5 flex-1">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <Badge className={cn("text-white border-none rounded-full px-4 h-7 text-[9px] font-black uppercase tracking-widest", isVenta ? "bg-secondary" : "bg-primary")}>
-                            {isVenta ? "Venta Recibida" : "Mi Compra"}
-                          </Badge>
-                          <Badge className={cn(status.color, "text-white border-none rounded-full px-4 h-7 text-[9px] font-black uppercase tracking-widest gap-1.5")}>
-                            <StatusIcon className="w-3.5 h-3.5" /> {status.label}
-                          </Badge>
-                          <OrderTimer createdAt={order.createdAt} status={order.status} />
-                        </div>
+                <Card key={order.id} id={order.id} className="border-none rounded-[48px] overflow-hidden shadow-2xl bg-white border border-slate-50">
+                  <CardContent className="p-8 space-y-6">
+                    {/* Badges Header */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Badge className={cn("text-white border-none rounded-full px-5 h-9 text-[10px] font-black uppercase tracking-widest", isVenta ? "bg-secondary" : "bg-primary")}>
+                        <Zap className="w-3.5 h-3.5 mr-2" />
+                        {isVenta ? "VENTA RECIBIDA" : "MI COMPRA"}
+                      </Badge>
+                      <Badge className={cn(status.color, "text-white border-none rounded-full px-5 h-9 text-[10px] font-black uppercase tracking-widest gap-2")}>
+                        <Clock className="w-3.5 h-3.5" /> {status.label}
+                      </Badge>
+                    </div>
 
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                             <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">#{order.id.slice(-6)}</span>
-                             <span className="text-[10px] font-bold text-primary uppercase bg-primary/5 px-2 rounded-md italic">{status.desc}</span>
-                          </div>
-                          <h3 className="text-3xl font-black text-slate-900 italic uppercase leading-none">{order.productName}</h3>
-                          <div className="flex flex-col gap-1 mt-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center"><UserIcon className="w-3 h-3 text-slate-500" /></div>
-                              <Link 
-                                href={`/profile/${isVenta ? order.customerId : order.storeOwnerId}`}
-                                className="text-sm font-black text-slate-700 hover:text-primary transition-colors underline decoration-dotted underline-offset-4"
-                              >
-                                {isVenta ? order.customerName : order.storeName}
-                              </Link>
-                            </div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-8">{dateStr}</div>
-                          </div>
-                        </div>
+                    {/* Date Badge */}
+                    <div className="flex items-center gap-2 bg-slate-50 w-fit px-4 py-1.5 rounded-full border border-slate-100">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{dateStr}</span>
+                    </div>
 
-                        <div className="text-4xl font-black text-slate-900 tracking-tighter flex items-baseline gap-2">
+                    {/* Order Info */}
+                    <div className="space-y-4">
+                      <h3 className="text-4xl font-black text-slate-900 italic uppercase leading-tight tracking-tighter">
+                        {order.productName}
+                      </h3>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <UserIcon className="w-4 h-4 text-primary" />
+                          <span className="text-xs font-black uppercase tracking-widest text-slate-400">CLIENTE: </span>
+                          <Link 
+                            href={`/profile/${isVenta ? order.customerId : order.storeOwnerId}`}
+                            className="text-sm font-black text-slate-800 hover:text-primary transition-colors"
+                          >
+                            {isVenta ? order.customerName : order.storeName}
+                          </Link>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <MapPin className="w-4 h-4 text-secondary" />
+                          <span className="text-xs font-black uppercase tracking-widest text-slate-400">UBICACIÓN: </span>
+                          <span className="text-sm font-black text-slate-800 italic">WhatsApp Cliente</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-baseline gap-2 pt-2">
+                        <span className="text-5xl font-black text-slate-900 tracking-tighter">
                           {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice)}
-                          <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">x{order.quantity}</span>
-                        </div>
+                        </span>
+                        <span className="text-xs font-bold text-slate-300 uppercase tracking-widest italic">x{order.quantity}un.</span>
                       </div>
+                    </div>
 
-                      <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                        <Button onClick={() => setSelectedOrderForChat(order)} className="rounded-full h-14 px-8 bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-xs uppercase tracking-widest gap-2 shadow-sm">
-                          <MessageCircle className="w-5 h-5 text-primary" /> Chat Directo
+                    {/* Action Buttons */}
+                    <div className="space-y-3 pt-4">
+                      {isVenta && order.status === 'pending' && (
+                        <Button 
+                          onClick={() => handleUpdateStatus(order.id, 'preparing')} 
+                          className="w-full h-16 rounded-full bg-primary hover:bg-primary/90 text-white font-black text-sm uppercase tracking-widest gap-3 shadow-xl shadow-primary/20 transition-all active:scale-95"
+                        >
+                          <Package className="w-6 h-6" /> PREPARAR
                         </Button>
-                        
-                        {isVenta && order.status === 'pending' && (
-                          <div className="flex gap-2 w-full lg:w-auto">
-                            <Button onClick={() => handleUpdateStatus(order.id, 'preparing')} className="flex-1 lg:flex-none rounded-full h-14 px-10 bg-primary hover:bg-primary/90 text-white font-black text-xs uppercase tracking-widest gap-2 shadow-xl">
-                              <Zap className="w-5 h-5 text-yellow-300" /> Preparar
-                            </Button>
-                            <Button onClick={() => handleUpdateStatus(order.id, 'cancelled')} variant="outline" className="rounded-full h-14 px-5 border-red-100 text-red-500 hover:bg-red-50">
-                              <AlertTriangle className="w-5 h-5" />
-                            </Button>
-                          </div>
-                        )}
+                      )}
 
-                        {isVenta && order.status === 'preparing' && (
-                          <Button onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')} className="rounded-full h-14 px-10 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest gap-2 shadow-xl">
-                            <CheckCircle2 className="w-5 h-5" /> Listo en Tienda
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </div>
+                      {isVenta && order.status === 'preparing' && (
+                        <Button 
+                          onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')} 
+                          className="w-full h-16 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm uppercase tracking-widest gap-3 shadow-xl shadow-indigo-100"
+                        >
+                          <CheckCircle2 className="w-6 h-6" /> LISTO EN TIENDA
+                        </Button>
+                      )}
+
+                      {/* Botón WhatsApp - Chat Cliente */}
+                      <Button 
+                        onClick={() => handleWhatsAppChat(isVenta ? order.customerPhone : '', order.productName)}
+                        className="w-full h-16 rounded-full bg-[#25d366] hover:bg-[#128c7e] text-white font-black text-sm uppercase tracking-widest gap-3 shadow-xl shadow-green-100 border-none transition-transform active:scale-95"
+                      >
+                        <MessageCircle className="w-6 h-6" /> CHAT CLIENTE
+                      </Button>
+
+                      {/* Botón Chat Directo (Opcional/Secundario) */}
+                      <Button 
+                        variant="ghost"
+                        onClick={() => setSelectedOrderForChat(order)} 
+                        className="w-full h-12 rounded-full text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] hover:bg-slate-50"
+                      >
+                        CHAT INTERNO DE SOPORTE
+                      </Button>
+                    </div>
+                  </CardContent>
                 </Card>
               );
             })}
@@ -237,7 +268,7 @@ export default function OrdersManagementPage() {
           <div className="bg-white border-none rounded-[48px] py-24 text-center px-10 shadow-sm border border-slate-100">
             <Package className="w-16 h-16 mx-auto text-slate-100 mb-6" />
             <h3 className="text-2xl font-black text-slate-900 italic uppercase">Sin órdenes activas</h3>
-            <p className="text-slate-400 font-medium mt-2">Tus pedidos y ventas aparecerán aquí en tiempo real.</p>
+            <p className="text-slate-400 font-medium mt-2">Tus pedidos aparecerán aquí en tiempo real.</p>
           </div>
         )}
       </main>
