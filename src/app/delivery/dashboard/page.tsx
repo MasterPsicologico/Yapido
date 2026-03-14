@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, orderBy, doc, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { differenceInMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -36,14 +36,13 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || profile?.role === 'admin';
 
-  // CONSULTA LOGÍSTICA: Incluye el filtro 'isLogisticsPublic' para satisfacer las reglas de Firestore
+  // CONSULTA LOGÍSTICA: Removido orderBy para evitar requerir índices compuestos en la red pública.
   const availableOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor) return null;
     return query(
       collection(firestore, 'orders'),
       where('isLogisticsPublic', '==', true),
-      where('status', 'in', ['preparing', 'ready_for_pickup']),
-      orderBy('createdAt', 'desc')
+      where('status', 'in', ['preparing', 'ready_for_pickup'])
     );
   }, [firestore, isConfirmedRepartidor]);
 
@@ -52,13 +51,23 @@ export default function DeliveryDashboardPage() {
     return query(
       collection(firestore, 'orders'),
       where('deliveryDriverId', '==', user.uid),
-      where('status', '==', 'shipped'),
-      orderBy('createdAt', 'desc')
+      where('status', '==', 'shipped')
     );
   }, [firestore, user?.uid, isConfirmedRepartidor]);
 
-  const { data: availableOrders, isLoading: loadingAvailable } = useCollection(availableOrdersQuery);
-  const { data: myDeliveries, isLoading: loadingMy } = useCollection(myDeliveriesQuery);
+  const { data: rawAvailable, isLoading: loadingAvailable } = useCollection(availableOrdersQuery);
+  const { data: rawMy, isLoading: loadingMy } = useCollection(myDeliveriesQuery);
+
+  // Ordenamiento en memoria
+  const availableOrders = useMemo(() => {
+    if (!rawAvailable) return [];
+    return [...rawAvailable].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+  }, [rawAvailable]);
+
+  const myDeliveries = useMemo(() => {
+    if (!rawMy) return [];
+    return [...rawMy].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+  }, [rawMy]);
 
   const handleAcceptOrder = (orderId: string) => {
     if (!firestore || !user) return;
@@ -68,7 +77,6 @@ export default function DeliveryDashboardPage() {
       deliveryDriverName: profile?.displayName || user.displayName || 'Repartidor', 
       status: 'shipped', 
       updatedAt: serverTimestamp(),
-      // Al aceptar, el repartidor se une legalmente al pedido
       participants: arrayUnion(user.uid)
     });
     toast({ title: "Ruta Aceptada", description: "¡Dirígete a la tienda ahora!" });

@@ -24,7 +24,7 @@ export function ActivityCenter() {
   const { profile, isLoading: profileLoading } = useProfile();
   const firestore = useFirestore();
 
-  // CONSULTA MAESTRA: Filtrada quirúrgicamente por 'participants' para evitar error 403
+  // CONSULTA PROTEGIDA: Removido orderBy para evitar errores 403 por falta de índices compuestos.
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || profileLoading) return null;
     return query(
@@ -33,10 +33,17 @@ export function ActivityCenter() {
     );
   }, [firestore, user?.uid, profileLoading]);
 
-  const { data: orders } = useCollection(ordersQuery);
+  const { data: rawOrders } = useCollection(ordersQuery);
 
   const activities = useMemo(() => {
-    if (!orders || !user) return [];
+    if (!rawOrders || !user) return [];
+
+    // Ordenar en memoria por fecha de creación descendente
+    const orders = [...rawOrders].sort((a, b) => {
+      const tA = a.createdAt?.toMillis?.() || 0;
+      const tB = b.createdAt?.toMillis?.() || 0;
+      return tB - tA;
+    });
 
     return orders.map(order => {
       let task = null;
@@ -59,7 +66,7 @@ export function ActivityCenter() {
       }
       return null;
     }).filter(Boolean);
-  }, [orders, user, profile]);
+  }, [rawOrders, user, profile]);
 
   const count = activities.length;
 

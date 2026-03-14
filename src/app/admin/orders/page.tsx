@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, orderBy, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp } from 'firebase/firestore';
 import { format, differenceInMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
@@ -77,25 +77,33 @@ export default function OrdersManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrderForChat, setSelectedOrderForChat] = useState<any | null>(null);
 
-  // CONSULTA MAESTRA REFORZADA: Solo lanza la consulta si el perfil NO está cargando.
-  // Esto evita el error de permisos al cambiar de cuenta.
+  // CONSULTA PROTEGIDA: Removido orderBy para evitar errores de permisos/índices al cambiar de cuenta.
+  // El ordenamiento se realiza en memoria (JS) para máxima fiabilidad.
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || profileLoading) return null;
     return query(
       collection(firestore, 'orders'),
-      where('participants', 'array-contains', user.uid),
-      orderBy('createdAt', 'desc')
+      where('participants', 'array-contains', user.uid)
     );
   }, [firestore, user?.uid, profileLoading]);
 
-  const { data: orders, isLoading: ordersLoading } = useCollection(ordersQuery);
+  const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
+
+  // Ordenamiento en memoria para evitar requerir índices compuestos en Firestore
+  const orders = useMemo(() => {
+    if (!rawOrders) return null;
+    return [...rawOrders].sort((a, b) => {
+      const timeA = a.createdAt?.toMillis?.() || 0;
+      const timeB = b.createdAt?.toMillis?.() || 0;
+      return timeB - timeA;
+    });
+  }, [rawOrders]);
 
   const handleUpdateStatus = (orderId: string, newStatus: string) => {
     if (!firestore) return;
     const orderRef = doc(firestore, 'orders', orderId);
     const updateData: any = { status: newStatus, updatedAt: serverTimestamp() };
     
-    // Si se pasa a preparación, se abre a la logística pública para repartidores
     if (newStatus === 'preparing') updateData.isLogisticsPublic = true;
     
     updateDocumentNonBlocking(orderRef, updateData);
@@ -107,7 +115,6 @@ export default function OrdersManagementPage() {
     o.customerName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Pantalla de Carga Blindada
   if (profileLoading || (user && ordersLoading)) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">

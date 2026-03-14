@@ -36,26 +36,24 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    // ARQUITECTURA DE ÓRDENES: Seguridad Segmentada para evitar error 403
+    // ARQUITECTURA DE ÓRDENES: Seguridad Unificada y Query-Safe
     match /orders/{orderId} {
-      // 1. Permiso de listado para PARTICIPANTES (Dueño, Cliente, Repartidor asignado)
-      // Esta regla permite que consultas con filter 'participants array-contains' funcionen.
-      allow list: if isSignedIn() && request.auth.uid in resource.data.participants;
-      
-      // 2. Permiso de listado para LOGÍSTICA (Rutas libres para repartidores)
-      // Esta regla permite que consultas con filter 'isLogisticsPublic == true' funcionen.
-      allow list: if isSignedIn() && resource.data.isLogisticsPublic == true;
+      // Regla de listado consolidada: Permite si el usuario es participante O si el pedido es de logística pública
+      allow list: if isSignedIn() && (
+        (request.auth.uid in resource.data.participants) || 
+        (resource.data.isLogisticsPublic == true)
+      );
 
-      // 3. Lectura individual
+      // Lectura individual (get)
       allow get: if isSignedIn() && (
-        request.auth.uid in resource.data.participants || 
-        resource.data.isLogisticsPublic == true
+        (request.auth.uid in resource.data.participants) || 
+        (resource.data.isLogisticsPublic == true)
       );
 
       allow create: if isSignedIn();
       allow update: if isSignedIn() && (
-        request.auth.uid in resource.data.participants ||
-        resource.data.isLogisticsPublic == true
+        (request.auth.uid in resource.data.participants) ||
+        (resource.data.isLogisticsPublic == true)
       );
       
       allow delete: if isSignedIn();
