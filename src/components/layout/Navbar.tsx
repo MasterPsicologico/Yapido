@@ -18,11 +18,12 @@ import {
   UserCircle, 
   Bell, 
   MessageSquareText,
-  Loader2 
+  Loader2,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { useUser, useAuth } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -75,28 +76,98 @@ export function Navbar() {
                 <Menu className="w-5 h-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[300px]">
-              <SheetHeader className="mb-8">
-                <SheetTitle className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white"><ShoppingBag className="w-5 h-5" /></div>
-                  Vitriniando
-                </SheetTitle>
-              </SheetHeader>
-              <nav className="flex flex-col gap-4">
-                <Link href="/" className="flex items-center gap-3 px-4 py-2 font-bold hover:bg-muted rounded-lg transition-colors"><HomeIcon className="w-5 h-5 text-primary" /> Inicio</Link>
-                <Link href="/profile" className="flex items-center gap-3 px-4 py-2 font-bold hover:bg-muted rounded-lg transition-colors"><UserCircle className="w-5 h-5 text-primary" /> Perfil</Link>
-                {user && (
-                  <>
-                    <Link href="/admin/orders" className="flex items-center gap-3 px-4 py-2 font-bold hover:bg-muted rounded-lg transition-colors"><ClipboardList className="w-5 h-5 text-primary" /> Pedidos</Link>
-                    {canAccessManage && <Link href="/admin/manage" className="flex items-center gap-3 px-4 py-2 font-bold hover:bg-muted rounded-lg transition-colors"><Store className="w-5 h-5 text-primary" /> Mi Negocio</Link>}
-                  </>
-                )}
-              </nav>
+            <SheetContent side="left" className="w-[320px] p-0 border-none shadow-2xl">
+              <div className="p-6 h-full flex flex-col">
+                <SheetHeader className="mb-10 relative">
+                  <SheetTitle className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                      <ShoppingBag className="w-6 h-6" />
+                    </div>
+                    <span className="text-2xl font-black italic tracking-tighter">Vitriniando</span>
+                  </SheetTitle>
+                </SheetHeader>
+
+                <nav className="flex flex-col gap-2">
+                  <SheetClose asChild>
+                    <Link href="/" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-50 text-blue-500 group-hover:bg-primary group-hover:text-white transition-colors">
+                        <HomeIcon className="w-5 h-5" />
+                      </div>
+                      <span className="font-bold text-slate-700 group-hover:text-slate-900">Inicio</span>
+                    </Link>
+                  </SheetClose>
+
+                  <SheetClose asChild>
+                    <Link href="/profile" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-indigo-50 text-indigo-500 group-hover:bg-primary group-hover:text-white transition-colors">
+                        <UserCircle className="w-5 h-5" />
+                      </div>
+                      <span className="font-bold text-slate-700 group-hover:text-slate-900">Mi Perfil</span>
+                    </Link>
+                  </SheetClose>
+
+                  <SheetClose asChild>
+                    <Link href="/about" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-cyan-50 text-cyan-500 group-hover:bg-primary group-hover:text-white transition-colors">
+                        <Info className="w-5 h-5" />
+                      </div>
+                      <span className="font-bold text-slate-700 group-hover:text-slate-900">Sobre Nosotros</span>
+                    </Link>
+                  </SheetClose>
+
+                  {user && (
+                    <>
+                      <SheetClose asChild>
+                        <Link href="/admin/orders" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-50 text-orange-500 group-hover:bg-primary group-hover:text-white transition-colors">
+                            <ClipboardList className="w-5 h-5" />
+                          </div>
+                          <span className="font-bold text-slate-700 group-hover:text-slate-900">Gestionar Pedidos</span>
+                        </Link>
+                      </SheetClose>
+
+                      {canAccessManage && (
+                        <SheetClose asChild>
+                          <Link href="/admin/manage" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-violet-50 text-violet-500 group-hover:bg-primary group-hover:text-white transition-colors">
+                              <Store className="w-5 h-5" />
+                            </div>
+                            <span className="font-bold text-slate-700 group-hover:text-slate-900">Inventario y Tienda</span>
+                          </Link>
+                        </SheetClose>
+                      )}
+                    </>
+                  )}
+
+                  {!isRepartidor && (
+                    <SheetClose asChild>
+                      <Link href="/delivery/register" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-50 text-emerald-500 group-hover:bg-primary group-hover:text-white transition-colors">
+                          <Truck className="w-5 h-5" />
+                        </div>
+                        <span className="font-bold text-slate-700 group-hover:text-slate-900">Quiero ser Repartidor</span>
+                      </Link>
+                    </SheetClose>
+                  )}
+                </nav>
+
+                <div className="mt-auto pt-6 border-t">
+                  {user ? (
+                    <Button onClick={handleLogout} variant="ghost" className="w-full justify-start gap-4 h-14 rounded-2xl text-red-500 hover:bg-red-50 hover:text-red-600 font-bold px-4">
+                      <LogOut className="w-5 h-5" /> Cerrar Sesión
+                    </Button>
+                  ) : (
+                    <Button onClick={handleLogin} className="w-full h-14 rounded-2xl bg-secondary font-black text-lg gap-3 shadow-xl shadow-secondary/20">
+                      <User className="w-5 h-5" /> Ingresar Ahora
+                    </Button>
+                  )}
+                </div>
+              </div>
             </SheetContent>
           </Sheet>
 
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground group-hover:scale-110 transition-transform"><ShoppingBag className="w-6 h-6" /></div>
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground group-hover:scale-110 transition-transform shadow-lg shadow-primary/20"><ShoppingBag className="w-6 h-6" /></div>
             <span className="text-2xl font-black tracking-tight text-primary hidden sm:inline italic">Vitriniando</span>
           </Link>
         </div>
@@ -121,7 +192,7 @@ export function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-                    <Avatar className="h-10 w-10 border-2 border-primary/20">
+                    <Avatar className="h-10 w-10 border-2 border-primary/20 shadow-sm">
                       <AvatarImage src={profile?.photoURL || user.photoURL || ''} />
                       <AvatarFallback className="font-black">U</AvatarFallback>
                     </Avatar>
@@ -143,7 +214,7 @@ export function Navbar() {
           )}
 
           {!isUserLoading && !user && (
-            <Button onClick={handleLogin} variant="default" className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-6 font-black">
+            <Button onClick={handleLogin} variant="default" className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-6 font-black shadow-lg shadow-secondary/20">
               <User className="w-4 h-4" /> Ingresar
             </Button>
           )}
