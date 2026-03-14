@@ -26,6 +26,7 @@ import { useProfile } from '@/firebase/auth/use-profile';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ActivityCenter } from './ActivityCenter';
 import { MessageCenter } from './MessageCenter';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
 const MODE_KEY = 'vitriniando_preferred_mode';
@@ -88,81 +89,88 @@ export function Navbar() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] p-0 border-none shadow-2xl">
-              <div className="p-6 h-full flex flex-col">
-                <SheetHeader className="mb-8">
-                  <SheetTitle className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                      <ShoppingBag className="w-6 h-6" />
-                    </div>
-                    <span className="text-2xl font-black italic tracking-tighter">Vitriniando</span>
-                  </SheetTitle>
-                </SheetHeader>
-
-                <nav className="flex flex-col gap-1.5">
-                  <SheetClose asChild>
-                    <Link href="/" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-50 text-blue-500 group-hover:bg-primary group-hover:text-white transition-colors">
-                        <HomeIcon className="w-5 h-5" />
+              <div className="h-full flex flex-col">
+                {/* Header Fijo */}
+                <div className="p-6 pb-2">
+                  <SheetHeader className="mb-4">
+                    <SheetTitle className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                        <ShoppingBag className="w-6 h-6" />
                       </div>
-                      <span className="font-bold text-slate-700 group-hover:text-slate-900">Inicio</span>
-                    </Link>
-                  </SheetClose>
+                      <span className="text-2xl font-black italic tracking-tighter">Vitriniando</span>
+                    </SheetTitle>
+                  </SheetHeader>
+                </div>
 
-                  <SheetClose asChild>
-                    <Link href="/profile" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-indigo-50 text-indigo-500 group-hover:bg-primary group-hover:text-white transition-colors">
-                        <UserCircle className="w-5 h-5" />
-                      </div>
-                      <span className="font-bold text-slate-700 group-hover:text-slate-900">Mi Perfil</span>
-                    </Link>
-                  </SheetClose>
-
-                  <SheetClose asChild>
-                    <Link href="/about" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-cyan-50 text-cyan-500 group-hover:bg-primary group-hover:text-white transition-colors">
-                        <Info className="w-5 h-5" />
-                      </div>
-                      <span className="font-bold text-slate-700 group-hover:text-slate-900">Sobre Nosotros</span>
-                    </Link>
-                  </SheetClose>
-
-                  {user && (
-                    <>
-                      <SheetClose asChild>
-                        <Link href="/admin/orders" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-50 text-orange-500 group-hover:bg-primary group-hover:text-white transition-colors">
-                            <ClipboardList className="w-5 h-5" />
-                          </div>
-                          <span className="font-bold text-slate-700 group-hover:text-slate-900">Gestionar Pedidos</span>
-                        </Link>
-                      </SheetClose>
-
-                      {canAccessManage && (
-                        <SheetClose asChild>
-                          <Link href="/admin/manage" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-violet-50 text-violet-500 group-hover:bg-primary group-hover:text-white transition-colors">
-                              <Store className="w-5 h-5" />
-                            </div>
-                            <span className="font-bold text-slate-700 group-hover:text-slate-900">Inventario y Tienda</span>
-                          </Link>
-                        </SheetClose>
-                      )}
-                    </>
-                  )}
-
-                  {!isRepartidor && (
+                {/* Área de Navegación con Scroll */}
+                <ScrollArea className="flex-1 px-6">
+                  <nav className="flex flex-col gap-1.5 py-4 pb-10">
                     <SheetClose asChild>
-                      <Link href="/delivery/register" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-50 text-emerald-500 group-hover:bg-primary group-hover:text-white transition-colors">
-                          <Truck className="w-5 h-5" />
+                      <Link href="/" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-50 text-blue-500 group-hover:bg-primary group-hover:text-white transition-colors">
+                          <HomeIcon className="w-5 h-5" />
                         </div>
-                        <span className="font-bold text-slate-700 group-hover:text-slate-900">Quiero ser Repartidor</span>
+                        <span className="font-bold text-slate-700 group-hover:text-slate-900">Inicio</span>
                       </Link>
                     </SheetClose>
-                  )}
-                </nav>
 
-                <div className="mt-auto pt-6 border-t border-slate-100">
+                    <SheetClose asChild>
+                      <Link href="/profile" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-indigo-50 text-indigo-500 group-hover:bg-primary group-hover:text-white transition-colors">
+                          <UserCircle className="w-5 h-5" />
+                        </div>
+                        <span className="font-bold text-slate-700 group-hover:text-slate-900">Mi Perfil</span>
+                      </Link>
+                    </SheetClose>
+
+                    <SheetClose asChild>
+                      <Link href="/about" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-cyan-50 text-cyan-500 group-hover:bg-primary group-hover:text-white transition-colors">
+                          <Info className="w-5 h-5" />
+                        </div>
+                        <span className="font-bold text-slate-700 group-hover:text-slate-900">Sobre Nosotros</span>
+                      </Link>
+                    </SheetClose>
+
+                    {user && (
+                      <>
+                        <SheetClose asChild>
+                          <Link href="/admin/orders" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-50 text-orange-500 group-hover:bg-primary group-hover:text-white transition-colors">
+                              <ClipboardList className="w-5 h-5" />
+                            </div>
+                            <span className="font-bold text-slate-700 group-hover:text-slate-900">Gestionar Pedidos</span>
+                          </Link>
+                        </SheetClose>
+
+                        {canAccessManage && (
+                          <SheetClose asChild>
+                            <Link href="/admin/manage" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-violet-50 text-violet-500 group-hover:bg-primary group-hover:text-white transition-colors">
+                                <Store className="w-5 h-5" />
+                              </div>
+                              <span className="font-bold text-slate-700 group-hover:text-slate-900">Inventario y Tienda</span>
+                            </Link>
+                          </SheetClose>
+                        )}
+                      </>
+                    )}
+
+                    {!isRepartidor && (
+                      <SheetClose asChild>
+                        <Link href="/delivery/register" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-50 text-emerald-500 group-hover:bg-primary group-hover:text-white transition-colors">
+                            <Truck className="w-5 h-5" />
+                          </div>
+                          <span className="font-bold text-slate-700 group-hover:text-slate-900">Quiero ser Repartidor</span>
+                        </Link>
+                      </SheetClose>
+                    )}
+                  </nav>
+                </ScrollArea>
+
+                {/* Footer Fijo */}
+                <div className="p-6 border-t border-slate-100">
                   {user ? (
                     <Button onClick={handleLogout} variant="ghost" className="w-full justify-start gap-4 h-14 rounded-2xl text-red-500 hover:bg-red-50 hover:text-red-600 font-bold px-4">
                       <LogOut className="w-5 h-5" /> Cerrar Sesión
@@ -223,7 +231,7 @@ export function Navbar() {
                 </span>
               </div>
 
-              {/* Cápsula de Cristal (Sistema de Notificaciones y Mensajes) */}
+              {/* Cápsula de Cristal */}
               <div className="flex items-center bg-slate-50/80 rounded-full px-1 py-1 gap-0.5 border border-slate-100 backdrop-blur-sm shadow-inner">
                 <ActivityCenter />
                 <MessageCenter />
