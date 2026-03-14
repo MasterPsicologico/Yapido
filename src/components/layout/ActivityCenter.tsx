@@ -36,11 +36,7 @@ export function ActivityCenter() {
     // Si es dueño o cliente, ve sus pedidos activos
     return query(
       collection(firestore, 'orders'),
-      or(
-        where('customerId', '==', user.uid),
-        where('storeOwnerId', '==', user.uid),
-        where('deliveryDriverId', '==', user.uid)
-      )
+      where('viewers', 'array-contains', user.uid)
     );
   }, [firestore, user?.uid, isAdmin]);
 
