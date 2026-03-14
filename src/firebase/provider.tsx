@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -32,12 +33,6 @@ export interface FirebaseServicesAndUser {
   userError: Error | null;
 }
 
-export interface UserHookResult {
-  user: User | null;
-  isUserLoading: boolean;
-  userError: Error | null;
-}
-
 export const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
 
 interface FirebaseProviderProps {
@@ -62,7 +57,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   useEffect(() => {
     if (!auth) return;
 
-    // Limpiar errores previos de redirección
     getRedirectResult(auth).catch(() => {});
 
     const unsubscribe = onAuthStateChanged(
@@ -70,13 +64,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       async (firebaseUser) => {
         if (firebaseUser && firestore) {
           const userRef = doc(firestore, 'users', firebaseUser.uid);
-          
           try {
             const docSnap = await getDoc(userRef);
             if (!docSnap.exists()) {
-              // Crear perfil inicial si no existe. El rol por defecto es 'cliente'.
-              // Importante: No bloqueamos el estado de carga por esto, 
-              // pero aseguramos que se intente crear.
               setDocumentNonBlocking(userRef, {
                 id: firebaseUser.uid,
                 email: firebaseUser.email,
@@ -87,24 +77,15 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 role: 'cliente' 
               }, { merge: true });
             } else {
-              // Actualizar último login
-              updateDocumentNonBlocking(userRef, {
-                lastLogin: serverTimestamp(),
-              });
+              updateDocumentNonBlocking(userRef, { lastLogin: serverTimestamp() });
             }
-          } catch (e) {
-            // Error silencioso en la sincronización
-          } finally {
-            // Aseguramos que el estado se actualice al final de la sincronización inicial
-            setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
-          }
+          } catch (e) {}
+          setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
         } else {
           setUserAuthState({ user: null, isUserLoading: false, userError: null });
         }
       },
-      (error) => {
-        setUserAuthState({ user: null, isUserLoading: false, userError: error });
-      }
+      (error) => setUserAuthState({ user: null, isUserLoading: false, userError: error })
     );
 
     return () => unsubscribe();
@@ -126,8 +107,12 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   return (
     <FirebaseContext.Provider value={contextValue}>
       <FirebaseErrorListener />
-      {/* Usamos el uid como key para forzar el remontaje de componentes hijos al cambiar de cuenta */}
-      <div key={userAuthState.user?.uid || 'anonymous'}>
+      {/* 
+        ESTRATEGIA MAESTRA: Reinicio por UID.
+        Al cambiar de cuenta, el key cambia, forzando a React a destruir todos los 
+        componentes internos y sus listeners de Firestore, evitando errores de permisos.
+      */}
+      <div key={userAuthState.user?.uid || 'guest'} className="contents">
         {children}
       </div>
     </FirebaseContext.Provider>
@@ -162,7 +147,7 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T & 
   return memoized as any;
 }
 
-export const useUser = (): UserHookResult => {
+export const useUser = () => {
   const { user, isUserLoading, userError } = useFirebase();
   return { user, isUserLoading, userError };
 };

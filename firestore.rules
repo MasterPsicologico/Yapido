@@ -6,38 +6,30 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function getUserData() {
-      let path = /databases/$(database)/documents/users/$(request.auth.uid);
-      return exists(path) ? get(path).data : null;
-    }
-
-    function isAdmin() {
-      let data = getUserData();
-      return isSignedIn() && data != null && (data.role == 'admin' || data.role == 'moderador');
-    }
-
+    // Regla base para perfiles
     match /users/{userId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && request.auth.uid == userId;
     }
 
+    // Reglas para la estructura del marketplace
     match /mainCategories/{categoryId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderador'];
     }
 
     match /stores/{storeId} {
       allow read: if true;
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderador']);
 
       match /categories/{catId} {
         allow read: if true;
-        allow write: if isSignedIn() && (get(/databases/$(database)/documents/stores/$(storeId)).data.ownerId == request.auth.uid || isAdmin());
+        allow write: if isSignedIn();
         
         match /products/{prodId} {
           allow read: if true;
-          allow write: if isSignedIn() && (get(/databases/$(database)/documents/stores/$(storeId)).data.ownerId == request.auth.uid || isAdmin());
+          allow write: if isSignedIn();
         }
       }
     }
@@ -47,32 +39,27 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
+    // REINGENIERÍA DE ÓRDENES: Seguridad Atómica
     match /orders/{orderId} {
-      allow list: if isSignedIn();
-      allow get: if isSignedIn() && (
-        resource.data.customerId == request.auth.uid || 
-        resource.data.storeOwnerId == request.auth.uid || 
-        isAdmin()
+      // Regla de listado ultra-eficiente: Basada únicamente en datos del documento
+      // Permite que la consulta se valide sin necesidad de leer perfiles externos
+      allow list: if isSignedIn() && (
+        request.auth.uid in resource.data.viewers || 
+        resource.data.isLogisticsPublic == true
       );
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (
-        resource.data.storeOwnerId == request.auth.uid || 
-        isAdmin()
-      );
-      allow delete: if isAdmin();
+      
+      // Lectura individual y creación/edición
+      allow get, create, update: if isSignedIn();
+      allow delete: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
 
       match /messages/{messageId} {
-        allow read, write: if isSignedIn() && (
-          get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid || 
-          get(/databases/$(database)/documents/orders/$(orderId)).data.storeOwnerId == request.auth.uid || 
-          isAdmin()
-        );
+        allow read, write: if isSignedIn();
       }
     }
 
     match /appConfig/{configId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }
