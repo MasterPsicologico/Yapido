@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { HomeHeader } from '@/components/home/HomeHeader';
 import { HomeActions } from '@/components/home/HomeActions';
@@ -18,27 +19,32 @@ import { ShoppingBag } from 'lucide-react';
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const router = useRouter();
+
+  // Control de Redirección Persistente
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      const savedMode = localStorage.getItem('vitriniando_preferred_mode');
+      if (savedMode === 'delivery') {
+        router.replace('/delivery/dashboard');
+      }
+    }
+  }, [user, isUserLoading, router]);
 
   if (isUserLoading) return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0a0a]">
       <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700">
         <div className="relative">
-          {/* Efecto de pulso exterior */}
           <div className="absolute inset-0 rounded-[2.5rem] bg-primary/20 animate-ping duration-[2000ms]" />
-          
-          {/* Contenedor del Icono */}
           <div className="relative w-24 h-24 bg-primary rounded-[2.5rem] flex items-center justify-center text-white shadow-[0_20px_50px_rgba(59,130,246,0.3)] border border-white/10">
             <ShoppingBag className="w-12 h-12" />
           </div>
         </div>
-
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="space-y-1">
             <h2 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">Vitriniando</h2>
             <p className="text-primary/60 text-[10px] font-black uppercase tracking-[0.4em] translate-x-1">Cargando Experiencia</p>
           </div>
-          
-          {/* Barra de Progreso Minimalista */}
           <div className="h-1 w-32 bg-white/5 rounded-full overflow-hidden relative">
             <div className="absolute inset-0 bg-primary animate-progress-loading" />
           </div>
@@ -138,7 +144,6 @@ function AuthenticatedHome() {
         imageUrl: `https://picsum.photos/seed/${ref.id}/800/600`
       }, { merge: true });
 
-      // Sincronizar automáticamente el rol de dueño
       const userRef = doc(firestore, 'users', user.uid);
       updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
 

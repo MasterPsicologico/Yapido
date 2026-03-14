@@ -3,12 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { 
   Store, 
   ShoppingBag, 
   User, 
-  Search, 
   Menu, 
   Info, 
   Home as HomeIcon, 
@@ -16,13 +15,9 @@ import {
   ClipboardList, 
   Truck, 
   UserCircle, 
-  Bell, 
-  MessageSquareText,
-  Loader2,
-  X
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { useUser, useAuth } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
@@ -31,37 +26,51 @@ import { useProfile } from '@/firebase/auth/use-profile';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ActivityCenter } from './ActivityCenter';
 import { MessageCenter } from './MessageCenter';
-import { Progress } from "@/components/ui/progress";
 import { cn } from '@/lib/utils';
+
+const MODE_KEY = 'vitriniando_preferred_mode';
 
 export function Navbar() {
   const { user, isUserLoading } = useUser();
   const { profile, isOwner, isAdmin } = useProfile();
   const auth = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
-  const [isDeliveryLoading, setIsDeliveryLoading] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const handleDeliveryRedirect = () => {
-    setIsDeliveryLoading(true);
+  const isDeliveryZone = pathname?.startsWith('/delivery');
+  const targetLabel = isDeliveryZone ? "TIENDAS" : "DELIVERY";
+  const targetIcon = isDeliveryZone ? "T" : "D";
+
+  const handleModeSwitch = () => {
+    setIsTransitioning(true);
     let currentProgress = 0;
     const interval = setInterval(() => {
-      currentProgress += 10;
+      currentProgress += 5;
       setProgress(currentProgress);
       if (currentProgress >= 100) {
         clearInterval(interval);
         setTimeout(() => {
-          router.push('/delivery/dashboard');
-          setIsDeliveryLoading(false);
+          const nextMode = isDeliveryZone ? 'stores' : 'delivery';
+          const nextPath = isDeliveryZone ? '/' : '/delivery/dashboard';
+          
+          localStorage.setItem(MODE_KEY, nextMode);
+          router.push(nextPath);
+          
+          setIsTransitioning(false);
           setProgress(0);
-        }, 300);
+        }, 200);
       }
-    }, 100);
+    }, 30);
   };
 
   const handleLogin = () => initiateGoogleSignIn(auth);
-  const handleLogout = () => auth.signOut();
+  const handleLogout = () => {
+    localStorage.removeItem(MODE_KEY);
+    auth.signOut();
+  };
 
   const isRepartidor = profile?.role === 'repartidor';
   const canAccessManage = isOwner || isAdmin || profile?.role === 'dueño';
@@ -175,15 +184,39 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           {!isUserLoading && user && (
             <>
-              {/* Botón Delivery Inteligente */}
-              <div className="relative flex items-center group overflow-hidden h-10 rounded-full transition-all duration-500 ease-in-out cursor-pointer bg-secondary/10 hover:bg-secondary/20 pr-4 pl-1" onClick={handleDeliveryRedirect}>
-                <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center text-white font-black shadow-lg">D</div>
-                <span className="ml-2 text-[10px] font-black uppercase tracking-widest text-secondary opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-4 group-hover:translate-x-0">Delivery</span>
-                {isDeliveryLoading && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-                    <div className="h-full bg-secondary transition-all duration-100" style={{ width: `${progress}%` }} />
-                  </div>
+              {/* Botón de Modo Persistente con Efecto de Carga */}
+              <div 
+                className={cn(
+                  "relative flex items-center h-10 rounded-full cursor-pointer transition-all duration-300 pr-4 pl-1 overflow-hidden min-w-[110px]",
+                  isDeliveryZone ? "bg-primary/10 hover:bg-primary/20" : "bg-secondary/10 hover:bg-secondary/20"
                 )}
+                onClick={handleModeSwitch}
+              >
+                {/* Barra de progreso de llenado total */}
+                {isTransitioning && (
+                  <div 
+                    className={cn(
+                      "absolute inset-0 transition-all duration-100 ease-linear opacity-40",
+                      isDeliveryZone ? "bg-primary" : "bg-secondary"
+                    )}
+                    style={{ width: `${progress}%` }}
+                  />
+                )}
+
+                <div className={cn(
+                  "relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-white font-black shadow-lg transition-transform",
+                  isDeliveryZone ? "bg-primary" : "bg-secondary",
+                  isTransitioning && "scale-90"
+                )}>
+                  {isTransitioning ? <Loader2 className="w-4 h-4 animate-spin" /> : targetIcon}
+                </div>
+                
+                <span className={cn(
+                  "relative z-10 ml-2 text-[10px] font-black uppercase tracking-widest transition-colors",
+                  isDeliveryZone ? "text-primary" : "text-secondary"
+                )}>
+                  {targetLabel}
+                </span>
               </div>
 
               <ActivityCenter />
