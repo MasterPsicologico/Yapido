@@ -76,18 +76,20 @@ export function Navbar() {
   const canAccessManage = isOwner || isAdmin || profile?.role === 'dueño';
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+    <nav className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-xl border-b border-slate-100 overflow-hidden">
+      <div className="max-w-full px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
+        
+        {/* LADO IZQUIERDO: Menú y Marca */}
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Menu className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-slate-50">
+                <Menu className="w-5 h-5 text-slate-600" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[320px] p-0 border-none shadow-2xl">
+            <SheetContent side="left" className="w-[300px] p-0 border-none shadow-2xl">
               <div className="p-6 h-full flex flex-col">
-                <SheetHeader className="mb-10 relative">
+                <SheetHeader className="mb-8">
                   <SheetTitle className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
                       <ShoppingBag className="w-6 h-6" />
@@ -96,7 +98,7 @@ export function Navbar() {
                   </SheetTitle>
                 </SheetHeader>
 
-                <nav className="flex flex-col gap-2">
+                <nav className="flex flex-col gap-1.5">
                   <SheetClose asChild>
                     <Link href="/" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
                       <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-50 text-blue-500 group-hover:bg-primary group-hover:text-white transition-colors">
@@ -160,7 +162,7 @@ export function Navbar() {
                   )}
                 </nav>
 
-                <div className="mt-auto pt-6 border-t">
+                <div className="mt-auto pt-6 border-t border-slate-100">
                   {user ? (
                     <Button onClick={handleLogout} variant="ghost" className="w-full justify-start gap-4 h-14 rounded-2xl text-red-500 hover:bg-red-50 hover:text-red-600 font-bold px-4">
                       <LogOut className="w-5 h-5" /> Cerrar Sesión
@@ -176,23 +178,25 @@ export function Navbar() {
           </Sheet>
 
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground group-hover:scale-110 transition-transform shadow-lg shadow-primary/20"><ShoppingBag className="w-6 h-6" /></div>
-            <span className="text-2xl font-black tracking-tight text-primary hidden sm:inline italic">Vitriniando</span>
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white group-hover:scale-105 transition-transform shadow-lg shadow-primary/20 shrink-0">
+              <ShoppingBag className="w-5 h-5" />
+            </div>
+            <span className="text-xl font-black tracking-tight text-primary hidden lg:inline italic uppercase leading-none">Vitriniando</span>
           </Link>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* LADO DERECHO: Acciones Agrupadas (Sin desbordamiento) */}
+        <div className="flex items-center gap-1 sm:gap-3 ml-auto">
           {!isUserLoading && user && (
             <>
-              {/* Botón de Modo Persistente con Efecto de Carga */}
+              {/* Botón de Modo: Más compacto en móvil */}
               <div 
                 className={cn(
-                  "relative flex items-center h-10 rounded-full cursor-pointer transition-all duration-300 pr-4 pl-1 overflow-hidden min-w-[110px]",
+                  "relative flex items-center h-10 rounded-full cursor-pointer transition-all duration-300 pr-3 sm:pr-4 pl-1 overflow-hidden min-w-[90px] sm:min-w-[110px]",
                   isDeliveryZone ? "bg-primary/10 hover:bg-primary/20" : "bg-secondary/10 hover:bg-secondary/20"
                 )}
                 onClick={handleModeSwitch}
               >
-                {/* Barra de progreso de llenado total */}
                 {isTransitioning && (
                   <div 
                     className={cn(
@@ -204,7 +208,7 @@ export function Navbar() {
                 )}
 
                 <div className={cn(
-                  "relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-white font-black shadow-lg transition-transform",
+                  "relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-white font-black shadow-lg transition-transform text-xs",
                   isDeliveryZone ? "bg-primary" : "bg-secondary",
                   isTransitioning && "scale-90"
                 )}>
@@ -212,43 +216,62 @@ export function Navbar() {
                 </div>
                 
                 <span className={cn(
-                  "relative z-10 ml-2 text-[10px] font-black uppercase tracking-widest transition-colors",
+                  "relative z-10 ml-1.5 sm:ml-2 text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-colors truncate",
                   isDeliveryZone ? "text-primary" : "text-secondary"
                 )}>
                   {targetLabel}
                 </span>
               </div>
 
-              <ActivityCenter />
-              <MessageCenter />
+              {/* Cápsula de Cristal para Iconos de Sistema */}
+              <div className="hidden xs:flex items-center bg-slate-50/80 rounded-full px-1.5 py-1 gap-0.5 border border-slate-100 backdrop-blur-sm">
+                <ActivityCenter />
+                <MessageCenter />
+              </div>
 
+              {/* Dropdown de Perfil: Rediseñado y blindado contra desbordamiento */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-                    <Avatar className="h-10 w-10 border-2 border-primary/20 shadow-sm">
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 shrink-0 border-2 border-primary/10 hover:border-primary/40 transition-colors bg-white">
+                    <Avatar className="h-full w-full">
                       <AvatarImage src={profile?.photoURL || user.photoURL || ''} />
-                      <AvatarFallback className="font-black">U</AvatarFallback>
+                      <AvatarFallback className="font-black text-[10px] bg-slate-50 text-primary">U</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-64 p-2 rounded-[24px] shadow-2xl" align="end">
+                <DropdownMenuContent className="w-64 p-2 rounded-[24px] shadow-2xl mr-2" align="end">
                   <DropdownMenuLabel className="font-normal p-4">
                     <p className="text-sm font-black italic">{profile?.displayName || user.displayName}</p>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{user.email}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest truncate">{user.email}</p>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="rounded-xl h-11"><Link href="/profile"><UserCircle className="mr-2 h-4 w-4 text-primary" /><span className="font-bold">Mi Perfil</span></Link></DropdownMenuItem>
-                  {canAccessManage && <DropdownMenuItem asChild className="rounded-xl h-11"><Link href="/admin/manage"><Store className="mr-2 h-4 w-4 text-primary" /><span className="font-bold">Gestionar Mi Negocio</span></Link></DropdownMenuItem>}
+                  <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer">
+                    <Link href="/profile" className="flex items-center">
+                      <UserCircle className="mr-2 h-4 w-4 text-primary" />
+                      <span className="font-bold">Mi Perfil</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  {canAccessManage && (
+                    <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer">
+                      <Link href="/admin/manage" className="flex items-center">
+                        <Store className="mr-2 h-4 w-4 text-primary" />
+                        <span className="font-bold">Gestionar Mi Negocio</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-500 rounded-xl h-11"><LogOut className="mr-2 h-4 w-4" /><span className="font-bold">Cerrar Sesión</span></DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-500 rounded-xl h-11 cursor-pointer hover:bg-red-50">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span className="font-bold">Cerrar Sesión</span>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           )}
 
           {!isUserLoading && !user && (
-            <Button onClick={handleLogin} variant="default" className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-6 font-black shadow-lg shadow-secondary/20">
-              <User className="w-4 h-4" /> Ingresar
+            <Button onClick={handleLogin} variant="default" className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-4 sm:px-6 font-black shadow-lg shadow-secondary/20 h-10 text-xs">
+              <User className="w-4 h-4" /> <span className="hidden xs:inline">Ingresar</span>
             </Button>
           )}
         </div>
