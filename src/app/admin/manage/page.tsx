@@ -59,10 +59,10 @@ export default function ManagePage() {
   const { data: stores, isLoading: loadingStore } = useCollection(storesQuery);
   const currentStore = stores?.[0];
 
-  // CONSULTA DE ÓRDENES: Filtrada para que el motor de seguridad no falle
+  // CONSULTA DE ÓRDENES CORREGIDA: Sincronizada con el campo 'participants'
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || loadingProfile) return null;
-    return query(collection(firestore, 'orders'), where('viewers', 'array-contains', user.uid));
+    return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid));
   }, [firestore, user?.uid, loadingProfile]);
 
   const { data: orders } = useCollection(ordersQuery);
@@ -222,7 +222,6 @@ export default function ManagePage() {
             </CardContent>
           </Card>
 
-          {/* BOTÓN QUIRÚRGICO A ÓRDENES PENDIENTES */}
           <Link href="/admin/orders">
             <Card className="border-none rounded-[32px] shadow-sm bg-white overflow-hidden border-l-4 border-l-orange-500 hover:shadow-xl transition-all cursor-pointer group">
               <CardHeader className="pb-2">

@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, orderBy, doc, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, serverTimestamp } from 'firebase/firestore';
 import { format, differenceInMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
@@ -77,7 +77,8 @@ export default function OrdersManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrderForChat, setSelectedOrderForChat] = useState<any | null>(null);
 
-  // CONSULTA MAESTRA: Sincronizada con el arreglo 'participants' para evitar error 403
+  // CONSULTA MAESTRA REFORZADA: Solo lanza la consulta si el perfil NO está cargando.
+  // Esto evita el error de permisos al cambiar de cuenta.
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || profileLoading) return null;
     return query(
@@ -94,6 +95,7 @@ export default function OrdersManagementPage() {
     const orderRef = doc(firestore, 'orders', orderId);
     const updateData: any = { status: newStatus, updatedAt: serverTimestamp() };
     
+    // Si se pasa a preparación, se abre a la logística pública para repartidores
     if (newStatus === 'preparing') updateData.isLogisticsPublic = true;
     
     updateDocumentNonBlocking(orderRef, updateData);
@@ -105,6 +107,7 @@ export default function OrdersManagementPage() {
     o.customerName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Pantalla de Carga Blindada
   if (profileLoading || (user && ordersLoading)) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">

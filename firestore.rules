@@ -36,14 +36,17 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    // ARQUITECTURA DE ÓRDENES: Seguridad Atómica por Participación
+    // ARQUITECTURA DE ÓRDENES: Seguridad Segmentada para evitar error 403
     match /orders/{orderId} {
-      // El listado es seguro porque las consultas del cliente SIEMPRE incluyen el filtro de participantes o logística
-      allow list: if isSignedIn() && (
-        request.auth.uid in resource.data.participants || 
-        resource.data.isLogisticsPublic == true
-      );
+      // 1. Permiso de listado para PARTICIPANTES (Dueño, Cliente, Repartidor asignado)
+      // Esta regla permite que consultas con filter 'participants array-contains' funcionen.
+      allow list: if isSignedIn() && request.auth.uid in resource.data.participants;
       
+      // 2. Permiso de listado para LOGÍSTICA (Rutas libres para repartidores)
+      // Esta regla permite que consultas con filter 'isLogisticsPublic == true' funcionen.
+      allow list: if isSignedIn() && resource.data.isLogisticsPublic == true;
+
+      // 3. Lectura individual
       allow get: if isSignedIn() && (
         request.auth.uid in resource.data.participants || 
         resource.data.isLogisticsPublic == true
