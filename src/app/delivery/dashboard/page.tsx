@@ -23,9 +23,10 @@ import {
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, orderBy, doc, serverTimestamp, or } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { differenceInMinutes } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export default function DeliveryDashboardPage() {
   const { user } = useUser();
@@ -35,11 +36,12 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || profile?.role === 'admin';
 
-  // Los repartidores ven órdenes que están 'preparing' (en cocina) o 'ready_for_pickup' (listas)
+  // CONSULTA LOGÍSTICA: Incluye el filtro 'isLogisticsPublic' para satisfacer las reglas de Firestore
   const availableOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor) return null;
     return query(
       collection(firestore, 'orders'),
+      where('isLogisticsPublic', '==', true),
       where('status', 'in', ['preparing', 'ready_for_pickup']),
       orderBy('createdAt', 'desc')
     );
@@ -65,7 +67,9 @@ export default function DeliveryDashboardPage() {
       deliveryDriverId: user.uid, 
       deliveryDriverName: profile?.displayName || user.displayName || 'Repartidor', 
       status: 'shipped', 
-      updatedAt: serverTimestamp() 
+      updatedAt: serverTimestamp(),
+      // Al aceptar, el repartidor se une legalmente al pedido
+      participants: arrayUnion(user.uid)
     });
     toast({ title: "Ruta Aceptada", description: "¡Dirígete a la tienda ahora!" });
     setActiveTab("my-deliveries");

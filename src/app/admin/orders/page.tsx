@@ -77,12 +77,12 @@ export default function OrdersManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrderForChat, setSelectedOrderForChat] = useState<any | null>(null);
 
-  // CONSULTA MAESTRA: Filtrada quirúrgicamente por 'viewers' para evitar errores de permisos
+  // CONSULTA MAESTRA: Sincronizada con el arreglo 'participants' para evitar error 403
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || profileLoading) return null;
     return query(
       collection(firestore, 'orders'),
-      where('viewers', 'array-contains', user.uid),
+      where('participants', 'array-contains', user.uid),
       orderBy('createdAt', 'desc')
     );
   }, [firestore, user?.uid, profileLoading]);
@@ -94,7 +94,6 @@ export default function OrdersManagementPage() {
     const orderRef = doc(firestore, 'orders', orderId);
     const updateData: any = { status: newStatus, updatedAt: serverTimestamp() };
     
-    // Al preparar, el pedido se vuelve visible para la red de despacho (Logística Pública)
     if (newStatus === 'preparing') updateData.isLogisticsPublic = true;
     
     updateDocumentNonBlocking(orderRef, updateData);
@@ -179,7 +178,6 @@ export default function OrdersManagementPage() {
                           <div className="flex flex-col gap-1 mt-3">
                             <div className="flex items-center gap-2">
                               <div className="w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center"><UserIcon className="w-3 h-3 text-slate-500" /></div>
-                              {/* ENLACE AL PERFIL PÚBLICO: HOJA DE VIDA */}
                               <Link 
                                 href={`/profile/${isVenta ? order.customerId : order.storeOwnerId}`}
                                 className="text-sm font-black text-slate-700 hover:text-primary transition-colors underline decoration-dotted underline-offset-4"

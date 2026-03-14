@@ -104,15 +104,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
+  // ESTRATEGIA MAESTRA: El Kill-Switch de UID
+  // Al usar el UID como key, React destruye TODO el árbol de componentes al cambiar de cuenta.
+  // Esto elimina instantáneamente cualquier listener residual de Firestore que causaba el error 403.
   return (
     <FirebaseContext.Provider value={contextValue}>
-      <FirebaseErrorListener />
-      {/* 
-        ESTRATEGIA MAESTRA: Reinicio por UID.
-        Al cambiar de cuenta, el key cambia, forzando a React a destruir todos los 
-        componentes internos y sus listeners de Firestore, evitando errores de permisos.
-      */}
       <div key={userAuthState.user?.uid || 'guest'} className="contents">
+        <FirebaseErrorListener />
         {children}
       </div>
     </FirebaseContext.Provider>

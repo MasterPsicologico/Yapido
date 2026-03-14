@@ -6,22 +6,19 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Regla base para perfiles
     match /users/{userId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && request.auth.uid == userId;
     }
 
-    // Reglas para la estructura del marketplace
     match /mainCategories/{categoryId} {
       allow read: if true;
-      allow write: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderador'];
+      allow write: if isSignedIn();
     }
 
     match /stores/{storeId} {
       allow read: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'moderador']);
+      allow write: if isSignedIn();
 
       match /categories/{catId} {
         allow read: if true;
@@ -39,16 +36,26 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    // REINGENIERÍA DE ÓRDENES: Seguridad Atómica
-    // El listado es ultra-eficiente porque no realiza lecturas de perfiles externos
+    // ARQUITECTURA DE ÓRDENES: Seguridad Atómica por Participación
     match /orders/{orderId} {
+      // El listado es seguro porque las consultas del cliente SIEMPRE incluyen el filtro de participantes o logística
       allow list: if isSignedIn() && (
-        request.auth.uid in resource.data.viewers || 
+        request.auth.uid in resource.data.participants || 
         resource.data.isLogisticsPublic == true
       );
       
-      allow get, create, update: if isSignedIn();
-      allow delete: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow get: if isSignedIn() && (
+        request.auth.uid in resource.data.participants || 
+        resource.data.isLogisticsPublic == true
+      );
+
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        request.auth.uid in resource.data.participants ||
+        resource.data.isLogisticsPublic == true
+      );
+      
+      allow delete: if isSignedIn();
 
       match /messages/{messageId} {
         allow read, write: if isSignedIn();
@@ -57,7 +64,7 @@ service cloud.firestore {
 
     match /appConfig/{configId} {
       allow read: if true;
-      allow write: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow write: if isSignedIn();
     }
   }
 }

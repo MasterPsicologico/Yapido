@@ -61,8 +61,8 @@ export default function ProductPage() {
         status: 'pending',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        // CAMPO CLAVE PARA REGLAS DE SEGURIDAD
-        viewers: [user.uid, ownerId],
+        // ARQUITECTURA DE SEGURIDAD: Campo participantes para indexado query-safe
+        participants: [user.uid, ownerId],
         isLogisticsPublic: false
       };
 
@@ -77,7 +77,7 @@ export default function ProductPage() {
     } catch (e) {
       toast({ title: "Error", variant: "destructive" });
     } finally {
-      setIsOrdering(true); // Se queda en true para evitar spam
+      setIsOrdering(true); 
     }
   };
 

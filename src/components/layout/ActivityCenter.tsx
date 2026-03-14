@@ -2,7 +2,7 @@
 "use client";
 
 import { useMemo } from 'react';
-import { Bell, Clock, Package, Truck, Zap, AlertCircle } from 'lucide-react';
+import { Bell, Clock, Package, Truck, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, or } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -24,12 +24,12 @@ export function ActivityCenter() {
   const { profile, isLoading: profileLoading } = useProfile();
   const firestore = useFirestore();
 
-  // Consulta Maestra: Filtrada quirúrgicamente por 'viewers' para evitar errores de permisos
+  // CONSULTA MAESTRA: Filtrada quirúrgicamente por 'participants' para evitar error 403
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || profileLoading) return null;
     return query(
       collection(firestore, 'orders'),
-      where('viewers', 'array-contains', user.uid)
+      where('participants', 'array-contains', user.uid)
     );
   }, [firestore, user?.uid, profileLoading]);
 
@@ -41,7 +41,6 @@ export function ActivityCenter() {
     return orders.map(order => {
       let task = null;
 
-      // Lógica de tareas por Rol
       if (order.customerId === user.uid && order.status === 'shipped') {
         task = { label: "Confirmar entrega", desc: order.productName, icon: Package, color: "text-blue-500", bg: "bg-blue-50" };
       } 
@@ -86,16 +85,16 @@ export function ActivityCenter() {
         <DropdownMenuSeparator className="bg-slate-50" />
         <div className="max-h-[400px] overflow-y-auto p-1 space-y-1">
           {activities.length > 0 ? activities.map((act, i) => {
-            const Icon = act.icon;
+            const Icon = act!.icon;
             return (
               <DropdownMenuItem key={i} asChild className="rounded-2xl p-3 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all">
-                <Link href={`/admin/orders#${act.orderId}`} className="flex items-start gap-3">
-                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm", act.bg, act.color)}>
+                <Link href={`/admin/orders#${act!.orderId}`} className="flex items-start gap-3">
+                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm", act!.bg, act!.color)}>
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-black uppercase tracking-tight text-slate-900 leading-none mb-1">{act.label}</p>
-                    <p className="text-[10px] font-bold text-slate-400 truncate">{act.desc}</p>
+                    <p className="text-[11px] font-black uppercase tracking-tight text-slate-900 leading-none mb-1">{act!.label}</p>
+                    <p className="text-[10px] font-bold text-slate-400 truncate">{act!.desc}</p>
                   </div>
                 </Link>
               </DropdownMenuItem>

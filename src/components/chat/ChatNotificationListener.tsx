@@ -28,12 +28,12 @@ export function ChatNotificationListener() {
     window.dispatchEvent(new CustomEvent('unread-messages-sync', { detail: { unreadMap: unreadOrders } }));
   }, [unreadOrders]);
 
-  // Consulta de órdenes protegida por 'viewers' y perfil cargado
+  // CONSULTA PROTEGIDA: Sincronizada con el arreglo 'participants' para evitar error 403
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || profileLoading) return null;
     return query(
       collection(firestore, 'orders'),
-      where('viewers', 'array-contains', user.uid)
+      where('participants', 'array-contains', user.uid)
     );
   }, [firestore, user?.uid, profileLoading]);
 
@@ -75,9 +75,7 @@ export function ChatNotificationListener() {
             triggerAlarm(order.id, order.productName || 'Nuevo Mensaje');
           }
         });
-      }, (error) => {
-        // Silencio silencioso para evitar parpadeos de consola en cambios de cuenta
-      });
+      }, (error) => {});
       unsubscribers.push(unsub);
     });
 
