@@ -24,7 +24,7 @@ export function ActivityCenter() {
   const { profile, isLoading: profileLoading } = useProfile();
   const firestore = useFirestore();
 
-  // CONSULTA PROTEGIDA: Removido orderBy para evitar errores 403 por falta de índices compuestos.
+  // CONSULTA PROTEGIDA: Sincronizada con el arreglo 'participants'
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || profileLoading) return null;
     return query(
@@ -73,24 +73,24 @@ export function ActivityCenter() {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-slate-100 transition-colors">
-          <Bell className={cn("w-5 h-5", count > 0 ? "text-primary animate-vibrate" : "text-slate-400")} />
+        <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-slate-100 transition-colors h-9 w-9">
+          <Bell className={cn("w-4.5 h-4.5", count > 0 ? "text-primary animate-vibrate" : "text-slate-400")} />
           {count > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+            <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
               {count}
             </span>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 p-2 rounded-[32px] shadow-2xl border-none bg-white" align="center">
+      <DropdownMenuContent className="w-80 p-2 rounded-[28px] shadow-2xl border-none bg-white mt-2" align="center">
         <DropdownMenuLabel className="px-4 py-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-black italic uppercase tracking-tighter">Actividades Pendientes</span>
-            <Badge variant="secondary" className="rounded-full text-[10px] font-black">{count}</Badge>
+            <span className="text-sm font-black italic uppercase tracking-tighter text-slate-900">Actividad Viva</span>
+            <Badge variant="secondary" className="rounded-full text-[10px] font-black bg-primary/10 text-primary border-none">{count}</Badge>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-slate-50" />
-        <div className="max-h-[400px] overflow-y-auto p-1 space-y-1">
+        <div className="max-h-[350px] overflow-y-auto p-1 space-y-1 no-scrollbar">
           {activities.length > 0 ? activities.map((act, i) => {
             const Icon = act!.icon;
             return (
@@ -111,13 +111,13 @@ export function ActivityCenter() {
               <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Bell className="w-6 h-6 text-slate-200" />
               </div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Todo al día, morrocoy</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Sin notificaciones</p>
             </div>
           )}
         </div>
         <DropdownMenuSeparator className="bg-slate-50" />
         <DropdownMenuItem asChild className="rounded-xl justify-center h-10 focus:bg-primary/5">
-          <Link href="/admin/orders" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Ver todos los pedidos</Link>
+          <Link href="/admin/orders" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Ver historial completo</Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

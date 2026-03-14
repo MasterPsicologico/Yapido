@@ -48,7 +48,7 @@ export function Navbar() {
     setIsTransitioning(true);
     let currentProgress = 0;
     const interval = setInterval(() => {
-      currentProgress += 5;
+      currentProgress += 10;
       setProgress(currentProgress);
       if (currentProgress >= 100) {
         clearInterval(interval);
@@ -61,9 +61,9 @@ export function Navbar() {
           
           setIsTransitioning(false);
           setProgress(0);
-        }, 200);
+        }, 150);
       }
-    }, 30);
+    }, 25);
   };
 
   const handleLogin = () => initiateGoogleSignIn(auth);
@@ -76,14 +76,14 @@ export function Navbar() {
   const canAccessManage = isOwner || isAdmin || profile?.role === 'dueño';
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-xl border-b border-slate-100 overflow-hidden">
-      <div className="max-w-full px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
+    <nav className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-2xl border-b border-slate-100">
+      <div className="container mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 max-w-7xl">
         
         {/* LADO IZQUIERDO: Menú y Marca */}
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-4 shrink-0">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-slate-50">
+              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-slate-100 transition-colors">
                 <Menu className="w-5 h-5 text-slate-600" />
               </Button>
             </SheetTrigger>
@@ -178,21 +178,21 @@ export function Navbar() {
           </Sheet>
 
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white group-hover:scale-105 transition-transform shadow-lg shadow-primary/20 shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center text-white group-hover:scale-105 transition-transform shadow-lg shadow-primary/20 shrink-0">
               <ShoppingBag className="w-5 h-5" />
             </div>
-            <span className="text-xl font-black tracking-tight text-primary hidden lg:inline italic uppercase leading-none">Vitriniando</span>
+            <span className="text-lg sm:text-xl font-black tracking-tight text-primary hidden md:inline italic uppercase leading-none">Vitriniando</span>
           </Link>
         </div>
 
-        {/* LADO DERECHO: Acciones Agrupadas (Sin desbordamiento) */}
-        <div className="flex items-center gap-1 sm:gap-3 ml-auto">
+        {/* LADO DERECHO: Acciones Agrupadas */}
+        <div className="flex items-center gap-1 sm:gap-2 ml-auto">
           {!isUserLoading && user && (
             <>
-              {/* Botón de Modo: Más compacto en móvil */}
+              {/* Botón de Modo */}
               <div 
                 className={cn(
-                  "relative flex items-center h-10 rounded-full cursor-pointer transition-all duration-300 pr-3 sm:pr-4 pl-1 overflow-hidden min-w-[90px] sm:min-w-[110px]",
+                  "relative flex items-center h-10 rounded-full cursor-pointer transition-all duration-300 pr-3 sm:pr-4 pl-1 overflow-hidden min-w-[100px] sm:min-w-[120px] shadow-sm",
                   isDeliveryZone ? "bg-primary/10 hover:bg-primary/20" : "bg-secondary/10 hover:bg-secondary/20"
                 )}
                 onClick={handleModeSwitch}
@@ -216,52 +216,52 @@ export function Navbar() {
                 </div>
                 
                 <span className={cn(
-                  "relative z-10 ml-1.5 sm:ml-2 text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-colors truncate",
+                  "relative z-10 ml-1.5 sm:ml-2 text-[10px] font-black uppercase tracking-widest transition-colors",
                   isDeliveryZone ? "text-primary" : "text-secondary"
                 )}>
                   {targetLabel}
                 </span>
               </div>
 
-              {/* Cápsula de Cristal para Iconos de Sistema */}
-              <div className="hidden xs:flex items-center bg-slate-50/80 rounded-full px-1.5 py-1 gap-0.5 border border-slate-100 backdrop-blur-sm">
+              {/* Cápsula de Cristal (Sistema de Notificaciones y Mensajes) */}
+              <div className="flex items-center bg-slate-50/80 rounded-full px-1 py-1 gap-0.5 border border-slate-100 backdrop-blur-sm shadow-inner">
                 <ActivityCenter />
                 <MessageCenter />
               </div>
 
-              {/* Dropdown de Perfil: Rediseñado y blindado contra desbordamiento */}
+              {/* Perfil de Usuario */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 shrink-0 border-2 border-primary/10 hover:border-primary/40 transition-colors bg-white">
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 shrink-0 border-2 border-white shadow-md hover:border-primary/20 transition-all bg-white">
                     <Avatar className="h-full w-full">
                       <AvatarImage src={profile?.photoURL || user.photoURL || ''} />
-                      <AvatarFallback className="font-black text-[10px] bg-slate-50 text-primary">U</AvatarFallback>
+                      <AvatarFallback className="font-black text-[10px] bg-slate-100 text-primary">U</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-64 p-2 rounded-[24px] shadow-2xl mr-2" align="end">
+                <DropdownMenuContent className="w-64 p-2 rounded-[28px] shadow-2xl mt-2 border-none" align="end">
                   <DropdownMenuLabel className="font-normal p-4">
-                    <p className="text-sm font-black italic">{profile?.displayName || user.displayName}</p>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest truncate">{user.email}</p>
+                    <p className="text-sm font-black italic text-slate-900">{profile?.displayName || user.displayName}</p>
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate mt-0.5">{user.email}</p>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer">
+                  <DropdownMenuSeparator className="bg-slate-50" />
+                  <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/5">
                     <Link href="/profile" className="flex items-center">
-                      <UserCircle className="mr-2 h-4 w-4 text-primary" />
-                      <span className="font-bold">Mi Perfil</span>
+                      <UserCircle className="mr-3 h-4 w-4 text-primary" />
+                      <span className="font-bold text-slate-700">Mi Perfil</span>
                     </Link>
                   </DropdownMenuItem>
                   {canAccessManage && (
-                    <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer">
+                    <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/5">
                       <Link href="/admin/manage" className="flex items-center">
-                        <Store className="mr-2 h-4 w-4 text-primary" />
-                        <span className="font-bold">Gestionar Mi Negocio</span>
+                        <Store className="mr-3 h-4 w-4 text-primary" />
+                        <span className="font-bold text-slate-700">Gestionar Mi Negocio</span>
                       </Link>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-500 rounded-xl h-11 cursor-pointer hover:bg-red-50">
-                    <LogOut className="mr-2 h-4 w-4" />
+                  <DropdownMenuSeparator className="bg-slate-50" />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-500 rounded-xl h-11 cursor-pointer hover:bg-red-50 hover:text-red-600">
+                    <LogOut className="mr-3 h-4 w-4" />
                     <span className="font-bold">Cerrar Sesión</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -270,8 +270,8 @@ export function Navbar() {
           )}
 
           {!isUserLoading && !user && (
-            <Button onClick={handleLogin} variant="default" className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-4 sm:px-6 font-black shadow-lg shadow-secondary/20 h-10 text-xs">
-              <User className="w-4 h-4" /> <span className="hidden xs:inline">Ingresar</span>
+            <Button onClick={handleLogin} variant="default" className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-4 sm:px-6 font-black shadow-lg shadow-secondary/20 h-10 text-[10px] uppercase tracking-widest">
+              <User className="w-4 h-4" /> <span>Ingresar</span>
             </Button>
           )}
         </div>
