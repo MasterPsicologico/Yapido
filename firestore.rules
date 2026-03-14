@@ -40,15 +40,13 @@ service cloud.firestore {
     }
 
     // REINGENIERÍA DE ÓRDENES: Seguridad Atómica
+    // El listado es ultra-eficiente porque no realiza lecturas de perfiles externos
     match /orders/{orderId} {
-      // Regla de listado ultra-eficiente: Basada únicamente en datos del documento
-      // Permite que la consulta se valide sin necesidad de leer perfiles externos
       allow list: if isSignedIn() && (
         request.auth.uid in resource.data.viewers || 
         resource.data.isLogisticsPublic == true
       );
       
-      // Lectura individual y creación/edición
       allow get, create, update: if isSignedIn();
       allow delete: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
 

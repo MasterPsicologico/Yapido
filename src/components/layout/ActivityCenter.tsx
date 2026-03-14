@@ -21,24 +21,17 @@ import { cn } from '@/lib/utils';
 
 export function ActivityCenter() {
   const { user } = useUser();
-  const { profile, isAdmin } = useProfile();
+  const { profile, isLoading: profileLoading } = useProfile();
   const firestore = useFirestore();
 
-  // Consulta de pedidos relevantes para tareas pendientes
+  // Consulta Maestra: Filtrada quirúrgicamente por 'viewers' para evitar errores de permisos
   const ordersQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    
-    // Si es admin, ve todo lo que no esté finalizado
-    if (isAdmin) {
-        return query(collection(firestore, 'orders'), where('status', 'not-in', ['delivered', 'cancelled']));
-    }
-
-    // Si es dueño o cliente, ve sus pedidos activos
+    if (!firestore || !user?.uid || profileLoading) return null;
     return query(
       collection(firestore, 'orders'),
       where('viewers', 'array-contains', user.uid)
     );
-  }, [firestore, user?.uid, isAdmin]);
+  }, [firestore, user?.uid, profileLoading]);
 
   const { data: orders } = useCollection(ordersQuery);
 
@@ -61,16 +54,13 @@ export function ActivityCenter() {
       else if (profile?.role === 'repartidor' && order.status === 'ready_for_pickup' && !order.deliveryDriverId) {
         task = { label: "Nueva ruta disponible", desc: order.productName, icon: Truck, color: "text-green-500", bg: "bg-green-50" };
       }
-      else if (isAdmin) {
-        task = { label: `Estado: ${order.status}`, desc: order.productName, icon: AlertCircle, color: "text-slate-500", bg: "bg-slate-50" };
-      }
 
       if (task) {
         return { ...task, orderId: order.id };
       }
       return null;
     }).filter(Boolean);
-  }, [orders, user, profile, isAdmin]);
+  }, [orders, user, profile]);
 
   const count = activities.length;
 
@@ -95,19 +85,22 @@ export function ActivityCenter() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-slate-50" />
         <div className="max-h-[400px] overflow-y-auto p-1 space-y-1">
-          {activities.length > 0 ? activities.map((act, i) => (
-            <DropdownMenuItem key={i} asChild className="rounded-2xl p-3 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all">
-              <Link href={`/admin/orders#${act.orderId}`} className="flex items-start gap-3">
-                <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm", act.bg, act.color)}>
-                  <act.icon className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-black uppercase tracking-tight text-slate-900 leading-none mb-1">{act.label}</p>
-                  <p className="text-[10px] font-bold text-slate-400 truncate">{act.desc}</p>
-                </div>
-              </Link>
-            </DropdownMenuItem>
-          )) : (
+          {activities.length > 0 ? activities.map((act, i) => {
+            const Icon = act.icon;
+            return (
+              <DropdownMenuItem key={i} asChild className="rounded-2xl p-3 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all">
+                <Link href={`/admin/orders#${act.orderId}`} className="flex items-start gap-3">
+                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm", act.bg, act.color)}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-black uppercase tracking-tight text-slate-900 leading-none mb-1">{act.label}</p>
+                    <p className="text-[10px] font-bold text-slate-400 truncate">{act.desc}</p>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+            );
+          }) : (
             <div className="py-10 text-center">
               <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Bell className="w-6 h-6 text-slate-200" />
