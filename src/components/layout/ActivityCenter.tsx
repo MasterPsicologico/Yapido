@@ -2,7 +2,7 @@
 "use client";
 
 import { useMemo } from 'react';
-import { Bell, Clock, Package, Truck, Zap } from 'lucide-react';
+import { Bell, Clock, Package, Truck, Zap, CheckCircle2, Navigation, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -46,19 +46,42 @@ export function ActivityCenter() {
     });
 
     return orders.map(order => {
+      // Solo mostrar órdenes que no han finalizado (activas)
+      if (order.status === 'delivered' || order.status === 'cancelled') return null;
+
       let task = null;
 
-      if (order.customerId === user.uid && order.status === 'shipped') {
-        task = { label: "Confirmar entrega", desc: order.productName, icon: Package, color: "text-blue-500", bg: "bg-blue-50" };
+      // LÓGICA DE VISIBILIDAD BASADA EN ROL Y ESTADO
+      if (order.storeOwnerId === user.uid) {
+        // Vendedor: Ver todo el ciclo de su venta
+        if (order.status === 'pending') {
+          task = { label: "Venta: Nuevo Pedido", desc: order.productName, icon: Zap, color: "text-orange-500", bg: "bg-orange-50" };
+        } else if (order.status === 'preparing') {
+          task = { label: "Venta: Preparando", desc: order.productName, icon: Clock, color: "text-blue-500", bg: "bg-blue-50" };
+        } else if (order.status === 'ready_for_pickup') {
+          task = { label: "Venta: Listo en Tienda", desc: order.productName, icon: CheckCircle2, color: "text-indigo-500", bg: "bg-indigo-50" };
+        } else if (order.status === 'shipped') {
+          task = { label: "Venta: En Reparto", desc: order.productName, icon: Truck, color: "text-purple-500", bg: "bg-purple-50" };
+        }
       } 
-      else if (order.storeOwnerId === user.uid && order.status === 'pending') {
-        task = { label: "Nuevo pedido por preparar", desc: order.productName, icon: Zap, color: "text-orange-500", bg: "bg-orange-50" };
+      else if (order.deliveryDriverId === user.uid) {
+        // Repartidor Asignado: Ver su ruta actual
+        if (order.status === 'shipped') {
+          task = { label: "Ruta: Entrega en Curso", desc: order.productName, icon: Navigation, color: "text-secondary", bg: "bg-secondary/10" };
+        }
       }
-      else if (order.storeOwnerId === user.uid && order.status === 'preparing') {
-        task = { label: "Listo para despacho", desc: order.productName, icon: Clock, color: "text-purple-500", bg: "bg-purple-50" };
+      else if (order.customerId === user.uid) {
+        // Cliente: Ver el progreso de su compra
+        if (order.status === 'shipped') {
+          task = { label: "Compra: Confirmar Entrega", desc: order.productName, icon: Package, color: "text-blue-500", bg: "bg-blue-50" };
+        } else {
+          task = { label: "Compra: En Seguimiento", desc: order.productName, icon: Timer, color: "text-slate-500", bg: "bg-slate-50" };
+        }
       }
-      else if (profile?.role === 'repartidor' && order.status === 'ready_for_pickup' && !order.deliveryDriverId) {
-        task = { label: "Nueva ruta disponible", desc: order.productName, icon: Truck, color: "text-green-500", bg: "bg-green-50" };
+      
+      // Caso especial: Repartidor viendo rutas públicas
+      if (!task && profile?.role === 'repartidor' && order.status === 'ready_for_pickup' && !order.deliveryDriverId) {
+        task = { label: "Ruta: Disponible ahora", desc: order.productName, icon: Truck, color: "text-green-500", bg: "bg-green-50" };
       }
 
       if (task) {
