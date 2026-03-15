@@ -22,7 +22,9 @@ import {
   PlusCircle, 
   Trash2, 
   Check,
-  Plus
+  Plus,
+  Package,
+  Target
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -51,13 +53,13 @@ const STATUS_MAP = {
 };
 
 const VALUE_BADGES_CONFIG = {
-  express: { label: "Envío Express", icon: Zap, color: "text-primary", bg: "bg-primary/5", border: "border-primary/10", animate: true },
-  eco: { label: "Eco Amigable", icon: Leaf, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100", animate: false },
-  top: { label: "Top Choice", icon: Medal, color: "text-secondary", bg: "bg-secondary/5", border: "border-secondary/10", animate: false },
-  stock: { label: "Stock Vivo", icon: Sparkles, color: "text-green-600", bg: "bg-green-50", border: "border-green-100", animate: true },
-  flash: { label: "Entrega Flash", icon: Zap, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100", animate: true },
-  exclusive: { label: "Exclusivo", icon: Crown, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100", animate: false },
-  hero: { label: "Orgullo Local", icon: Heart, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-100", animate: false },
+  express: { label: "Envío Express", icon: Zap, color: "text-blue-600", category: 'logistics' },
+  flash: { label: "Entrega Flash", icon: Target, color: "text-blue-600", category: 'logistics' },
+  top: { label: "Top Choice", icon: Medal, color: "text-amber-600", category: 'trust' },
+  exclusive: { label: "Exclusivo", icon: Crown, color: "text-purple-600", category: 'community' },
+  stock: { label: "Stock Vivo", icon: Package, color: "text-emerald-600", category: 'product' },
+  eco: { label: "Eco Friendly", icon: Leaf, color: "text-emerald-600", category: 'product' },
+  hero: { label: "Orgullo Local", icon: Heart, color: "text-rose-600", category: 'community' },
 };
 
 type StatusKey = keyof typeof STATUS_MAP;
@@ -74,8 +76,8 @@ export function StoreCard({ store }: { store: any }) {
   const activeBadgeIds: BadgeKey[] = store.activeBadgeIds || [];
   
   const handleAddBadge = (badgeKey: BadgeKey) => {
-    if (!firestore || !store.id || activeBadgeIds.length >= 4) return;
-    const newBadges = [...activeBadgeIds, badgeKey];
+    if (!firestore || !store.id) return;
+    const newBadges = [...activeBadgeIds, badgeKey].slice(-4);
     const storeRef = doc(firestore, 'stores', store.id);
     updateDocumentNonBlocking(storeRef, { activeBadgeIds: newBadges });
   };
@@ -92,6 +94,13 @@ export function StoreCard({ store }: { store: any }) {
     const storeRef = doc(firestore, 'stores', store.id);
     updateDocumentNonBlocking(storeRef, { verificationStatus: newStatus });
   };
+
+  const QUADRANTS = [
+    { id: 'logistics', label: 'ENTREGA', color: 'bg-blue-50/80', border: 'border-blue-100', icon: Zap, textColor: 'text-blue-600' },
+    { id: 'trust', label: 'RECONOCIMIENTO', color: 'bg-amber-50/80', border: 'border-amber-100', icon: ShieldCheck, textColor: 'text-amber-600' },
+    { id: 'product', label: 'ESTADO', color: 'bg-emerald-50/80', border: 'border-emerald-100', icon: Package, textColor: 'text-emerald-600' },
+    { id: 'community', label: 'VALOR', color: 'bg-purple-50/80', border: 'border-purple-100', icon: Heart, textColor: 'text-purple-600' },
+  ];
 
   const StatusContent = (
     <div className={cn(
@@ -123,7 +132,7 @@ export function StoreCard({ store }: { store: any }) {
 
   return (
     <Card className="group flex flex-col h-full border-none rounded-[48px] shadow-[0_15px_50px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.12)] transition-all duration-700 bg-white overflow-hidden">
-      {/* Mitad Superior: Identidad Visual (Se mantiene intacta) */}
+      {/* Mitad Superior: Identidad Visual */}
       <Link href={`/stores/${store.id}`} className="block relative aspect-[16/11] w-full overflow-hidden bg-slate-50">
         <Image
           src={store.imageUrl || 'https://picsum.photos/seed/store/800/600'}
@@ -161,107 +170,97 @@ export function StoreCard({ store }: { store: any }) {
         </div>
       </Link>
 
-      {/* Mitad Inferior: REESTRUCTURADA PREMIUM */}
-      <CardContent className="p-10 flex flex-col flex-1 space-y-10 bg-white">
+      {/* Mitad Inferior: Arquitectura Técnica de Cuadrantes */}
+      <CardContent className="p-8 flex flex-col flex-1 space-y-8 bg-white">
         
-        {/* Sección de Mensaje de Marca Personalizado */}
+        {/* Descripción de Autor */}
         {store.description && (
           <div className="relative group/desc">
-            <div className="absolute -left-5 top-0 w-1.5 h-full bg-primary/10 rounded-full group-hover/desc:bg-primary/30 transition-colors" />
-            <p className="text-[15px] text-slate-600 leading-[1.7] font-medium italic pl-3 pr-2 break-words">
+            <div className="absolute -left-4 top-0 w-1 h-full bg-primary/10 rounded-full group-hover/desc:bg-primary/30 transition-colors" />
+            <p className="text-[14px] text-slate-600 leading-[1.6] font-medium italic pl-3 pr-2 break-words">
               "{store.description}"
             </p>
           </div>
         )}
 
-        {/* Sistema de Atributos Jewel-Case */}
-        <div className="space-y-5">
-          <div className="flex items-center justify-between px-1">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">Atributos de Valor</h4>
-            {isAdmin && activeBadgeIds.length < 4 && (
-              <DropdownMenu modal={false}>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    size="icon" 
-                    className="h-8 w-8 rounded-full bg-slate-900 text-white hover:bg-primary transition-all active:scale-90 border-none shadow-xl"
-                  >
-                    <Plus className="w-4.5 h-4.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 rounded-[32px] p-3 shadow-2xl border-none bg-white ring-1 ring-black/5 z-[100]">
-                  <div className="px-4 py-2 mb-2 border-b">
-                    <h5 className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Distintivos VIP</h5>
-                  </div>
-                  {(Object.keys(VALUE_BADGES_CONFIG) as BadgeKey[])
-                    .filter(key => !activeBadgeIds.includes(key))
-                    .map((key) => {
-                      const item = VALUE_BADGES_CONFIG[key];
-                      return (
-                        <DropdownMenuItem 
-                          key={key} 
-                          onClick={() => handleAddBadge(key)}
-                          className="flex items-center gap-4 p-3.5 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all mb-1"
-                        >
-                          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-50", item.color)}>
-                            <item.icon className="w-5.5 h-5.5" />
-                          </div>
-                          <span className="text-[12px] font-black uppercase tracking-widest text-slate-600">{item.label}</span>
-                        </DropdownMenuItem>
-                      );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
+        {/* Sistema de Cuadrantes Windows-Premium */}
+        <div className="grid grid-cols-2 gap-2 relative">
+          {QUADRANTS.map((quad) => {
+            const activeBadge = activeBadgeIds
+              .map(id => ({ id, ...VALUE_BADGES_CONFIG[id] }))
+              .find(b => b.category === quad.id);
 
-          <div className="grid grid-cols-1 gap-3">
-            {activeBadgeIds.length > 0 ? activeBadgeIds.map((id) => {
-              const badge = VALUE_BADGES_CONFIG[id];
-              if (!badge) return null;
-              return (
-                <div 
-                  key={id} 
-                  className={cn(
-                    "flex items-center justify-between pl-4 pr-3 h-14 rounded-[22px] border transition-all duration-500 bg-white group/badge hover:shadow-lg hover:scale-[1.02]",
-                    badge.bg,
-                    badge.border
-                  )}
-                >
-                   <div className="flex items-center gap-4">
-                     <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-sm">
-                        <badge.icon className={cn("w-5 h-5", badge.color, badge.animate && "animate-pulse")} />
-                     </div>
-                     <span className={cn("text-[11px] font-black uppercase tracking-[0.2em] italic", badge.color)}>
-                      {badge.label}
-                     </span>
-                   </div>
-                   {isAdmin && (
-                     <button 
-                       onClick={(e) => { e.preventDefault(); handleRemoveBadge(id); }}
-                       className="w-8 h-8 flex items-center justify-center hover:bg-red-500 hover:text-white rounded-full transition-all text-red-300 shadow-sm"
-                     >
-                       <Trash2 className="w-4 h-4" />
-                     </button>
-                   )}
+            return (
+              <div 
+                key={quad.id} 
+                className={cn(
+                  "p-4 rounded-[28px] border flex flex-col items-center justify-center text-center gap-2 transition-all duration-500 min-h-[95px]",
+                  quad.color,
+                  quad.border,
+                  !activeBadge && "opacity-40 grayscale-[0.5]"
+                )}
+              >
+                <div className={cn("w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center", quad.textColor)}>
+                  {activeBadge ? <activeBadge.icon className="w-4.5 h-4.5" /> : <quad.icon className="w-4.5 h-4.5 opacity-30" />}
                 </div>
-              );
-            }) : (
-              <div className="py-10 flex flex-col items-center justify-center bg-slate-50/40 rounded-[32px] border-2 border-dashed border-slate-100">
-                <Sparkles className="w-8 h-8 text-slate-200 mb-3" />
-                <span className="text-[11px] font-bold text-slate-300 uppercase tracking-[0.3em] italic">Catálogo en proceso</span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40">{quad.label}</span>
+                  <span className={cn("text-[10px] font-black uppercase tracking-widest italic leading-none", quad.textColor)}>
+                    {activeBadge ? activeBadge.label : 'PENDIENTE'}
+                  </span>
+                </div>
+                
+                {isAdmin && (
+                  <div className="absolute top-0 right-0 p-1">
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="icon" className="h-6 w-6 rounded-full bg-white/50 text-slate-400 hover:text-primary shadow-sm border-none">
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="center" className="w-56 rounded-[24px] p-2 shadow-2xl border-none bg-white z-[100]">
+                        {(Object.keys(VALUE_BADGES_CONFIG) as BadgeKey[])
+                          .filter(key => VALUE_BADGES_CONFIG[key].category === quad.id)
+                          .map((key) => (
+                            <DropdownMenuItem 
+                              key={key} 
+                              onClick={() => handleAddBadge(key)}
+                              className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-slate-50"
+                            >
+                              <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
+                                {(() => {
+                                  const Icon = VALUE_BADGES_CONFIG[key].icon;
+                                  return <Icon className="w-4 h-4 text-slate-600" />;
+                                })()}
+                              </div>
+                              <span className="text-[11px] font-bold uppercase tracking-tight">{VALUE_BADGES_CONFIG[key].label}</span>
+                            </DropdownMenuItem>
+                          ))}
+                        {activeBadge && (
+                          <DropdownMenuItem 
+                            onClick={() => handleRemoveBadge(activeBadge.id as BadgeKey)}
+                            className="text-red-500 p-3 rounded-xl cursor-pointer hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> <span className="text-[11px] font-bold">REMOVER</span>
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            );
+          })}
         </div>
 
-        {/* Estatus Maestro - La Bóveda de Cierre */}
-        <div className="mt-auto pt-6 relative border-t border-slate-50">
+        {/* Estatus de Verificación Final */}
+        <div className="mt-auto pt-4 border-t border-slate-50">
           {isAdmin ? (
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 {StatusContent}
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-80 rounded-[40px] p-4 shadow-2xl border-none bg-white ring-1 ring-black/5 z-[100] mt-4">
+              <DropdownMenuContent align="center" className="w-80 rounded-[40px] p-4 shadow-2xl border-none bg-white z-[100] mt-4">
                 <div className="px-5 py-3 mb-3">
                   <h5 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">Jerarquía de Vitrina</h5>
                 </div>
