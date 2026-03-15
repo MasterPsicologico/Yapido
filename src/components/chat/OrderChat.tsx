@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -73,7 +74,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
     }
   }, [isCameraOpen, stream]);
 
-  // LÓGICA ESPECIALISTA: Detección inteligente de direcciones en el chat
+  // LÓGICA ESPECIALISTA: Detección inteligente de direcciones en el chat con PROPAGACIÓN SELECTIVA
   const handleSmartAddressSync = (messageText: string) => {
     if (!firestore || !orderId) return;
 
@@ -87,14 +88,15 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
       setIsAutoSyncing(true);
       const orderRef = doc(firestore, 'orders', orderId);
       
-      // Actualizar el pedido instantáneamente
+      // 1. Actualización de Pedido: Siempre permitida para participantes
       updateDocumentNonBlocking(orderRef, { 
         customerAddress: messageText.trim(),
         updatedAt: serverTimestamp() 
       });
 
-      // Actualizar el perfil del cliente para futuras compras (Sincronización Total)
-      if (orderData.customerId) {
+      // 2. SINCRONIZACIÓN SELECTIVA: Solo actualizar el perfil si el usuario que escribe ES el cliente
+      // Esto previene el error 403 (Permission Denied) cuando el vendedor escribe la dirección
+      if (orderData.customerId && user?.uid === orderData.customerId) {
         const userRef = doc(firestore, 'users', orderData.customerId);
         updateDocumentNonBlocking(userRef, { 
           address: messageText.trim(),
@@ -220,7 +222,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
           {isAutoSyncing && (
             <div className="flex items-center gap-1.5 bg-green-500/20 px-3 py-1 rounded-full animate-pulse">
               <RefreshCw className="w-3 h-3 text-green-400 animate-spin" />
-              <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Sincronizando Datos</span>
+              <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Sincronizando</span>
             </div>
           )}
           {onClose && (

@@ -164,21 +164,29 @@ export default function OrdersManagementPage() {
     if (!firestore || !addressUpdateOrder || !newAddressValue.trim()) return;
     setIsSavingAddress(true);
     try {
-      // 1. Actualizar el pedido instantáneamente
+      // 1. Actualizar el pedido instantáneamente (Esto funciona para todos los participantes)
       const orderRef = doc(firestore, 'orders', addressUpdateOrder.id);
       updateDocumentNonBlocking(orderRef, { 
         customerAddress: newAddressValue.trim(),
         updatedAt: serverTimestamp() 
       });
 
-      // 2. Actualizar el perfil del usuario para el futuro (Sincronización Total)
-      const userRef = doc(firestore, 'users', addressUpdateOrder.customerId);
-      updateDocumentNonBlocking(userRef, { 
-        address: newAddressValue.trim(),
-        updatedAt: serverTimestamp() 
-      });
+      // 2. SINCRONIZACIÓN SELECTIVA: Solo actualizar el perfil si el usuario actual es el dueño del perfil
+      // Esto evita el error de permisos (403) cuando un vendedor intenta escribir en la cuenta de un cliente
+      if (user?.uid === addressUpdateOrder.customerId) {
+        const userRef = doc(firestore, 'users', addressUpdateOrder.customerId);
+        updateDocumentNonBlocking(userRef, { 
+          address: newAddressValue.trim(),
+          updatedAt: serverTimestamp() 
+        });
+      }
 
-      toast({ title: "¡Ubicación Corregida!", description: "Sincronizada en el pedido y perfil del cliente." });
+      toast({ 
+        title: "¡Ubicación Actualizada!", 
+        description: user?.uid === addressUpdateOrder.customerId 
+          ? "Sincronizada en pedido y perfil." 
+          : "Dirección del pedido corregida con éxito." 
+      });
       setAddressUpdateOrder(null);
       setNewAddressValue("");
     } catch (e) {
@@ -393,7 +401,7 @@ export default function OrdersManagementPage() {
                 <MapIcon className="w-7 h-7 text-primary" /> Resolver Ubicación
               </DialogTitle>
               <DialogDescription className="text-slate-400 font-medium">
-                ¿Hubo un error? Corrige la dirección aquí. Esto actualizará el pedido y el perfil del cliente automáticamente.
+                ¿Hubo un error? Corrige la dirección aquí. Esto actualizará el pedido inmediatamente.
               </DialogDescription>
             </DialogHeader>
             
@@ -427,19 +435,21 @@ export default function OrdersManagementPage() {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Dirección de Entrega</Label>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
-                  <Input 
+                  <input 
                     value={newAddressValue} 
                     onChange={(e) => setNewAddressValue(e.target.value)}
                     placeholder="Ej: Calle 5 # 10-20, Barrio El Centro"
-                    className="h-14 rounded-2xl bg-slate-50 border-none pl-12 font-bold focus:ring-4 focus:ring-primary/10"
+                    className="flex h-14 w-full rounded-2xl bg-slate-50 border-none pl-12 font-bold focus:ring-4 focus:ring-primary/10 outline-none"
                   />
                 </div>
               </div>
               
               <div className="flex items-center justify-center gap-2 py-2 bg-blue-50/50 rounded-2xl border border-blue-100/50">
                 <RefreshCw className={cn("w-3 h-3 text-blue-500", isSavingAddress && "animate-spin")} />
-                <p className="text-[9px] text-blue-600 font-black uppercase tracking-widest italic">
-                  Sincronización Bidireccional Activa
+                <p className="text-[9px] text-blue-600 font-black uppercase tracking-widest italic text-center">
+                  {user?.uid === addressUpdateOrder?.customerId 
+                    ? "Sincronización Bidireccional Activa (Pedido + Perfil)" 
+                    : "Sincronización Logística (Solo Pedido)"}
                 </p>
               </div>
             </div>
@@ -450,7 +460,7 @@ export default function OrdersManagementPage() {
                 disabled={isSavingAddress || !newAddressValue.trim()}
                 className="w-full h-14 rounded-full bg-primary text-white font-black text-lg gap-3 shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
               >
-                {isSavingAddress ? <Loader2 className="animate-spin" /> : <><Save className="w-5 h-5" /> Guardar y Sincronizar</>}
+                {isSavingAddress ? <Loader2 className="animate-spin" /> : <><Save className="w-5 h-5" /> Guardar Cambios</>}
               </Button>
             </DialogFooter>
           </DialogContent>
