@@ -29,7 +29,11 @@ import {
   Wallet,
   ShieldCheck,
   Hash,
-  ArrowUpRight
+  ArrowUpRight,
+  Edit3,
+  Map as MapIcon,
+  Save,
+  Sparkles
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -40,8 +44,9 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { OrderChat } from '@/components/chat/OrderChat';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import Link from 'next/link';
+import { Label } from '@/components/ui/label';
 
 const STATUS_CONFIG = {
   pending: { label: "PENDIENTE", color: "text-orange-500", bg: "bg-orange-50", border: "border-orange-100", icon: Timer },
@@ -61,6 +66,9 @@ export default function OrdersManagementPage() {
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [showMyPurchases, setShowMyPurchases] = useState(false);
   const [selectedOrderForChat, setSelectedOrderForChat] = useState<any | null>(null);
+  const [addressUpdateOrder, setAddressUpdateOrder] = useState<any | null>(null);
+  const [newAddressValue, setNewAddressValue] = useState("");
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
 
   const myStoresQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -74,7 +82,6 @@ export default function OrdersManagementPage() {
   }, [firestore, user?.uid]);
   const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
 
-  // SISTEMA DE ENRUTAMIENTO PROFUNDO: Detecta el hash en la URL para abrir el negocio correcto
   useEffect(() => {
     const handleDeepLinking = () => {
       const hash = window.location.hash.replace('#', '');
@@ -88,7 +95,6 @@ export default function OrdersManagementPage() {
             setSelectedStoreId(targetOrder.storeId);
             setShowMyPurchases(false);
           }
-          // Scroll suave hacia la tarjeta después de un breve delay para permitir el renderizado
           setTimeout(() => {
             const el = document.getElementById(hash);
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -131,6 +137,34 @@ export default function OrdersManagementPage() {
     if (newStatus === 'preparing') updateData.isLogisticsPublic = true;
     updateDocumentNonBlocking(orderRef, updateData);
     toast({ title: "Estado Actualizado" });
+  };
+
+  const handleSaveAddressPatch = async () => {
+    if (!firestore || !addressUpdateOrder || !newAddressValue.trim()) return;
+    setIsSavingAddress(true);
+    try {
+      // 1. Actualizar el pedido instantáneamente
+      const orderRef = doc(firestore, 'orders', addressUpdateOrder.id);
+      updateDocumentNonBlocking(orderRef, { 
+        customerAddress: newAddressValue.trim(),
+        updatedAt: serverTimestamp() 
+      });
+
+      // 2. Actualizar el perfil del usuario para el futuro
+      const userRef = doc(firestore, 'users', addressUpdateOrder.customerId);
+      updateDocumentNonBlocking(userRef, { 
+        address: newAddressValue.trim(),
+        updatedAt: serverTimestamp() 
+      });
+
+      toast({ title: "¡Ubicación Sincronizada!", description: "Dirección actualizada en el pedido y perfil." });
+      setAddressUpdateOrder(null);
+      setNewAddressValue("");
+    } catch (e) {
+      toast({ title: "Error al actualizar", variant: "destructive" });
+    } finally {
+      setIsSavingAddress(false);
+    }
   };
 
   const handleWhatsAppChat = (phone: string, productName: string) => {
@@ -204,13 +238,11 @@ export default function OrdersManagementPage() {
               const isVenta = order.storeOwnerId === user?.uid;
               const dateStr = order.createdAt ? format(order.createdAt.toDate(), "d 'DE' MMMM, HH:mm", { locale: es }).toUpperCase() : 'Cargando...';
               
-              // Lógica de dirección real obligatoria
               const addressToDisplay = order.customerAddress || "DIRECCIÓN NO DETECTADA (Definir en chat)";
 
               return (
                 <Card key={order.id} id={order.id} className="border-none rounded-[48px] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.1)] bg-white ring-1 ring-black/[0.03] transition-all">
                   <CardContent className="p-0">
-                    {/* Header de la Tarjeta */}
                     <div className="bg-slate-50 px-8 py-4 flex items-center justify-between border-b">
                       <div className="flex items-center gap-3">
                         <Hash className="w-3 h-3 text-slate-300" />
@@ -223,7 +255,6 @@ export default function OrdersManagementPage() {
                     </div>
 
                     <div className="p-8 space-y-8">
-                      {/* Estado y Rol */}
                       <div className="flex flex-wrap items-center gap-3">
                         <Badge className={cn("text-white border-none rounded-full px-5 h-8 text-[9px] font-black uppercase tracking-widest", isVenta ? "bg-primary" : "bg-secondary")}>
                           {isVenta ? "VENTA RECIBIDA" : "MI COMPRA"}
@@ -234,14 +265,12 @@ export default function OrdersManagementPage() {
                         </div>
                       </div>
 
-                      {/* Título Principal - PRODUCTO PROMINENTE */}
                       <div className="space-y-2">
                         <h3 className="text-[2.8rem] font-black text-slate-900 italic uppercase leading-[0.85] tracking-tighter">
                           {order.productName}
                         </h3>
                       </div>
 
-                      {/* Información de Participantes y Lugar */}
                       <div className="grid grid-cols-1 gap-6 bg-slate-50/50 p-6 rounded-[32px] border border-slate-100">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-slate-400">
@@ -252,18 +281,33 @@ export default function OrdersManagementPage() {
                             {isVenta ? order.customerName : order.storeName}
                           </Link>
                         </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-slate-400">
-                            <MapPin className="w-3.5 h-3.5" />
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">UBICACIÓN:</span>
+                        <div className="space-y-1 relative group/addr">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-slate-400">
+                              <MapPin className="w-3.5 h-3.5" />
+                              <span className="text-[9px] font-black uppercase tracking-[0.2em]">UBICACIÓN:</span>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => { setAddressUpdateOrder(order); setNewAddressValue(order.customerAddress || ""); }}
+                              className="h-8 w-8 rounded-full bg-white shadow-sm border opacity-0 group-hover/addr:opacity-100 transition-opacity"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-primary" />
+                            </Button>
                           </div>
-                          <p className={cn("text-lg font-black italic leading-tight", !order.customerAddress ? "text-red-500 animate-pulse" : "text-slate-800")}>
+                          <p 
+                            className={cn(
+                              "text-lg font-black italic leading-tight transition-colors cursor-pointer", 
+                              !order.customerAddress ? "text-red-500 animate-pulse" : "text-slate-800 hover:text-primary"
+                            )}
+                            onClick={() => { setAddressUpdateOrder(order); setNewAddressValue(order.customerAddress || ""); }}
+                          >
                             {addressToDisplay}
                           </p>
                         </div>
                       </div>
 
-                      {/* Bloque de Precio Sophisticado - UNIDADES DEBAJO DEL PRECIO */}
                       <div className="flex flex-col gap-1">
                         <span className="text-6xl font-black text-slate-900 tracking-tighter leading-none">
                           {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice)}
@@ -276,7 +320,6 @@ export default function OrdersManagementPage() {
                         </div>
                       </div>
 
-                      {/* Centro de Comunicaciones y Logística */}
                       <div className="space-y-4 pt-2">
                         {isVenta && (
                           <>
@@ -321,6 +364,48 @@ export default function OrdersManagementPage() {
           </div>
         </main>
         
+        {/* DIÁLOGO DE PARCHE DE DIRECCIÓN (Resolución Instantánea) */}
+        <Dialog open={!!addressUpdateOrder} onOpenChange={(v) => !v && setAddressUpdateOrder(null)}>
+          <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px]">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter flex items-center gap-3">
+                <MapIcon className="w-7 h-7 text-primary" /> Resolver Ubicación
+              </DialogTitle>
+              <DialogDescription className="text-slate-400 font-medium">
+                Ingresa la dirección exacta. Esto actualizará este pedido y el perfil del cliente permanentemente.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-6 space-y-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Dirección de Entrega</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+                  <Input 
+                    value={newAddressValue} 
+                    onChange={(e) => setNewAddressValue(e.target.value)}
+                    placeholder="Ej: Calle 5 # 10-20, Barrio El Centro"
+                    className="h-14 rounded-2xl bg-slate-50 border-none pl-12 font-bold focus:ring-4 focus:ring-primary/10"
+                  />
+                </div>
+              </div>
+              <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest text-center italic">
+                <Sparkles className="w-3 h-3 inline mr-1 text-yellow-400" /> Sincronización Automática en Tiempo Real
+              </p>
+            </div>
+
+            <DialogFooter className="sm:justify-center">
+              <Button 
+                onClick={handleSaveAddressPatch} 
+                disabled={isSavingAddress || !newAddressValue.trim()}
+                className="w-full h-14 rounded-full bg-primary text-white font-black text-lg gap-3 shadow-xl shadow-primary/20"
+              >
+                {isSavingAddress ? <Loader2 className="animate-spin" /> : <><Save className="w-5 h-5" /> Guardar y Sincronizar</>}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={!!selectedOrderForChat} onOpenChange={(v) => !v && setSelectedOrderForChat(null)}>
           <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-[450px]">
             <DialogHeader className="sr-only">
