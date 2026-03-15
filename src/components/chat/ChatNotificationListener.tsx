@@ -78,9 +78,8 @@ export function ChatNotificationListener() {
           // CASO B: ACTIVAR ESCUCHA DE MENSAJES PARA ESTA ORDEN ESPECÍFICA
           if (!messageUnsubs.has(orderId)) {
             const messagesRef = collection(firestore, 'orders', orderId, 'messages');
-            const latestMsgQ = query(messagesRef, orderBy('createdAt', 'desc'), limit(1));
-            
-            const unsubMsg = onSnapshot(latestMsgQ, (msgSnap) => {
+            // Nota: No usamos orderBy aquí para evitar errores de índices ausentes durante la creación del pedido
+            const unsubMsg = onSnapshot(messagesRef, (msgSnap) => {
               msgSnap.docChanges().forEach((msgChange) => {
                 if (msgChange.type === 'added') {
                   const msg = msgChange.doc.data();
@@ -90,6 +89,7 @@ export function ChatNotificationListener() {
                   if (notifiedIds.current.has(msgId)) return;
 
                   const msgTime = msg.createdAt?.toMillis?.() || Date.now();
+                  // Margen de 60 seg para considerar el mensaje como "nuevo" y no cargar el historial entero como notificaciones
                   if (Date.now() - msgTime < 60000) {
                     notifiedIds.current.add(msgId);
                     setUnreadItems(prev => {
@@ -102,6 +102,11 @@ export function ChatNotificationListener() {
                   notifiedIds.current.add(msgId);
                 }
               });
+            }, (error) => {
+              // Gestión silenciosa de errores para evitar que un fallo en un chat rompa toda la escucha
+              if (error.code !== 'permission-denied') {
+                console.warn("Error en escucha de chat:", orderId, error.code);
+              }
             });
             messageUnsubs.set(orderId, unsubMsg);
             unsubscribers.push(unsubMsg);
@@ -114,6 +119,11 @@ export function ChatNotificationListener() {
           messageUnsubs.delete(orderId);
         }
       });
+    }, (error) => {
+      // Si hay un error de permisos global, solo registramos, no bloqueamos la UI con un error fatal
+      if (error.code !== 'permission-denied') {
+        console.error("Error maestro de órdenes:", error.code);
+      }
     });
 
     unsubscribers.push(unsubOrders);
@@ -169,6 +179,7 @@ export function ChatNotificationListener() {
     const interval = setInterval(() => {
       if (unreadItems.size > 0) {
         const now = Date.now();
+        // Recordar solo si han pasado más de 10 seg desde la última alarma
         if (now - lastAlarmTime.current > 10000) {
             const entry = Array.from(unreadItems.entries())[0];
             if (entry) triggerAlarm(entry[0], entry[1].title, entry[1].type === 'order' ? 'PEDIDO PENDIENTE' : 'MENSAJE PENDIENTE');

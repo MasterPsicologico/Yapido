@@ -45,7 +45,16 @@ export default function ProductPage() {
 
     setIsOrdering(true);
     try {
-      const ownerId = product.storeOwnerId || (await getDoc(doc(firestore, 'stores', product.storeId))).data()?.ownerId;
+      // Garantizar que tenemos el ownerId del negocio
+      let ownerId = product.storeOwnerId;
+      if (!ownerId) {
+        const storeSnap = await getDoc(doc(firestore, 'stores', product.storeId));
+        ownerId = storeSnap.data()?.ownerId;
+      }
+
+      if (!ownerId) {
+        throw new Error("No se pudo identificar al dueño del negocio.");
+      }
       
       const orderData = {
         customerId: user.uid,
@@ -74,15 +83,15 @@ export default function ProductPage() {
 
       setOrderConfirmed(true);
       toast({ title: "¡Pedido Enviado!" });
-    } catch (e) {
-      toast({ title: "Error", variant: "destructive" });
+    } catch (e: any) {
+      toast({ title: "Error al solicitar", description: e.message || "Inténtalo de nuevo.", variant: "destructive" });
     } finally {
-      setIsOrdering(true); 
+      setIsOrdering(false); 
     }
   };
 
   if (isLoading) return (
-    <div className="flex flex-col min-h-screen"><Navbar /><div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin" /></div></div>
+    <div className="flex flex-col min-h-screen"><Navbar /><div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div></div>
   );
 
   return (
@@ -94,7 +103,9 @@ export default function ProductPage() {
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 bg-white rounded-[40px] overflow-hidden shadow-xl border border-white">
-          <div className="relative aspect-square"><Image src={product?.imageUrl || ''} alt={product?.name || ''} fill className="object-cover" /></div>
+          <div className="relative aspect-square">
+            {product?.imageUrl && <Image src={product.imageUrl} alt={product.name || 'Producto'} fill className="object-cover" />}
+          </div>
           <div className="p-8 flex flex-col">
             <Badge className="bg-primary/10 text-primary border-none uppercase text-[10px] font-black px-4 py-1 rounded-full w-fit mb-4">Vitriniando Pro</Badge>
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-tight mb-2">{product?.name}</h1>
@@ -107,7 +118,7 @@ export default function ProductPage() {
                 <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
                 <h3 className="text-2xl font-black text-green-900">¡Pedido Solicitado!</h3>
                 <p className="text-green-700 font-medium">El vendedor te contactará por WhatsApp en los próximos minutos.</p>
-                <Button asChild className="rounded-full w-full h-12"><Link href="/admin/orders">Ver mis Pedidos</Link></Button>
+                <Button asChild className="rounded-full w-full h-12 shadow-lg"><Link href="/admin/orders">Ver mis Pedidos</Link></Button>
               </div>
             ) : (
               <div className="mt-auto space-y-6">
@@ -116,15 +127,15 @@ export default function ProductPage() {
                   <Input type="tel" value={tempPhone} onChange={(e) => setTempPhone(e.target.value)} className="h-12 rounded-2xl bg-white border-none font-black" placeholder="Ej: 300 123 4567" />
                 </div>
                 <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
-                  <span className="font-black text-slate-400">CANTIDAD</span>
+                  <span className="font-black text-slate-400 text-xs">CANTIDAD</span>
                   <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))}><Minus /></Button>
+                    <Button variant="outline" size="icon" className="rounded-full h-10 w-10" onClick={() => setQuantity(Math.max(1, quantity - 1))}><Minus className="w-4 h-4" /></Button>
                     <span className="text-xl font-black">{quantity}</span>
-                    <Button variant="outline" size="icon" onClick={() => setQuantity(quantity + 1)}><Plus /></Button>
+                    <Button variant="outline" size="icon" className="rounded-full h-10 w-10" onClick={() => setQuantity(quantity + 1)}><Plus className="w-4 h-4" /></Button>
                   </div>
                 </div>
-                <Button onClick={handlePlaceOrder} className="w-full h-16 rounded-full text-xl font-black bg-primary shadow-xl gap-3">
-                  <ShoppingCart /> Solicitar Pedido
+                <Button onClick={handlePlaceOrder} disabled={isOrdering} className="w-full h-16 rounded-full text-xl font-black bg-primary shadow-xl gap-3">
+                  {isOrdering ? <Loader2 className="w-6 h-6 animate-spin" /> : <><ShoppingCart /> Solicitar Pedido</>}
                 </Button>
               </div>
             )}
