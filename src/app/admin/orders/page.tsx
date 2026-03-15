@@ -204,6 +204,9 @@ export default function OrdersManagementPage() {
               const isVenta = order.storeOwnerId === user?.uid;
               const dateStr = order.createdAt ? format(order.createdAt.toDate(), "d 'DE' MMMM, HH:mm", { locale: es }).toUpperCase() : 'Cargando...';
               
+              // Lógica de dirección real obligatoria
+              const addressToDisplay = order.customerAddress || "DIRECCIÓN NO DETECTADA (Definir en chat)";
+
               return (
                 <Card key={order.id} id={order.id} className="border-none rounded-[48px] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.1)] bg-white ring-1 ring-black/[0.03] transition-all">
                   <CardContent className="p-0">
@@ -239,7 +242,7 @@ export default function OrdersManagementPage() {
                       </div>
 
                       {/* Información de Participantes y Lugar */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-slate-50/50 p-6 rounded-[32px] border border-slate-100">
+                      <div className="grid grid-cols-1 gap-6 bg-slate-50/50 p-6 rounded-[32px] border border-slate-100">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-slate-400">
                             <UserIcon className="w-3.5 h-3.5" />
@@ -254,18 +257,23 @@ export default function OrdersManagementPage() {
                             <MapPin className="w-3.5 h-3.5" />
                             <span className="text-[9px] font-black uppercase tracking-[0.2em]">UBICACIÓN:</span>
                           </div>
-                          <p className="text-lg font-black text-slate-800 italic leading-tight">
-                            {order.customerPhone ? "Dirección Registrada" : "Por definir en chat"}
+                          <p className={cn("text-lg font-black italic leading-tight", !order.customerAddress ? "text-red-500 animate-pulse" : "text-slate-800")}>
+                            {addressToDisplay}
                           </p>
                         </div>
                       </div>
 
-                      {/* Bloque de Precio Sophisticado */}
-                      <div className="flex items-baseline gap-3">
+                      {/* Bloque de Precio Sophisticado - UNIDADES DEBAJO DEL PRECIO */}
+                      <div className="flex flex-col gap-1">
                         <span className="text-6xl font-black text-slate-900 tracking-tighter leading-none">
                           {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice)}
                         </span>
-                        <span className="text-sm font-black text-slate-300 italic">X{order.quantity}UN.</span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="h-0.5 w-4 bg-slate-200" />
+                          <span className="text-sm font-black text-slate-400 italic uppercase tracking-widest">
+                            X{order.quantity} UNIDADES SOLICITADAS
+                          </span>
+                        </div>
                       </div>
 
                       {/* Centro de Comunicaciones y Logística */}

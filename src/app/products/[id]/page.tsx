@@ -55,11 +55,15 @@ export default function ProductPage() {
       if (!ownerId) {
         throw new Error("No se pudo identificar al dueño del negocio.");
       }
+
+      // Obtener la dirección actual del perfil para estamparla en el pedido
+      const customerAddress = profile?.address || (profile?.addresses && profile.addresses[0]) || '';
       
       const orderData = {
         customerId: user.uid,
         customerName: profile?.displayName || user.displayName || 'Cliente',
         customerPhone: tempPhone,
+        customerAddress: customerAddress, // DIRECCIÓN REAL DETECTADA
         storeId: product.storeId,
         storeName: product.storeName,
         storeOwnerId: ownerId,
