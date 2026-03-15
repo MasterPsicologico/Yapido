@@ -26,7 +26,10 @@ import {
   ChevronRight,
   ArrowLeft,
   TrendingUp,
-  Wallet
+  Wallet,
+  ShieldCheck,
+  Hash,
+  ArrowUpRight
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -41,12 +44,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import Link from 'next/link';
 
 const STATUS_CONFIG = {
-  pending: { label: "PENDIENTE", color: "bg-orange-500", icon: Timer },
-  preparing: { label: "PREPARANDO", color: "bg-blue-500", icon: Package },
-  ready_for_pickup: { label: "LISTO PARA REPARTO", color: "bg-indigo-500", icon: CheckCircle2 },
-  shipped: { label: "EN REPARTO", color: "bg-purple-500", icon: Truck },
-  delivered: { label: "ENTREGADO", color: "bg-green-500", icon: CheckCircle2 },
-  cancelled: { label: "CANCELADO", color: "bg-red-500", icon: AlertTriangle }
+  pending: { label: "PENDIENTE", color: "text-orange-500", bg: "bg-orange-500/10", icon: Timer },
+  preparing: { label: "PREPARANDO", color: "text-blue-500", bg: "bg-blue-500/10", icon: Package },
+  ready_for_pickup: { label: "LISTO EN TIENDA", color: "text-indigo-500", bg: "bg-indigo-500/10", icon: CheckCircle2 },
+  shipped: { label: "EN REPARTO", color: "text-purple-500", bg: "bg-purple-500/10", icon: Truck },
+  delivered: { label: "ENTREGADO", color: "text-green-500", bg: "bg-green-500/10", icon: CheckCircle2 },
+  cancelled: { label: "CANCELADO", color: "text-red-500", bg: "bg-red-500/10", icon: AlertTriangle }
 };
 
 export default function OrdersManagementPage() {
@@ -59,21 +62,18 @@ export default function OrdersManagementPage() {
   const [showMyPurchases, setShowMyPurchases] = useState(false);
   const [selectedOrderForChat, setSelectedOrderForChat] = useState<any | null>(null);
 
-  // 1. Consultar tiendas propiedad del usuario
   const myStoresQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'stores'), where('ownerId', '==', user.uid));
   }, [firestore, user?.uid]);
   const { data: myStores, isLoading: storesLoading } = useCollection(myStoresQuery);
 
-  // 2. Consultar todas las órdenes donde participa
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid));
   }, [firestore, user?.uid]);
   const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
 
-  // 3. Procesar datos para las tarjetas de resumen de tiendas
   const storeSummaries = useMemo(() => {
     if (!myStores || !rawOrders) return [];
     return myStores.map(store => {
@@ -127,7 +127,6 @@ export default function OrdersManagementPage() {
     );
   }
 
-  // Vista Detallada de una Tienda o Mis Compras
   if (selectedStoreId || showMyPurchases) {
     const contextName = showMyPurchases ? "Mis Compras" : storeSummaries.find(s => s.id === selectedStoreId)?.name;
     const filteredOrders = rawOrders?.filter(o => {
@@ -156,14 +155,14 @@ export default function OrdersManagementPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">{contextName}</h1>
-                <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Control en Vivo</p>
+                <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">Gestión Detallada</p>
               </div>
             </div>
 
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input 
-                placeholder="Buscar cliente o producto..." 
+                placeholder="Buscar por cliente o producto..." 
                 className="pl-10 h-12 rounded-2xl border-none bg-white shadow-sm font-medium" 
                 value={searchTerm} 
                 onChange={(e) => setSearchTerm(e.target.value)} 
@@ -171,85 +170,130 @@ export default function OrdersManagementPage() {
             </div>
           </div>
 
-          <div className="grid gap-8">
+          <div className="grid gap-10">
             {filteredOrders && filteredOrders.length > 0 ? filteredOrders.map(order => {
               const status = STATUS_CONFIG[order.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
               const isVenta = order.storeOwnerId === user?.uid;
               const dateStr = order.createdAt ? format(order.createdAt.toDate(), "d 'DE' MMMM, HH:mm", { locale: es }).toUpperCase() : 'Cargando...';
               
               return (
-                <Card key={order.id} id={order.id} className="border-none rounded-[48px] overflow-hidden shadow-2xl bg-white">
-                  <CardContent className="p-8 space-y-6">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <Badge className={cn("text-white border-none rounded-full px-6 h-10 text-[10px] font-black uppercase tracking-widest", isVenta ? "bg-primary" : "bg-secondary")}>
-                        <Zap className="w-3.5 h-3.5 mr-2" />
-                        {isVenta ? "VENTA RECIBIDA" : "MI COMPRA"}
-                      </Badge>
-                      <Badge className={cn(status.color, "text-white border-none rounded-full px-6 h-10 text-[10px] font-black uppercase tracking-widest gap-2")}>
-                        <Clock className="w-3.5 h-3.5" /> {status.label}
-                      </Badge>
+                <Card key={order.id} id={order.id} className="border-none rounded-[48px] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.1)] bg-white ring-1 ring-black/[0.03]">
+                  <CardContent className="p-0">
+                    {/* Header de la Tarjeta */}
+                    <div className="bg-slate-50 px-8 py-4 flex items-center justify-between border-b">
+                      <div className="flex items-center gap-3">
+                        <Hash className="w-3 h-3 text-slate-300" />
+                        <span className="text-[10px] font-black text-slate-400 tracking-[0.2em]">{order.id.slice(-8).toUpperCase()}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3 h-3 text-slate-300" />
+                        <span className="text-[9px] font-black text-slate-400 tracking-widest">{dateStr}</span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-slate-50 w-fit px-5 py-2 rounded-full border border-slate-100">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{dateStr}</span>
-                    </div>
-
-                    <div className="space-y-5">
-                      <h3 className="text-[2.8rem] font-black text-slate-900 italic uppercase leading-none tracking-tighter">
-                        {order.productName}
-                      </h3>
-                      
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <UserIcon className="w-4.5 h-4.5 text-primary" />
-                          <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">CLIENTE: </span>
-                          <Link href={`/profile/${isVenta ? order.customerId : order.storeOwnerId}`} className="text-base font-black text-slate-800 hover:text-primary">{isVenta ? order.customerName : order.storeName}</Link>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <MapPin className="w-4.5 h-4.5 text-secondary" />
-                          <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">UBICACIÓN: </span>
-                          <span className="text-base font-black text-slate-800 italic">WhatsApp</span>
+                    <div className="p-8 space-y-8">
+                      {/* Estado y Rol */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Badge className={cn("text-white border-none rounded-full px-5 h-8 text-[9px] font-black uppercase tracking-widest", isVenta ? "bg-primary" : "bg-secondary")}>
+                          {isVenta ? "VENTA RECIBIDA" : "MI COMPRA"}
+                        </Badge>
+                        <div className={cn("flex items-center gap-2 px-4 h-8 rounded-full border", status.bg, status.color)}>
+                          <status.icon className="w-3 h-3" />
+                          <span className="text-[9px] font-black uppercase tracking-widest">{status.label}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-baseline gap-2 pt-2">
+                      {/* Título Principal */}
+                      <div className="space-y-2">
+                        <h3 className="text-[2.6rem] font-black text-slate-900 italic uppercase leading-[0.9] tracking-tighter">
+                          {order.productName}
+                        </h3>
+                      </div>
+
+                      {/* Información de Participantes y Lugar */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-slate-50/50 p-6 rounded-[32px] border border-slate-100">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-slate-400">
+                            <UserIcon className="w-3.5 h-3.5" />
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Cliente Final</span>
+                          </div>
+                          <Link href={`/profile/${isVenta ? order.customerId : order.storeOwnerId}`} className="text-lg font-black text-slate-800 hover:text-primary transition-colors block leading-tight">
+                            {isVenta ? order.customerName : order.storeName}
+                          </Link>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-slate-400">
+                            <MapPin className="w-3.5 h-3.5" />
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Punto de Entrega</span>
+                          </div>
+                          <p className="text-lg font-black text-slate-800 italic leading-tight">
+                            {order.customerPhone ? "Dirección Registrada" : "Por definir en chat"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Bloque de Precio */}
+                      <div className="flex items-baseline gap-3">
                         <span className="text-6xl font-black text-slate-900 tracking-tighter">
                           {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice)}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] italic">X{order.quantity}UN.</span>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Total Pago</span>
+                          <span className="text-[11px] font-bold text-slate-300 uppercase italic">X{order.quantity} UNIDADES</span>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="space-y-4 pt-4">
-                      {isVenta && order.status === 'pending' && (
-                        <Button onClick={() => handleUpdateStatus(order.id, 'preparing')} className="w-full h-16 rounded-full bg-primary font-black text-sm uppercase tracking-widest gap-3 shadow-xl">
-                          <Package className="w-6 h-6" /> PREPARAR
-                        </Button>
-                      )}
-                      {isVenta && order.status === 'preparing' && (
-                        <Button onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')} className="w-full h-16 rounded-full bg-indigo-600 font-black text-sm uppercase tracking-widest gap-3 shadow-xl">
-                          <CheckCircle2 className="w-6 h-6" /> LISTO EN TIENDA
-                        </Button>
-                      )}
-                      <Button onClick={() => handleWhatsAppChat(isVenta ? order.customerPhone : '', order.productName)} className="w-full h-18 rounded-full bg-[#22c55e] font-black text-lg uppercase tracking-widest gap-3 shadow-xl border-none">
-                        <MessageCircle className="w-7 h-7" /> CHAT CLIENTE
-                      </Button>
-                      <Button variant="ghost" onClick={() => setSelectedOrderForChat(order)} className="w-full h-10 rounded-full text-slate-300 font-black text-[9px] uppercase tracking-[0.3em] hover:bg-slate-50 transition-colors">
-                        CHAT INTERNO DE SOPORTE
-                      </Button>
+                      {/* Centro de Comunicaciones y Logística */}
+                      <div className="space-y-4 pt-2">
+                        {isVenta && (
+                          <>
+                            {order.status === 'pending' && (
+                              <Button onClick={() => handleUpdateStatus(order.id, 'preparing')} className="w-full h-16 rounded-[24px] bg-primary text-white font-black text-sm uppercase tracking-widest gap-3 shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all">
+                                <Package className="w-6 h-6" /> INICIAR PREPARACIÓN
+                              </Button>
+                            )}
+                            {order.status === 'preparing' && (
+                              <Button onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')} className="w-full h-16 rounded-[24px] bg-indigo-600 text-white font-black text-sm uppercase tracking-widest gap-3 shadow-xl shadow-indigo-600/20 hover:scale-[1.02] transition-all">
+                                <CheckCircle2 className="w-6 h-6" /> MARCAR COMO LISTO
+                              </Button>
+                            )}
+                          </>
+                        )}
+
+                        <div className="grid grid-cols-1 gap-3">
+                          <Button 
+                            onClick={() => handleWhatsAppChat(isVenta ? order.customerPhone : '', order.productName)} 
+                            className="w-full h-16 rounded-[24px] bg-[#22c55e] text-white font-black text-lg uppercase tracking-widest gap-3 shadow-xl shadow-green-500/20 border-none hover:bg-[#1eb34b] transition-all"
+                          >
+                            <MessageCircle className="w-7 h-7" /> CHAT CON CLIENTE
+                          </Button>
+                          
+                          <Button 
+                            onClick={() => setSelectedOrderForChat(order)} 
+                            className="w-full h-16 rounded-[24px] bg-slate-900 text-white font-black text-sm uppercase tracking-widest gap-3 shadow-2xl hover:bg-slate-800 transition-all border-none"
+                          >
+                            <ShieldCheck className="w-6 h-6 text-primary" /> CHAT INTERNO DE SOPORTE
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               );
             }) : (
-              <div className="py-20 text-center text-slate-300 font-bold uppercase tracking-widest italic">Sin pedidos en este historial</div>
+              <div className="py-20 text-center text-slate-300 font-bold uppercase tracking-widest italic bg-white rounded-[48px] border-2 border-dashed">
+                Sin pedidos en este historial
+              </div>
             )}
           </div>
         </main>
+        
         <Dialog open={!!selectedOrderForChat} onOpenChange={(v) => !v && setSelectedOrderForChat(null)}>
           <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-[450px]">
-            <DialogHeader className="sr-only"><DialogTitle>Chat</DialogTitle><DialogDescription>Conversación</DialogDescription></DialogHeader>
+            <DialogHeader className="sr-only">
+              <DialogTitle>Chat Interno</DialogTitle>
+              <DialogDescription>Soporte directo de Vitriniando</DialogDescription>
+            </DialogHeader>
             {selectedOrderForChat && <OrderChat orderId={selectedOrderForChat.id} orderData={selectedOrderForChat} onClose={() => setSelectedOrderForChat(null)} />}
           </DialogContent>
         </Dialog>
@@ -257,13 +301,12 @@ export default function OrdersManagementPage() {
     );
   }
 
-  // VISTA MAESTRA: Selector de Tiendas
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
         <div className="flex items-center gap-4 mb-10">
-          <div className="w-16 h-16 bg-primary rounded-[24px] flex items-center justify-center text-white shadow-2xl">
+          <div className="w-16 h-16 bg-primary rounded-[24px] flex items-center justify-center text-white shadow-2xl shadow-primary/20">
             <StoreIcon className="w-8 h-8" />
           </div>
           <div>
@@ -328,7 +371,6 @@ export default function OrdersManagementPage() {
             </Card>
           ))}
 
-          {/* Tarjeta de Mis Compras */}
           <Card 
             onClick={() => setShowMyPurchases(true)}
             className="border-none rounded-[40px] overflow-hidden shadow-md bg-slate-900 text-white hover:bg-slate-800 transition-all cursor-pointer group"
