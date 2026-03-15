@@ -95,34 +95,35 @@ export function StoreCard({ store }: { store: any }) {
 
   const StatusContent = (
     <div className={cn(
-      "flex items-center justify-between w-full py-3.5 px-5 rounded-[24px] border transition-all duration-500 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] bg-white",
+      "flex items-center justify-between w-full py-4 px-6 rounded-[32px] border transition-all duration-500 shadow-sm bg-white",
       statusInfo.bg,
       statusInfo.border,
       isAdmin && "hover:bg-slate-50 hover:shadow-xl cursor-pointer group/status active:scale-[0.98]"
     )}>
       <div className="flex items-center gap-4">
-          <div className={cn("w-9 h-9 rounded-full flex items-center justify-center bg-white shadow-md border border-slate-100 transition-transform group-hover/status:rotate-[10deg]", statusInfo.color)}>
-            <StatusIcon className="w-5 h-5" />
+          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md border border-slate-100 transition-transform group-hover/status:rotate-[10deg]", statusInfo.color)}>
+            <StatusIcon className="w-5.5 h-5.5" />
           </div>
           <div className="flex flex-col">
-            <span className={cn("text-[11px] font-black uppercase tracking-[0.15em] italic leading-none", statusInfo.color)}>
+            <span className={cn("text-[12px] font-black uppercase tracking-[0.15em] italic leading-none", statusInfo.color)}>
               {statusInfo.label}
             </span>
-            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Estatus Oficial</span>
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Estatus Oficial</span>
           </div>
       </div>
       {isAdmin ? (
         <ChevronDown className="w-4 h-4 text-slate-300 group-hover/status:text-primary transition-colors" />
       ) : (
-        <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center">
-          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-transform" />
+        <div className="w-9 h-9 rounded-full bg-white/50 flex items-center justify-center shadow-inner">
+          <ChevronRight className="w-4.5 h-4.5 text-slate-300 group-hover:translate-x-1 transition-transform" />
         </div>
       )}
     </div>
   );
 
   return (
-    <Card className="group flex flex-col h-full border-none rounded-[40px] shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] transition-all duration-700 bg-white overflow-hidden">
+    <Card className="group flex flex-col h-full border-none rounded-[48px] shadow-[0_15px_50px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.12)] transition-all duration-700 bg-white overflow-hidden">
+      {/* Mitad Superior: Identidad Visual (Se mantiene intacta) */}
       <Link href={`/stores/${store.id}`} className="block relative aspect-[16/11] w-full overflow-hidden bg-slate-50">
         <Image
           src={store.imageUrl || 'https://picsum.photos/seed/store/800/600'}
@@ -132,67 +133,65 @@ export function StoreCard({ store }: { store: any }) {
           data-ai-hint="store image"
         />
         
-        {/* Overlay Superior de Badges */}
-        <div className="absolute top-5 left-5 flex flex-col gap-2 z-20">
-          {store.isPro && (
-            <Badge className="bg-secondary text-white border-none text-[9px] h-6 px-3 rounded-full uppercase font-black tracking-widest shadow-2xl backdrop-blur-md">
-              PRO
-            </Badge>
-          )}
-          <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20 shadow-lg">
-            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-            <span className="text-[10px] font-black text-slate-900">4.9</span>
+        <div className="absolute top-6 left-6 flex flex-col gap-2 z-20">
+          <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-xl">
+            <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+            <span className="text-[11px] font-black text-slate-900">4.9</span>
           </div>
         </div>
 
-        {/* Gradiente de Contraste Inferior */}
         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/30 to-transparent z-10" />
 
-        {/* Información Dinámica sobre la Imagen */}
-        <div className="absolute bottom-6 left-6 right-6 z-20 text-white space-y-3">
-          <h3 className="text-3xl sm:text-4xl font-black text-white italic leading-[0.85] tracking-tighter uppercase drop-shadow-2xl break-words">
+        <div className="absolute bottom-8 left-8 right-8 z-20 text-white space-y-4">
+          <h3 className="text-4xl sm:text-5xl font-black text-white italic leading-[0.8] tracking-tighter uppercase drop-shadow-2xl break-words">
             {store.name}
           </h3>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 opacity-90 max-w-[75%]">
-              <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">
-                <MapPin className="w-3 h-3 text-white" />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5 opacity-90 max-w-[70%]">
+              <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0 shadow-lg">
+                <MapPin className="w-3.5 h-3.5 text-white" />
               </div>
-              <span className="text-[11px] font-black uppercase tracking-[0.1em] truncate">{store.address || 'Aguachica'}</span>
+              <span className="text-[12px] font-black uppercase tracking-[0.1em] truncate">{store.address || 'Aguachica'}</span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10">
-              <Clock className="w-3.5 h-3.5 text-secondary animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-tighter">15 MIN</span>
+            <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 shadow-inner">
+              <Clock className="w-4 h-4 text-secondary animate-pulse" />
+              <span className="text-[11px] font-black uppercase tracking-tighter">15 MIN</span>
             </div>
           </div>
         </div>
       </Link>
 
-      <CardContent className="p-8 flex flex-col flex-1 space-y-8 bg-gradient-to-b from-white to-slate-50/30">
+      {/* Mitad Inferior: REESTRUCTURADA PREMIUM */}
+      <CardContent className="p-10 flex flex-col flex-1 space-y-10 bg-white">
         
-        {/* Sección de Mensaje de Marca */}
-        <div className="relative">
-          <div className="absolute -left-4 top-0 w-1 h-full bg-primary/20 rounded-full" />
-          <p className="text-[13px] text-slate-500 leading-[1.6] font-medium italic pl-2 pr-4">
-            "{store.description || 'Explora lo mejor de nuestra vitrina digital en un espacio diseñado para tu comodidad.'}"
-          </p>
-        </div>
+        {/* Sección de Mensaje de Marca Personalizado */}
+        {store.description && (
+          <div className="relative group/desc">
+            <div className="absolute -left-5 top-0 w-1.5 h-full bg-primary/10 rounded-full group-hover/desc:bg-primary/30 transition-colors" />
+            <p className="text-[15px] text-slate-600 leading-[1.7] font-medium italic pl-3 pr-2 break-words">
+              "{store.description}"
+            </p>
+          </div>
+        )}
 
-        {/* Sistema de Atributos en Grid Técnico */}
-        <div className="space-y-4">
+        {/* Sistema de Atributos Jewel-Case */}
+        <div className="space-y-5">
           <div className="flex items-center justify-between px-1">
-            <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-300">Atributos Destacados</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">Atributos de Valor</h4>
             {isAdmin && activeBadgeIds.length < 4 && (
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button 
                     size="icon" 
-                    className="h-7 w-7 rounded-full bg-slate-900 text-white hover:bg-primary transition-all active:scale-90 border-none shadow-lg"
+                    className="h-8 w-8 rounded-full bg-slate-900 text-white hover:bg-primary transition-all active:scale-90 border-none shadow-xl"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4.5 h-4.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-60 rounded-[28px] p-2 shadow-2xl border-none bg-white/95 backdrop-blur-xl ring-1 ring-black/5 z-[100]">
+                <DropdownMenuContent align="end" className="w-64 rounded-[32px] p-3 shadow-2xl border-none bg-white ring-1 ring-black/5 z-[100]">
+                  <div className="px-4 py-2 mb-2 border-b">
+                    <h5 className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Distintivos VIP</h5>
+                  </div>
                   {(Object.keys(VALUE_BADGES_CONFIG) as BadgeKey[])
                     .filter(key => !activeBadgeIds.includes(key))
                     .map((key) => {
@@ -201,12 +200,12 @@ export function StoreCard({ store }: { store: any }) {
                         <DropdownMenuItem 
                           key={key} 
                           onClick={() => handleAddBadge(key)}
-                          className="flex items-center gap-3 p-3 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all mb-1"
+                          className="flex items-center gap-4 p-3.5 rounded-2xl cursor-pointer hover:bg-slate-50 transition-all mb-1"
                         >
-                          <div className={cn("w-9 h-9 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-50", item.color)}>
-                            <item.icon className="w-5 h-5" />
+                          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-50", item.color)}>
+                            <item.icon className="w-5.5 h-5.5" />
                           </div>
-                          <span className="text-[11px] font-black uppercase tracking-widest text-slate-600">{item.label}</span>
+                          <span className="text-[12px] font-black uppercase tracking-widest text-slate-600">{item.label}</span>
                         </DropdownMenuItem>
                       );
                   })}
@@ -215,7 +214,7 @@ export function StoreCard({ store }: { store: any }) {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 gap-3">
             {activeBadgeIds.length > 0 ? activeBadgeIds.map((id) => {
               const badge = VALUE_BADGES_CONFIG[id];
               if (!badge) return null;
@@ -223,47 +222,48 @@ export function StoreCard({ store }: { store: any }) {
                 <div 
                   key={id} 
                   className={cn(
-                    "flex items-center justify-between pl-3 pr-2 h-11 rounded-[18px] border transition-all duration-300 bg-white group/badge hover:shadow-md",
+                    "flex items-center justify-between pl-4 pr-3 h-14 rounded-[22px] border transition-all duration-500 bg-white group/badge hover:shadow-lg hover:scale-[1.02]",
                     badge.bg,
                     badge.border
                   )}
                 >
-                   <div className="flex items-center gap-3">
-                     <badge.icon className={cn("w-4.5 h-4.5", badge.color, badge.animate && "animate-pulse")} />
-                     <span className={cn("text-[9px] font-black uppercase tracking-[0.1em]", badge.color)}>
+                   <div className="flex items-center gap-4">
+                     <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-sm">
+                        <badge.icon className={cn("w-5 h-5", badge.color, badge.animate && "animate-pulse")} />
+                     </div>
+                     <span className={cn("text-[11px] font-black uppercase tracking-[0.2em] italic", badge.color)}>
                       {badge.label}
                      </span>
                    </div>
                    {isAdmin && (
                      <button 
                        onClick={(e) => { e.preventDefault(); handleRemoveBadge(id); }}
-                       className="w-7 h-7 flex items-center justify-center hover:bg-red-100 rounded-full transition-colors text-red-400 hover:text-red-600"
+                       className="w-8 h-8 flex items-center justify-center hover:bg-red-500 hover:text-white rounded-full transition-all text-red-300 shadow-sm"
                      >
-                       <Trash2 className="w-3.5 h-3.5" />
+                       <Trash2 className="w-4 h-4" />
                      </button>
                    )}
                 </div>
               );
             }) : (
-              <div className="col-span-full py-6 flex flex-col items-center justify-center bg-slate-50/50 rounded-[24px] border-2 border-dashed border-slate-100">
-                <Sparkles className="w-6 h-6 text-slate-200 mb-2" />
-                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest italic">Personaliza tu vitrina</span>
+              <div className="py-10 flex flex-col items-center justify-center bg-slate-50/40 rounded-[32px] border-2 border-dashed border-slate-100">
+                <Sparkles className="w-8 h-8 text-slate-200 mb-3" />
+                <span className="text-[11px] font-bold text-slate-300 uppercase tracking-[0.3em] italic">Catálogo en proceso</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Estatus Maestro - La Bóveda Final */}
-        <div className="mt-auto pt-4 relative">
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-12 h-1 bg-slate-100 rounded-full" />
+        {/* Estatus Maestro - La Bóveda de Cierre */}
+        <div className="mt-auto pt-6 relative border-t border-slate-50">
           {isAdmin ? (
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 {StatusContent}
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-72 rounded-[32px] p-3 shadow-2xl border-none bg-white ring-1 ring-black/5 z-[100] mt-2">
-                <div className="px-4 py-2 mb-2">
-                  <h5 className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em]">Nivel de Verificación</h5>
+              <DropdownMenuContent align="center" className="w-80 rounded-[40px] p-4 shadow-2xl border-none bg-white ring-1 ring-black/5 z-[100] mt-4">
+                <div className="px-5 py-3 mb-3">
+                  <h5 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em]">Jerarquía de Vitrina</h5>
                 </div>
                 {(Object.keys(STATUS_MAP) as StatusKey[]).map((key) => {
                   const item = STATUS_MAP[key];
@@ -273,18 +273,18 @@ export function StoreCard({ store }: { store: any }) {
                       key={key} 
                       onClick={() => handleStatusChange(key)}
                       className={cn(
-                        "flex items-center gap-4 p-3.5 rounded-[22px] cursor-pointer transition-all mb-1.5",
-                        currentStatusKey === key ? "bg-slate-50 border-primary/10 border" : "hover:bg-slate-50"
+                        "flex items-center gap-5 p-4 rounded-[28px] cursor-pointer transition-all mb-2",
+                        currentStatusKey === key ? "bg-slate-50 border-primary/10 border shadow-inner" : "hover:bg-slate-50"
                       )}
                     >
-                      <div className={cn("w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-100", item.color)}>
-                        <ItemIcon className="w-5 h-5" />
+                      <div className={cn("w-11 h-11 rounded-full flex items-center justify-center bg-white shadow-md border border-slate-100", item.color)}>
+                        <ItemIcon className="w-6 h-6" />
                       </div>
                       <div className="flex flex-col">
-                        <span className={cn("text-[11px] font-black uppercase tracking-widest", currentStatusKey === key ? item.color : "text-slate-600")}>
+                        <span className={cn("text-[12px] font-black uppercase tracking-widest", currentStatusKey === key ? item.color : "text-slate-600")}>
                           {item.label}
                         </span>
-                        {currentStatusKey === key && <span className="text-[8px] text-primary font-bold uppercase mt-0.5">Activo ahora</span>}
+                        {currentStatusKey === key && <span className="text-[9px] text-primary font-black uppercase mt-1 tracking-tighter italic">ACTIVO</span>}
                       </div>
                     </DropdownMenuItem>
                   );
