@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, serverTimestamp, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -14,7 +14,8 @@ import {
   MessageCircle, 
   User as UserIcon,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -39,11 +40,12 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Emitir evento de "chat abierto" para detener alarmas de notificación
   useEffect(() => {
     if (orderId) {
       window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId } }));
@@ -57,22 +59,58 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
 
   const { data: messages, isLoading: loadingMessages } = useCollection(messagesQuery);
 
-  // Auto-scroll QUIRÚRGICO al final de los mensajes
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
-    // Scroll inmediato cuando cargan los mensajes o llega uno nuevo
     scrollToBottom();
   }, [messages, isSending]);
 
-  // Manejar la conexión del stream al elemento video una vez montado
   useEffect(() => {
     if (isCameraOpen && stream && videoRef.current) {
       videoRef.current.srcObject = stream;
     }
   }, [isCameraOpen, stream]);
+
+  // LÓGICA ESPECIALISTA: Detección inteligente de direcciones en el chat
+  const handleSmartAddressSync = (messageText: string) => {
+    if (!firestore || !orderId) return;
+
+    const keywords = ['calle', 'carrera', 'diagonal', 'transversal', 'avenida', 'cll', 'cra', 'dg', 'tr', 'av', 'barrio', 'manzana', 'casa', 'apto', '#'];
+    const lowerText = messageText.toLowerCase();
+    
+    // Si el mensaje tiene palabras clave de dirección y al menos un número, es una dirección probable
+    const isLikelyAddress = keywords.some(k => lowerText.includes(k)) && /\d/.test(messageText);
+
+    if (isLikelyAddress) {
+      setIsAutoSyncing(true);
+      const orderRef = doc(firestore, 'orders', orderId);
+      
+      // Actualizar el pedido instantáneamente
+      updateDocumentNonBlocking(orderRef, { 
+        customerAddress: messageText.trim(),
+        updatedAt: serverTimestamp() 
+      });
+
+      // Actualizar el perfil del cliente para futuras compras (Sincronización Total)
+      if (orderData.customerId) {
+        const userRef = doc(firestore, 'users', orderData.customerId);
+        updateDocumentNonBlocking(userRef, { 
+          address: messageText.trim(),
+          updatedAt: serverTimestamp() 
+        });
+      }
+
+      toast({ 
+        title: "¡Inteligencia Logística Activa!", 
+        description: "He detectado una dirección y la he guardado en el pedido.",
+        className: "bg-green-600 text-white border-none"
+      });
+
+      setTimeout(() => setIsAutoSyncing(false), 2000);
+    }
+  };
 
   const handleSendMessage = async (payload: { text?: string; imageUrl?: string; type: 'text' | 'image' }) => {
     if (!user || !firestore || (!payload.text && !payload.imageUrl)) return;
@@ -88,8 +126,13 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
         type: payload.type,
         createdAt: serverTimestamp(),
       });
+
+      // Si es un mensaje de texto, intentar sincronizar dirección automáticamente
+      if (payload.type === 'text' && payload.text) {
+        handleSmartAddressSync(payload.text);
+      }
+
       setText('');
-      // Forzar scroll después de enviar
       setTimeout(scrollToBottom, 100);
     } catch (e) {
       toast({ title: "Error al enviar", variant: "destructive" });
@@ -152,7 +195,6 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
     }
   };
 
-  // Limpiar stream al desmontar el componente
   useEffect(() => {
     return () => {
       if (stream) {
@@ -174,11 +216,19 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Orden: #{orderId.slice(-6)}</p>
           </div>
         </div>
-        {onClose && (
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/10 rounded-full">
-            <X className="w-5 h-5" />
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {isAutoSyncing && (
+            <div className="flex items-center gap-1.5 bg-green-500/20 px-3 py-1 rounded-full animate-pulse">
+              <RefreshCw className="w-3 h-3 text-green-400 animate-spin" />
+              <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Sincronizando Datos</span>
+            </div>
+          )}
+          {onClose && (
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/10 rounded-full">
+              <X className="w-5 h-5" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Messages Area */}
@@ -214,7 +264,6 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
               </div>
             );
           })}
-          {/* El Ancla Invisible para el Scroll */}
           <div ref={messagesEndRef} className="h-2 w-full" />
         </div>
       </ScrollArea>
