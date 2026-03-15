@@ -23,7 +23,6 @@ export function MessageCenter() {
   const firestore = useFirestore();
   const [unreadSessionOrders, setUnreadSessionOrders] = useState<[string, string][]>([]);
 
-  // 1. Escuchamos notificaciones efímeras de la sesión (mensajes nuevos que acaban de llegar)
   useEffect(() => {
     const handleSync = (e: any) => {
       if (e.detail && e.detail.unreadMap) {
@@ -36,7 +35,6 @@ export function MessageCenter() {
     return () => window.removeEventListener('unread-messages-sync' as any, handleSync);
   }, []);
 
-  // 2. Cargamos todos los chats activos (pedidos no finalizados) para que estén "siempre presentes"
   const activeChatsQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
@@ -54,7 +52,6 @@ export function MessageCenter() {
       .map(o => ({ id: o.id, name: o.productName || 'Chat de Pedido' }));
   }, [rawOrders]);
 
-  // Consolidamos para el conteo: Prioridad a los no leídos de la sesión, pero mostramos todos los activos.
   const count = unreadSessionOrders.length || activeChats.length;
 
   return (
@@ -77,19 +74,21 @@ export function MessageCenter() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-slate-50" />
-        <div className="max-h-[350px] overflow-y-auto p-1 space-y-1 no-scrollbar">
+        <div className="max-h-[350px] overflow-y-auto p-1 space-y-2 no-scrollbar">
           {activeChats.length > 0 ? activeChats.map((chat) => {
             const isUnread = unreadSessionOrders.some(([id]) => id === chat.id);
             return (
-              <DropdownMenuItem key={chat.id} asChild className="rounded-2xl p-3 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all">
-                <Link href={`/admin/orders#${chat.id}`} className="flex items-center gap-3">
-                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm", isUnread ? "bg-secondary text-white" : "bg-secondary/10 text-secondary")}>
-                    <UserIcon className="w-5 h-5" />
+              <DropdownMenuItem key={chat.id} asChild className="rounded-2xl p-3.5 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all hover:scale-[1.02]">
+                <Link href={`/admin/orders#${chat.id}`} className="flex items-start gap-4">
+                  <div className={cn("w-11 h-11 rounded-full flex items-center justify-center shrink-0 shadow-sm", isUnread ? "bg-secondary text-white" : "bg-secondary/10 text-secondary")}>
+                    <UserIcon className="w-5.5 h-5.5" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-black uppercase tracking-tight text-slate-900 truncate leading-none mb-1">{chat.name}</p>
-                    <p className={cn("text-[9px] font-bold uppercase tracking-widest italic", isUnread ? "text-secondary animate-pulse" : "text-slate-300")}>
-                      {isUnread ? "Mensaje nuevo..." : "Conversación activa"}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-400 leading-none">
+                      {isUnread ? "¡Mensaje Nuevo!" : "Historial de Chat"}
+                    </p>
+                    <p className="text-[15px] font-black text-slate-900 leading-tight italic uppercase tracking-tighter truncate">
+                      {chat.name}
                     </p>
                   </div>
                 </Link>

@@ -24,7 +24,6 @@ export function ActivityCenter() {
   const { profile, isLoading: profileLoading } = useProfile();
   const firestore = useFirestore();
 
-  // CONSULTA PROTEGIDA: Sincronizada con el arreglo 'participants'
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || profileLoading) return null;
     return query(
@@ -38,7 +37,6 @@ export function ActivityCenter() {
   const activities = useMemo(() => {
     if (!rawOrders || !user) return [];
 
-    // Ordenar en memoria por fecha de creación descendente
     const orders = [...rawOrders].sort((a, b) => {
       const tA = a.createdAt?.toMillis?.() || 0;
       const tB = b.createdAt?.toMillis?.() || 0;
@@ -46,14 +44,11 @@ export function ActivityCenter() {
     });
 
     return orders.map(order => {
-      // Solo mostrar órdenes que no han finalizado (activas)
       if (order.status === 'delivered' || order.status === 'cancelled') return null;
 
       let task = null;
 
-      // LÓGICA DE VISIBILIDAD BASADA EN ROL Y ESTADO
       if (order.storeOwnerId === user.uid) {
-        // Vendedor: Ver todo el ciclo de su venta
         if (order.status === 'pending') {
           task = { label: "Venta: Nuevo Pedido", desc: order.productName, icon: Zap, color: "text-orange-500", bg: "bg-orange-50" };
         } else if (order.status === 'preparing') {
@@ -65,13 +60,11 @@ export function ActivityCenter() {
         }
       } 
       else if (order.deliveryDriverId === user.uid) {
-        // Repartidor Asignado: Ver su ruta actual
         if (order.status === 'shipped') {
           task = { label: "Ruta: Entrega en Curso", desc: order.productName, icon: Navigation, color: "text-secondary", bg: "bg-secondary/10" };
         }
       }
       else if (order.customerId === user.uid) {
-        // Cliente: Ver el progreso de su compra
         if (order.status === 'shipped') {
           task = { label: "Compra: Confirmar Entrega", desc: order.productName, icon: Package, color: "text-blue-500", bg: "bg-blue-50" };
         } else {
@@ -79,7 +72,6 @@ export function ActivityCenter() {
         }
       }
       
-      // Caso especial: Repartidor viendo rutas públicas
       if (!task && profile?.role === 'repartidor' && order.status === 'ready_for_pickup' && !order.deliveryDriverId) {
         task = { label: "Ruta: Disponible ahora", desc: order.productName, icon: Truck, color: "text-green-500", bg: "bg-green-50" };
       }
@@ -113,18 +105,20 @@ export function ActivityCenter() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-slate-50" />
-        <div className="max-h-[350px] overflow-y-auto p-1 space-y-1 no-scrollbar">
+        <div className="max-h-[350px] overflow-y-auto p-1 space-y-2 no-scrollbar">
           {activities.length > 0 ? activities.map((act, i) => {
             const Icon = act!.icon;
             return (
-              <DropdownMenuItem key={i} asChild className="rounded-2xl p-3 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all">
-                <Link href={`/admin/orders#${act!.orderId}`} className="flex items-start gap-3">
-                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm", act!.bg, act!.color)}>
-                    <Icon className="w-5 h-5" />
+              <DropdownMenuItem key={i} asChild className="rounded-2xl p-3.5 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all hover:scale-[1.02]">
+                <Link href={`/admin/orders#${act!.orderId}`} className="flex items-start gap-4">
+                  <div className={cn("w-11 h-11 rounded-full flex items-center justify-center shrink-0 shadow-sm", act!.bg, act!.color)}>
+                    <Icon className="w-5.5 h-5.5" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-black uppercase tracking-tight text-slate-900 leading-none mb-1">{act!.label}</p>
-                    <p className="text-[10px] font-bold text-slate-400 truncate">{act!.desc}</p>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-400 leading-none">{act!.label}</p>
+                    <p className="text-[15px] font-black text-slate-900 leading-tight italic uppercase tracking-tighter truncate">
+                      {act!.desc}
+                    </p>
                   </div>
                 </Link>
               </DropdownMenuItem>

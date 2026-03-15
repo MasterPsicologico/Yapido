@@ -44,12 +44,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import Link from 'next/link';
 
 const STATUS_CONFIG = {
-  pending: { label: "PENDIENTE", color: "text-orange-500", bg: "bg-orange-500/10", icon: Timer },
-  preparing: { label: "PREPARANDO", color: "text-blue-500", bg: "bg-blue-500/10", icon: Package },
-  ready_for_pickup: { label: "LISTO EN TIENDA", color: "text-indigo-500", bg: "bg-indigo-500/10", icon: CheckCircle2 },
-  shipped: { label: "EN REPARTO", color: "text-purple-500", bg: "bg-purple-500/10", icon: Truck },
-  delivered: { label: "ENTREGADO", color: "text-green-500", bg: "bg-green-500/10", icon: CheckCircle2 },
-  cancelled: { label: "CANCELADO", color: "text-red-500", bg: "bg-red-500/10", icon: AlertTriangle }
+  pending: { label: "PENDIENTE", color: "text-orange-500", bg: "bg-orange-50", border: "border-orange-100", icon: Timer },
+  preparing: { label: "PREPARANDO", color: "text-blue-500", bg: "bg-blue-50", border: "border-blue-100", icon: Package },
+  ready_for_pickup: { label: "LISTO EN TIENDA", color: "text-indigo-500", bg: "bg-indigo-50", border: "border-indigo-100", icon: CheckCircle2 },
+  shipped: { label: "EN REPARTO", color: "text-purple-500", bg: "bg-purple-50", border: "border-purple-100", icon: Truck },
+  delivered: { label: "ENTREGADO", color: "text-green-500", bg: "bg-green-50", border: "border-green-100", icon: CheckCircle2 },
+  cancelled: { label: "CANCELADO", color: "text-red-500", bg: "bg-red-50", border: "border-red-100", icon: AlertTriangle }
 };
 
 export default function OrdersManagementPage() {
@@ -73,6 +73,34 @@ export default function OrdersManagementPage() {
     return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid));
   }, [firestore, user?.uid]);
   const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
+
+  // SISTEMA DE ENRUTAMIENTO PROFUNDO: Detecta el hash en la URL para abrir el negocio correcto
+  useEffect(() => {
+    const handleDeepLinking = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && rawOrders && rawOrders.length > 0) {
+        const targetOrder = rawOrders.find(o => o.id === hash);
+        if (targetOrder) {
+          if (targetOrder.customerId === user?.uid && targetOrder.storeOwnerId !== user?.uid) {
+            setShowMyPurchases(true);
+            setSelectedStoreId(null);
+          } else {
+            setSelectedStoreId(targetOrder.storeId);
+            setShowMyPurchases(false);
+          }
+          // Scroll suave hacia la tarjeta después de un breve delay para permitir el renderizado
+          setTimeout(() => {
+            const el = document.getElementById(hash);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 300);
+        }
+      }
+    };
+
+    if (!ordersLoading) handleDeepLinking();
+    window.addEventListener('hashchange', handleDeepLinking);
+    return () => window.removeEventListener('hashchange', handleDeepLinking);
+  }, [rawOrders, ordersLoading, user?.uid]);
 
   const storeSummaries = useMemo(() => {
     if (!myStores || !rawOrders) return [];
@@ -143,7 +171,7 @@ export default function OrdersManagementPage() {
           <div className="flex flex-col gap-6 mb-10">
             <Button 
               variant="ghost" 
-              onClick={() => { setSelectedStoreId(null); setShowMyPurchases(false); }}
+              onClick={() => { setSelectedStoreId(null); setShowMyPurchases(false); window.location.hash = ''; }}
               className="w-fit gap-2 text-slate-400 font-bold hover:text-primary p-0 h-auto"
             >
               <ArrowLeft className="w-4 h-4" /> Volver a mis Vitrinas
@@ -177,7 +205,7 @@ export default function OrdersManagementPage() {
               const dateStr = order.createdAt ? format(order.createdAt.toDate(), "d 'DE' MMMM, HH:mm", { locale: es }).toUpperCase() : 'Cargando...';
               
               return (
-                <Card key={order.id} id={order.id} className="border-none rounded-[48px] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.1)] bg-white ring-1 ring-black/[0.03]">
+                <Card key={order.id} id={order.id} className="border-none rounded-[48px] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.1)] bg-white ring-1 ring-black/[0.03] transition-all">
                   <CardContent className="p-0">
                     {/* Header de la Tarjeta */}
                     <div className="bg-slate-50 px-8 py-4 flex items-center justify-between border-b">
@@ -197,15 +225,15 @@ export default function OrdersManagementPage() {
                         <Badge className={cn("text-white border-none rounded-full px-5 h-8 text-[9px] font-black uppercase tracking-widest", isVenta ? "bg-primary" : "bg-secondary")}>
                           {isVenta ? "VENTA RECIBIDA" : "MI COMPRA"}
                         </Badge>
-                        <div className={cn("flex items-center gap-2 px-4 h-8 rounded-full border", status.bg, status.color)}>
+                        <div className={cn("flex items-center gap-2 px-4 h-8 rounded-full border", status.bg, status.color, status.border)}>
                           <status.icon className="w-3 h-3" />
                           <span className="text-[9px] font-black uppercase tracking-widest">{status.label}</span>
                         </div>
                       </div>
 
-                      {/* Título Principal */}
+                      {/* Título Principal - PRODUCTO PROMINENTE */}
                       <div className="space-y-2">
-                        <h3 className="text-[2.6rem] font-black text-slate-900 italic uppercase leading-[0.9] tracking-tighter">
+                        <h3 className="text-[2.8rem] font-black text-slate-900 italic uppercase leading-[0.85] tracking-tighter">
                           {order.productName}
                         </h3>
                       </div>
@@ -215,7 +243,7 @@ export default function OrdersManagementPage() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-slate-400">
                             <UserIcon className="w-3.5 h-3.5" />
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Cliente Final</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">CLIENTE:</span>
                           </div>
                           <Link href={`/profile/${isVenta ? order.customerId : order.storeOwnerId}`} className="text-lg font-black text-slate-800 hover:text-primary transition-colors block leading-tight">
                             {isVenta ? order.customerName : order.storeName}
@@ -224,7 +252,7 @@ export default function OrdersManagementPage() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-slate-400">
                             <MapPin className="w-3.5 h-3.5" />
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Punto de Entrega</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">UBICACIÓN:</span>
                           </div>
                           <p className="text-lg font-black text-slate-800 italic leading-tight">
                             {order.customerPhone ? "Dirección Registrada" : "Por definir en chat"}
@@ -232,15 +260,12 @@ export default function OrdersManagementPage() {
                         </div>
                       </div>
 
-                      {/* Bloque de Precio */}
+                      {/* Bloque de Precio Sophisticado */}
                       <div className="flex items-baseline gap-3">
-                        <span className="text-6xl font-black text-slate-900 tracking-tighter">
+                        <span className="text-6xl font-black text-slate-900 tracking-tighter leading-none">
                           {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice)}
                         </span>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Total Pago</span>
-                          <span className="text-[11px] font-bold text-slate-300 uppercase italic">X{order.quantity} UNIDADES</span>
-                        </div>
+                        <span className="text-sm font-black text-slate-300 italic">X{order.quantity}UN.</span>
                       </div>
 
                       {/* Centro de Comunicaciones y Logística */}
@@ -265,14 +290,14 @@ export default function OrdersManagementPage() {
                             onClick={() => handleWhatsAppChat(isVenta ? order.customerPhone : '', order.productName)} 
                             className="w-full h-16 rounded-[24px] bg-[#22c55e] text-white font-black text-lg uppercase tracking-widest gap-3 shadow-xl shadow-green-500/20 border-none hover:bg-[#1eb34b] transition-all"
                           >
-                            <MessageCircle className="w-7 h-7" /> CHAT CON CLIENTE
+                            <MessageCircle className="w-7 h-7" /> CHAT CLIENTE
                           </Button>
                           
                           <Button 
                             onClick={() => setSelectedOrderForChat(order)} 
-                            className="w-full h-16 rounded-[24px] bg-slate-900 text-white font-black text-sm uppercase tracking-widest gap-3 shadow-2xl hover:bg-slate-800 transition-all border-none"
+                            className="w-full h-12 rounded-[20px] bg-slate-900 text-white font-black text-[10px] uppercase tracking-[0.3em] gap-2 shadow-2xl hover:bg-slate-800 transition-all border-none"
                           >
-                            <ShieldCheck className="w-6 h-6 text-primary" /> CHAT INTERNO DE SOPORTE
+                            <ShieldCheck className="w-4 h-4 text-primary" /> CHAT INTERNO DE SOPORTE
                           </Button>
                         </div>
                       </div>
