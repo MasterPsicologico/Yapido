@@ -33,11 +33,12 @@ import {
   Edit3,
   Map as MapIcon,
   Save,
-  Sparkles
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { format, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
@@ -69,6 +70,7 @@ export default function OrdersManagementPage() {
   const [addressUpdateOrder, setAddressUpdateOrder] = useState<any | null>(null);
   const [newAddressValue, setNewAddressValue] = useState("");
   const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [customerSuggestions, setCustomerSuggestions] = useState<string[]>([]);
 
   const myStoresQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -130,6 +132,25 @@ export default function OrdersManagementPage() {
     return rawOrders.filter(o => o.customerId === user.uid).length;
   }, [rawOrders, user]);
 
+  const handleOpenAddressEditor = async (order: any) => {
+    setAddressUpdateOrder(order);
+    setNewAddressValue(order.customerAddress || "");
+    setCustomerSuggestions([]);
+    
+    // FETCH INTELIGENTE: Obtener direcciones registradas del cliente para sugerencias
+    if (firestore && order.customerId) {
+      try {
+        const userRef = doc(firestore, 'users', order.customerId);
+        const snap = await getDoc(userRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          const addrs = data.addresses || (data.address ? [data.address] : []);
+          setCustomerSuggestions(addrs);
+        }
+      } catch (e) {}
+    }
+  };
+
   const handleUpdateStatus = (orderId: string, newStatus: string) => {
     if (!firestore) return;
     const orderRef = doc(firestore, 'orders', orderId);
@@ -150,14 +171,14 @@ export default function OrdersManagementPage() {
         updatedAt: serverTimestamp() 
       });
 
-      // 2. Actualizar el perfil del usuario para el futuro
+      // 2. Actualizar el perfil del usuario para el futuro (Sincronización Total)
       const userRef = doc(firestore, 'users', addressUpdateOrder.customerId);
       updateDocumentNonBlocking(userRef, { 
         address: newAddressValue.trim(),
         updatedAt: serverTimestamp() 
       });
 
-      toast({ title: "¡Ubicación Sincronizada!", description: "Dirección actualizada en el pedido y perfil." });
+      toast({ title: "¡Ubicación Corregida!", description: "Sincronizada en el pedido y perfil del cliente." });
       setAddressUpdateOrder(null);
       setNewAddressValue("");
     } catch (e) {
@@ -223,9 +244,9 @@ export default function OrdersManagementPage() {
 
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input 
+              <input 
                 placeholder="Buscar por cliente o producto..." 
-                className="pl-10 h-12 rounded-2xl border-none bg-white shadow-sm font-medium" 
+                className="w-full pl-10 h-12 rounded-2xl border-none bg-white shadow-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none" 
                 value={searchTerm} 
                 onChange={(e) => setSearchTerm(e.target.value)} 
               />
@@ -290,7 +311,7 @@ export default function OrdersManagementPage() {
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              onClick={() => { setAddressUpdateOrder(order); setNewAddressValue(order.customerAddress || ""); }}
+                              onClick={() => handleOpenAddressEditor(order)}
                               className="h-8 w-8 rounded-full bg-white shadow-sm border opacity-0 group-hover/addr:opacity-100 transition-opacity"
                             >
                               <Edit3 className="w-3.5 h-3.5 text-primary" />
@@ -301,7 +322,7 @@ export default function OrdersManagementPage() {
                               "text-lg font-black italic leading-tight transition-colors cursor-pointer", 
                               !order.customerAddress ? "text-red-500 animate-pulse" : "text-slate-800 hover:text-primary"
                             )}
-                            onClick={() => { setAddressUpdateOrder(order); setNewAddressValue(order.customerAddress || ""); }}
+                            onClick={() => handleOpenAddressEditor(order)}
                           >
                             {addressToDisplay}
                           </p>
@@ -364,19 +385,44 @@ export default function OrdersManagementPage() {
           </div>
         </main>
         
-        {/* DIÁLOGO DE PARCHE DE DIRECCIÓN (Resolución Instantánea) */}
+        {/* DIÁLOGO DE PARCHE DE DIRECCIÓN (Resolución Inteligente) */}
         <Dialog open={!!addressUpdateOrder} onOpenChange={(v) => !v && setAddressUpdateOrder(null)}>
           <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px]">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter flex items-center gap-3">
+              <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter flex items-center gap-3 text-slate-900">
                 <MapIcon className="w-7 h-7 text-primary" /> Resolver Ubicación
               </DialogTitle>
               <DialogDescription className="text-slate-400 font-medium">
-                Ingresa la dirección exacta. Esto actualizará este pedido y el perfil del cliente permanentemente.
+                ¿Hubo un error? Corrige la dirección aquí. Esto actualizará el pedido y el perfil del cliente automáticamente.
               </DialogDescription>
             </DialogHeader>
             
-            <div className="py-6 space-y-4">
+            <div className="py-6 space-y-6">
+              {/* SUGERENCIAS INTELIGENTES */}
+              {customerSuggestions.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-[9px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                    <Sparkles className="w-3 h-3" /> Sugerencias del Perfil
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {customerSuggestions.map((addr, i) => (
+                      <button 
+                        key={i}
+                        onClick={() => setNewAddressValue(addr)}
+                        className={cn(
+                          "px-4 py-2.5 rounded-xl text-[11px] font-bold border transition-all text-left",
+                          newAddressValue === addr 
+                            ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105" 
+                            : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
+                        )}
+                      >
+                        {addr}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Dirección de Entrega</Label>
                 <div className="relative">
@@ -389,16 +435,20 @@ export default function OrdersManagementPage() {
                   />
                 </div>
               </div>
-              <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest text-center italic">
-                <Sparkles className="w-3 h-3 inline mr-1 text-yellow-400" /> Sincronización Automática en Tiempo Real
-              </p>
+              
+              <div className="flex items-center justify-center gap-2 py-2 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                <RefreshCw className={cn("w-3 h-3 text-blue-500", isSavingAddress && "animate-spin")} />
+                <p className="text-[9px] text-blue-600 font-black uppercase tracking-widest italic">
+                  Sincronización Bidireccional Activa
+                </p>
+              </div>
             </div>
 
             <DialogFooter className="sm:justify-center">
               <Button 
                 onClick={handleSaveAddressPatch} 
                 disabled={isSavingAddress || !newAddressValue.trim()}
-                className="w-full h-14 rounded-full bg-primary text-white font-black text-lg gap-3 shadow-xl shadow-primary/20"
+                className="w-full h-14 rounded-full bg-primary text-white font-black text-lg gap-3 shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
               >
                 {isSavingAddress ? <Loader2 className="animate-spin" /> : <><Save className="w-5 h-5" /> Guardar y Sincronizar</>}
               </Button>
