@@ -10,6 +10,7 @@ import {
   QuerySnapshot,
   CollectionReference,
 } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -37,7 +38,7 @@ export interface InternalQuery extends Query<DocumentData> {
 
 /**
  * React hook to subscribe to a Firestore collection or query in real-time.
- * Handles nullable references/queries.
+ * Handles nullable references/queries and auth transition states.
  */
 export function useCollection<T = any>(
     memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
@@ -72,9 +73,12 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        // Solo reportar como error de permisos si realmente lo es.
-        // Otros errores (como falta de índices) se reportan tal cual.
-        if (error.code === 'permission-denied') {
+        // Validación crítica: Si el error es por permisos, pero el usuario no está logueado,
+        // es probable que sea una desconexión en progreso. No emitimos el error fatal.
+        const auth = getAuth();
+        const isAuthPresent = !!auth.currentUser;
+
+        if (error.code === 'permission-denied' && isAuthPresent) {
           let path = 'unknown';
           if (memoizedTargetRefOrQuery.type === 'collection') {
             path = (memoizedTargetRefOrQuery as CollectionReference).path;
@@ -91,7 +95,10 @@ export function useCollection<T = any>(
           setError(contextualError);
           errorEmitter.emit('permission-error', contextualError);
         } else {
-          console.error("Firestore Error:", error.code, error.message);
+          // Si no hay auth, simplemente fallamos en silencio ya que el componente se desmontará.
+          if (isAuthPresent) {
+            console.error("Firestore Error:", error.code, error.message);
+          }
           setError(error);
         }
         

@@ -45,7 +45,7 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || profile?.role === 'admin';
 
-  // CONSULTAS LOGÍSTICAS OPTIMIZADAS
+  // CONSULTAS LOGÍSTICAS OPTIMIZADAS PARA COINCIDIR CON REGLAS
   const availableOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
     return query(
@@ -57,9 +57,10 @@ export default function DeliveryDashboardPage() {
 
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
+    // Usamos 'participants' para garantizar que la regla de seguridad 'list' sea satisfecha
     return query(
       collection(firestore, 'orders'),
-      where('deliveryDriverId', '==', user.uid),
+      where('participants', 'array-contains', user.uid),
       where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver'])
     );
   }, [firestore, user?.uid, isConfirmedRepartidor]);
@@ -68,7 +69,7 @@ export default function DeliveryDashboardPage() {
     if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
     return query(
       collection(firestore, 'orders'),
-      where('deliveryDriverId', '==', user.uid),
+      where('participants', 'array-contains', user.uid),
       where('status', '==', 'delivered')
     );
   }, [firestore, user?.uid, isConfirmedRepartidor]);
@@ -84,8 +85,11 @@ export default function DeliveryDashboardPage() {
 
   const myDeliveries = useMemo(() => {
     if (!rawMy) return [];
-    return [...rawMy].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-  }, [rawMy]);
+    // Filtrar localmente por deliveryDriverId para asegurar que solo vemos lo asignado a nosotros específicamente
+    return [...rawMy]
+      .filter(o => o.deliveryDriverId === user?.uid)
+      .sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+  }, [rawMy, user?.uid]);
 
   // CÁLCULO FINANCIERO CAJA NEGRA ($1000/KM - 12.5% comisión)
   const calculateNetEarnings = (kms: number = 3) => {
@@ -112,7 +116,6 @@ export default function DeliveryDashboardPage() {
   const handleArriveAtStore = (orderId: string) => {
     if (!firestore) return;
     const orderRef = doc(firestore, 'orders', orderId);
-    // Generar código aleatorio de 4 dígitos
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     updateDocumentNonBlocking(orderRef, { 
       status: 'at_store', 
@@ -147,8 +150,8 @@ export default function DeliveryDashboardPage() {
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-6">
           <Truck className="w-16 h-16 text-slate-200" />
-          <h2 className="text-2xl font-black uppercase italic italic tracking-tighter">Acceso Restringido</h2>
-          <p className="text-slate-400 max-w-xs">Debes estar verificado como repartidor.</p>
+          <h2 className="text-2xl font-black uppercase italic tracking-tighter">Acceso Restringido</h2>
+          <p className="text-slate-400 max-w-xs">Debes estar verificado como repartidor para acceder a esta consola.</p>
           <Button onClick={() => window.location.href = '/delivery/register'} className="rounded-full bg-secondary h-12 px-8">Registrarme</Button>
         </div>
       </div>
@@ -201,6 +204,7 @@ export default function DeliveryDashboardPage() {
               <div className="text-center py-20 bg-slate-50 rounded-[48px] border-2 border-dashed">
                 <Lock className="w-16 h-16 mx-auto text-slate-200 mb-4" />
                 <h3 className="text-xl font-black text-slate-400 uppercase italic">Modo Desconectado</h3>
+                <p className="text-xs text-slate-400 mt-2">Inicia turno para ver rutas disponibles.</p>
               </div>
             ) : availableOrders.length > 0 ? (
               <div className="grid gap-4">
@@ -218,7 +222,7 @@ export default function DeliveryDashboardPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20 text-slate-300 font-black uppercase tracking-[0.2em] italic">No hay rutas libres</div>
+              <div className="text-center py-20 text-slate-300 font-black uppercase tracking-[0.2em] italic">No hay rutas libres en este momento</div>
             )}
           </TabsContent>
 
