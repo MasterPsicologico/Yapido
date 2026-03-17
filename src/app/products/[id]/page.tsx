@@ -45,28 +45,19 @@ export default function ProductPage() {
 
     setIsOrdering(true);
     try {
-      // Garantizar que tenemos el ownerId del negocio
-      let ownerId = product.storeOwnerId;
-      if (!ownerId) {
-        const storeSnap = await getDoc(doc(firestore, 'stores', product.storeId));
-        ownerId = storeSnap.data()?.ownerId;
-      }
-
-      if (!ownerId) {
-        throw new Error("No se pudo identificar al dueño del negocio.");
-      }
-
-      // Obtener la dirección actual del perfil para estamparla en el pedido
-      const customerAddress = profile?.address || (profile?.addresses && profile.addresses[0]) || '';
+      // Obtener dirección de tienda y ID del dueño
+      const storeSnap = await getDoc(doc(firestore, 'stores', product.storeId));
+      const storeData = storeSnap.data();
       
       const orderData = {
         customerId: user.uid,
         customerName: profile?.displayName || user.displayName || 'Cliente',
         customerPhone: tempPhone,
-        customerAddress: customerAddress, // DIRECCIÓN REAL DETECTADA
+        customerAddress: profile?.address || 'Por definir',
         storeId: product.storeId,
         storeName: product.storeName,
-        storeOwnerId: ownerId,
+        storeOwnerId: storeData?.ownerId || product.storeOwnerId,
+        storeAddress: storeData?.address || 'Ubicación de tienda',
         productId: product.id,
         productName: product.name,
         quantity,
@@ -74,9 +65,8 @@ export default function ProductPage() {
         status: 'pending',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        // ARQUITECTURA DE SEGURIDAD: Campo participantes para indexado query-safe
-        participants: [user.uid, ownerId],
-        isLogisticsPublic: false
+        isLogisticsPublic: false,
+        participants: [user.uid, storeData?.ownerId || product.storeOwnerId]
       };
 
       await addDoc(collection(firestore, 'orders'), orderData);

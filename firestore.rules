@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -36,13 +37,11 @@ service cloud.firestore {
     }
 
     // ARQUITECTURA DE ÓRDENES: Seguridad Unificada y Multi-Rol
+    // Optimizada para evitar errores de permisos en consultas de listado
     match /orders/{orderId} {
       allow list: if isSignedIn() && (
         (request.auth.uid in resource.data.get('participants', [])) || 
-        (resource.data.get('isLogisticsPublic', false) == true) ||
-        (resource.data.get('deliveryDriverId', '') == request.auth.uid) ||
-        (resource.data.get('customerId', '') == request.auth.uid) ||
-        (resource.data.get('storeOwnerId', '') == request.auth.uid)
+        (resource.data.get('isLogisticsPublic', false) == true)
       );
 
       allow get: if isSignedIn() && (
@@ -55,12 +54,19 @@ service cloud.firestore {
 
       allow create: if isSignedIn();
       
-      allow update: if isSignedIn();
+      // Permitir actualización si el usuario es participante o si es un repartidor uniéndose a una ruta pública
+      allow update: if isSignedIn() && (
+        (request.auth.uid in resource.data.get('participants', [])) ||
+        (resource.data.get('isLogisticsPublic', false) == true)
+      );
       
-      allow delete: if isSignedIn();
+      allow delete: if isSignedIn() && (
+        request.auth.uid == resource.data.get('storeOwnerId', '') || 
+        request.auth.uid == resource.data.get('customerId', '')
+      );
 
       match /messages/{messageId} {
-        allow read, write: if isSignedIn();
+        allow read, write: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/orders/$(orderId)).data.get('participants', []);
       }
     }
 
