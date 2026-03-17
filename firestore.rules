@@ -36,28 +36,31 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    // ARQUITECTURA DE ÓRDENES: Seguridad Unificada y Multi-Rol
-    // Optimizada para permitir listados basados en roles específicos o participación general
+    // ARQUITECTURA DE ÓRDENES: Seguridad Segmentada
     match /orders/{orderId} {
-      allow list: if isSignedIn() && (
-        (request.auth.uid in resource.data.get('participants', [])) || 
-        (resource.data.get('isLogisticsPublic', false) == true) ||
-        (resource.data.get('deliveryDriverId', '') == request.auth.uid) ||
-        (resource.data.get('customerId', '') == request.auth.uid) ||
-        (resource.data.get('storeOwnerId', '') == request.auth.uid)
+      // Lectura individual (get)
+      allow get: if isSignedIn() && (
+        request.auth.uid in resource.data.get('participants', []) || 
+        resource.data.get('isLogisticsPublic', false) == true ||
+        resource.data.get('deliveryDriverId', '') == request.auth.uid ||
+        resource.data.get('customerId', '') == request.auth.uid ||
+        resource.data.get('storeOwnerId', '') == request.auth.uid
       );
 
-      allow get: if isSignedIn() && (
-        (request.auth.uid in resource.data.get('participants', [])) || 
-        (resource.data.get('isLogisticsPublic', false) == true) ||
-        (resource.data.get('deliveryDriverId', '') == request.auth.uid) ||
-        (resource.data.get('customerId', '') == request.auth.uid) ||
-        (resource.data.get('storeOwnerId', '') == request.auth.uid)
+      // Reglas de Listado (list): Segmentadas para optimización del analizador de consultas
+      // Rama 1: El usuario es participante directo
+      allow list: if isSignedIn() && (request.auth.uid in resource.data.get('participants', []));
+      // Rama 2: La ruta es pública para logística
+      allow list: if isSignedIn() && (resource.data.get('isLogisticsPublic', false) == true);
+      // Rama 3: El usuario tiene un rol específico asignado
+      allow list: if isSignedIn() && (
+        resource.data.get('deliveryDriverId', '') == request.auth.uid ||
+        resource.data.get('customerId', '') == request.auth.uid ||
+        resource.data.get('storeOwnerId', '') == request.auth.uid
       );
 
       allow create: if isSignedIn();
       
-      // Permitir actualización si el usuario es participante o es un repartidor aceptando una ruta pública
       allow update: if isSignedIn() && (
         (request.auth.uid in resource.data.get('participants', [])) ||
         (resource.data.get('isLogisticsPublic', false) == true)

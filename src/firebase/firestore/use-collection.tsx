@@ -73,8 +73,7 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        // Validación crítica: Si el error es por permisos, pero el usuario no está logueado,
-        // es probable que sea una desconexión en progreso. No emitimos el error fatal.
+        // Validación de Auth: Evitar errores fatales durante el cambio de sesión
         const auth = getAuth();
         const isAuthPresent = !!auth.currentUser;
 
@@ -92,10 +91,13 @@ export function useCollection<T = any>(
             path,
           });
 
+          // Solo emitimos el error fatal si no estamos en una posible transición de cuenta
+          // Para este prototipo, guardamos el error localmente pero evitamos el bloqueo total si es posible
+          console.warn("Firestore Permission Denied:", path);
           setError(contextualError);
           errorEmitter.emit('permission-error', contextualError);
         } else {
-          // Si no hay auth, simplemente fallamos en silencio ya que el componente se desmontará.
+          // Manejo silencioso para errores no críticos o sin auth
           if (isAuthPresent) {
             console.error("Firestore Error:", error.code, error.message);
           }
