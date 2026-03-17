@@ -35,27 +35,27 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    // ARQUITECTURA DE ÓRDENES: Seguridad Unificada y Query-Safe (Refinada)
+    // ARQUITECTURA DE ÓRDENES: Seguridad Unificada y Multi-Rol
     match /orders/{orderId} {
-      // Uso de .get() para prevenir errores en documentos con esquemas parciales
       allow list: if isSignedIn() && (
         (request.auth.uid in resource.data.get('participants', [])) || 
-        (resource.data.get('isLogisticsPublic', false) == true)
+        (resource.data.get('isLogisticsPublic', false) == true) ||
+        (resource.data.get('deliveryDriverId', '') == request.auth.uid) ||
+        (resource.data.get('customerId', '') == request.auth.uid) ||
+        (resource.data.get('storeOwnerId', '') == request.auth.uid)
       );
 
       allow get: if isSignedIn() && (
         (request.auth.uid in resource.data.get('participants', [])) || 
-        (resource.data.get('isLogisticsPublic', false) == true)
+        (resource.data.get('isLogisticsPublic', false) == true) ||
+        (resource.data.get('deliveryDriverId', '') == request.auth.uid) ||
+        (resource.data.get('customerId', '') == request.auth.uid) ||
+        (resource.data.get('storeOwnerId', '') == request.auth.uid)
       );
 
       allow create: if isSignedIn();
       
-      allow update: if isSignedIn() && (
-        (request.auth.uid in resource.data.get('participants', [])) ||
-        (resource.data.get('isLogisticsPublic', false) == true) ||
-        // Permitir a repartidores unirse a una ruta pública (isLogisticsPublic)
-        (resource.data.get('isLogisticsPublic', false) == true && request.resource.data.get('deliveryDriverId', '') == request.auth.uid)
-      );
+      allow update: if isSignedIn();
       
       allow delete: if isSignedIn();
 
