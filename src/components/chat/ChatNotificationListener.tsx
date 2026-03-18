@@ -146,12 +146,12 @@ export function ChatNotificationListener() {
       navigator.vibrate([500, 200, 500]);
     }
 
-    // Toast persistente con acción directa
+    // Toast persistente estable con acción directa
     toast({
       title: `🚨 ${toastTitle}`,
       description: `Tienes actividad en "${title}".`,
       variant: "default",
-      className: "bg-primary text-white border-none shadow-2xl animate-vibrate cursor-pointer h-24",
+      className: "border-2 border-primary shadow-2xl cursor-pointer bg-white",
       action: (
         <ToastAction 
           altText="Atender" 
@@ -164,7 +164,7 @@ export function ChatNotificationListener() {
             // Redirección directa al ancla del pedido
             router.push(`/admin/orders#${orderId}`);
           }}
-          className="bg-white text-primary hover:bg-white/90 font-black border-none rounded-full h-10 px-6"
+          className="bg-primary text-white hover:bg-primary/90 font-black rounded-full h-10 px-6 border-none"
         >
           ATENDER
         </ToastAction>
