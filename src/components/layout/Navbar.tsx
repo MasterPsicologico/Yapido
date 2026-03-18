@@ -26,6 +26,7 @@ import { useProfile } from '@/firebase/auth/use-profile';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ActivityCenter } from './ActivityCenter';
 import { MessageCenter } from './MessageCenter';
+import { FavoritesCenter } from './FavoritesCenter';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
@@ -233,6 +234,7 @@ export function Navbar() {
 
               {/* Cápsula de Cristal */}
               <div className="flex items-center bg-slate-50/80 rounded-full px-1 py-1 gap-0.5 border border-slate-100 backdrop-blur-sm shadow-inner">
+                <FavoritesCenter />
                 <ActivityCenter />
                 <MessageCenter />
               </div>
