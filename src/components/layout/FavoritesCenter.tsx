@@ -28,13 +28,11 @@ export function FavoritesCenter() {
   const favoriteStoreIds = profile?.favoriteStores || [];
   const favoriteProductIds = profile?.favoriteProducts || [];
 
-  // Consulta para Tiendas Favoritas
   const storesQuery = useMemoFirebase(() => {
     if (!firestore || favoriteStoreIds.length === 0) return null;
     return query(collection(firestore, 'stores'), where(documentId(), 'in', favoriteStoreIds.slice(0, 10)));
   }, [firestore, favoriteStoreIds]);
 
-  // Consulta para Productos Favoritos
   const productsQuery = useMemoFirebase(() => {
     if (!firestore || favoriteProductIds.length === 0) return null;
     return query(collection(firestore, 'products'), where(documentId(), 'in', favoriteProductIds.slice(0, 10)));
@@ -48,10 +46,10 @@ export function FavoritesCenter() {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-slate-100 transition-colors h-9 w-9">
-          <Heart className={cn("w-4.5 h-4.5 transition-all", totalCount > 0 ? "text-rose-500 fill-rose-500" : "text-slate-400")} />
+        <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-slate-100 transition-colors h-8 w-8 sm:h-9 sm:w-9">
+          <Heart className={cn("w-4 h-4 sm:w-4.5 sm:h-4.5 transition-all", totalCount > 0 ? "text-rose-500 fill-rose-500" : "text-slate-400")} />
           {totalCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in">
+            <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[7px] sm:text-[8px] font-black w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in">
               {totalCount}
             </span>
           )}
@@ -77,7 +75,6 @@ export function FavoritesCenter() {
             </div>
           ) : (
             <>
-              {/* Sección de Tiendas */}
               {stores && stores.length > 0 && (
                 <div className="space-y-2">
                   <div className="px-3 flex items-center gap-2">
@@ -101,7 +98,6 @@ export function FavoritesCenter() {
                 </div>
               )}
 
-              {/* Sección de Productos */}
               {products && products.length > 0 && (
                 <div className="space-y-2">
                   <div className="px-3 flex items-center gap-2">

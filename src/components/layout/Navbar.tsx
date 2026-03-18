@@ -79,19 +79,18 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-2xl border-b border-slate-100">
-      <div className="container mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 max-w-7xl">
+      <div className="container mx-auto px-2 sm:px-6 h-16 flex items-center justify-between gap-1 sm:gap-2 max-w-7xl">
         
         {/* LADO IZQUIERDO: Menú y Marca */}
-        <div className="flex items-center gap-1 sm:gap-4 shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-4 shrink-0">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 hover:bg-slate-100 transition-colors">
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 sm:h-10 sm:w-10 hover:bg-slate-100 transition-colors">
                 <Menu className="w-5 h-5 text-slate-600" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] p-0 border-none shadow-2xl">
               <div className="h-full flex flex-col">
-                {/* Header Fijo */}
                 <div className="p-6 pb-2">
                   <SheetHeader className="mb-4">
                     <SheetTitle className="flex items-center gap-3">
@@ -103,7 +102,6 @@ export function Navbar() {
                   </SheetHeader>
                 </div>
 
-                {/* Área de Navegación con Scroll */}
                 <ScrollArea className="flex-1 px-6">
                   <nav className="flex flex-col gap-1.5 py-4 pb-10">
                     <SheetClose asChild>
@@ -170,7 +168,6 @@ export function Navbar() {
                   </nav>
                 </ScrollArea>
 
-                {/* Footer Fijo */}
                 <div className="p-6 border-t border-slate-100">
                   {user ? (
                     <Button onClick={handleLogout} variant="ghost" className="w-full justify-start gap-4 h-14 rounded-2xl text-red-500 hover:bg-red-50 hover:text-red-600 font-bold px-4">
@@ -186,11 +183,11 @@ export function Navbar() {
             </SheetContent>
           </Sheet>
 
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center text-white group-hover:scale-105 transition-transform shadow-lg shadow-primary/20 shrink-0">
-              <ShoppingBag className="w-5 h-5" />
+          <Link href="/" className="flex items-center gap-1 sm:gap-2 group">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-xl flex items-center justify-center text-white group-hover:scale-105 transition-transform shadow-lg shadow-primary/20 shrink-0">
+              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <span className="text-lg sm:text-xl font-black tracking-tight text-primary hidden md:inline italic uppercase leading-none">Vitriniando</span>
+            <span className="text-base sm:text-xl font-black tracking-tight text-primary hidden md:inline italic uppercase leading-none">Vitriniando</span>
           </Link>
         </div>
 
@@ -198,10 +195,10 @@ export function Navbar() {
         <div className="flex items-center gap-1 sm:gap-2 ml-auto">
           {!isUserLoading && user && (
             <>
-              {/* Botón de Modo */}
+              {/* Botón de Modo - Ajustado para móvil */}
               <div 
                 className={cn(
-                  "relative flex items-center h-10 rounded-full cursor-pointer transition-all duration-300 pr-3 sm:pr-4 pl-1 overflow-hidden min-w-[100px] sm:min-w-[120px] shadow-sm",
+                  "relative flex items-center h-9 sm:h-10 rounded-full cursor-pointer transition-all duration-300 pr-1 sm:pr-4 pl-1 overflow-hidden min-w-[36px] sm:min-w-[120px] shadow-sm",
                   isDeliveryZone ? "bg-primary/10 hover:bg-primary/20" : "bg-secondary/10 hover:bg-secondary/20"
                 )}
                 onClick={handleModeSwitch}
@@ -217,32 +214,32 @@ export function Navbar() {
                 )}
 
                 <div className={cn(
-                  "relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-white font-black shadow-lg transition-transform text-xs",
+                  "relative z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white font-black shadow-lg transition-transform text-[10px] sm:text-xs",
                   isDeliveryZone ? "bg-primary" : "bg-secondary",
                   isTransitioning && "scale-90"
                 )}>
-                  {isTransitioning ? <Loader2 className="w-4 h-4 animate-spin" /> : targetIcon}
+                  {isTransitioning ? <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" /> : targetIcon}
                 </div>
                 
                 <span className={cn(
-                  "relative z-10 ml-1.5 sm:ml-2 text-[10px] font-black uppercase tracking-widest transition-colors",
+                  "relative z-10 ml-1.5 sm:ml-2 text-[10px] font-black uppercase tracking-widest transition-colors hidden sm:inline",
                   isDeliveryZone ? "text-primary" : "text-secondary"
                 )}>
                   {targetLabel}
                 </span>
               </div>
 
-              {/* Cápsula de Cristal */}
-              <div className="flex items-center bg-slate-50/80 rounded-full px-1 py-1 gap-0.5 border border-slate-100 backdrop-blur-sm shadow-inner">
+              {/* Cápsula de Cristal - Ajustada para móvil */}
+              <div className="flex items-center bg-slate-50/80 rounded-full px-0.5 sm:px-1 py-0.5 sm:py-1 gap-0 sm:gap-0.5 border border-slate-100 backdrop-blur-sm shadow-inner">
                 <FavoritesCenter />
                 <ActivityCenter />
                 <MessageCenter />
               </div>
 
-              {/* Perfil de Usuario */}
+              {/* Perfil de Usuario - Ajustado para móvil */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 shrink-0 border-2 border-white shadow-md hover:border-primary/20 transition-all bg-white">
+                  <Button variant="ghost" className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-full p-0 shrink-0 border-2 border-white shadow-md hover:border-primary/20 transition-all bg-white">
                     <Avatar className="h-full w-full">
                       <AvatarImage src={profile?.photoURL || user.photoURL || ''} />
                       <AvatarFallback className="font-black text-[10px] bg-slate-100 text-primary">U</AvatarFallback>
@@ -280,8 +277,8 @@ export function Navbar() {
           )}
 
           {!isUserLoading && !user && (
-            <Button onClick={handleLogin} variant="default" className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-4 sm:px-6 font-black shadow-lg shadow-secondary/20 h-10 text-[10px] uppercase tracking-widest">
-              <User className="w-4 h-4" /> <span>Ingresar</span>
+            <Button onClick={handleLogin} variant="default" className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-3 sm:px-6 font-black shadow-lg shadow-secondary/20 h-9 sm:h-10 text-[9px] sm:text-[10px] uppercase tracking-widest">
+              <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span>Ingresar</span>
             </Button>
           )}
         </div>
