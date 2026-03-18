@@ -9,6 +9,7 @@ import { HomeActions } from '@/components/home/HomeActions';
 import { HomeCategorySection } from '@/components/home/HomeCategorySection';
 import { HomePromoBanner } from '@/components/home/HomePromoBanner';
 import { UnauthenticatedLanding } from '@/components/home/UnauthenticatedLanding';
+import { StoreCard } from '@/components/store/StoreCard';
 import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, doc, serverTimestamp, orderBy } from 'firebase/firestore';
