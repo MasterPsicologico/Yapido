@@ -28,8 +28,8 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, limit, doc } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useUser } from '@/firebase';
+import { collection, query, where, limit, doc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useProfile } from '@/firebase/auth/use-profile';
 import {
   DropdownMenu,
@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 const STATUS_MAP = {
   verified: { label: "Vitrina Verificada", icon: ShieldCheck, color: "text-primary", bg: "bg-primary/5", border: "border-primary/10" },
@@ -67,14 +68,35 @@ type BadgeKey = keyof typeof VALUE_BADGES_CONFIG;
 
 export function StoreCard({ store }: { store: any }) {
   const firestore = useFirestore();
-  const { isAdmin } = useProfile();
+  const { isAdmin, profile } = useProfile();
+  const { user } = useUser();
   
+  const isFavorite = profile?.favoriteStores?.includes(store.id);
+
   const currentStatusKey = (store.verificationStatus as StatusKey) || 'verified';
   const statusInfo = STATUS_MAP[currentStatusKey] || STATUS_MAP.verified;
   const StatusIcon = statusInfo.icon;
 
   const activeBadgeIds: BadgeKey[] = store.activeBadgeIds || [];
   
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user || !firestore) {
+      toast({ title: "Inicia sesión", description: "Debes ingresar para guardar favoritos.", variant: "destructive" });
+      return;
+    }
+
+    const userRef = doc(firestore, 'users', user.uid);
+    if (isFavorite) {
+      updateDocumentNonBlocking(userRef, { favoriteStores: arrayRemove(store.id) });
+      toast({ title: "Removido de favoritos" });
+    } else {
+      updateDocumentNonBlocking(userRef, { favoriteStores: arrayUnion(store.id) });
+      toast({ title: "Añadido a favoritos", className: "bg-rose-500 text-white border-none" });
+    }
+  };
+
   const handleAddBadge = (badgeKey: BadgeKey) => {
     if (!firestore || !store.id) return;
     const newBadges = [...activeBadgeIds, badgeKey].slice(-4);
@@ -132,15 +154,16 @@ export function StoreCard({ store }: { store: any }) {
 
   return (
     <Card className="group flex flex-col h-full border-none rounded-[48px] shadow-[0_15px_50px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.12)] transition-all duration-700 bg-white overflow-hidden">
-      {/* Mitad Superior: Identidad Visual */}
-      <Link href={`/stores/${store.id}`} className="block relative aspect-[16/11] w-full overflow-hidden bg-slate-50">
-        <Image
-          src={store.imageUrl || 'https://picsum.photos/seed/store/800/600'}
-          alt={store.name}
-          fill
-          className="object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
-          data-ai-hint="store image"
-        />
+      <div className="block relative aspect-[16/11] w-full overflow-hidden bg-slate-50">
+        <Link href={`/stores/${store.id}`}>
+          <Image
+            src={store.imageUrl || 'https://picsum.photos/seed/store/800/600'}
+            alt={store.name}
+            fill
+            className="object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
+            data-ai-hint="store image"
+          />
+        </Link>
         
         <div className="absolute top-6 left-6 flex flex-col gap-2 z-20">
           <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-xl">
@@ -149,9 +172,23 @@ export function StoreCard({ store }: { store: any }) {
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/30 to-transparent z-10" />
+        <div className="absolute top-6 right-6 z-20">
+          <Button 
+            onClick={handleToggleFavorite}
+            variant="ghost" 
+            size="icon" 
+            className={cn(
+              "rounded-full h-12 w-12 backdrop-blur-xl border border-white/20 shadow-2xl transition-all active:scale-75",
+              isFavorite ? "bg-rose-500 text-white border-none" : "bg-white/20 text-white hover:bg-white/40"
+            )}
+          >
+            <Heart className={cn("w-6 h-6 transition-transform", isFavorite && "fill-current scale-110")} />
+          </Button>
+        </div>
 
-        <div className="absolute bottom-8 left-8 right-8 z-20 text-white space-y-4">
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/30 to-transparent z-10 pointer-events-none" />
+
+        <div className="absolute bottom-8 left-8 right-8 z-20 text-white space-y-4 pointer-events-none">
           <h3 className="text-4xl sm:text-5xl font-black text-white italic leading-[0.8] tracking-tighter uppercase drop-shadow-2xl break-words">
             {store.name}
           </h3>
@@ -168,12 +205,9 @@ export function StoreCard({ store }: { store: any }) {
             </div>
           </div>
         </div>
-      </Link>
+      </div>
 
-      {/* Mitad Inferior: Arquitectura Técnica de Cuadrantes */}
       <CardContent className="p-8 flex flex-col flex-1 space-y-8 bg-white">
-        
-        {/* Descripción de Autor */}
         {store.description && (
           <div className="relative group/desc">
             <div className="absolute -left-4 top-0 w-1 h-full bg-primary/10 rounded-full group-hover/desc:bg-primary/30 transition-colors" />
@@ -183,7 +217,6 @@ export function StoreCard({ store }: { store: any }) {
           </div>
         )}
 
-        {/* Sistema de Cuadrantes Windows-Premium */}
         <div className="grid grid-cols-2 gap-2 relative">
           {QUADRANTS.map((quad) => {
             const activeBadge = activeBadgeIds
@@ -253,7 +286,6 @@ export function StoreCard({ store }: { store: any }) {
           })}
         </div>
 
-        {/* Estatus de Verificación Final */}
         <div className="mt-auto pt-4 border-t border-slate-50">
           {isAdmin ? (
             <DropdownMenu modal={false}>

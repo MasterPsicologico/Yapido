@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { HomeHeader } from '@/components/home/HomeHeader';
@@ -14,14 +14,13 @@ import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, doc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, SearchX } from 'lucide-react';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const router = useRouter();
 
-  // Control de Redirección Persistente
   useEffect(() => {
     if (!isUserLoading && user) {
       const savedMode = localStorage.getItem('vitriniando_preferred_mode');
@@ -72,6 +71,7 @@ function AuthenticatedHome() {
   const { user } = useUser();
   const { isAdmin } = useProfile();
   
+  const [searchTerm, setSearchTerm] = useState("");
   const [openStore, setOpenStore] = useState(false);
   const [openCategory, setOpenCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any | null>(null);
@@ -82,6 +82,27 @@ function AuthenticatedHome() {
 
   const catQ = useMemoFirebase(() => query(collection(firestore, 'mainCategories'), orderBy('createdAt', 'desc')), [firestore]);
   const { data: mainCategories, isLoading: loadingCategories } = useCollection(catQ);
+
+  const allStoresQ = useMemoFirebase(() => query(collection(firestore, 'stores')), [firestore]);
+  const { data: allStores } = useCollection(allStoresQ);
+
+  const filteredData = useMemo(() => {
+    if (!searchTerm.trim()) return { categories: mainCategories, stores: null };
+    
+    const lowerSearch = searchTerm.toLowerCase();
+    const matchedCategories = mainCategories?.filter(c => 
+      c.name.toLowerCase().includes(lowerSearch) || 
+      c.description.toLowerCase().includes(lowerSearch)
+    );
+    
+    const matchedStores = allStores?.filter(s => 
+      s.name.toLowerCase().includes(lowerSearch) || 
+      s.description?.toLowerCase().includes(lowerSearch) ||
+      s.address?.toLowerCase().includes(lowerSearch)
+    );
+
+    return { categories: matchedCategories, stores: matchedStores };
+  }, [searchTerm, mainCategories, allStores]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -155,8 +176,8 @@ function AuthenticatedHome() {
 
   return (
     <div className="w-full py-6 sm:py-10 space-y-8">
-      <div className="px-4 sm:px-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-        <HomeHeader />
+      <div className="px-4 sm:px-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
+        <HomeHeader onSearch={setSearchTerm} />
         <HomeActions 
           isAdmin={isAdmin}
           openCategory={openCategory} 
@@ -176,18 +197,44 @@ function AuthenticatedHome() {
           onStoreSubmit={handleStoreSubmit}
         />
       </div>
-      <HomeCategorySection 
-        isAdmin={isAdmin} 
-        categories={mainCategories} 
-        isLoading={loadingCategories} 
-        onEdit={(c) => { 
-          setEditingCategory(c); 
-          setOpenCategory(true); 
-          setIsImageRemoved(false);
-          setBase64Image(null);
-        }} 
-      />
-      <HomePromoBanner onAction={() => setOpenStore(true)} />
+
+      {searchTerm && filteredData.stores && filteredData.stores.length > 0 && (
+        <section className="px-4 sm:px-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-1.5 h-6 bg-secondary rounded-full" />
+            <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Tiendas encontradas</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredData.stores.map(store => (
+              <StoreCard key={store.id} store={store} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {searchTerm && (!filteredData.categories || filteredData.categories.length === 0) && (!filteredData.stores || filteredData.stores.length === 0) ? (
+        <div className="py-20 flex flex-col items-center justify-center text-center px-4">
+          <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+            <SearchX className="w-10 h-10 text-slate-300" />
+          </div>
+          <h3 className="text-2xl font-black text-slate-400 italic">No encontramos resultados</h3>
+          <p className="text-slate-400 font-medium max-w-xs mt-2">Intenta con otras palabras o navega por las categorías.</p>
+        </div>
+      ) : (
+        <HomeCategorySection 
+          isAdmin={isAdmin} 
+          categories={filteredData.categories} 
+          isLoading={loadingCategories} 
+          onEdit={(c) => { 
+            setEditingCategory(c); 
+            setOpenCategory(true); 
+            setIsImageRemoved(false);
+            setBase64Image(null);
+          }} 
+        />
+      )}
+      
+      {!searchTerm && <HomePromoBanner onAction={() => setOpenStore(true)} />}
     </div>
   );
 }
