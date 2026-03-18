@@ -1,8 +1,10 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
+import { CartProvider } from '@/context/CartContext';
 
 export const metadata: Metadata = {
   title: 'Vitriniando - Gestión de Tiendas y Delivery',
@@ -23,10 +25,12 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background text-foreground min-h-screen">
         <FirebaseClientProvider>
-          {/* El ChatNotificationListener vive aquí para estar activo en toda la app */}
-          <ChatNotificationListener />
-          {children}
-          <Toaster />
+          <CartProvider>
+            {/* El ChatNotificationListener vive aquí para estar activo en toda la app */}
+            <ChatNotificationListener />
+            {children}
+            <Toaster />
+          </CartProvider>
         </FirebaseClientProvider>
       </body>
     </html>

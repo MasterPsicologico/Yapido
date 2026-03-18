@@ -27,6 +27,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { ActivityCenter } from './ActivityCenter';
 import { MessageCenter } from './MessageCenter';
 import { FavoritesCenter } from './FavoritesCenter';
+import { CartCenter } from './CartCenter';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
@@ -81,7 +82,6 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-2xl border-b border-slate-100">
       <div className="container mx-auto px-2 sm:px-6 h-16 flex items-center justify-between gap-1 sm:gap-2 max-w-7xl">
         
-        {/* LADO IZQUIERDO: Menú y Marca */}
         <div className="flex items-center gap-0.5 sm:gap-4 shrink-0">
           <Sheet>
             <SheetTrigger asChild>
@@ -191,11 +191,9 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* LADO DERECHO: Acciones Agrupadas */}
         <div className="flex items-center gap-1 sm:gap-2 ml-auto">
           {!isUserLoading && user && (
             <>
-              {/* Botón de Modo - Ajustado para móvil */}
               <div 
                 className={cn(
                   "relative flex items-center h-9 sm:h-10 rounded-full cursor-pointer transition-all duration-300 pr-1 sm:pr-4 pl-1 overflow-hidden min-w-[36px] sm:min-w-[120px] shadow-sm",
@@ -229,14 +227,13 @@ export function Navbar() {
                 </span>
               </div>
 
-              {/* Cápsula de Cristal - Ajustada para móvil */}
               <div className="flex items-center bg-slate-50/80 rounded-full px-0.5 sm:px-1 py-0.5 sm:py-1 gap-0 sm:gap-0.5 border border-slate-100 backdrop-blur-sm shadow-inner">
+                <CartCenter />
                 <FavoritesCenter />
                 <ActivityCenter />
                 <MessageCenter />
               </div>
 
-              {/* Perfil de Usuario - Ajustado para móvil */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-full p-0 shrink-0 border-2 border-white shadow-md hover:border-primary/20 transition-all bg-white">

@@ -11,11 +11,13 @@ import { useProfile } from '@/firebase/auth/use-profile';
 import { doc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useCart } from '@/context/CartContext';
 
 export function ProductCard({ product }: { product: any }) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { profile } = useProfile();
+  const { addToCart } = useCart();
   
   const isFavorite = profile?.favoriteProducts?.includes(product.id);
 
@@ -41,6 +43,21 @@ export function ProductCard({ product }: { product: any }) {
       updateDocumentNonBlocking(userRef, { favoriteProducts: arrayUnion(product.id) });
       toast({ title: "Producto en favoritos", className: "bg-rose-500 text-white border-none" });
     }
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      imageUrl: product.imageUrl || 'https://picsum.photos/seed/product/400',
+      storeId: product.storeId,
+      storeName: product.storeName || 'Negocio Local'
+    });
   };
 
   return (
@@ -84,7 +101,12 @@ export function ProductCard({ product }: { product: any }) {
 
       <CardFooter className="p-4 pt-0 flex items-center justify-between">
         <span className="text-lg font-black text-slate-900 tracking-tighter">{formattedPrice}</span>
-        <Button size="icon" variant="ghost" className="rounded-full bg-slate-50 text-slate-900 hover:bg-primary hover:text-white transition-all h-10 w-10 shadow-sm">
+        <Button 
+          onClick={handleAddToCart}
+          size="icon" 
+          variant="ghost" 
+          className="rounded-full bg-slate-50 text-slate-900 hover:bg-primary hover:text-white transition-all h-10 w-10 shadow-sm"
+        >
           <Plus className="w-5 h-5" />
         </Button>
       </CardFooter>
