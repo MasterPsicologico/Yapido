@@ -15,6 +15,8 @@
           "enum": ["admin", "moderador", "dueño", "repartidor", "cliente"],
           "description": "Define los permisos del usuario en la plataforma."
         },
+        "favoriteStores": { "type": "array", "items": { "type": "string" } },
+        "favoriteProducts": { "type": "array", "items": { "type": "string" } },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "email", "role"]
@@ -33,7 +35,19 @@
         "storeName": { "type": "string" },
         "storeOwnerId": { "type": "string" },
         "storeAddress": { "type": "string" },
-        "productId": { "type": "string" },
+        "items": { 
+          "type": "array", 
+          "items": { 
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "price": { "type": "number" },
+              "quantity": { "type": "number" },
+              "imageUrl": { "type": "string" }
+            }
+          } 
+        },
         "productName": { "type": "string" },
         "quantity": { "type": "number" },
         "totalPrice": { "type": "number" },
@@ -41,11 +55,14 @@
           "type": "string", 
           "enum": ["pending", "preparing", "ready_for_pickup", "at_store", "delivered_to_driver", "shipped", "delivered", "cancelled"] 
         },
+        "rating": { "type": "number", "minimum": 1, "maximum": 5 },
+        "review": { "type": "string" },
+        "ratedAt": { "type": "string", "format": "date-time" },
         "deliveryDriverId": { "type": "string" },
         "deliveryDriverName": { "type": "string" },
-        "deliveryCode": { "type": "string", "description": "Código de 4 dígitos para validar entrega física en tienda." },
-        "isLogisticsPublic": { "type": "boolean", "description": "Indica si la ruta es visible para repartidores." },
-        "participants": { "type": "array", "items": { "type": "string" }, "description": "IDs de usuarios involucrados para seguridad." },
+        "deliveryCode": { "type": "string" },
+        "isLogisticsPublic": { "type": "boolean" },
+        "participants": { "type": "array", "items": { "type": "string" } },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "customerId", "storeId", "status", "participants"]
@@ -59,7 +76,7 @@
         "senderId": { "type": "string" },
         "senderName": { "type": "string" },
         "text": { "type": "string" },
-        "imageUrl": { "type": "string", "description": "URL de la imagen o base64 de la evidencia." },
+        "imageUrl": { "type": "string" },
         "type": { "type": "string", "enum": ["text", "image"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },

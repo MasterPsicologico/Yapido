@@ -35,7 +35,9 @@ import {
   Save,
   Sparkles,
   RefreshCw,
-  Lock
+  Lock,
+  Star,
+  RotateCcw
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -47,8 +49,10 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { OrderChat } from '@/components/chat/OrderChat';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { RatingDialog } from '@/components/order/RatingDialog';
 import Link from 'next/link';
 import { Label } from '@/components/ui/label';
+import { useCart } from '@/context/CartContext';
 
 const STATUS_CONFIG = {
   pending: { label: "PENDIENTE", color: "text-orange-500", bg: "bg-orange-50", border: "border-orange-100", icon: Timer },
@@ -65,16 +69,14 @@ export default function OrdersManagementPage() {
   const { user } = useUser();
   const { profile, isLoading: profileLoading } = useProfile();
   const firestore = useFirestore();
+  const { addToCart } = useCart();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [showMyPurchases, setShowMyPurchases] = useState(false);
   const [selectedOrderForChat, setSelectedOrderForChat] = useState<any | null>(null);
-  const [addressUpdateOrder, setAddressUpdateOrder] = useState<any | null>(null);
-  const [newAddressValue, setNewAddressValue] = useState("");
-  const [isSavingAddress, setIsSavingAddress] = useState(false);
-  const [customerSuggestions, setCustomerSuggestions] = useState<string[]>([]);
   const [validatingOrder, setValidatingOrder] = useState<any | null>(null);
+  const [ratingOrder, setRatingOrder] = useState<any | null>(null);
 
   const myStoresQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -129,6 +131,31 @@ export default function OrdersManagementPage() {
     }
   };
 
+  const handleReorder = (order: any) => {
+    if (!order.items || order.items.length === 0) {
+      toast({ title: "No hay items para reordenar", variant: "destructive" });
+      return;
+    }
+
+    order.items.forEach((item: any) => {
+      addToCart({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        imageUrl: item.imageUrl,
+        storeId: order.storeId,
+        storeName: order.storeName
+      });
+    });
+    
+    toast({ 
+      title: "Items añadidos", 
+      description: `Se agregaron ${order.items.length} productos al carrito.`,
+      className: "bg-primary text-white"
+    });
+  };
+
   if (profileLoading || ordersLoading || storesLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
@@ -168,23 +195,46 @@ export default function OrdersManagementPage() {
             {filteredOrders && filteredOrders.length > 0 ? filteredOrders.map(order => {
               const status = STATUS_CONFIG[order.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
               const isVenta = order.storeOwnerId === user?.uid;
+              const hasRated = !!order.rating;
               
               return (
-                <Card key={order.id} className="border-none rounded-[48px] overflow-hidden shadow-2xl bg-white ring-1 ring-black/[0.03]">
+                <Card key={order.id} id={order.id} className="border-none rounded-[48px] overflow-hidden shadow-2xl bg-white ring-1 ring-black/[0.03]">
                   <CardContent className="p-8 space-y-8">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <Badge className={cn("text-white border-none rounded-full px-5 h-8 text-[9px] font-black uppercase tracking-widest", isVenta ? "bg-primary" : "bg-secondary")}>
-                        {isVenta ? "VENTA" : "COMPRA"}
-                      </Badge>
-                      <div className={cn("flex items-center gap-2 px-4 h-8 rounded-full border", status.bg, status.color, status.border)}>
-                        <status.icon className="w-3 h-3" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">{status.label}</span>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <Badge className={cn("text-white border-none rounded-full px-5 h-8 text-[9px] font-black uppercase tracking-widest", isVenta ? "bg-primary" : "bg-secondary")}>
+                          {isVenta ? "VENTA" : "COMPRA"}
+                        </Badge>
+                        <div className={cn("flex items-center gap-2 px-4 h-8 rounded-full border", status.bg, status.color, status.border)}>
+                          <status.icon className="w-3 h-3" />
+                          <span className="text-[9px] font-black uppercase tracking-widest">{status.label}</span>
+                        </div>
                       </div>
+                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                        {order.createdAt ? format(order.createdAt.toDate(), "dd MMM, HH:mm", { locale: es }) : ''}
+                      </span>
                     </div>
 
-                    <h3 className="text-4xl font-black text-slate-900 italic uppercase leading-[0.85] tracking-tighter">
-                      {order.productName}
-                    </h3>
+                    <div className="space-y-2">
+                      <h3 className="text-4xl font-black text-slate-900 italic uppercase leading-[0.85] tracking-tighter">
+                        {order.productName}
+                      </h3>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <StoreIcon className="w-3 h-3" /> {order.storeName}
+                      </p>
+                    </div>
+
+                    {/* Visualización de Calificación si existe */}
+                    {hasRated && (
+                      <div className="flex items-center gap-4 bg-yellow-50 p-4 rounded-3xl border border-yellow-100">
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star key={s} className={cn("w-3.5 h-3.5", s <= order.rating ? "fill-yellow-400 text-yellow-400" : "text-yellow-200")} />
+                          ))}
+                        </div>
+                        <p className="text-[11px] font-medium text-yellow-800 italic line-clamp-1">"{order.review || 'Sin comentario'}"</p>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 gap-4 bg-slate-50 p-6 rounded-[32px]">
                       <div className="flex flex-col">
@@ -196,12 +246,15 @@ export default function OrdersManagementPage() {
                         <span className="text-4xl font-black text-slate-900 tracking-tighter">
                           {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice)}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-400 mt-1 uppercase italic">X{order.quantity} Unidades</span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase italic">X{order.quantity || 1} Unidades</span>
+                          {order.items && <Badge variant="outline" className="text-[8px] h-4 px-1.5 font-bold border-slate-200 text-slate-400">{order.items.length} productos</Badge>}
+                        </div>
                       </div>
                     </div>
 
                     <div className="space-y-4">
-                      {isVenta && (
+                      {isVenta ? (
                         <>
                           {order.status === 'pending' && (
                             <Button onClick={() => handleUpdateStatus(order.id, 'preparing')} className="w-full h-16 rounded-[24px] bg-primary text-white font-black uppercase tracking-widest gap-3 shadow-xl">
@@ -219,6 +272,26 @@ export default function OrdersManagementPage() {
                             </Button>
                           )}
                         </>
+                      ) : (
+                        <div className="flex gap-3">
+                          {!hasRated && order.status === 'delivered' && (
+                            <Button 
+                              onClick={() => setRatingOrder(order)} 
+                              className="flex-1 h-16 rounded-[24px] bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-black uppercase tracking-widest gap-3 shadow-lg"
+                            >
+                              <Star className="w-6 h-6" /> CALIFICAR
+                            </Button>
+                          )}
+                          {(order.status === 'delivered' || order.status === 'cancelled') && (
+                            <Button 
+                              onClick={() => handleReorder(order)}
+                              variant="outline" 
+                              className="flex-1 h-16 rounded-[24px] border-2 border-slate-100 font-black uppercase tracking-widest gap-3 hover:bg-slate-50 text-slate-600"
+                            >
+                              <RotateCcw className="w-6 h-6 text-primary" /> REORDENAR
+                            </Button>
+                          )}
+                        </div>
                       )}
                       
                       <Button onClick={() => setSelectedOrderForChat(order)} className="w-full h-12 rounded-[20px] bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest gap-2">
@@ -233,6 +306,13 @@ export default function OrdersManagementPage() {
             )}
           </div>
         </main>
+
+        <RatingDialog 
+          isOpen={!!ratingOrder} 
+          onOpenChange={(v) => !v && setRatingOrder(null)}
+          orderId={ratingOrder?.id || ''}
+          storeName={ratingOrder?.storeName || 'Tienda'}
+        />
 
         <Dialog open={!!validatingOrder} onOpenChange={(v) => !v && setValidatingOrder(null)}>
           <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px]">
