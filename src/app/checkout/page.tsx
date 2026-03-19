@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,21 +14,26 @@ import {
   Loader2,
   AlertCircle,
   Truck,
-  Zap
+  Zap,
+  Tag,
+  Wallet,
+  Globe,
+  X
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
-import { useUser, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, doc, serverTimestamp, addDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, addDoc, getDoc, query, where, getDocs, limit } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 export default function CheckoutPage() {
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice: cartSubtotal, clearCart } = useCart();
   const { user } = useUser();
   const { profile } = useProfile();
   const firestore = useFirestore();
@@ -38,24 +43,62 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [tempPhone, setTempPhone] = useState("");
   const [tempAddress, setTempAddress] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'digital'>('cash');
+  
+  // Coupon State
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
   useEffect(() => {
     if (profile?.phoneNumber) setTempPhone(profile.phoneNumber);
     if (profile?.address) setTempAddress(profile.address);
   }, [profile]);
 
-  if (items.length === 0 && !orderId) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-6">
-          <Zap className="w-16 h-16 text-slate-200" />
-          <h2 className="text-2xl font-black uppercase italic tracking-tighter">Carrito Vacío</h2>
-          <Button asChild className="rounded-full h-14 px-10 font-black"><Link href="/">Seguir Comprando</Link></Button>
-        </div>
-      </div>
-    );
-  }
+  const discountAmount = useMemo(() => {
+    if (!appliedCoupon) return 0;
+    if (appliedCoupon.discountType === 'percentage') {
+      return (cartSubtotal * appliedCoupon.value) / 100;
+    }
+    return appliedCoupon.value;
+  }, [appliedCoupon, cartSubtotal]);
+
+  const finalTotal = Math.max(0, cartSubtotal - discountAmount);
+
+  const handleValidateCoupon = async () => {
+    if (!couponCode.trim() || !firestore) return;
+    setIsValidatingCoupon(true);
+    try {
+      const q = query(
+        collection(firestore, 'coupons'), 
+        where('code', '==', couponCode.toUpperCase()),
+        where('active', '==', true),
+        limit(1)
+      );
+      const snap = await getDocs(q);
+      
+      if (snap.empty) {
+        toast({ title: "Cupón inválido", description: "El código no existe o expiró.", variant: "destructive" });
+        setAppliedCoupon(null);
+      } else {
+        const couponData = snap.docs[0].data();
+        if (cartSubtotal < (couponData.minOrderValue || 0)) {
+          toast({ 
+            title: "Monto insuficiente", 
+            description: `Compra mínima: ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(couponData.minOrderValue)}`, 
+            variant: "destructive" 
+          });
+          return;
+        }
+        setAppliedCoupon({ ...couponData, id: snap.docs[0].id });
+        toast({ title: "¡Cupón Aplicado!", description: "El descuento ha sido inyectado." });
+      }
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo validar el cupón.", variant: "destructive" });
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
 
   const handleCompleteOrder = async () => {
     if (!user || !firestore || items.length === 0) return;
@@ -72,7 +115,6 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
     try {
-      // Tomamos la info de la tienda del primer ítem (asumiendo validación de tienda única en el contexto)
       const storeRef = doc(firestore, 'stores', items[0].storeId);
       const storeSnap = await getDoc(storeRef);
       const storeData = storeSnap.data();
@@ -94,7 +136,10 @@ export default function CheckoutPage() {
           imageUrl: i.imageUrl
         })),
         productName: items.length === 1 ? items[0].name : `${items[0].name} y ${items.length - 1} más`,
-        totalPrice: totalPrice,
+        subtotal: cartSubtotal,
+        discountAmount: discountAmount,
+        totalPrice: finalTotal,
+        paymentMethod: paymentMethod,
         status: 'pending',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -104,7 +149,6 @@ export default function CheckoutPage() {
 
       const docRef = await addDoc(collection(firestore, 'orders'), orderData);
       
-      // Actualizar perfil si los datos cambiaron
       const userRef = doc(firestore, 'users', user.uid);
       const updateData: any = {};
       if (tempPhone !== profile?.phoneNumber) updateData.phoneNumber = tempPhone;
@@ -159,10 +203,10 @@ export default function CheckoutPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Formulario de entrega */}
             <div className="lg:col-span-2 space-y-6">
-              <Card className="border-none rounded-[32px] shadow-sm overflow-hidden">
-                <CardContent className="p-8 space-y-8">
+              <Card className="border-none rounded-[32px] shadow-sm overflow-hidden bg-white">
+                <CardContent className="p-8 space-y-10">
+                  {/* Punto de Entrega */}
                   <div className="space-y-6">
                     <div className="flex items-center gap-3 text-primary">
                       <MapPin className="w-5 h-5" />
@@ -193,37 +237,98 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
+                  {/* Método de Pago */}
                   <div className="pt-8 border-t space-y-6">
                     <div className="flex items-center gap-3 text-slate-400">
                       <CreditCard className="w-5 h-5" />
                       <h3 className="font-black text-sm uppercase tracking-widest">Método de Pago</h3>
                     </div>
-                    <div className="bg-slate-50 p-6 rounded-3xl border-2 border-primary/20 flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-primary shadow-sm">
-                          <Zap className="w-6 h-6" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <button 
+                        onClick={() => setPaymentMethod('cash')}
+                        className={cn(
+                          "p-6 rounded-3xl border-2 transition-all flex flex-col items-center gap-3",
+                          paymentMethod === 'cash' ? "border-primary bg-primary/5" : "border-slate-100 bg-slate-50"
+                        )}
+                      >
+                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", paymentMethod === 'cash' ? "bg-primary text-white" : "bg-white text-slate-400")}>
+                          <Wallet className="w-6 h-6" />
                         </div>
-                        <div>
-                          <p className="font-black text-sm uppercase italic">Pago Contra Entrega</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Efectivo o Transferencia</p>
+                        <div className="text-center">
+                          <p className="font-black text-xs uppercase italic">Contra Entrega</p>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Efectivo / Transferencia</p>
                         </div>
-                      </div>
-                      <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white">
-                        <CheckCircle2 className="w-4 h-4" />
-                      </div>
+                      </button>
+
+                      <button 
+                        onClick={() => setPaymentMethod('digital')}
+                        className={cn(
+                          "p-6 rounded-3xl border-2 transition-all flex flex-col items-center gap-3",
+                          paymentMethod === 'digital' ? "border-secondary bg-secondary/5" : "border-slate-100 bg-slate-50"
+                        )}
+                      >
+                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", paymentMethod === 'digital' ? "bg-secondary text-white" : "bg-white text-slate-400")}>
+                          <Globe className="w-6 h-6" />
+                        </div>
+                        <div className="text-center">
+                          <p className="font-black text-xs uppercase italic">Pago Online</p>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Tarjeta / PSE / Billetera</p>
+                        </div>
+                      </button>
                     </div>
+                  </div>
+
+                  {/* Sección de Cupones */}
+                  <div className="pt-8 border-t space-y-6">
+                    <div className="flex items-center gap-3 text-slate-400">
+                      <Tag className="w-5 h-5" />
+                      <h3 className="font-black text-sm uppercase tracking-widest">¿Tienes un Cupón?</h3>
+                    </div>
+                    {appliedCoupon ? (
+                      <div className="bg-green-50 p-4 rounded-2xl border border-green-100 flex items-center justify-between animate-in slide-in-from-top-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white">
+                            <CheckCircle2 className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-black text-xs uppercase text-green-700 italic">Cupón "{appliedCoupon.code}" Aplicado</p>
+                            <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest">
+                              Descuento de {appliedCoupon.discountType === 'percentage' ? `${appliedCoupon.value}%` : `$${appliedCoupon.value}`}
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => setAppliedCoupon(null)} className="text-green-700 hover:bg-green-100 rounded-full">
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input 
+                          placeholder="CÓDIGO" 
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                          className="h-12 rounded-xl bg-slate-50 border-none font-black text-center tracking-[0.2em]"
+                        />
+                        <Button 
+                          onClick={handleValidateCoupon}
+                          disabled={isValidatingCoupon || !couponCode}
+                          className="h-12 px-6 rounded-xl bg-slate-900 text-white font-black uppercase text-[10px] tracking-widest shrink-0"
+                        >
+                          {isValidatingCoupon ? <Loader2 className="animate-spin" /> : "APLICAR"}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Resumen del pedido */}
             <div className="space-y-6">
               <Card className="border-none rounded-[32px] shadow-2xl bg-slate-900 text-white overflow-hidden sticky top-24">
                 <CardContent className="p-8 space-y-8">
                   <h3 className="text-xl font-black italic uppercase tracking-tighter border-b border-white/10 pb-4">Resumen</h3>
                   
-                  <div className="space-y-4 max-h-[300px] overflow-y-auto no-scrollbar">
+                  <div className="space-y-4 max-h-[250px] overflow-y-auto no-scrollbar">
                     {items.map((item) => (
                       <div key={item.id} className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
@@ -241,20 +346,31 @@ export default function CheckoutPage() {
                     <div className="flex items-center justify-between text-slate-400">
                       <span className="text-[10px] font-black uppercase tracking-widest">Subtotal</span>
                       <span className="text-sm font-bold">
-                        {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(totalPrice)}
+                        {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(cartSubtotal)}
                       </span>
                     </div>
+                    
+                    {discountAmount > 0 && (
+                      <div className="flex items-center justify-between text-green-400">
+                        <span className="text-[10px] font-black uppercase tracking-widest">Descuento</span>
+                        <span className="text-sm font-bold">
+                          -{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(discountAmount)}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between text-primary">
                       <div className="flex items-center gap-2">
                         <Truck className="w-4 h-4" />
                         <span className="text-[10px] font-black uppercase tracking-widest">Envío</span>
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest italic">Por definir</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest italic">A cargo de tienda</span>
                     </div>
+
                     <div className="flex items-center justify-between pt-4">
                       <span className="text-lg font-black italic uppercase tracking-tighter">Total</span>
                       <span className="text-3xl font-black tracking-tighter text-primary">
-                        {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(totalPrice)}
+                        {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(finalTotal)}
                       </span>
                     </div>
                   </div>

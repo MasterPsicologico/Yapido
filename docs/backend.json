@@ -50,7 +50,10 @@
         },
         "productName": { "type": "string" },
         "quantity": { "type": "number" },
+        "subtotal": { "type": "number" },
+        "discountAmount": { "type": "number" },
         "totalPrice": { "type": "number" },
+        "paymentMethod": { "type": "string", "enum": ["cash", "digital"] },
         "status": { 
           "type": "string", 
           "enum": ["pending", "preparing", "ready_for_pickup", "at_store", "delivered_to_driver", "shipped", "delivered", "cancelled"] 
@@ -66,6 +69,21 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "customerId", "storeId", "status", "participants"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "type": "object",
+      "description": "Cupones de descuento para el marketplace.",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "discountType": { "type": "string", "enum": ["percentage", "fixed"] },
+        "value": { "type": "number" },
+        "minOrderValue": { "type": "number" },
+        "active": { "type": "boolean" },
+        "expiresAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["code", "discountType", "value", "active"]
     },
     "Message": {
       "title": "Message",
@@ -102,6 +120,14 @@
           "entityName": "Order",
           "schema": { "$ref": "#/backend/entities/Order" },
           "description": "Pedidos principales."
+        }
+      },
+      {
+        "path": "/coupons/{couponId}",
+        "definition": {
+          "entityName": "Coupon",
+          "schema": { "$ref": "#/backend/entities/Coupon" },
+          "description": "Cupones globales."
         }
       },
       {
