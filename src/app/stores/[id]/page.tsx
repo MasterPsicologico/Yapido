@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -96,7 +95,6 @@ export default function StorePage() {
     }
 
     try {
-      // Buscar si ya existe una consulta (inquiry) previa
       const q = query(
         collection(firestore, 'orders'),
         where('customerId', '==', user.uid),
@@ -108,7 +106,6 @@ export default function StorePage() {
       if (!snap.empty) {
         setInternalChatOrder({ id: snap.docs[0].id, ...snap.docs[0].data() });
       } else {
-        // Crear una nueva consulta en la colección de órdenes con estado especial
         const inquiryData = {
           customerId: user.uid,
           customerName: user.displayName || 'Cliente',
@@ -348,7 +345,7 @@ export default function StorePage() {
       </main>
 
       <Dialog open={!!internalChatOrder} onOpenChange={v => !v && setInternalChatOrder(null)}>
-        <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-[450px]">
+        <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-none w-screen h-[100dvh] sm:p-4 md:p-8">
           <DialogHeader className="sr-only">
             <DialogTitle>Chat Interno con la Tienda</DialogTitle>
             <DialogDescription>Inicia una conversación privada con el dueño del negocio.</DialogDescription>

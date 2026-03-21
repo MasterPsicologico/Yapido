@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -324,7 +323,6 @@ export default function OrdersManagementPage() {
                       )}
                       
                       <div className="flex flex-col gap-3">
-                        {/* CHAT INTERNO: Ubicado con Jerarquía Absoluta sobre WhatsApp */}
                         <Button 
                           onClick={() => setSelectedOrderForChat(order)} 
                           className="w-full h-12 rounded-[20px] bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg transition-transform active:scale-95"
@@ -391,7 +389,7 @@ export default function OrdersManagementPage() {
         </Dialog>
 
         <Dialog open={!!selectedOrderForChat} onOpenChange={v => !v && setSelectedOrderForChat(null)}>
-          <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-[450px]">
+          <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-none w-screen h-[100dvh] sm:p-4 md:p-8">
             <DialogHeader className="sr-only">
               <DialogTitle>Chat Interno del Pedido</DialogTitle>
               <DialogDescription>Canal de comunicación para la gestión de esta orden.</DialogDescription>

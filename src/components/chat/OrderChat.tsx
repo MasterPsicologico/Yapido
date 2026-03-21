@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -74,28 +73,23 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
     }
   }, [isCameraOpen, stream]);
 
-  // LÓGICA ESPECIALISTA: Detección inteligente de direcciones en el chat con PROPAGACIÓN SELECTIVA
   const handleSmartAddressSync = (messageText: string) => {
     if (!firestore || !orderId) return;
 
     const keywords = ['calle', 'carrera', 'diagonal', 'transversal', 'avenida', 'cll', 'cra', 'dg', 'tr', 'av', 'barrio', 'manzana', 'casa', 'apto', '#'];
     const lowerText = messageText.toLowerCase();
     
-    // Si el mensaje tiene palabras clave de dirección y al menos un número, es una dirección probable
     const isLikelyAddress = keywords.some(k => lowerText.includes(k)) && /\d/.test(messageText);
 
     if (isLikelyAddress) {
       setIsAutoSyncing(true);
       const orderRef = doc(firestore, 'orders', orderId);
       
-      // 1. Actualización de Pedido: Siempre permitida para participantes
       updateDocumentNonBlocking(orderRef, { 
         customerAddress: messageText.trim(),
         updatedAt: serverTimestamp() 
       });
 
-      // 2. SINCRONIZACIÓN SELECTIVA: Solo actualizar el perfil si el usuario que escribe ES el cliente
-      // Esto previene el error 403 (Permission Denied) cuando el vendedor escribe la dirección
       if (orderData.customerId && user?.uid === orderData.customerId) {
         const userRef = doc(firestore, 'users', orderData.customerId);
         updateDocumentNonBlocking(userRef, { 
@@ -129,7 +123,6 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
         createdAt: serverTimestamp(),
       });
 
-      // Si es un mensaje de texto, intentar sincronizar dirección automáticamente
       if (payload.type === 'text' && payload.text) {
         handleSmartAddressSync(payload.text);
       }
@@ -206,84 +199,86 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   }, [stream]);
 
   return (
-    <div className="flex flex-col h-[600px] max-h-[80vh] bg-white rounded-[32px] shadow-2xl overflow-hidden border">
+    <div className="flex flex-col h-full w-full bg-white rounded-none sm:rounded-[40px] shadow-2xl overflow-hidden border animate-in zoom-in duration-300">
       {/* Header */}
-      <div className="bg-slate-900 p-4 flex items-center justify-between text-white">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-            <MessageCircle className="w-5 h-5 text-primary" />
+      <div className="bg-slate-900 p-5 flex items-center justify-between text-white shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+            <MessageCircle className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h4 className="font-black text-sm uppercase tracking-tighter italic">Chat del Pedido</h4>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Orden: #{orderId.slice(-6)}</p>
+            <h4 className="font-black text-base uppercase tracking-tighter italic">Chat del Pedido</h4>
+            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Orden: #{orderId.slice(-6)}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {isAutoSyncing && (
             <div className="flex items-center gap-1.5 bg-green-500/20 px-3 py-1 rounded-full animate-pulse">
               <RefreshCw className="w-3 h-3 text-green-400 animate-spin" />
-              <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Sincronizando</span>
+              <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Logística</span>
             </div>
           )}
           {onClose && (
-            <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/10 rounded-full">
-              <X className="w-5 h-5" />
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/10 rounded-full h-10 w-10">
+              <X className="w-6 h-6" />
             </Button>
           )}
         </div>
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4 bg-slate-50">
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 p-6 bg-slate-50">
+        <div className="space-y-6">
           {loadingMessages ? (
             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
           ) : messages?.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center opacity-30">
-               <MessageCircle className="w-10 h-10 mb-2" />
-               <p className="text-xs font-black uppercase tracking-widest">Inicia la conversación</p>
+            <div className="flex flex-col items-center justify-center py-20 text-center opacity-30">
+               <MessageCircle className="w-16 h-16 mb-4" />
+               <p className="text-sm font-black uppercase tracking-[0.2em]">Inicia la conversación</p>
             </div>
           ) : messages?.map((msg) => {
             const isMe = msg.senderId === user?.uid;
             return (
               <div key={msg.id} className={cn("flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300", isMe ? "items-end" : "items-start")}>
                 <div className={cn(
-                  "max-w-[80%] p-3 rounded-2xl shadow-sm",
-                  isMe ? "bg-primary text-white rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none"
+                  "max-w-[85%] p-4 rounded-[24px] shadow-sm",
+                  isMe ? "bg-primary text-white rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none border border-slate-100"
                 )}>
-                  {!isMe && <p className="text-[9px] font-black uppercase opacity-50 mb-1">{msg.senderName}</p>}
+                  {!isMe && <p className="text-[10px] font-black uppercase opacity-50 mb-1.5">{msg.senderName}</p>}
                   {msg.type === 'text' ? (
-                    <p className="text-sm font-medium">{msg.text}</p>
+                    <p className="text-sm font-semibold leading-relaxed">{msg.text}</p>
                   ) : (
-                    <div className="relative aspect-square w-48 rounded-lg overflow-hidden border border-black/5 bg-slate-100">
+                    <div className="relative aspect-square w-64 max-w-full rounded-2xl overflow-hidden border border-black/5 bg-slate-100">
                       <Image src={msg.imageUrl} alt="Evidencia" fill className="object-cover" />
                     </div>
                   )}
-                  <p className={cn("text-[8px] mt-1 font-bold uppercase opacity-40", isMe ? "text-right" : "text-left")}>
+                  <p className={cn("text-[9px] mt-2 font-bold uppercase opacity-40", isMe ? "text-right" : "text-left")}>
                     {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), "HH:mm") : 'Enviando...'}
                   </p>
                 </div>
               </div>
             );
           })}
-          <div ref={messagesEndRef} className="h-2 w-full" />
+          <div ref={messagesEndRef} className="h-4 w-full" />
         </div>
       </ScrollArea>
 
       {/* Camera Preview Overlay */}
       {isCameraOpen && (
-        <div className="absolute inset-0 z-50 bg-black flex flex-col p-4 animate-in fade-in duration-300">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <Camera className="w-4 h-4 text-primary" />
-              <h4 className="text-white font-black uppercase text-[10px] tracking-widest italic">Cámara de Evidencia</h4>
+        <div className="absolute inset-0 z-50 bg-black flex flex-col p-6 animate-in fade-in duration-300">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
+                <Camera className="w-5 h-5 text-primary" />
+              </div>
+              <h4 className="text-white font-black uppercase text-xs tracking-widest italic">Evidencia Real</h4>
             </div>
-            <Button variant="ghost" size="icon" onClick={stopCamera} className="text-white hover:bg-white/10 rounded-full">
-              <X className="w-5 h-5" />
+            <Button variant="ghost" size="icon" onClick={stopCamera} className="text-white hover:bg-white/10 rounded-full h-12 w-12">
+              <X className="w-8 h-8" />
             </Button>
           </div>
           
-          <div className="flex-1 relative rounded-2xl overflow-hidden bg-slate-900 shadow-inner flex items-center justify-center">
+          <div className="flex-1 relative rounded-[40px] overflow-hidden bg-slate-900 shadow-inner flex items-center justify-center border-4 border-white/5">
             <video 
               ref={videoRef} 
               autoPlay 
@@ -292,22 +287,22 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
               className="w-full h-full object-cover" 
             />
             {(!hasCameraPermission && hasCameraPermission !== null) && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white bg-slate-900/90">
-                <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-                <p className="font-bold text-sm uppercase tracking-tighter">Acceso Denegado</p>
-                <p className="text-[10px] text-slate-400 mt-2">Habilita los permisos de cámara en tu navegador.</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-10 text-center text-white bg-slate-900/95">
+                <AlertCircle className="w-16 h-16 text-red-500 mb-6" />
+                <p className="font-black text-lg uppercase tracking-tighter italic">Acceso Denegado</p>
+                <p className="text-xs text-slate-400 mt-3 max-w-xs leading-relaxed uppercase tracking-widest">Habilita los permisos de cámara en tu navegador para enviar evidencias.</p>
               </div>
             )}
           </div>
 
-          <div className="py-8 flex justify-center">
+          <div className="py-10 flex justify-center">
             <Button 
               onClick={capturePhoto} 
               disabled={!stream}
-              className="w-20 h-20 rounded-full bg-white text-black hover:bg-slate-200 shadow-[0_0_30px_rgba(255,255,255,0.3)] border-4 border-slate-300 transition-transform active:scale-90"
+              className="w-24 h-24 rounded-full bg-white text-black hover:bg-slate-200 shadow-[0_0_50px_rgba(255,255,255,0.2)] border-8 border-slate-300 transition-all active:scale-90"
             >
-              <div className="w-14 h-14 rounded-full border-2 border-slate-900 flex items-center justify-center">
-                <Camera className="w-8 h-8" />
+              <div className="w-16 h-16 rounded-full border-4 border-slate-900 flex items-center justify-center">
+                <Camera className="w-10 h-10" />
               </div>
             </Button>
           </div>
@@ -315,26 +310,26 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
       )}
 
       {/* Input Area */}
-      <div className="p-4 bg-white border-t space-y-3">
-        <div className="flex items-center gap-2">
+      <div className="p-6 bg-white border-t space-y-4 shrink-0">
+        <div className="flex items-center gap-3">
           <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
           <Button 
             variant="outline" 
             size="icon" 
             onClick={() => fileInputRef.current?.click()} 
-            className="rounded-full h-10 w-10 border-slate-200 shrink-0"
+            className="rounded-full h-12 w-12 border-slate-200 shrink-0 hover:bg-slate-50 transition-colors"
             title="Subir de Galería"
           >
-            <ImageIcon className="w-5 h-5 text-slate-400" />
+            <ImageIcon className="w-6 h-6 text-slate-400" />
           </Button>
           <Button 
             variant="outline" 
             size="icon" 
             onClick={startCamera} 
-            className="rounded-full h-10 w-10 border-slate-200 shrink-0"
+            className="rounded-full h-12 w-12 border-slate-200 shrink-0 hover:bg-slate-50 transition-colors"
             title="Tomar Foto Evidencia"
           >
-            <Camera className="w-5 h-5 text-slate-400" />
+            <Camera className="w-6 h-6 text-slate-400" />
           </Button>
           <div className="flex-1 relative">
             <Input 
@@ -342,21 +337,21 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !isSending && handleSendMessage({ text, type: 'text' })}
-              className="rounded-full h-10 bg-slate-100 border-none pl-4 pr-10 text-sm font-medium"
+              className="rounded-full h-12 bg-slate-100 border-none pl-6 pr-12 text-sm font-bold shadow-inner"
             />
             <Button 
               onClick={() => handleSendMessage({ text, type: 'text' })} 
               disabled={isSending || !text.trim()}
               variant="ghost" 
               size="icon" 
-              className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full h-8 w-8 text-primary hover:bg-transparent"
+              className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full h-10 w-10 text-primary hover:bg-transparent transition-transform active:scale-90"
             >
-              {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
             </Button>
           </div>
         </div>
-        <p className="text-[9px] text-center text-slate-300 font-black uppercase tracking-widest">
-          Soporte Vitriniando: Este chat es monitoreado por moderadores.
+        <p className="text-[10px] text-center text-slate-300 font-black uppercase tracking-[0.3em]">
+          Vitriniando Seguro • Canal Monitoreado
         </p>
       </div>
     </div>
