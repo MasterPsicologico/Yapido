@@ -15,7 +15,8 @@ import {
   User as UserIcon,
   CheckCircle2,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Maximize2
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -41,6 +42,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isAutoSyncing, setIsAutoSyncing] = useState(false);
+  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -199,7 +201,34 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   }, [stream]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-white rounded-none sm:rounded-[40px] shadow-2xl overflow-hidden border animate-in zoom-in duration-300">
+    <div className="flex flex-col h-full w-full bg-white rounded-none sm:rounded-[40px] shadow-2xl overflow-hidden border animate-in zoom-in duration-300 relative">
+      
+      {/* FULL SCREEN IMAGE OVERLAY */}
+      {fullScreenImage && (
+        <div 
+          className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center animate-in fade-in duration-300"
+          onClick={() => setFullScreenImage(null)}
+        >
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="absolute top-6 right-6 text-white hover:bg-white/10 rounded-full z-[210] h-12 w-12"
+            onClick={(e) => { e.stopPropagation(); setFullScreenImage(null); }}
+          >
+            <X className="w-8 h-8" />
+          </Button>
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            <Image 
+              src={fullScreenImage} 
+              alt="Evidencia Full Screen" 
+              fill 
+              className="object-contain" 
+              priority 
+            />
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-slate-900 p-5 flex items-center justify-between text-white shrink-0">
         <div className="flex items-center gap-4">
@@ -248,8 +277,16 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
                   {msg.type === 'text' ? (
                     <p className="text-sm font-semibold leading-relaxed">{msg.text}</p>
                   ) : (
-                    <div className="relative aspect-square w-64 max-w-full rounded-2xl overflow-hidden border border-black/5 bg-slate-100">
+                    <div 
+                      className="relative aspect-square w-64 max-w-full rounded-2xl overflow-hidden border border-black/5 bg-slate-100 cursor-pointer group/img transition-transform active:scale-95"
+                      onClick={() => setFullScreenImage(msg.imageUrl)}
+                    >
                       <Image src={msg.imageUrl} alt="Evidencia" fill className="object-cover" />
+                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="bg-white/20 backdrop-blur-md rounded-full p-2">
+                          <Maximize2 className="w-6 h-6 text-white" />
+                        </div>
+                      </div>
                     </div>
                   )}
                   <p className={cn("text-[9px] mt-2 font-bold uppercase opacity-40", isMe ? "text-right" : "text-left")}>
