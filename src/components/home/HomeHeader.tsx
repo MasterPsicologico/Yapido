@@ -16,7 +16,7 @@ export function HomeHeader({ bgImage, isAdmin, onImageUpload, isUploading }: Hom
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="relative w-full lg:max-w-3xl rounded-[48px] overflow-hidden min-h-[380px] flex flex-col justify-center items-center p-8 sm:p-16 shadow-2xl transition-all duration-700 bg-slate-900 group/header text-center mx-auto">
+    <div className="relative w-full lg:max-w-3xl rounded-[40px] overflow-hidden min-h-[200px] flex flex-col justify-center items-center p-6 sm:p-10 shadow-2xl transition-all duration-700 bg-slate-900 group/header text-center mx-auto">
       {/* Fondo de Imagen Dinámico */}
       <div className="absolute inset-0 z-0">
         {bgImage ? (
@@ -36,7 +36,7 @@ export function HomeHeader({ bgImage, isAdmin, onImageUpload, isUploading }: Hom
 
       {/* Control Maestro de Imagen (Solo Admin) */}
       {isAdmin && (
-        <div className="absolute top-8 right-8 z-30">
+        <div className="absolute top-4 right-4 z-30">
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -48,29 +48,29 @@ export function HomeHeader({ bgImage, isAdmin, onImageUpload, isUploading }: Hom
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
             variant="outline"
-            className="rounded-full h-12 w-12 bg-white/10 backdrop-blur-2xl border-white/20 text-white hover:bg-white/20 shadow-2xl transition-all active:scale-90"
+            className="rounded-full h-10 w-10 bg-white/10 backdrop-blur-2xl border-white/20 text-white hover:bg-white/20 shadow-2xl transition-all active:scale-90"
           >
-            {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5 text-primary" />}
+            {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4 text-primary" />}
           </Button>
         </div>
       )}
 
-      {/* Contenido de la Cabecera Centralizado */}
-      <div className="relative z-10 space-y-8 w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-1000">
-        <div className="space-y-4">
-          <h1 className="text-5xl sm:text-8xl font-black text-white tracking-tighter leading-none uppercase italic drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+      {/* Contenido de la Cabecera Centralizado y Compacto */}
+      <div className="relative z-10 space-y-4 w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-1000">
+        <div className="space-y-2">
+          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter leading-none uppercase italic drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)]">
             Aguachica
           </h1>
-          <div className="inline-block px-8 py-2 bg-primary/20 backdrop-blur-2xl rounded-2xl border border-primary/30 transform -rotate-2 shadow-[0_0_40px_rgba(59,130,246,0.3)]">
-            <span className="text-3xl sm:text-5xl font-black text-primary uppercase italic tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+          <div className="inline-block px-6 py-1 bg-primary/20 backdrop-blur-2xl rounded-xl border border-primary/30 transform -rotate-2 shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+            <span className="text-2xl sm:text-4xl font-black text-primary uppercase italic tracking-widest drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]">
               Digital
             </span>
           </div>
-          <div className="flex flex-col items-center gap-2 pt-4">
-            <p className="text-white/60 text-[10px] sm:text-xs font-black uppercase tracking-[0.5em] flex items-center gap-2">
-              <Sparkles className="w-3 h-3 text-yellow-400 animate-pulse" /> Vitrinas Morrocoyeras
+          <div className="flex flex-col items-center gap-1 pt-2">
+            <p className="text-white/60 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] flex items-center gap-2">
+              <Sparkles className="w-2.5 h-2.5 text-yellow-400 animate-pulse" /> Vitrinas Morrocoyeras
             </p>
-            <div className="h-0.5 w-12 bg-primary/40 rounded-full" />
+            <div className="h-0.5 w-8 bg-primary/40 rounded-full" />
           </div>
         </div>
       </div>
