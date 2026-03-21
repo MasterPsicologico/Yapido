@@ -45,7 +45,7 @@ export default function ProductPage() {
 
     setIsOrdering(true);
     try {
-      // Obtener dirección de tienda y ID del dueño
+      // Obtener dirección de tienda, ID del dueño y teléfono de la tienda
       const storeSnap = await getDoc(doc(firestore, 'stores', product.storeId));
       const storeData = storeSnap.data();
       
@@ -58,9 +58,17 @@ export default function ProductPage() {
         storeName: product.storeName,
         storeOwnerId: storeData?.ownerId || product.storeOwnerId,
         storeAddress: storeData?.address || 'Ubicación de tienda',
+        storePhone: storeData?.phoneNumber || '', // Captura del teléfono de la tienda
         productId: product.id,
         productName: product.name,
         quantity,
+        items: [{
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          quantity: quantity,
+          imageUrl: product.imageUrl
+        }],
         totalPrice: product.price * quantity,
         status: 'pending',
         createdAt: serverTimestamp(),

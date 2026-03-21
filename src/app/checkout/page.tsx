@@ -128,6 +128,7 @@ export default function CheckoutPage() {
         storeName: items[0].storeName,
         storeOwnerId: storeData?.ownerId,
         storeAddress: storeData?.address || 'Tienda',
+        storePhone: storeData?.phoneNumber || '', // Captura del teléfono de la tienda para WhatsApp posterior
         items: items.map(i => ({
           id: i.id,
           name: i.name,
