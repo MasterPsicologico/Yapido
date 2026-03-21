@@ -1,7 +1,7 @@
 
 "use client";
 
-import { MapPin } from 'lucide-react';
+import { MapPin, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -19,9 +19,10 @@ interface StoreContactContainerProps {
   address?: string;
   phoneNumber?: string;
   onOpenChat: () => void;
+  onOpenInternalChat: () => void;
 }
 
-export function StoreContactContainer({ address, phoneNumber, onOpenChat }: StoreContactContainerProps) {
+export function StoreContactContainer({ address, phoneNumber, onOpenChat, onOpenInternalChat }: StoreContactContainerProps) {
   return (
     <div className="bg-[#f5f2eb] p-6 rounded-[32px] border border-[#e5e7eb]/40 space-y-6">
       <div className="flex items-center gap-4">
@@ -33,13 +34,24 @@ export function StoreContactContainer({ address, phoneNumber, onOpenChat }: Stor
           </span>
       </div>
 
-      <Button 
-        onClick={onOpenChat}
-        className="w-full h-14 bg-[#25d366] hover:bg-[#128c7e] text-white rounded-full font-black text-lg gap-3 shadow-xl shadow-green-200 border-none group transition-all"
-      >
-          <WhatsAppIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
-          WhatsApp
-      </Button>
+      <div className="flex flex-col gap-3">
+        {/* BOTÓN DE CHAT INTERNO: Restaurado con Jerarquía Prioritaria */}
+        <Button 
+          onClick={onOpenInternalChat}
+          className="w-full h-14 bg-slate-900 hover:bg-slate-800 text-white rounded-full font-black text-lg gap-3 shadow-xl shadow-slate-200 border-none group transition-all"
+        >
+            <MessageCircle className="w-6 h-6 text-primary group-hover:scale-110 transition-transform" />
+            Chat Interno
+        </Button>
+
+        <Button 
+          onClick={onOpenChat}
+          className="w-full h-14 bg-[#25d366] hover:bg-[#128c7e] text-white rounded-full font-black text-lg gap-3 shadow-xl shadow-green-200 border-none group transition-all"
+        >
+            <WhatsAppIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
+            WhatsApp
+        </Button>
+      </div>
     </div>
   );
 }

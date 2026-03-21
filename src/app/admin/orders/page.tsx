@@ -66,6 +66,7 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
 );
 
 const STATUS_CONFIG = {
+  inquiry: { label: "CONSULTA", color: "text-cyan-500", bg: "bg-cyan-50", border: "border-cyan-100", icon: MessageCircle },
   pending: { label: "PENDIENTE", color: "text-orange-500", bg: "bg-orange-50", border: "border-orange-100", icon: Timer },
   preparing: { label: "PREPARANDO", color: "text-blue-500", bg: "bg-blue-50", border: "border-blue-100", icon: Package },
   ready_for_pickup: { label: "LISTO EN TIENDA", color: "text-indigo-500", bg: "bg-indigo-50", border: "border-indigo-100", icon: CheckCircle2 },
@@ -73,7 +74,7 @@ const STATUS_CONFIG = {
   delivered_to_driver: { label: "CON REPARTIDOR", color: "text-purple-500", bg: "bg-purple-50", border: "border-purple-100", icon: Truck },
   shipped: { label: "EN REPARTO", color: "text-purple-500", bg: "bg-purple-50", border: "border-purple-100", icon: Truck },
   delivered: { label: "ENTREGADO", color: "text-green-500", bg: "bg-green-100", border: "border-green-200", icon: CheckCircle2 },
-  cancelled: { label: "CANCELADO", color: "text-red-500", bg: "bg-red-50", border: "border-red-100", icon: AlertTriangle }
+  cancelled: { label: "CANCELADO", color: "text-red-500", bg: "bg-red-100", border: "border-red-200", icon: AlertTriangle }
 };
 
 export default function OrdersManagementPage() {
@@ -105,7 +106,7 @@ export default function OrdersManagementPage() {
     if (!myStores || !rawOrders) return [];
     return myStores.map(store => {
       const storeOrders = rawOrders.filter(o => o.storeId === store.id);
-      const active = storeOrders.filter(o => !['delivered', 'cancelled'].includes(o.status));
+      const active = storeOrders.filter(o => !['delivered', 'cancelled', 'inquiry'].includes(o.status));
       const todayDelivered = storeOrders.filter(o => o.status === 'delivered' && o.createdAt && isToday(o.createdAt.toDate()));
       const revenueToday = todayDelivered.reduce((acc, curr) => acc + (curr.totalPrice || 0), 0);
 
@@ -262,22 +263,24 @@ export default function OrdersManagementPage() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 gap-4 bg-slate-50 p-6 rounded-[32px]">
-                      <div className="flex flex-col">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ubicación de Entrega</span>
-                        <p className="text-lg font-black text-slate-800 italic">{order.customerAddress || 'No detectada'}</p>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Valor de Orden</span>
-                        <span className="text-4xl font-black text-slate-900 tracking-tighter">
-                          {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice)}
-                        </span>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase italic">X{order.quantity || 1} Unidades</span>
-                          {order.items && <Badge variant="outline" className="text-[8px] h-4 px-1.5 font-bold border-slate-200 text-slate-400">{order.items.length} productos</Badge>}
+                    {order.status !== 'inquiry' && (
+                      <div className="grid grid-cols-1 gap-4 bg-slate-50 p-6 rounded-[32px]">
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ubicación de Entrega</span>
+                          <p className="text-lg font-black text-slate-800 italic">{order.customerAddress || 'No detectada'}</p>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Valor de Orden</span>
+                          <span className="text-4xl font-black text-slate-900 tracking-tighter">
+                            {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice || 0)}
+                          </span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase italic">X{order.quantity || 1} Unidades</span>
+                            {order.items && <Badge variant="outline" className="text-[8px] h-4 px-1.5 font-bold border-slate-200 text-slate-400">{order.items.length} productos</Badge>}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
 
                     <div className="space-y-4">
                       {isVenta ? (
@@ -321,13 +324,16 @@ export default function OrdersManagementPage() {
                       )}
                       
                       <div className="flex flex-col gap-3">
-                        {/* RESTAURACIÓN DE BOTÓN DE CHAT INTERNO */}
-                        <Button onClick={() => setSelectedOrderForChat(order)} className="w-full h-12 rounded-[20px] bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest gap-2">
+                        {/* CHAT INTERNO: Ubicado con Jerarquía Absoluta sobre WhatsApp */}
+                        <Button 
+                          onClick={() => setSelectedOrderForChat(order)} 
+                          className="w-full h-12 rounded-[20px] bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg transition-transform active:scale-95"
+                        >
                           <MessageCircle className="w-4 h-4 text-primary" /> CHAT INTERNO
                         </Button>
                         <Button 
                           onClick={() => openWhatsApp(order, isVenta)} 
-                          className="w-full h-12 rounded-[20px] bg-[#25D366] hover:bg-[#128C7E] text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg transition-all active:scale-95"
+                          className="w-full h-12 rounded-[20px] bg-[#25D366] hover:bg-[#128C7E] text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-md transition-all active:scale-95"
                         >
                           <WhatsAppIcon className="w-5 h-5" /> WHATSAPP
                         </Button>
@@ -337,7 +343,7 @@ export default function OrdersManagementPage() {
                 </Card>
               );
             }) : (
-              <div className="py-20 text-center text-slate-300 font-bold uppercase italic">Sin pedidos registrados</div>
+              <div className="py-20 text-center text-slate-300 font-bold uppercase italic">Sin actividad registrada</div>
             )}
           </div>
         </main>

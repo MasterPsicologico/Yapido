@@ -21,7 +21,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, doc, query, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, query, serverTimestamp, where, getDocs, addDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { OrderChat } from '@/components/chat/OrderChat';
 import { cn } from '@/lib/utils';
 
 export default function StorePage() {
@@ -46,7 +47,6 @@ export default function StorePage() {
   const storeRef = useMemoFirebase(() => (!firestore || !id) ? null : doc(firestore, 'stores', id), [firestore, id]);
   const { data: store, isLoading: loadingStore } = useDoc(storeRef);
 
-  // LÓGICA DE FALLBACK: Obtener el perfil del dueño si el teléfono de la tienda está vacío
   const ownerRef = useMemoFirebase(() => (!firestore || !store?.ownerId) ? null : doc(firestore, 'users', store.ownerId), [firestore, store?.ownerId]);
   const { data: ownerProfile } = useDoc(ownerRef);
 
@@ -62,6 +62,7 @@ export default function StorePage() {
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [productImage, setProductImage] = useState<string | null>(null);
   const [updatingImage, setUpdatingImage] = useState<string | null>(null);
+  const [internalChatOrder, setInternalChatOrder] = useState<any | null>(null);
 
   if (!mounted || loadingStore) return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md">
@@ -87,6 +88,48 @@ export default function StorePage() {
 
   const canEdit = user?.uid === store?.ownerId || isAdmin;
   const effectivePhoneNumber = store?.phoneNumber || ownerProfile?.phoneNumber;
+
+  const handleOpenInternalChat = async () => {
+    if (!user || !store || !firestore) {
+      toast({ title: "Inicia sesión", description: "Para chatear directamente con el negocio.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      // Buscar si ya existe una consulta (inquiry) previa
+      const q = query(
+        collection(firestore, 'orders'),
+        where('customerId', '==', user.uid),
+        where('storeId', '==', id),
+        where('status', '==', 'inquiry')
+      );
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        setInternalChatOrder({ id: snap.docs[0].id, ...snap.docs[0].data() });
+      } else {
+        // Crear una nueva consulta en la colección de órdenes con estado especial
+        const inquiryData = {
+          customerId: user.uid,
+          customerName: user.displayName || 'Cliente',
+          customerPhone: user.phoneNumber || '',
+          storeId: id,
+          storeName: store.name,
+          storeOwnerId: store.ownerId,
+          participants: [user.uid, store.ownerId],
+          status: 'inquiry',
+          productName: 'Consulta en Vitrina',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          isLogisticsPublic: false
+        };
+        const docRef = await addDoc(collection(firestore, 'orders'), inquiryData);
+        setInternalChatOrder({ id: docRef.id, ...inquiryData });
+      }
+    } catch (e) {
+      toast({ title: "Error al conectar chat", variant: "destructive" });
+    }
+  };
 
   const handleUpdateImage = async (e: React.ChangeEvent<HTMLInputElement>, field: string, index?: number) => {
     const file = e.target.files?.[0];
@@ -272,7 +315,12 @@ export default function StorePage() {
                 )}
               </div>
 
-              <StoreContactContainer address={store?.address} phoneNumber={effectivePhoneNumber} onOpenChat={handleWhatsAppOpen} />
+              <StoreContactContainer 
+                address={store?.address} 
+                phoneNumber={effectivePhoneNumber} 
+                onOpenChat={handleWhatsAppOpen}
+                onOpenInternalChat={handleOpenInternalChat}
+              />
 
               {canEdit && (
                 <StoreOwnerActions 
@@ -298,6 +346,12 @@ export default function StorePage() {
           </div>
         </div>
       </main>
+
+      <Dialog open={!!internalChatOrder} onOpenChange={v => !v && setInternalChatOrder(null)}>
+        <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-[450px]">
+          {internalChatOrder && <OrderChat orderId={internalChatOrder.id} orderData={internalChatOrder} onClose={() => setInternalChatOrder(null)} />}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
         <DialogContent>
