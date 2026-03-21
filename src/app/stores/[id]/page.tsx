@@ -29,7 +29,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { OrderChat } from '@/components/chat/OrderChat';
 import { cn } from '@/lib/utils';
 
@@ -349,6 +349,10 @@ export default function StorePage() {
 
       <Dialog open={!!internalChatOrder} onOpenChange={v => !v && setInternalChatOrder(null)}>
         <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-[450px]">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Chat Interno con la Tienda</DialogTitle>
+            <DialogDescription>Inicia una conversación privada con el dueño del negocio.</DialogDescription>
+          </DialogHeader>
           {internalChatOrder && <OrderChat orderId={internalChatOrder.id} orderData={internalChatOrder} onClose={() => setInternalChatOrder(null)} />}
         </DialogContent>
       </Dialog>

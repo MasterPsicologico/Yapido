@@ -392,6 +392,10 @@ export default function OrdersManagementPage() {
 
         <Dialog open={!!selectedOrderForChat} onOpenChange={v => !v && setSelectedOrderForChat(null)}>
           <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-[450px]">
+            <DialogHeader className="sr-only">
+              <DialogTitle>Chat Interno del Pedido</DialogTitle>
+              <DialogDescription>Canal de comunicación para la gestión de esta orden.</DialogDescription>
+            </DialogHeader>
             {selectedOrderForChat && <OrderChat orderId={selectedOrderForChat.id} orderData={selectedOrderForChat} onClose={() => setSelectedOrderForChat(null)} />}
           </DialogContent>
         </Dialog>
