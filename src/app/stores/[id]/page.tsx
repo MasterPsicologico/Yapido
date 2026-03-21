@@ -8,7 +8,6 @@ import { StoreInfo } from '@/components/store/view/StoreInfo';
 import { StoreHighlights } from '@/components/store/view/StoreHighlights';
 import { StoreStats } from '@/components/store/view/StoreStats';
 import { StoreContactContainer } from '@/components/store/view/StoreContactContainer';
-import { StoreWhatsAppChat } from '@/components/store/view/StoreWhatsAppChat';
 import { StoreOwnerActions } from '@/components/store/view/StoreOwnerActions';
 import { StoreProductsSection } from '@/components/store/view/StoreProductsSection';
 import { 
@@ -58,10 +57,8 @@ export default function StorePage() {
   const [prodDialogOpen, setProdDialogOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [productImage, setProductImage] = useState<string | null>(null);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [updatingImage, setUpdatingImage] = useState<string | null>(null);
 
-  // Lógica de carga unificada para evitar Hydration Error y flashes visuales
   if (!mounted || loadingStore) return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/80 backdrop-blur-md">
       <div className="flex flex-col items-center gap-4">
@@ -211,6 +208,17 @@ export default function StorePage() {
     }
   };
 
+  const handleWhatsAppOpen = () => {
+    if (!store?.phoneNumber) {
+      toast({ title: "Teléfono no disponible", description: "Este negocio no ha registrado su WhatsApp.", variant: "destructive" });
+      return;
+    }
+    const cleanPhone = store.phoneNumber.replace(/\D/g, '');
+    const message = `¡Hola! 👋 Te contacto desde Vitriniando. Me interesa conocer más sobre tus productos en la vitrina *${store.name}*.`;
+    const url = `https://wa.me/${cleanPhone.startsWith('57') ? cleanPhone : '57' + cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-[#f3f4f6]">
       <Navbar />
@@ -258,7 +266,7 @@ export default function StorePage() {
                 )}
               </div>
 
-              <StoreContactContainer address={store?.address} phoneNumber={store?.phoneNumber} onOpenChat={() => setIsChatOpen(true)} />
+              <StoreContactContainer address={store?.address} phoneNumber={store?.phoneNumber} onOpenChat={handleWhatsAppOpen} />
 
               {canEdit && (
                 <StoreOwnerActions 
@@ -284,8 +292,6 @@ export default function StorePage() {
           </div>
         </div>
       </main>
-
-      <StoreWhatsAppChat isOpen={isChatOpen} onOpenChange={setIsChatOpen} storeName={store?.name} storeImageUrl={store?.imageUrl} />
 
       <Dialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
         <DialogContent>
