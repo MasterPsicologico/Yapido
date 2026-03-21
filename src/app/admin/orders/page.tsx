@@ -321,8 +321,9 @@ export default function OrdersManagementPage() {
                       )}
                       
                       <div className="flex flex-col gap-3">
+                        {/* RESTAURACIÓN DE BOTÓN DE CHAT INTERNO */}
                         <Button onClick={() => setSelectedOrderForChat(order)} className="w-full h-12 rounded-[20px] bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest gap-2">
-                          <MessageCircle className="w-4 h-4 text-primary" /> CHAT DE SOPORTE
+                          <MessageCircle className="w-4 h-4 text-primary" /> CHAT INTERNO
                         </Button>
                         <Button 
                           onClick={() => openWhatsApp(order, isVenta)} 
@@ -348,7 +349,7 @@ export default function OrdersManagementPage() {
           storeName={ratingOrder?.storeName || 'Tienda'}
         />
 
-        <Dialog open={!!validatingOrder} onOpenChange={(v) => !v && setValidatingOrder(null)}>
+        <Dialog open={!!validatingOrder} onOpenChange={v => !v && setValidatingOrder(null)}>
           <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px]">
             <DialogHeader>
               <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter flex items-center gap-3 text-slate-900">
@@ -383,7 +384,7 @@ export default function OrdersManagementPage() {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={!!selectedOrderForChat} onOpenChange={(v) => !v && setSelectedOrderForChat(null)}>
+        <Dialog open={!!selectedOrderForChat} onOpenChange={v => !v && setSelectedOrderForChat(null)}>
           <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-[450px]">
             {selectedOrderForChat && <OrderChat orderId={selectedOrderForChat.id} orderData={selectedOrderForChat} onClose={() => setSelectedOrderForChat(null)} />}
           </DialogContent>
