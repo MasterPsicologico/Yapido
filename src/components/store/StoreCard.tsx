@@ -117,36 +117,34 @@ export function StoreCard({ store }: { store: any }) {
     updateDocumentNonBlocking(storeRef, { verificationStatus: newStatus });
   };
 
+  // CORE: Reducción a 2 cuadrantes clave para mayor impacto visual
   const QUADRANTS = [
-    { id: 'logistics', label: 'ENTREGA', color: 'bg-blue-50/80', border: 'border-blue-100', icon: Zap, textColor: 'text-blue-600' },
-    { id: 'trust', label: 'RECONOCIMIENTO', color: 'bg-amber-50/80', border: 'border-amber-100', icon: ShieldCheck, textColor: 'text-amber-600' },
-    { id: 'product', label: 'ESTADO', color: 'bg-emerald-50/80', border: 'border-emerald-100', icon: Package, textColor: 'text-emerald-600' },
-    { id: 'community', label: 'VALOR', color: 'bg-purple-50/80', border: 'border-purple-100', icon: Heart, textColor: 'text-purple-600' },
+    { id: 'product', label: 'ESTADO', color: 'bg-emerald-50/60', border: 'border-emerald-100', icon: Package, textColor: 'text-emerald-600', accent: 'bg-emerald-500' },
+    { id: 'community', label: 'VALOR', color: 'bg-purple-50/60', border: 'border-purple-100', icon: Heart, textColor: 'text-purple-600', accent: 'bg-purple-500' },
   ];
 
   const StatusContent = (
     <div className={cn(
-      "flex items-center justify-between w-full py-4 px-6 rounded-[32px] border transition-all duration-500 shadow-sm bg-white",
-      statusInfo.bg,
+      "flex items-center justify-between w-full py-3.5 px-6 rounded-[28px] border transition-all duration-500 shadow-sm bg-gradient-to-r from-white to-slate-50/50",
       statusInfo.border,
       isAdmin && "hover:bg-slate-50 hover:shadow-xl cursor-pointer group/status active:scale-[0.98]"
     )}>
       <div className="flex items-center gap-4">
-          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md border border-slate-100 transition-transform group-hover/status:rotate-[10deg]", statusInfo.color)}>
-            <StatusIcon className="w-5.5 h-5.5" />
+          <div className={cn("w-9 h-9 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-100 transition-transform group-hover/status:rotate-[10deg]", statusInfo.color)}>
+            <StatusIcon className="w-5 h-5" />
           </div>
           <div className="flex flex-col">
-            <span className={cn("text-[12px] font-black uppercase tracking-[0.15em] italic leading-none", statusInfo.color)}>
+            <span className={cn("text-[11px] font-black uppercase tracking-[0.12em] italic leading-none", statusInfo.color)}>
               {statusInfo.label}
             </span>
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Estatus Oficial</span>
+            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Estatus Oficial</span>
           </div>
       </div>
       {isAdmin ? (
         <ChevronDown className="w-4 h-4 text-slate-300 group-hover/status:text-primary transition-colors" />
       ) : (
-        <div className="w-9 h-9 rounded-full bg-white/50 flex items-center justify-center shadow-inner">
-          <ChevronRight className="w-4.5 h-4.5 text-slate-300 group-hover:translate-x-1 transition-transform" />
+        <div className="w-8 h-8 rounded-full bg-white/50 flex items-center justify-center shadow-inner">
+          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-transform" />
         </div>
       )}
     </div>
@@ -207,17 +205,18 @@ export function StoreCard({ store }: { store: any }) {
         </div>
       </div>
 
-      <CardContent className="p-8 flex flex-col flex-1 space-y-8 bg-white">
+      <CardContent className="p-8 flex flex-col flex-1 space-y-6 bg-white">
         {store.description && (
           <div className="relative group/desc">
             <div className="absolute -left-4 top-0 w-1 h-full bg-primary/10 rounded-full group-hover/desc:bg-primary/30 transition-colors" />
-            <p className="text-[14px] text-slate-600 leading-[1.6] font-medium italic pl-3 pr-2 break-words">
+            <p className="text-[13px] text-slate-500 leading-[1.5] font-medium italic pl-3 pr-2 break-words">
               "{store.description}"
             </p>
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-2 relative">
+        {/* CORE: Grid de 2 Cuadrantes Compactos y Vibrantes */}
+        <div className="grid grid-cols-2 gap-3 relative">
           {QUADRANTS.map((quad) => {
             const activeBadge = activeBadgeIds
               .map(id => ({ id, ...VALUE_BADGES_CONFIG[id] }))
@@ -227,28 +226,31 @@ export function StoreCard({ store }: { store: any }) {
               <div 
                 key={quad.id} 
                 className={cn(
-                  "p-4 rounded-[28px] border flex flex-col items-center justify-center text-center gap-2 transition-all duration-500 min-h-[95px]",
+                  "relative p-4 rounded-[24px] border flex flex-col items-center justify-center text-center gap-2 transition-all duration-500 min-h-[85px] overflow-hidden",
                   quad.color,
                   quad.border,
                   !activeBadge && "opacity-40 grayscale-[0.5]"
                 )}
               >
-                <div className={cn("w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center", quad.textColor)}>
-                  {activeBadge ? <activeBadge.icon className="w-4.5 h-4.5" /> : <quad.icon className="w-4.5 h-4.5 opacity-30" />}
+                {/* Efecto de luz de fondo */}
+                <div className={cn("absolute -top-10 -right-10 w-20 h-20 rounded-full blur-2xl opacity-20", quad.accent)} />
+                
+                <div className={cn("relative z-10 w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center", quad.textColor)}>
+                  {activeBadge ? <activeBadge.icon className="w-4 h-4" /> : <quad.icon className="w-4 h-4 opacity-30" />}
                 </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40">{quad.label}</span>
-                  <span className={cn("text-[10px] font-black uppercase tracking-widest italic leading-none", quad.textColor)}>
+                <div className="relative z-10 flex flex-col gap-0.5">
+                  <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40">{quad.label}</span>
+                  <span className={cn("text-[9px] font-black uppercase tracking-widest italic leading-none", quad.textColor)}>
                     {activeBadge ? activeBadge.label : 'PENDIENTE'}
                   </span>
                 </div>
                 
                 {isAdmin && (
-                  <div className="absolute top-0 right-0 p-1">
+                  <div className="absolute top-0 right-0 p-1 z-20">
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
-                        <Button size="icon" className="h-6 w-6 rounded-full bg-white/50 text-slate-400 hover:text-primary shadow-sm border-none">
-                          <Plus className="w-3 h-3" />
+                        <Button size="icon" className="h-5 w-5 rounded-full bg-white/50 text-slate-400 hover:text-primary shadow-sm border-none">
+                          <Plus className="w-2.5 h-2.5" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="center" className="w-56 rounded-[24px] p-2 shadow-2xl border-none bg-white z-[100]">
@@ -286,7 +288,8 @@ export function StoreCard({ store }: { store: any }) {
           })}
         </div>
 
-        <div className="mt-auto pt-4 border-t border-slate-50">
+        {/* CORE: Barra de Estatus Final Compacta */}
+        <div className="mt-2 pt-2">
           {isAdmin ? (
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
