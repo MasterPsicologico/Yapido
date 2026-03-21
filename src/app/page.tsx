@@ -10,7 +10,7 @@ import { HomeCategorySection } from '@/components/home/HomeCategorySection';
 import { HomePromoBanner } from '@/components/home/HomePromoBanner';
 import { UnauthenticatedLanding } from '@/components/home/UnauthenticatedLanding';
 import { StoreCard } from '@/components/store/StoreCard';
-import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useDoc, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, doc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -80,6 +80,11 @@ function AuthenticatedHome() {
   const [isCompressing, setIsCompressing] = useState(false);
   const [base64Image, setBase64Image] = useState<string | null>(null);
   const [isImageRemoved, setIsImageRemoved] = useState(false);
+  const [isUploadingHeader, setIsUploadingHeader] = useState(false);
+
+  // Obtener configuración de la cabecera
+  const configRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'home'), [firestore]);
+  const { data: appConfig } = useDoc(configRef);
 
   const catQ = useMemoFirebase(() => query(collection(firestore, 'mainCategories'), orderBy('createdAt', 'desc')), [firestore]);
   const { data: mainCategories, isLoading: loadingCategories } = useCollection(catQ);
@@ -104,6 +109,36 @@ function AuthenticatedHome() {
 
     return { categories: matchedCategories, stores: matchedStores };
   }, [searchTerm, mainCategories, allStores]);
+
+  const handleHeaderImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !isAdmin) return;
+
+    setIsUploadingHeader(true);
+    try {
+      const compressed = await compressImage(file, 1920, 1080, 0.8);
+      
+      if (appConfig) {
+        updateDocumentNonBlocking(configRef, {
+          headerImageUrl: compressed,
+          updatedAt: serverTimestamp(),
+          headerUpdatedBy: user?.uid
+        });
+      } else {
+        setDocumentNonBlocking(configRef, {
+          headerImageUrl: compressed,
+          createdAt: serverTimestamp(),
+          headerUpdatedBy: user?.uid
+        }, { merge: true });
+      }
+      
+      toast({ title: "Fondo de cabecera actualizado" });
+    } catch (error) {
+      toast({ title: "Error al actualizar fondo", variant: "destructive" });
+    } finally {
+      setIsUploadingHeader(false);
+    }
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -178,7 +213,13 @@ function AuthenticatedHome() {
   return (
     <div className="w-full py-6 sm:py-10 space-y-8">
       <div className="px-4 sm:px-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
-        <HomeHeader onSearch={setSearchTerm} />
+        <HomeHeader 
+          onSearch={setSearchTerm} 
+          bgImage={appConfig?.headerImageUrl} 
+          isAdmin={isAdmin} 
+          onImageUpload={handleHeaderImageUpload}
+          isUploading={isUploadingHeader}
+        />
         <HomeActions 
           isAdmin={isAdmin}
           openCategory={openCategory} 
