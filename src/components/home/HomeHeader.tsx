@@ -20,26 +20,27 @@ export function HomeHeader({ onSearch, bgImage, isAdmin, onImageUpload, isUpload
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="relative w-full lg:max-w-2xl rounded-[40px] overflow-hidden min-h-[320px] flex flex-col justify-end p-8 sm:p-12 shadow-2xl transition-all duration-700 bg-slate-900 group/header">
-      {/* Fondo de Imagen Dinámico con Overlay */}
+    <div className="relative w-full lg:max-w-3xl rounded-[48px] overflow-hidden min-h-[420px] flex flex-col justify-center items-center p-8 sm:p-16 shadow-2xl transition-all duration-700 bg-slate-900 group/header text-center mx-auto">
+      {/* Fondo de Imagen Dinámico con Overlay Reforzado */}
       <div className="absolute inset-0 z-0">
         {bgImage ? (
           <Image 
             src={bgImage} 
             alt="Cabecera Aguachica" 
             fill 
-            className="object-cover opacity-60 group-hover/header:scale-105 transition-transform duration-[2000ms]" 
+            className="object-cover opacity-70 group-hover/header:scale-105 transition-transform duration-[3000ms] ease-out" 
             priority
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/30" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+        <div className="absolute inset-0 bg-black/10" />
       </div>
 
       {/* Control Maestro de Imagen (Solo Admin) */}
       {isAdmin && (
-        <div className="absolute top-6 right-6 z-20">
+        <div className="absolute top-8 right-8 z-30">
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -51,34 +52,41 @@ export function HomeHeader({ onSearch, bgImage, isAdmin, onImageUpload, isUpload
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
             variant="outline"
-            className="rounded-full h-12 w-12 sm:w-auto sm:px-5 bg-white/10 backdrop-blur-xl border-white/20 text-white hover:bg-white/20 gap-2 shadow-2xl transition-all active:scale-90"
+            className="rounded-full h-12 w-12 bg-white/10 backdrop-blur-2xl border-white/20 text-white hover:bg-white/20 shadow-2xl transition-all active:scale-90"
           >
             {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5 text-primary" />}
-            <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">Cambiar Fondo</span>
           </Button>
         </div>
       )}
 
-      {/* Contenido de la Cabecera */}
-      <div className="relative z-10 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="space-y-2">
-          <h1 className="text-4xl sm:text-7xl font-black text-white tracking-tighter leading-[0.85] uppercase italic drop-shadow-2xl">
-            Aguachica <br /> <span className="text-primary drop-shadow-[0_0_30px_rgba(59,130,246,0.5)]">Digital</span>
+      {/* Contenido de la Cabecera Centralizado */}
+      <div className="relative z-10 space-y-10 w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-1000">
+        <div className="space-y-4">
+          <h1 className="text-5xl sm:text-8xl font-black text-white tracking-tighter leading-none uppercase italic drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+            Aguachica
           </h1>
-          <p className="text-white/60 text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] flex items-center gap-2 ml-1">
-            <Sparkles className="w-3 h-3 text-yellow-400 animate-pulse" /> Las mejores vitrinas morrocoyeras
-          </p>
+          <div className="inline-block px-8 py-2 bg-primary/20 backdrop-blur-2xl rounded-2xl border border-primary/30 transform -rotate-2 shadow-[0_0_40px_rgba(59,130,246,0.3)]">
+            <span className="text-3xl sm:text-5xl font-black text-primary uppercase italic tracking-widest drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+              Digital
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-2 pt-4">
+            <p className="text-white/60 text-[10px] sm:text-xs font-black uppercase tracking-[0.5em] flex items-center gap-2">
+              <Sparkles className="w-3 h-3 text-yellow-400 animate-pulse" /> Vitrinas Morrocoyeras
+            </p>
+            <div className="h-0.5 w-12 bg-primary/40 rounded-full" />
+          </div>
         </div>
 
-        <div className="relative group max-w-md">
-          <div className="absolute inset-0 bg-primary/30 rounded-full blur-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
+        <div className="relative group w-full max-w-lg">
+          <div className="absolute inset-0 bg-primary/40 rounded-full blur-3xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-700" />
           <div className="relative">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30 group-focus-within:text-primary transition-colors" />
+            <Search className="absolute left-7 top-1/2 -translate-y-1/2 w-6 h-6 text-white/30 group-focus-within:text-primary transition-all duration-300" />
             <Input 
               type="text"
-              placeholder="¿Qué buscas hoy? (Ej: Pizza, Ropa...)" 
+              placeholder="¿Qué buscas hoy en la ciudad?" 
               onChange={(e) => onSearch?.(e.target.value)}
-              className="h-16 rounded-full bg-white/10 backdrop-blur-2xl border-white/10 pl-16 pr-6 text-lg font-bold text-white placeholder:text-white/20 focus:ring-4 focus:ring-primary/20 transition-all shadow-2xl"
+              className="h-20 rounded-full bg-white/10 backdrop-blur-3xl border-white/10 pl-18 pr-8 text-xl font-bold text-white placeholder:text-white/20 focus:ring-8 focus:ring-primary/10 transition-all shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
             />
           </div>
         </div>
