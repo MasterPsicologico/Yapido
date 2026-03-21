@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -15,7 +14,8 @@ import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, doc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
-import { ShoppingBag, SearchX } from 'lucide-react';
+import { ShoppingBag, SearchX, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -82,7 +82,6 @@ function AuthenticatedHome() {
   const [isImageRemoved, setIsImageRemoved] = useState(false);
   const [isUploadingHeader, setIsUploadingHeader] = useState(false);
 
-  // Obtener configuración de la cabecera
   const configRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'home'), [firestore]);
   const { data: appConfig } = useDoc(configRef);
 
@@ -117,21 +116,11 @@ function AuthenticatedHome() {
     setIsUploadingHeader(true);
     try {
       const compressed = await compressImage(file, 1920, 1080, 0.8);
-      
       if (appConfig) {
-        updateDocumentNonBlocking(configRef, {
-          headerImageUrl: compressed,
-          updatedAt: serverTimestamp(),
-          headerUpdatedBy: user?.uid
-        });
+        updateDocumentNonBlocking(configRef, { headerImageUrl: compressed, updatedAt: serverTimestamp() });
       } else {
-        setDocumentNonBlocking(configRef, {
-          headerImageUrl: compressed,
-          createdAt: serverTimestamp(),
-          headerUpdatedBy: user?.uid
-        }, { merge: true });
+        setDocumentNonBlocking(configRef, { headerImageUrl: compressed, createdAt: serverTimestamp() }, { merge: true });
       }
-      
       toast({ title: "Fondo de cabecera actualizado" });
     } catch (error) {
       toast({ title: "Error al actualizar fondo", variant: "destructive" });
@@ -156,10 +145,7 @@ function AuthenticatedHome() {
 
   const handleCategorySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!isAdmin) {
-      toast({ title: "Acceso Denegado", description: "Solo el administrador puede crear categorías.", variant: "destructive" });
-      return;
-    }
+    if (!isAdmin) return;
     const fd = new FormData(e.currentTarget);
     const name = fd.get('name') as string;
     const description = fd.get('description') as string;
@@ -174,7 +160,7 @@ function AuthenticatedHome() {
         const ref = doc(collection(firestore, 'mainCategories'));
         setDocumentNonBlocking(ref, { id: ref.id, name, description, imageUrl: base64Image, createdAt: serverTimestamp() }, { merge: true });
       }
-      setOpenCategory(false); setEditingCategory(null); setBase64Image(null); setIsImageRemoved(false);
+      setOpenCategory(false); setEditingCategory(null); setBase64Image(null);
     } catch (e) { toast({ title: "Error" }); }
     finally { setIsRegistering(false); }
   };
@@ -190,20 +176,9 @@ function AuthenticatedHome() {
     setIsRegistering(true);
     try {
       const ref = doc(collection(firestore, 'stores'));
-      setDocumentNonBlocking(ref, { 
-        id: ref.id, 
-        ownerId: user.uid, 
-        mainCategoryId, 
-        name, 
-        address, 
-        status: 'active', 
-        createdAt: serverTimestamp(),
-        imageUrl: `https://picsum.photos/seed/${ref.id}/800/600`
-      }, { merge: true });
-
+      setDocumentNonBlocking(ref, { id: ref.id, ownerId: user.uid, mainCategoryId, name, address, status: 'active', createdAt: serverTimestamp(), imageUrl: `https://picsum.photos/seed/${ref.id}/800/600` }, { merge: true });
       const userRef = doc(firestore, 'users', user.uid);
       updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
-
       setOpenStore(false);
       toast({ title: "Vitrina registrada con éxito" });
     } catch (e) { toast({ title: "Error al registrar vitrina" }); }
@@ -211,10 +186,9 @@ function AuthenticatedHome() {
   };
 
   return (
-    <div className="w-full py-6 sm:py-10 space-y-8">
+    <div className="w-full py-6 sm:py-10 space-y-12">
       <div className="px-4 sm:px-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
         <HomeHeader 
-          onSearch={setSearchTerm} 
           bgImage={appConfig?.headerImageUrl} 
           isAdmin={isAdmin} 
           onImageUpload={handleHeaderImageUpload}
@@ -239,6 +213,20 @@ function AuthenticatedHome() {
           onStoreSubmit={handleStoreSubmit}
         />
       </div>
+
+      {/* NUEVO BUSCADOR GLOBAL SUTIL */}
+      <section className="px-4 sm:px-8 max-w-2xl">
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-primary transition-colors" />
+          <Input 
+            type="text"
+            placeholder="¿Qué tienda o categoría buscas hoy?" 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-14 rounded-[20px] bg-white border-slate-100 pl-12 pr-6 text-sm font-bold shadow-sm focus:ring-4 focus:ring-primary/5 transition-all"
+          />
+        </div>
+      </section>
 
       {searchTerm && filteredData.stores && filteredData.stores.length > 0 && (
         <section className="px-4 sm:px-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
