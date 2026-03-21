@@ -45,9 +45,17 @@ export default function ProductPage() {
 
     setIsOrdering(true);
     try {
-      // Obtener dirección de tienda, ID del dueño y teléfono de la tienda
+      // Obtener dirección de tienda, ID del dueño y teléfono de la tienda con fallback inteligente
       const storeSnap = await getDoc(doc(firestore, 'stores', product.storeId));
       const storeData = storeSnap.data();
+      
+      let storePhone = storeData?.phoneNumber || '';
+      if (!storePhone && storeData?.ownerId) {
+        const ownerSnap = await getDoc(doc(firestore, 'users', storeData.ownerId));
+        if (ownerSnap.exists()) {
+          storePhone = ownerSnap.data().phoneNumber || '';
+        }
+      }
       
       const orderData = {
         customerId: user.uid,
@@ -58,7 +66,7 @@ export default function ProductPage() {
         storeName: product.storeName,
         storeOwnerId: storeData?.ownerId || product.storeOwnerId,
         storeAddress: storeData?.address || 'Ubicación de tienda',
-        storePhone: storeData?.phoneNumber || '', // Captura del teléfono de la tienda
+        storePhone: storePhone,
         productId: product.id,
         productName: product.name,
         quantity,

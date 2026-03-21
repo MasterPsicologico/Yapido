@@ -46,6 +46,10 @@ export default function StorePage() {
   const storeRef = useMemoFirebase(() => (!firestore || !id) ? null : doc(firestore, 'stores', id), [firestore, id]);
   const { data: store, isLoading: loadingStore } = useDoc(storeRef);
 
+  // LÓGICA DE FALLBACK: Obtener el perfil del dueño si el teléfono de la tienda está vacío
+  const ownerRef = useMemoFirebase(() => (!firestore || !store?.ownerId) ? null : doc(firestore, 'users', store.ownerId), [firestore, store?.ownerId]);
+  const { data: ownerProfile } = useDoc(ownerRef);
+
   const catQ = useMemoFirebase(() => !id ? null : query(collection(firestore, 'stores', id, 'categories')), [firestore, id]);
   const { data: categories } = useCollection(catQ);
 
@@ -82,6 +86,7 @@ export default function StorePage() {
   );
 
   const canEdit = user?.uid === store?.ownerId || isAdmin;
+  const effectivePhoneNumber = store?.phoneNumber || ownerProfile?.phoneNumber;
 
   const handleUpdateImage = async (e: React.ChangeEvent<HTMLInputElement>, field: string, index?: number) => {
     const file = e.target.files?.[0];
@@ -209,11 +214,12 @@ export default function StorePage() {
   };
 
   const handleWhatsAppOpen = () => {
-    if (!store?.phoneNumber) {
+    const phone = effectivePhoneNumber;
+    if (!phone) {
       toast({ title: "Teléfono no disponible", description: "Este negocio no ha registrado su WhatsApp.", variant: "destructive" });
       return;
     }
-    const cleanPhone = store.phoneNumber.replace(/\D/g, '');
+    const cleanPhone = phone.replace(/\D/g, '');
     const message = `¡Hola! 👋 Te contacto desde Vitriniando. Me interesa conocer más sobre tus productos en la vitrina *${store.name}*.`;
     const url = `https://wa.me/${cleanPhone.startsWith('57') ? cleanPhone : '57' + cleanPhone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -266,7 +272,7 @@ export default function StorePage() {
                 )}
               </div>
 
-              <StoreContactContainer address={store?.address} phoneNumber={store?.phoneNumber} onOpenChat={handleWhatsAppOpen} />
+              <StoreContactContainer address={store?.address} phoneNumber={effectivePhoneNumber} onOpenChat={handleWhatsAppOpen} />
 
               {canEdit && (
                 <StoreOwnerActions 

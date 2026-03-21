@@ -119,6 +119,15 @@ export default function CheckoutPage() {
       const storeSnap = await getDoc(storeRef);
       const storeData = storeSnap.data();
 
+      // INTELIGENCIA DE CONTACTO: Fallback al perfil del dueño si el teléfono de tienda está vacío
+      let storePhone = storeData?.phoneNumber || '';
+      if (!storePhone && storeData?.ownerId) {
+        const ownerSnap = await getDoc(doc(firestore, 'users', storeData.ownerId));
+        if (ownerSnap.exists()) {
+          storePhone = ownerSnap.data().phoneNumber || '';
+        }
+      }
+
       const orderData = {
         customerId: user.uid,
         customerName: profile?.displayName || user.displayName || 'Cliente',
@@ -128,7 +137,7 @@ export default function CheckoutPage() {
         storeName: items[0].storeName,
         storeOwnerId: storeData?.ownerId,
         storeAddress: storeData?.address || 'Tienda',
-        storePhone: storeData?.phoneNumber || '', // Captura del teléfono de la tienda para WhatsApp posterior
+        storePhone: storePhone,
         items: items.map(i => ({
           id: i.id,
           name: i.name,
