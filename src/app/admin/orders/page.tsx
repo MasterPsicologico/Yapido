@@ -101,7 +101,6 @@ export default function OrdersManagementPage() {
   }, [firestore, user?.uid]);
   const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
 
-  // LOGICA QUIRURGICA: Abrir chat automaticamente desde el hash de la URL
   useEffect(() => {
     const handleHashOpenChat = () => {
       const hashId = window.location.hash.replace('#', '');
@@ -214,18 +213,20 @@ export default function OrdersManagementPage() {
     );
   }
 
-  if (selectedStoreId || showMyPurchases) {
-    const contextName = showMyPurchases ? "Mis Compras" : storeSummaries.find(s => s.id === selectedStoreId)?.name;
-    const filteredOrders = rawOrders?.filter(o => {
-      const matchesSearch = o.productName?.toLowerCase().includes(searchTerm.toLowerCase()) || o.customerName?.toLowerCase().includes(searchTerm.toLowerCase());
-      if (!matchesSearch) return false;
-      if (showMyPurchases) return o.customerId === user?.uid;
-      return o.storeId === selectedStoreId;
-    }).sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+  const isDetailView = selectedStoreId || showMyPurchases;
+  const contextName = showMyPurchases ? "Mis Compras" : storeSummaries.find(s => s.id === selectedStoreId)?.name;
+  const filteredOrders = isDetailView ? rawOrders?.filter(o => {
+    const matchesSearch = o.productName?.toLowerCase().includes(searchTerm.toLowerCase()) || o.customerName?.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchesSearch) return false;
+    if (showMyPurchases) return o.customerId === user?.uid;
+    return o.storeId === selectedStoreId;
+  }).sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)) : [];
 
-    return (
-      <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-        <Navbar />
+  return (
+    <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+      <Navbar />
+      
+      {isDetailView ? (
         <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
           <div className="flex flex-col gap-6 mb-10">
             <Button 
@@ -365,93 +366,89 @@ export default function OrdersManagementPage() {
             )}
           </div>
         </main>
-
-        <RatingDialog 
-          isOpen={!!ratingOrder} 
-          onOpenChange={(v) => !v && setRatingOrder(null)}
-          orderId={ratingOrder?.id || ''}
-          storeName={ratingOrder?.storeName || 'Tienda'}
-        />
-
-        <Dialog open={!!validatingOrder} onOpenChange={v => !v && setValidatingOrder(null)}>
-          <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px]">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter flex items-center gap-3 text-slate-900">
-                <Lock className="w-7 h-7 text-amber-500" /> Validación de Entrega
-              </DialogTitle>
-              <DialogDescription className="text-slate-400 font-medium">
-                Pide al repartidor su código de 4 dígitos y selecciona la opción correcta para transferir la responsabilidad del pedido.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="py-8 grid grid-cols-1 gap-4">
-              {validatingOrder && (
-                <>
-                  {[
-                    validatingOrder.deliveryCode,
-                    (Number(validatingOrder.deliveryCode) + 123).toString().slice(-4),
-                    (Number(validatingOrder.deliveryCode) - 456).toString().slice(-4)
-                  ].sort().map((code, idx) => (
-                    <Button 
-                      key={idx} 
-                      onClick={() => handleValidateDriverCode(code)}
-                      variant="outline" 
-                      className="h-20 rounded-[24px] text-3xl font-black tracking-[0.3em] italic border-2 hover:bg-slate-50 hover:border-primary transition-all"
-                    >
-                      {code}
-                    </Button>
-                  ))}
-                </>
-              )}
+      ) : (
+        <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="w-16 h-16 bg-primary rounded-[24px] flex items-center justify-center text-white shadow-2xl">
+              <StoreIcon className="w-8 h-8" />
             </div>
-            <p className="text-[9px] text-slate-300 font-black uppercase text-center tracking-widest">Este paso garantiza la entrega física del producto</p>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={!!selectedOrderForChat} onOpenChange={v => !v && setSelectedOrderForChat(null)}>
-          <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-none w-screen h-[100dvh] sm:p-4 md:p-8">
-            <DialogHeader className="sr-only">
-              <DialogTitle>Chat Interno del Pedido</DialogTitle>
-              <DialogDescription>Canal de comunicación para la gestión de esta orden.</DialogDescription>
-            </DialogHeader>
-            {selectedOrderForChat && <OrderChat orderId={selectedOrderForChat.id} orderData={selectedOrderForChat} onClose={() => setSelectedOrderForChat(null)} />}
-          </DialogContent>
-        </Dialog>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-      <Navbar />
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
-        <div className="flex items-center gap-4 mb-10">
-          <div className="w-16 h-16 bg-primary rounded-[24px] flex items-center justify-center text-white shadow-2xl">
-            <StoreIcon className="w-8 h-8" />
+            <h1 className="text-4xl font-black italic tracking-tighter uppercase">Panel Maestro</h1>
           </div>
-          <h1 className="text-4xl font-black italic tracking-tighter uppercase">Panel Maestro</h1>
-        </div>
 
-        <div className="grid gap-6">
-          {storeSummaries.map((store) => (
-            <Card key={store.id} onClick={() => setSelectedStoreId(store.id)} className="border-none rounded-[40px] shadow-xl bg-white cursor-pointer hover:scale-[1.02] transition-all">
+          <div className="grid gap-6">
+            {storeSummaries.map((store) => (
+              <Card key={store.id} onClick={() => setSelectedStoreId(store.id)} className="border-none rounded-[40px] shadow-xl bg-white cursor-pointer hover:scale-[1.02] transition-all">
+                <CardContent className="p-8 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-black italic uppercase tracking-tighter">{store.name}</h2>
+                    <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">{store.activeCount} Órdenes vivas</p>
+                  </div>
+                  <Button size="icon" className="rounded-full bg-primary"><ChevronRight /></Button>
+                </CardContent>
+              </Card>
+            ))}
+            <Card onClick={() => setShowMyPurchases(true)} className="border-none rounded-[40px] shadow-md bg-slate-900 text-white cursor-pointer">
               <CardContent className="p-8 flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-black italic uppercase tracking-tighter">{store.name}</h2>
-                  <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">{store.activeCount} Órdenes vivas</p>
-                </div>
-                <Button size="icon" className="rounded-full bg-primary"><ChevronRight /></Button>
+                <h3 className="text-xl font-black italic uppercase">Mis Compras</h3>
+                <ArrowRight className="w-6 h-6 text-white/20" />
               </CardContent>
             </Card>
-          ))}
-          <Card onClick={() => setShowMyPurchases(true)} className="border-none rounded-[40px] shadow-md bg-slate-900 text-white cursor-pointer">
-            <CardContent className="p-8 flex items-center justify-between">
-              <h3 className="text-xl font-black italic uppercase">Mis Compras</h3>
-              <ArrowRight className="w-6 h-6 text-white/20" />
-            </CardContent>
-          </Card>
-        </div>
-      </main>
+          </div>
+        </main>
+      )}
+
+      {/* MODALES MAESTROS: Movidos a la raíz para que funcionen desde cualquier vista del panel */}
+      <RatingDialog 
+        isOpen={!!ratingOrder} 
+        onOpenChange={(v) => !v && setRatingOrder(null)}
+        orderId={ratingOrder?.id || ''}
+        storeName={ratingOrder?.storeName || 'Tienda'}
+      />
+
+      <Dialog open={!!validatingOrder} onOpenChange={v => !v && setValidatingOrder(null)}>
+        <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter flex items-center gap-3 text-slate-900">
+              <Lock className="w-7 h-7 text-amber-500" /> Validación de Entrega
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 font-medium">
+              Pide al repartidor su código de 4 dígitos y selecciona la opción correcta para transferir la responsabilidad del pedido.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-8 grid grid-cols-1 gap-4">
+            {validatingOrder && (
+              <>
+                {[
+                  validatingOrder.deliveryCode,
+                  (Number(validatingOrder.deliveryCode) + 123).toString().slice(-4),
+                  (Number(validatingOrder.deliveryCode) - 456).toString().slice(-4)
+                ].sort().map((code, idx) => (
+                  <Button 
+                    key={idx} 
+                    onClick={() => handleValidateDriverCode(code)}
+                    variant="outline" 
+                    className="h-20 rounded-[24px] text-3xl font-black tracking-[0.3em] italic border-2 hover:bg-slate-50 hover:border-primary transition-all"
+                  >
+                    {code}
+                  </Button>
+                ))}
+              </>
+            )}
+          </div>
+          <p className="text-[9px] text-slate-300 font-black uppercase text-center tracking-widest">Este paso garantiza la entrega física del producto</p>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!selectedOrderForChat} onOpenChange={v => !v && setSelectedOrderForChat(null)}>
+        <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-none w-screen h-[100dvh] sm:p-4 md:p-8">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Chat Interno del Pedido</DialogTitle>
+            <DialogDescription>Canal de comunicación para la gestión de esta orden.</DialogDescription>
+          </DialogHeader>
+          {selectedOrderForChat && <OrderChat orderId={selectedOrderForChat.id} orderData={selectedOrderForChat} onClose={() => setSelectedOrderForChat(null)} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
