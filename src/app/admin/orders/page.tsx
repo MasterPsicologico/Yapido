@@ -36,7 +36,8 @@ import {
   RefreshCw,
   Lock,
   Star,
-  RotateCcw
+  RotateCcw,
+  X
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -101,6 +102,7 @@ export default function OrdersManagementPage() {
   }, [firestore, user?.uid]);
   const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
 
+  // DETECTOR DE HASH QUIRÚRGICO: Abre el chat automáticamente basado en la URL
   useEffect(() => {
     const handleHashOpenChat = () => {
       const hashId = window.location.hash.replace('#', '');
@@ -200,6 +202,15 @@ export default function OrdersManagementPage() {
     const cleanPhone = phone.replace(/\D/g, '');
     const waUrl = `https://wa.me/${cleanPhone.startsWith('57') ? cleanPhone : '57' + cleanPhone}?text=${encodeURIComponent(message)}`;
     window.open(waUrl, '_blank');
+  };
+
+  // LIMPIEZA DE HASH: Crucial para permitir aperturas múltiples consecutivas
+  const handleCloseChat = () => {
+    setSelectedOrderForChat(null);
+    // Eliminar el hash de la URL sin recargar la página para que el siguiente clic funcione
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
   };
 
   if (profileLoading || ordersLoading || storesLoading) {
@@ -397,7 +408,6 @@ export default function OrdersManagementPage() {
         </main>
       )}
 
-      {/* MODALES MAESTROS: Movidos a la raíz para que funcionen desde cualquier vista del panel */}
       <RatingDialog 
         isOpen={!!ratingOrder} 
         onOpenChange={(v) => !v && setRatingOrder(null)}
@@ -440,13 +450,23 @@ export default function OrdersManagementPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!selectedOrderForChat} onOpenChange={v => !v && setSelectedOrderForChat(null)}>
+      {/* DIÁLOGO DEL CHAT: Limpieza automática del Hash al cerrar */}
+      <Dialog 
+        open={!!selectedOrderForChat} 
+        onOpenChange={v => !v && handleCloseChat()}
+      >
         <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-none w-screen h-[100dvh] sm:p-4 md:p-8">
           <DialogHeader className="sr-only">
             <DialogTitle>Chat Interno del Pedido</DialogTitle>
             <DialogDescription>Canal de comunicación para la gestión de esta orden.</DialogDescription>
           </DialogHeader>
-          {selectedOrderForChat && <OrderChat orderId={selectedOrderForChat.id} orderData={selectedOrderForChat} onClose={() => setSelectedOrderForChat(null)} />}
+          {selectedOrderForChat && (
+            <OrderChat 
+              orderId={selectedOrderForChat.id} 
+              orderData={selectedOrderForChat} 
+              onClose={handleCloseChat} 
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
