@@ -24,7 +24,8 @@ import {
   RotateCcw,
   MapPin,
   TrendingUp,
-  Zap
+  Zap,
+  Info
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -38,6 +39,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { RatingDialog } from '@/components/order/RatingDialog';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
+import Image from 'next/image';
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg 
@@ -73,6 +75,7 @@ export default function OrdersManagementPage() {
   const [showMyPurchases, setShowMyPurchases] = useState(false);
   const [validatingOrder, setValidatingOrder] = useState<any | null>(null);
   const [ratingOrder, setRatingOrder] = useState<any | null>(null);
+  const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
 
   const myStoresQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -155,6 +158,10 @@ export default function OrdersManagementPage() {
     window.open(`https://wa.me/${cleanPhone.startsWith('57') ? cleanPhone : '57' + cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
+  const toggleOrderDetails = (orderId: string) => {
+    setExpandedOrders(prev => ({ ...prev, [orderId]: !prev[orderId] }));
+  };
+
   const selectedOrderData = useMemo(() => rawOrders?.find(o => o.id === activeOrderId), [rawOrders, activeOrderId]);
 
   if (profileLoading || ordersLoading || storesLoading) {
@@ -190,6 +197,8 @@ export default function OrdersManagementPage() {
             {filteredOrders && filteredOrders.length > 0 ? filteredOrders.map(order => {
               const status = STATUS_CONFIG[order.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
               const isVenta = order.storeOwnerId === user?.uid;
+              const isExpanded = expandedOrders[order.id];
+
               return (
                 <Card key={order.id} id={order.id} className="border-none rounded-[48px] overflow-hidden shadow-2xl bg-white ring-1 ring-black/[0.03]">
                   <CardContent className="p-8 space-y-8">
@@ -209,9 +218,46 @@ export default function OrdersManagementPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <h3 className="text-4xl font-black text-slate-900 italic uppercase leading-[0.85] tracking-tighter">{order.productName}</h3>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><StoreIcon className="w-3 h-3" /> {order.storeName}</p>
+                      <div className="flex items-start justify-between gap-4">
+                        <h3 className="text-4xl font-black text-slate-900 italic uppercase leading-[0.85] tracking-tighter flex-1">
+                          {order.productName}
+                        </h3>
+                        <Button 
+                          variant="ghost" 
+                          onClick={() => toggleOrderDetails(order.id)}
+                          className="text-primary font-black uppercase text-[10px] tracking-widest h-auto p-0 mt-1 hover:bg-transparent hover:underline"
+                        >
+                          {isExpanded ? "Ocultar" : "ver pedido"}
+                        </Button>
+                      </div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <StoreIcon className="w-3 h-3" /> {order.storeName}
+                      </p>
                     </div>
+
+                    {isExpanded && order.items && (
+                      <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="bg-slate-50/80 rounded-[32px] p-6 space-y-4 border border-slate-100">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Desglose de productos</p>
+                          {order.items.map((item: any, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between gap-4 border-b border-slate-200/30 pb-3 last:border-none last:pb-0">
+                              <div className="flex items-center gap-3">
+                                <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm shrink-0 border border-white">
+                                  <Image src={item.imageUrl || 'https://picsum.photos/seed/product/200'} alt={item.name} fill className="object-cover" />
+                                </div>
+                                <div>
+                                  <p className="text-xs font-black uppercase italic leading-none">{item.name}</p>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">x{item.quantity}</p>
+                                </div>
+                              </div>
+                              <span className="text-xs font-black text-slate-900">
+                                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(item.price * item.quantity)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {order.status !== 'inquiry' && (
                       <div className="grid grid-cols-1 gap-4 bg-slate-50 p-6 rounded-[32px]">
