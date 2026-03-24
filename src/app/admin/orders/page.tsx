@@ -101,6 +101,26 @@ export default function OrdersManagementPage() {
   }, [firestore, user?.uid]);
   const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
 
+  // LOGICA QUIRURGICA: Abrir chat automaticamente desde el hash de la URL
+  useEffect(() => {
+    const handleHashOpenChat = () => {
+      const hashId = window.location.hash.replace('#', '');
+      if (hashId && rawOrders && !ordersLoading) {
+        const targetOrder = rawOrders.find(o => o.id === hashId);
+        if (targetOrder) {
+          setSelectedOrderForChat(targetOrder);
+        }
+      }
+    };
+
+    if (!ordersLoading && rawOrders) {
+      handleHashOpenChat();
+    }
+
+    window.addEventListener('hashchange', handleHashOpenChat);
+    return () => window.removeEventListener('hashchange', handleHashOpenChat);
+  }, [rawOrders, ordersLoading]);
+
   const storeSummaries = useMemo(() => {
     if (!myStores || !rawOrders) return [];
     return myStores.map(store => {
