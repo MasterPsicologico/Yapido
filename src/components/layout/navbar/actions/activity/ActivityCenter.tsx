@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Bell, Clock, Package, Truck, Zap, CheckCircle2, Navigation, Timer } from 'lucide-react';
 import {
   DropdownMenu,
@@ -19,10 +19,37 @@ import { Badge } from '@/components/ui/badge';
 import { ActivityTrigger } from './ActivityTrigger';
 import { ActivityItem } from './ActivityItem';
 
+const SEEN_ORDERS_KEY = 'vitriniando_seen_orders_v1';
+
 export function ActivityCenter() {
   const { user } = useUser();
   const { profile, isLoading: profileLoading } = useProfile();
   const firestore = useFirestore();
+  const [seenIds, setSeenIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(SEEN_ORDERS_KEY);
+    if (saved) setSeenIds(JSON.parse(saved));
+
+    const handleGlobalUpdate = (e: any) => {
+      const orderId = e.detail?.orderId;
+      if (orderId) {
+        setSeenIds(prev => {
+          if (prev.includes(orderId)) return prev;
+          const next = [...prev, orderId];
+          localStorage.setItem(SEEN_ORDERS_KEY, JSON.stringify(next));
+          return next;
+        });
+      }
+    };
+
+    window.addEventListener('order-attended' as any, handleGlobalUpdate);
+    window.addEventListener('chat-opened' as any, handleGlobalUpdate);
+    return () => {
+      window.removeEventListener('order-attended' as any, handleGlobalUpdate);
+      window.removeEventListener('chat-opened' as any, handleGlobalUpdate);
+    };
+  }, []);
 
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || profileLoading) return null;
@@ -53,22 +80,30 @@ export function ActivityCenter() {
       }).filter(Boolean);
   }, [rawOrders, user, profile]);
 
+  const unreadCount = useMemo(() => {
+    return activities.filter(a => !seenIds.includes(a!.orderId)).length;
+  }, [activities, seenIds]);
+
+  const handleItemClick = (orderId: string) => {
+    window.dispatchEvent(new CustomEvent('order-attended', { detail: { orderId } }));
+  };
+
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <ActivityTrigger count={activities.length} />
+        <ActivityTrigger count={unreadCount} />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-80 p-2 rounded-[28px] shadow-2xl border-none bg-white mt-2" align="center">
         <DropdownMenuLabel className="px-4 py-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-black italic uppercase tracking-tighter text-slate-900">Actividad Viva</span>
-            <Badge variant="secondary" className="rounded-full text-[10px] font-black bg-primary/10 text-primary border-none">{activities.length}</Badge>
+            <Badge variant="secondary" className="rounded-full text-[10px] font-black bg-primary/10 text-primary border-none">{unreadCount}</Badge>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-slate-50" />
         <div className="max-h-[350px] overflow-y-auto p-1 space-y-2 no-scrollbar">
           {activities.length > 0 ? activities.map((act, i) => (
-            <ActivityItem key={i} {...act!} />
+            <ActivityItem key={i} {...act!} onClick={() => handleItemClick(act!.orderId)} />
           )) : (
             <div className="py-10 text-center">
               <Bell className="w-12 h-12 bg-slate-50 rounded-full p-3 mx-auto mb-3 text-slate-200" />

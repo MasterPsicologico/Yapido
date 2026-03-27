@@ -13,11 +13,12 @@ interface ActivityItemProps {
   icon: LucideIcon;
   color: string;
   bg: string;
+  onClick?: () => void;
 }
 
-export function ActivityItem({ orderId, label, desc, icon: Icon, color, bg }: ActivityItemProps) {
+export function ActivityItem({ orderId, label, desc, icon: Icon, color, bg, onClick }: ActivityItemProps) {
   return (
-    <DropdownMenuItem asChild className="rounded-2xl p-3.5 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all hover:scale-[1.02]">
+    <DropdownMenuItem asChild className="rounded-2xl p-3.5 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all hover:scale-[1.02]" onClick={onClick}>
       <Link href={`/admin/orders#${orderId}`} className="flex items-start gap-4">
         <div className={cn("w-11 h-11 rounded-full flex items-center justify-center shrink-0 shadow-sm", bg, color)}>
           <Icon className="w-5.5 h-5.5" />

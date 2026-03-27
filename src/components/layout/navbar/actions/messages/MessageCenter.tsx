@@ -18,19 +18,45 @@ import { Badge } from '@/components/ui/badge';
 import { MessageTrigger } from './MessageTrigger';
 import { MessageItem } from './MessageItem';
 
+const SEEN_ORDERS_KEY = 'vitriniando_seen_orders_v1';
+
 export function MessageCenter() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [unreadSessionOrders, setUnreadSessionOrders] = useState<[string, string][]>([]);
+  const [seenIds, setSeenIds] = useState<string[]>([]);
 
   useEffect(() => {
+    const saved = localStorage.getItem(SEEN_ORDERS_KEY);
+    if (saved) setSeenIds(JSON.parse(saved));
+
     const handleSync = (e: any) => {
       if (e.detail?.unreadMap) {
         setUnreadSessionOrders(Array.from((e.detail.unreadMap as Map<string, string>).entries()));
       }
     };
+
+    const handleGlobalUpdate = (e: any) => {
+      const orderId = e.detail?.orderId;
+      if (orderId) {
+        setSeenIds(prev => {
+          if (prev.includes(orderId)) return prev;
+          const next = [...prev, orderId];
+          localStorage.setItem(SEEN_ORDERS_KEY, JSON.stringify(next));
+          return next;
+        });
+      }
+    };
+
     window.addEventListener('unread-messages-sync' as any, handleSync);
-    return () => window.removeEventListener('unread-messages-sync' as any, handleSync);
+    window.addEventListener('order-attended' as any, handleGlobalUpdate);
+    window.addEventListener('chat-opened' as any, handleGlobalUpdate);
+    
+    return () => {
+      window.removeEventListener('unread-messages-sync' as any, handleSync);
+      window.removeEventListener('order-attended' as any, handleGlobalUpdate);
+      window.removeEventListener('chat-opened' as any, handleGlobalUpdate);
+    };
   }, []);
 
   const activeChatsQuery = useMemoFirebase(() => {
@@ -46,24 +72,40 @@ export function MessageCenter() {
       .map(o => ({ id: o.id, name: o.productName || 'Chat de Pedido' }));
   }, [rawOrders]);
 
-  const count = unreadSessionOrders.length || activeChats.length;
+  const unreadCount = useMemo(() => {
+    // El contador de mensajes debe priorizar lo que el listener detecta como nuevo
+    // pero también filtrar por lo que el usuario ya ha abierto en esta sesión
+    const dynamicUnread = unreadSessionOrders.length;
+    const historyUnseen = activeChats.filter(c => !seenIds.includes(c.id)).length;
+    return Math.max(dynamicUnread, historyUnseen);
+  }, [unreadSessionOrders, activeChats, seenIds]);
+
+  const handleItemClick = (orderId: string) => {
+    window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId } }));
+  };
 
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <MessageTrigger count={count} hasUnread={unreadSessionOrders.length > 0} />
+        <MessageTrigger count={unreadCount} hasUnread={unreadSessionOrders.length > 0} />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-80 p-2 rounded-[28px] shadow-2xl border-none bg-white mt-2" align="center">
         <DropdownMenuLabel className="px-4 py-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-black italic uppercase tracking-tighter text-slate-900">Chats Activos</span>
-            <Badge className="bg-secondary text-white rounded-full text-[10px] font-black border-none">{count}</Badge>
+            <Badge className="bg-secondary text-white rounded-full text-[10px] font-black border-none">{unreadCount}</Badge>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-slate-50" />
         <div className="max-h-[350px] overflow-y-auto p-1 space-y-2 no-scrollbar">
           {activeChats.length > 0 ? activeChats.map((chat) => (
-            <MessageItem key={chat.id} chatId={chat.id} name={chat.name} isUnread={unreadSessionOrders.some(([id]) => id === chat.id)} />
+            <MessageItem 
+              key={chat.id} 
+              chatId={chat.id} 
+              name={chat.name} 
+              isUnread={unreadSessionOrders.some(([id]) => id === chat.id) || !seenIds.includes(chat.id)} 
+              onClick={() => handleItemClick(chat.id)}
+            />
           )) : (
             <div className="py-10 text-center">
               <MessageSquareText className="w-12 h-12 bg-slate-50 rounded-full p-3 mx-auto mb-3 text-slate-200" />

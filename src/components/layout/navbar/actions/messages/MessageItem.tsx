@@ -10,11 +10,12 @@ interface MessageItemProps {
   chatId: string;
   name: string;
   isUnread: boolean;
+  onClick?: () => void;
 }
 
-export function MessageItem({ chatId, name, isUnread }: MessageItemProps) {
+export function MessageItem({ chatId, name, isUnread, onClick }: MessageItemProps) {
   return (
-    <DropdownMenuItem asChild className="rounded-2xl p-3.5 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all hover:scale-[1.02]">
+    <DropdownMenuItem asChild className="rounded-2xl p-3.5 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all hover:scale-[1.02]" onClick={onClick}>
       <Link href={`/admin/orders#${chatId}`} className="flex items-start gap-4">
         <div className={cn("w-11 h-11 rounded-full flex items-center justify-center shrink-0 shadow-sm", isUnread ? "bg-secondary text-white" : "bg-secondary/10 text-secondary")}>
           <UserIcon className="w-5.5 h-5.5" />
