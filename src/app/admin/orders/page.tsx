@@ -77,6 +77,33 @@ export default function OrdersManagementPage() {
   const [ratingOrder, setRatingOrder] = useState<any | null>(null);
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
 
+  // LÓGICA DE NAVEGACIÓN REFORZADA (QUIRÚRGICA)
+  useEffect(() => {
+    const syncFromHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && hash !== activeOrderId) {
+        setActiveOrderId(hash);
+      }
+    };
+
+    const handleGlobalEvent = (e: any) => {
+      const id = e.detail?.orderId;
+      if (id) setActiveOrderId(id);
+    };
+
+    // Escuchar cambios de URL y eventos de la Navbar simultáneamente
+    syncFromHash();
+    window.addEventListener('hashchange', syncFromHash);
+    window.addEventListener('chat-opened' as any, handleGlobalEvent);
+    window.addEventListener('order-attended' as any, handleGlobalEvent);
+
+    return () => {
+      window.removeEventListener('hashchange', syncFromHash);
+      window.removeEventListener('chat-opened' as any, handleGlobalEvent);
+      window.removeEventListener('order-attended' as any, handleGlobalEvent);
+    };
+  }, [activeOrderId]);
+
   const myStoresQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(collection(firestore, 'stores'), where('ownerId', '==', user.uid));
@@ -88,16 +115,6 @@ export default function OrdersManagementPage() {
     return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid));
   }, [firestore, user?.uid]);
   const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
-
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (hash) setActiveOrderId(hash);
-    };
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
 
   const storeSummaries = useMemo(() => {
     if (!myStores || !rawOrders) return [];
@@ -119,6 +136,7 @@ export default function OrdersManagementPage() {
   const handleCloseChat = () => {
     setActiveOrderId(null);
     if (typeof window !== 'undefined') {
+      // Limpieza total del rastro de navegación para permitir aperturas infinitas
       window.history.replaceState(null, '', window.location.pathname);
     }
   };
@@ -275,6 +293,15 @@ export default function OrdersManagementPage() {
                     )}
 
                     <div className="space-y-4">
+                      <div className="flex flex-col gap-3">
+                        <Button onClick={() => { setActiveOrderId(order.id); window.location.hash = order.id; }} className="w-full h-12 rounded-[20px] bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-transform">
+                          <MessageCircle className="w-4 h-4 text-primary" /> CHAT INTERNO
+                        </Button>
+                        <Button onClick={() => openWhatsApp(order, isVenta)} className="w-full h-12 rounded-[20px] bg-[#25D366] hover:bg-[#128C7E] text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-md transition-all active:scale-95">
+                          <WhatsAppIcon className="w-5 h-5" /> WHATSAPP
+                        </Button>
+                      </div>
+
                       {isVenta ? (
                         <>
                           {order.status === 'pending' && <Button onClick={() => handleUpdateStatus(order.id, 'preparing')} className="w-full h-16 rounded-[24px] bg-primary text-white font-black uppercase tracking-widest gap-3 shadow-xl"><Package className="w-6 h-6" /> INICIAR PREPARACIÓN</Button>}
@@ -287,15 +314,6 @@ export default function OrdersManagementPage() {
                           {(order.status === 'delivered' || order.status === 'cancelled') && <Button onClick={() => handleReorder(order)} variant="outline" className="flex-1 h-16 rounded-[24px] border-2 border-slate-100 font-black uppercase tracking-widest gap-3 hover:bg-slate-50 text-slate-600"><RotateCcw className="w-6 h-6 text-primary" /> REORDENAR</Button>}
                         </div>
                       )}
-                      
-                      <div className="flex flex-col gap-3">
-                        <Button onClick={() => { setActiveOrderId(order.id); window.location.hash = order.id; }} className="w-full h-12 rounded-[20px] bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-transform">
-                          <MessageCircle className="w-4 h-4 text-primary" /> CHAT INTERNO
-                        </Button>
-                        <Button onClick={() => openWhatsApp(order, isVenta)} className="w-full h-12 rounded-[20px] bg-[#25D366] hover:bg-[#128C7E] text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-md transition-all active:scale-95">
-                          <WhatsAppIcon className="w-5 h-5" /> WHATSAPP
-                        </Button>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -324,11 +342,9 @@ export default function OrdersManagementPage() {
                 onClick={() => setSelectedStoreId(store.id)} 
                 className="group border-none rounded-[48px] shadow-[0_15px_50px_-15px_rgba(0,0,0,0.08)] bg-white cursor-pointer hover:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-500 overflow-hidden relative"
               >
-                {/* Micro-indicador de actividad */}
                 {store.activeCount > 0 && <div className="absolute top-0 left-0 w-2 h-full bg-orange-500 animate-pulse" />}
                 
                 <CardContent className="p-10 flex flex-col gap-8">
-                  {/* Item 1: Identidad y Estado */}
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <Badge className="bg-[#00c9db]/10 text-[#00c9db] border-none font-black text-[8px] uppercase px-3 tracking-widest mb-2">Vitriniando Pro</Badge>
@@ -339,9 +355,7 @@ export default function OrdersManagementPage() {
                     </div>
                   </div>
 
-                  {/* Grid Informativo: Items 2, 3, 4 y 5 */}
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Item 2: Órdenes Vivas (Urgencia) */}
                     <div className="bg-orange-50 p-6 rounded-[32px] flex flex-col gap-1 border border-orange-100 shadow-sm group-hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-2 mb-1">
                         <Timer className="w-4 h-4 text-orange-500" />
@@ -350,7 +364,6 @@ export default function OrdersManagementPage() {
                       <span className="text-4xl font-black text-orange-600 tracking-tighter">{store.activeCount}</span>
                     </div>
 
-                    {/* Item 3: Ventas de Hoy (Financiero) */}
                     <div className="bg-blue-50 p-6 rounded-[32px] flex flex-col gap-1 border border-blue-100 shadow-sm group-hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-2 mb-1">
                         <Wallet className="w-4 h-4 text-blue-500" />
@@ -361,7 +374,6 @@ export default function OrdersManagementPage() {
                       </span>
                     </div>
 
-                    {/* Item 4: Entregas Exitosas (Eficiencia) */}
                     <div className="bg-green-50 p-6 rounded-[32px] flex flex-col gap-1 border border-green-100 shadow-sm group-hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-2 mb-1">
                         <TrendingUp className="w-4 h-4 text-green-500" />
@@ -370,11 +382,10 @@ export default function OrdersManagementPage() {
                       <span className="text-4xl font-black text-green-600 tracking-tighter">{store.todayCount}</span>
                     </div>
 
-                    {/* Item 5: Ubicación (Logística) */}
-                    <div className="bg-slate-50 p-6 rounded-[32px] flex flex-col gap-1 border border-slate-100 shadow-sm group-hover:shadow-md transition-shadow">
+                    <div className="bg-slate-50 p-6 rounded-[32px] flex items-center gap-3 border border-slate-100 shadow-sm group-hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-2 mb-1">
                         <MapPin className="w-4 h-4 text-slate-400" />
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ubicación</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Zona</span>
                       </div>
                       <p className="text-[11px] font-black text-slate-600 uppercase truncate italic leading-tight">{store.address || 'Aguachica'}</p>
                     </div>
@@ -403,7 +414,7 @@ export default function OrdersManagementPage() {
         </main>
       )}
 
-      {/* DIÁLOGOS DE GESTIÓN (RESTAURADOS) */}
+      {/* DIÁLOGOS DE GESTIÓN (RESTAURADOS Y SINCRONIZADOS) */}
       <RatingDialog isOpen={!!ratingOrder} onOpenChange={(v) => !v && setRatingOrder(null)} orderId={ratingOrder?.id || ''} storeName={ratingOrder?.storeName || 'Tienda'} />
 
       <Dialog open={!!activeOrderId} onOpenChange={v => !v && handleCloseChat()}>
@@ -413,9 +424,11 @@ export default function OrdersManagementPage() {
             <DialogDescription>Canal de comunicación seguro.</DialogDescription>
           </DialogHeader>
           {activeOrderId && selectedOrderData ? (
-            <OrderChat orderId={activeOrderId} orderData={selectedOrderData} onClose={handleCloseChat} />
+            <div key={activeOrderId} className="h-full w-full animate-in zoom-in duration-300">
+              <OrderChat orderId={activeOrderId} orderData={selectedOrderData} onClose={handleCloseChat} />
+            </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-[40px] shadow-2xl p-10">
+            <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-[40px] shadow-2xl p-10 h-full">
               <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
               <p className="text-sm font-black uppercase tracking-widest text-slate-400">Conectando Canal Seguro...</p>
             </div>
