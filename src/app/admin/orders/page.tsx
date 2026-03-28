@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -24,7 +25,9 @@ import {
   MapPin,
   TrendingUp,
   Zap,
-  Info
+  Info,
+  Truck,
+  User as UserIcon
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -73,7 +76,11 @@ export default function OrdersManagementPage() {
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [showMyPurchases, setShowMyPurchases] = useState(false);
   const [validatingOrder, setValidatingOrder] = useState<any | null>(null);
+  
+  // ESTADOS DE RATING MULTI-ACTOR
   const [ratingOrder, setRatingOrder] = useState<any | null>(null);
+  const [ratingType, setRatingType] = useState<'to_store' | 'to_driver' | 'to_customer'>('to_store');
+
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -297,7 +304,6 @@ export default function OrdersManagementPage() {
                           <MessageCircle className="w-4 h-4 text-primary" /> CHAT INTERNO
                         </Button>
                         
-                        {/* BOTÓN WHATSAPP REAL CON MENSAJE INTELIGENTE */}
                         <Button 
                           onClick={() => handleWhatsAppRedirect(order)}
                           className="w-full h-12 rounded-[20px] bg-[#25d366] hover:bg-[#128c7e] text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-transform"
@@ -307,15 +313,44 @@ export default function OrdersManagementPage() {
                       </div>
 
                       {isVenta ? (
-                        <>
+                        <div className="grid gap-3">
                           {order.status === 'pending' && <Button onClick={() => handleUpdateStatus(order.id, 'preparing')} className="w-full h-16 rounded-[24px] bg-primary text-white font-black uppercase tracking-widest gap-3 shadow-xl"><Package className="w-6 h-6" /> INICIAR PREPARACIÓN</Button>}
                           {order.status === 'preparing' && <Button onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')} className="w-full h-16 rounded-[24px] bg-indigo-600 text-white font-black uppercase tracking-widest gap-3 shadow-xl"><CheckCircle2 className="w-6 h-6" /> MARCAR COMO LISTO</Button>}
                           {order.status === 'at_store' && <Button onClick={() => setValidatingOrder(order)} className="w-full h-16 rounded-[24px] bg-amber-500 text-white font-black uppercase tracking-widest gap-3 shadow-xl animate-pulse"><ShieldCheck className="w-6 h-6" /> VALIDAR REPARTIDOR</Button>}
-                        </>
+                          
+                          {/* SISTEMA DE RATING 360 PARA VENDEDOR */}
+                          {order.status === 'delivered' && (
+                            <div className="flex gap-2">
+                              {!order.driverRatingByStore && order.deliveryDriverId && (
+                                <Button onClick={() => { setRatingType('to_driver'); setRatingOrder(order); }} variant="outline" className="flex-1 rounded-2xl h-12 border-primary/20 text-primary font-black text-[9px] uppercase tracking-widest gap-2">
+                                  <Truck className="w-3.5 h-3.5" /> CALIFICAR REPARTIDOR
+                                </Button>
+                              )}
+                              {!order.customerRatingByStore && (
+                                <Button onClick={() => { setRatingType('to_customer'); setRatingOrder(order); }} variant="outline" className="flex-1 rounded-2xl h-12 border-secondary/20 text-secondary font-black text-[9px] uppercase tracking-widest gap-2">
+                                  <UserIcon className="w-3.5 h-3.5" /> CALIFICAR CLIENTE
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       ) : (
-                        <div className="flex gap-3">
-                          {!order.rating && order.status === 'delivered' && <Button onClick={() => setRatingOrder(order)} className="flex-1 h-16 rounded-[24px] bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-black uppercase tracking-widest gap-3 shadow-lg"><Star className="w-6 h-6" /> CALIFICAR</Button>}
-                          {(order.status === 'delivered' || order.status === 'cancelled') && <Button onClick={() => handleReorder(order)} variant="outline" className="flex-1 h-16 rounded-[24px] border-2 border-slate-100 font-black uppercase tracking-widest gap-3 hover:bg-slate-50 text-slate-600"><RotateCcw className="w-6 h-6 text-primary" /> REORDENAR</Button>}
+                        <div className="flex flex-col gap-3">
+                          <div className="flex gap-3">
+                            {!order.rating && order.status === 'delivered' && (
+                              <Button onClick={() => { setRatingType('to_store'); setRatingOrder(order); }} className="flex-1 h-16 rounded-[24px] bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-black uppercase tracking-widest gap-3 shadow-lg">
+                                <Star className="w-6 h-6" /> CALIFICAR TIENDA
+                              </Button>
+                            )}
+                            {(order.status === 'delivered' || order.status === 'cancelled') && <Button onClick={() => handleReorder(order)} variant="outline" className="flex-1 h-16 rounded-[24px] border-2 border-slate-100 font-black uppercase tracking-widest gap-3 hover:bg-slate-50 text-slate-600"><RotateCcw className="w-6 h-6 text-primary" /> REORDENAR</Button>}
+                          </div>
+                          
+                          {/* RATING AL REPARTIDOR DESDE CLIENTE */}
+                          {order.status === 'delivered' && !order.driverRatingByCustomer && order.deliveryDriverId && (
+                            <Button onClick={() => { setRatingType('to_driver'); setRatingOrder(order); }} variant="secondary" className="w-full h-12 rounded-[20px] font-black uppercase tracking-widest gap-2 text-[10px]">
+                              <Truck className="w-4 h-4" /> CALIFICAR AL REPARTIDOR
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -418,9 +453,14 @@ export default function OrdersManagementPage() {
         </main>
       )}
 
-      <RatingDialog isOpen={!!ratingOrder} onOpenChange={(v) => !v && setRatingOrder(null)} orderId={ratingOrder?.id || ''} storeName={ratingOrder?.storeName || 'Tienda'} />
+      <RatingDialog 
+        isOpen={!!ratingOrder} 
+        onOpenChange={(v) => !v && setRatingOrder(null)} 
+        orderId={ratingOrder?.id || ''} 
+        storeName={ratingOrder?.storeName || 'Tienda'} 
+        ratingType={ratingType}
+      />
 
-      {/* DIÁLOGO BLINDADO PARA CHAT: Reset de posicionamiento para pantalla completa real */}
       <Dialog open={!!activeOrderId} onOpenChange={v => !v && handleCloseChat()}>
         <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col">
           <DialogHeader className="sr-only">

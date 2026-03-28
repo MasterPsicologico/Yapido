@@ -30,7 +30,8 @@ import {
   Star,
   ExternalLink,
   Award,
-  Calendar
+  Calendar,
+  Crown
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -40,15 +41,15 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { WeeklyChallenge } from '@/components/delivery/WeeklyChallenge';
 
 export default function DeliveryDashboardPage() {
   const { user } = useUser();
-  const { profile, isLoading: loadingProfile } = useProfile();
+  const { profile, level, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
   const [activeTab, setActiveTab] = useState("available");
   const [isOnline, setIsOnline] = useState(true);
   
-  // Estados para Cámara
   const [showCamera, setShowCamera] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -56,7 +57,6 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || profile?.role === 'admin';
 
-  // CONSULTAS LOGÍSTICAS
   const availableOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
     return query(
@@ -98,7 +98,6 @@ export default function DeliveryDashboardPage() {
     return [...rawMy].filter(o => o.deliveryDriverId === user?.uid);
   }, [rawMy, user?.uid]);
 
-  // MÉTRICAS DE ÉLITE
   const stats = useMemo(() => {
     if (!history) return { rating: 5.0, count: 0, earnings: 0 };
     const validRatings = history.filter(o => o.rating).map(o => o.rating);
@@ -110,7 +109,6 @@ export default function DeliveryDashboardPage() {
     };
   }, [history]);
 
-  // LÓGICA DE CÁMARA
   useEffect(() => {
     if (showCamera && videoRef.current && stream) {
       videoRef.current.srcObject = stream;
@@ -181,17 +179,17 @@ export default function DeliveryDashboardPage() {
     );
   }
 
+  const LevelIcon = level.icon;
+
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
       
-      {/* HEADER DE MANDO: PERFIL INTERACTIVO */}
       <div className="bg-white border-b relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32" />
         <div className="container mx-auto max-w-4xl px-4 py-8 relative z-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex items-center gap-6">
-              {/* Avatar con Trigger de Cámara */}
               <div className="relative group cursor-pointer" onClick={startCamera}>
                 <Avatar className="w-24 h-24 border-[4px] border-white shadow-2xl ring-1 ring-slate-100 group-hover:scale-105 transition-transform duration-500">
                   <AvatarImage src={profile?.photoURL} className="object-cover" />
@@ -210,10 +208,17 @@ export default function DeliveryDashboardPage() {
                   <h1 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">
                     {profile?.displayName || 'Repartidor'}
                   </h1>
-                  <Badge className="bg-primary text-white font-black text-[8px] px-2 rounded-full h-5 italic">PRO</Badge>
+                  {/* BADGE DE NIVEL DINÁMICO SUSTITUYENDO A PRO */}
+                  <div className={cn(
+                    "flex items-center gap-1.5 px-3 h-6 rounded-full border shadow-sm animate-in zoom-in duration-500",
+                    level.bg, level.color, level.border
+                  )}>
+                    <LevelIcon className="w-3 h-3" />
+                    <span className="font-black text-[9px] uppercase italic tracking-widest">{level.name}</span>
+                  </div>
                 </div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2">
-                  <ShieldCheck className="w-3 h-3 text-primary" /> Repartidor Verificado • {stats.rating} <Star className="w-2 h-2 fill-yellow-400 text-yellow-400" />
+                  <ShieldCheck className="w-3 h-3 text-primary" /> Verificado • {stats.rating} <Star className="w-2 h-2 fill-yellow-400 text-yellow-400" />
                 </p>
                 <div className="flex gap-2 pt-2">
                   <Button asChild variant="outline" size="sm" className="h-8 rounded-full border-slate-100 text-[9px] font-black uppercase tracking-widest gap-2 hover:bg-slate-50 shadow-sm">
@@ -242,11 +247,10 @@ export default function DeliveryDashboardPage() {
             </div>
           </div>
 
-          {/* MINI TABLERO DE MÉRITOS */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-10">
             <div className="bg-white p-5 rounded-[28px] shadow-sm border border-slate-50 flex items-center gap-4">
               <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500"><TrendingUp className="w-5 h-5" /></div>
-              <div><p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Nivel</p><p className="text-sm font-black italic uppercase">Leyenda</p></div>
+              <div><p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Nivel</p><p className="text-sm font-black italic uppercase">{level.name}</p></div>
             </div>
             <div className="bg-white p-5 rounded-[28px] shadow-sm border border-slate-50 flex items-center gap-4">
               <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500"><CheckCircle2 className="w-5 h-5" /></div>
@@ -265,6 +269,10 @@ export default function DeliveryDashboardPage() {
       </div>
 
       <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
+        <div className="mb-10">
+          <WeeklyChallenge orders={history} />
+        </div>
+
         <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3">
             <TabsTrigger value="available" className="rounded-full h-full font-black text-[10px] uppercase tracking-tighter data-[state=active]:bg-primary data-[state=active]:text-white">RUTAS LIBRES</TabsTrigger>
@@ -354,7 +362,6 @@ export default function DeliveryDashboardPage() {
         </Tabs>
       </main>
 
-      {/* OVERLAY DE CÁMARA */}
       {showCamera && (
         <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex flex-col p-6 animate-in fade-in duration-500">
           <div className="flex justify-between items-center mb-8">
