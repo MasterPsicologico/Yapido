@@ -149,6 +149,29 @@ export default function OrdersManagementPage() {
     toast({ title: "Estado Actualizado" });
   };
 
+  const handleWhatsAppRedirect = (order: any) => {
+    const isVenta = order.storeOwnerId === user?.uid;
+    const targetPhone = isVenta ? order.customerPhone : order.storePhone;
+    
+    if (!targetPhone) {
+      toast({ title: "Número no disponible", variant: "destructive" });
+      return;
+    }
+
+    const cleanPhone = targetPhone.replace(/\D/g, '');
+    const phoneWithCode = cleanPhone.startsWith('57') ? cleanPhone : '57' + cleanPhone;
+    
+    let message = "";
+    if (isVenta) {
+      message = `¡Hola! 👋 Soy de la tienda *${order.storeName}*. Te contacto por tu pedido de *${order.productName}*. ID: ${order.id.slice(-6)}.`;
+    } else {
+      message = `¡Hola! 👋 Te contacto por mi pedido de *${order.productName}* realizado en *${order.storeName}*. Mi nombre es ${order.customerName}.`;
+    }
+
+    const url = `https://wa.me/${phoneWithCode}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
   const handleValidateDriverCode = (code: string) => {
     if (!validatingOrder || !firestore) return;
     if (code === validatingOrder.deliveryCode) {
@@ -272,6 +295,14 @@ export default function OrdersManagementPage() {
                       <div className="flex flex-col gap-3">
                         <Button onClick={() => { setActiveOrderId(order.id); window.location.hash = order.id; }} className="w-full h-12 rounded-[20px] bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-transform">
                           <MessageCircle className="w-4 h-4 text-primary" /> CHAT INTERNO
+                        </Button>
+                        
+                        {/* BOTÓN WHATSAPP REAL CON MENSAJE INTELIGENTE */}
+                        <Button 
+                          onClick={() => handleWhatsAppRedirect(order)}
+                          className="w-full h-12 rounded-[20px] bg-[#25d366] hover:bg-[#128c7e] text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-transform"
+                        >
+                          <WhatsAppIcon className="w-4 h-4" /> CONTACTO WHATSAPP
                         </Button>
                       </div>
 
