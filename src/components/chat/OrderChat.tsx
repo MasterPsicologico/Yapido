@@ -47,6 +47,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (orderId) {
@@ -61,13 +62,22 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
 
   const { data: messages, isLoading: loadingMessages } = useCollection(messagesQuery);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (instant = false) => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: instant ? "auto" : "smooth", block: "end" });
+    }
   };
 
+  // Scroll automático al cargar y al recibir mensajes
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isSending]);
+    const timer = setTimeout(() => scrollToBottom(messages?.length ? messages.length < 5 : true), 100);
+    return () => clearTimeout(timer);
+  }, [messages]);
+
+  // Scroll al enviar (cuando isSending cambia a true o false)
+  useEffect(() => {
+    if (isSending) scrollToBottom();
+  }, [isSending]);
 
   useEffect(() => {
     if (isCameraOpen && stream && videoRef.current) {
@@ -130,7 +140,6 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
       }
 
       setText('');
-      setTimeout(scrollToBottom, 100);
     } catch (e) {
       toast({ title: "Error al enviar", variant: "destructive" });
     } finally {
@@ -201,7 +210,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   }, [stream]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-white rounded-none sm:rounded-[40px] shadow-2xl overflow-hidden border animate-in zoom-in duration-300 relative">
+    <div className="grid grid-rows-[auto_1fr_auto] h-full w-full bg-white rounded-none sm:rounded-[40px] shadow-2xl overflow-hidden border animate-in zoom-in duration-300 relative">
       
       {/* FULL SCREEN IMAGE OVERLAY */}
       {fullScreenImage && (
@@ -230,7 +239,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
       )}
 
       {/* Header */}
-      <div className="bg-slate-900 p-5 flex items-center justify-between text-white shrink-0">
+      <div className="bg-slate-900 p-5 flex items-center justify-between text-white shrink-0 z-10">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
             <MessageCircle className="w-6 h-6 text-primary" />
@@ -256,49 +265,51 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-6 bg-slate-50">
-        <div className="space-y-6">
-          {loadingMessages ? (
-            <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
-          ) : messages?.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center opacity-30">
-               <MessageCircle className="w-16 h-16 mb-4" />
-               <p className="text-sm font-black uppercase tracking-[0.2em]">Inicia la conversación</p>
-            </div>
-          ) : messages?.map((msg) => {
-            const isMe = msg.senderId === user?.uid;
-            return (
-              <div key={msg.id} className={cn("flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300", isMe ? "items-end" : "items-start")}>
-                <div className={cn(
-                  "max-w-[85%] p-4 rounded-[24px] shadow-sm",
-                  isMe ? "bg-primary text-white rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none border border-slate-100"
-                )}>
-                  {!isMe && <p className="text-[10px] font-black uppercase opacity-50 mb-1.5">{msg.senderName}</p>}
-                  {msg.type === 'text' ? (
-                    <p className="text-sm font-semibold leading-relaxed">{msg.text}</p>
-                  ) : (
-                    <div 
-                      className="relative aspect-square w-64 max-w-full rounded-2xl overflow-hidden border border-black/5 bg-slate-100 cursor-pointer group/img transition-transform active:scale-95"
-                      onClick={() => setFullScreenImage(msg.imageUrl)}
-                    >
-                      <Image src={msg.imageUrl} alt="Evidencia" fill className="object-cover" />
-                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="bg-white/20 backdrop-blur-md rounded-full p-2">
-                          <Maximize2 className="w-6 h-6 text-white" />
+      <div className="relative flex-1 min-h-0 bg-slate-50">
+        <ScrollArea className="h-full w-full">
+          <div className="p-6 space-y-6">
+            {loadingMessages ? (
+              <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
+            ) : messages?.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center opacity-30">
+                 <MessageCircle className="w-16 h-16 mb-4" />
+                 <p className="text-sm font-black uppercase tracking-[0.2em]">Inicia la conversación</p>
+              </div>
+            ) : messages?.map((msg) => {
+              const isMe = msg.senderId === user?.uid;
+              return (
+                <div key={msg.id} className={cn("flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300", isMe ? "items-end" : "items-start")}>
+                  <div className={cn(
+                    "max-w-[85%] p-4 rounded-[24px] shadow-sm",
+                    isMe ? "bg-primary text-white rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none border border-slate-100"
+                  )}>
+                    {!isMe && <p className="text-[10px] font-black uppercase opacity-50 mb-1.5">{msg.senderName}</p>}
+                    {msg.type === 'text' ? (
+                      <p className="text-sm font-semibold leading-relaxed">{msg.text}</p>
+                    ) : (
+                      <div 
+                        className="relative aspect-square w-64 max-w-full rounded-2xl overflow-hidden border border-black/5 bg-slate-100 cursor-pointer group/img transition-transform active:scale-95"
+                        onClick={() => setFullScreenImage(msg.imageUrl)}
+                      >
+                        <Image src={msg.imageUrl} alt="Evidencia" fill className="object-cover" />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                          <div className="bg-white/20 backdrop-blur-md rounded-full p-2">
+                            <Maximize2 className="w-6 h-6 text-white" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                  <p className={cn("text-[9px] mt-2 font-bold uppercase opacity-40", isMe ? "text-right" : "text-left")}>
-                    {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), "HH:mm") : 'Enviando...'}
-                  </p>
+                    )}
+                    <p className={cn("text-[9px] mt-2 font-bold uppercase opacity-40", isMe ? "text-right" : "text-left")}>
+                      {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), "HH:mm") : 'Enviando...'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-          <div ref={messagesEndRef} className="h-4 w-full" />
-        </div>
-      </ScrollArea>
+              );
+            })}
+            <div ref={messagesEndRef} className="h-4 w-full" />
+          </div>
+        </ScrollArea>
+      </div>
 
       {/* Camera Preview Overlay */}
       {isCameraOpen && (
@@ -347,7 +358,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
       )}
 
       {/* Input Area */}
-      <div className="p-6 bg-white border-t space-y-4 shrink-0">
+      <div className="p-6 bg-white border-t space-y-4 shrink-0 z-10">
         <div className="flex items-center gap-3">
           <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
           <Button 
