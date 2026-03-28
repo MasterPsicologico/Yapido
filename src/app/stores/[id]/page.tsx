@@ -90,7 +90,7 @@ export default function StorePage() {
 
   const handleOpenInternalChat = async () => {
     if (!user || !store || !firestore) {
-      toast({ title: "Inicia sesión", description: "Para chatear directamente con el negocio.", variant: "destructive" });
+      toast({ title: "Inicia sesión", description: "Para chatear con el negocio.", variant: "destructive" });
       return;
     }
 
@@ -165,8 +165,7 @@ export default function StorePage() {
       updatedAt: serverTimestamp()
     });
     toast({ 
-      title: store?.featuresHidden ? "Sección Visible" : "Sección Oculta",
-      description: store?.featuresHidden ? "Tus clientes ahora verán los destacados." : "Esta sección ahora solo es visible para ti."
+      title: store?.featuresHidden ? "Sección Visible" : "Sección Oculta"
     });
   };
 
@@ -199,9 +198,9 @@ export default function StorePage() {
       try {
         const comp = await compressImage(file);
         setProductImage(comp);
-        toast({ title: "Imagen lista para publicar" });
+        toast({ title: "Imagen lista" });
       } catch (err) {
-        toast({ title: "Error al procesar imagen", variant: "destructive" });
+        toast({ title: "Error al procesar", variant: "destructive" });
       } finally {
         setIsCompressingProduct(false);
       }
@@ -212,7 +211,7 @@ export default function StorePage() {
     e.preventDefault();
     if (!id || !firestore || !store) return;
     if (!productImage) {
-      toast({ title: "Falta la imagen", description: "Sube una foto del producto antes de continuar.", variant: "destructive" });
+      toast({ title: "Falta la imagen", variant: "destructive" });
       return;
     }
     const formData = new FormData(e.currentTarget);
@@ -243,11 +242,11 @@ export default function StorePage() {
         categoryId: categoryId,
         createdAt: serverTimestamp(),
       });
-      toast({ title: "Producto publicado en tu vitrina" });
+      toast({ title: "Producto publicado" });
       setProdDialogOpen(false);
       setProductImage(null);
     } catch (e) {
-      toast({ title: "Error al publicar producto", variant: "destructive" });
+      toast({ title: "Error al publicar", variant: "destructive" });
     } finally {
       setIsAddingProduct(false);
     }
@@ -256,11 +255,11 @@ export default function StorePage() {
   const handleWhatsAppOpen = () => {
     const phone = effectivePhoneNumber;
     if (!phone) {
-      toast({ title: "Teléfono no disponible", description: "Este negocio no ha registrado su WhatsApp.", variant: "destructive" });
+      toast({ title: "Teléfono no disponible", variant: "destructive" });
       return;
     }
     const cleanPhone = phone.replace(/\D/g, '');
-    const message = `¡Hola! 👋 Te contacto desde Vitriniando. Me interesa conocer más sobre tus productos en la vitrina *${store.name}*.`;
+    const message = `¡Hola! 👋 Te contacto desde Vitriniando. Me interesa tu vitrina *${store.name}*.`;
     const url = `https://wa.me/${cleanPhone.startsWith('57') ? cleanPhone : '57' + cleanPhone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
@@ -286,7 +285,6 @@ export default function StorePage() {
                     size="icon" 
                     onClick={handleToggleFeatures}
                     className="absolute -top-6 right-0 z-30 h-8 w-8 rounded-full bg-slate-100/50 backdrop-blur-sm border border-slate-200 text-slate-500 hover:bg-primary hover:text-white transition-all shadow-sm"
-                    title={store?.featuresHidden ? "Mostrar sección" : "Ocultar sección"}
                   >
                     {store?.featuresHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </Button>
@@ -333,30 +331,29 @@ export default function StorePage() {
               )}
 
               <StoreProductsSection storeId={id} categories={categories} />
-
-              <div className="pt-8 flex justify-center pb-6">
-                <Button className="w-[85%] h-14 rounded-full bg-[#f59e0b] hover:bg-[#d97706] text-white text-xl font-bold shadow-xl border-none gap-2 group">
-                   Ver Menú <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </div>
             </div>
           </div>
         </div>
       </main>
 
+      {/* DIÁLOGO BLINDADO PARA CHAT INTERNO EN VITRINA */}
       <Dialog open={!!internalChatOrder} onOpenChange={v => !v && setInternalChatOrder(null)}>
-        <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-none w-screen h-[100dvh] sm:p-4 md:p-8">
+        <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col">
           <DialogHeader className="sr-only">
-            <DialogTitle>Chat Interno con la Tienda</DialogTitle>
-            <DialogDescription>Inicia una conversación privada con el dueño del negocio.</DialogDescription>
+            <DialogTitle>Chat con la Tienda</DialogTitle>
+            <DialogDescription>Conversación privada.</DialogDescription>
           </DialogHeader>
-          {internalChatOrder && <OrderChat orderId={internalChatOrder.id} orderData={internalChatOrder} onClose={() => setInternalChatOrder(null)} />}
+          {internalChatOrder && (
+            <div className="flex-1 min-h-0 w-full animate-in zoom-in duration-300">
+              <OrderChat orderId={internalChatOrder.id} orderData={internalChatOrder} onClose={() => setInternalChatOrder(null)} />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
       <Dialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle className="text-2xl font-black italic">Información de Vitrina</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-2xl font-black italic">Info de Vitrina</DialogTitle></DialogHeader>
           <form onSubmit={handleUpdateInfo} className="space-y-4 pt-4">
             <div className="space-y-2"><Label>Nombre</Label><Input name="name" defaultValue={store?.name} required /></div>
             <div className="space-y-2"><Label>Descripción</Label><Textarea name="description" defaultValue={store?.description} required /></div>

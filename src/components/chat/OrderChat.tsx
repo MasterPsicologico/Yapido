@@ -41,7 +41,6 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -89,15 +88,13 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
     const isLikelyAddress = keywords.some(k => lowerText.includes(k)) && /\d/.test(messageText);
 
     if (isLikelyAddress) {
-      setIsAutoSyncing(true);
       const orderRef = doc(firestore, 'orders', orderId);
       updateDocumentNonBlocking(orderRef, { customerAddress: messageText.trim(), updatedAt: serverTimestamp() });
       if (orderData.customerId && user?.uid === orderData.customerId) {
         const userRef = doc(firestore, 'users', orderData.customerId);
         updateDocumentNonBlocking(userRef, { address: messageText.trim(), updatedAt: serverTimestamp() });
       }
-      toast({ title: "¡Logística Activa!", description: "Dirección detectada y sincronizada.", className: "bg-green-600 text-white border-none" });
-      setTimeout(() => setIsAutoSyncing(false), 2000);
+      toast({ title: "¡Logística Activa!", description: "Dirección sincronizada.", className: "bg-green-600 text-white border-none" });
     }
   };
 
@@ -165,7 +162,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   };
 
   return (
-    <div className="grid grid-rows-[64px_1fr_100px] h-full w-full bg-white rounded-none sm:rounded-[40px] shadow-2xl overflow-hidden border animate-in zoom-in duration-300 relative">
+    <div className="grid grid-rows-[64px_1fr_auto] h-full w-full bg-white rounded-none sm:rounded-[40px] shadow-2xl overflow-hidden border animate-in zoom-in duration-300 relative">
       
       {/* VISOR DE IMAGEN PANTALLA COMPLETA */}
       {fullScreenImage && (
@@ -175,8 +172,8 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
         </div>
       )}
 
-      {/* Header (Altura Fija) */}
-      <div className="bg-slate-900 px-5 flex items-center justify-between text-white overflow-hidden">
+      {/* Header (Altura Fija Bloqueada) */}
+      <div className="h-16 bg-slate-900 px-5 flex items-center justify-between text-white shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center"><MessageCircle className="w-5 h-5 text-primary" /></div>
           <div><h4 className="font-black text-sm uppercase tracking-tighter italic leading-none">Chat Interno</h4><p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">#{orderId.slice(-6)}</p></div>
@@ -184,8 +181,8 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
         {onClose && <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/10 rounded-full h-9 w-9"><X className="w-5 h-5" /></Button>}
       </div>
 
-      {/* Area de Mensajes (Flexible pero restringida) */}
-      <div className="relative overflow-hidden min-h-0 bg-slate-50">
+      {/* Area de Mensajes (Flexible pero Restringida) */}
+      <div className="relative overflow-hidden bg-slate-50 min-h-0 flex-1">
         <ScrollArea className="h-full w-full">
           <div className="p-6 space-y-6">
             {messages?.map((msg) => {
@@ -219,8 +216,8 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
         </ScrollArea>
       </div>
 
-      {/* Input Area (Altura Fija Protegida) */}
-      <div className="p-4 bg-white border-t space-y-3 overflow-hidden">
+      {/* Input Area (Anclaje Mecánico Inferior) */}
+      <div className="shrink-0 bg-white border-t p-4 pb-safe space-y-3">
         <div className="flex items-center gap-2">
           <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
           <Button variant="outline" size="icon" onClick={() => fileInputRef.current?.click()} className="rounded-full h-10 w-10 border-slate-200 shrink-0"><ImageIcon className="w-5 h-5 text-slate-400" /></Button>

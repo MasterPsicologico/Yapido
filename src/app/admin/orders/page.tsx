@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -77,7 +76,6 @@ export default function OrdersManagementPage() {
   const [ratingOrder, setRatingOrder] = useState<any | null>(null);
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
 
-  // LÓGICA DE NAVEGACIÓN REFORZADA (QUIRÚRGICA)
   useEffect(() => {
     const syncFromHash = () => {
       const hash = window.location.hash.replace('#', '');
@@ -88,10 +86,12 @@ export default function OrdersManagementPage() {
 
     const handleGlobalEvent = (e: any) => {
       const id = e.detail?.orderId;
-      if (id) setActiveOrderId(id);
+      if (id) {
+        setActiveOrderId(id);
+        window.location.hash = id;
+      }
     };
 
-    // Escuchar cambios de URL y eventos de la Navbar simultáneamente
     syncFromHash();
     window.addEventListener('hashchange', syncFromHash);
     window.addEventListener('chat-opened' as any, handleGlobalEvent);
@@ -136,7 +136,6 @@ export default function OrdersManagementPage() {
   const handleCloseChat = () => {
     setActiveOrderId(null);
     if (typeof window !== 'undefined') {
-      // Limpieza total del rastro de navegación para permitir aperturas infinitas
       window.history.replaceState(null, '', window.location.pathname);
     }
   };
@@ -155,7 +154,7 @@ export default function OrdersManagementPage() {
     if (code === validatingOrder.deliveryCode) {
       const orderRef = doc(firestore, 'orders', validatingOrder.id);
       updateDocumentNonBlocking(orderRef, { status: 'delivered_to_driver', updatedAt: serverTimestamp() });
-      toast({ title: "¡Código Correcto!", description: "Pedido entregado al repartidor." });
+      toast({ title: "¡Código Correcto!", description: "Pedido entregado." });
       setValidatingOrder(null);
     } else {
       toast({ title: "Código Incorrecto", variant: "destructive" });
@@ -165,15 +164,7 @@ export default function OrdersManagementPage() {
   const handleReorder = (order: any) => {
     if (!order.items) return;
     order.items.forEach((item: any) => addToCart({ ...item, storeId: order.storeId, storeName: order.storeName }));
-    toast({ title: "Items añadidos al carrito" });
-  };
-
-  const openWhatsApp = (order: any, isVenta: boolean) => {
-    const phone = isVenta ? order.customerPhone : order.storePhone;
-    if (!phone) return toast({ title: "WhatsApp no registrado", variant: "destructive" });
-    const message = isVenta ? `Hola 👋 de ${order.storeName}. Sobre tu pedido: ${order.productName}` : `Hola 👋 sobre mi pedido: ${order.productName}`;
-    const cleanPhone = phone.replace(/\D/g, '');
-    window.open(`https://wa.me/${cleanPhone.startsWith('57') ? cleanPhone : '57' + cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    toast({ title: "Añadidos al carrito" });
   };
 
   const toggleOrderDetails = (orderId: string) => {
@@ -277,28 +268,10 @@ export default function OrdersManagementPage() {
                       </div>
                     )}
 
-                    {order.status !== 'inquiry' && (
-                      <div className="grid grid-cols-1 gap-4 bg-slate-50 p-6 rounded-[32px]">
-                        <div className="flex flex-col">
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ubicación</span>
-                          <p className="text-lg font-black text-slate-800 italic">{order.customerAddress || 'No detectada'}</p>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Valor de Orden</span>
-                          <span className="text-4xl font-black text-slate-900 tracking-tighter">
-                            {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice || 0)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
                     <div className="space-y-4">
                       <div className="flex flex-col gap-3">
                         <Button onClick={() => { setActiveOrderId(order.id); window.location.hash = order.id; }} className="w-full h-12 rounded-[20px] bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-transform">
                           <MessageCircle className="w-4 h-4 text-primary" /> CHAT INTERNO
-                        </Button>
-                        <Button onClick={() => openWhatsApp(order, isVenta)} className="w-full h-12 rounded-[20px] bg-[#25D366] hover:bg-[#128C7E] text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-md transition-all active:scale-95">
-                          <WhatsAppIcon className="w-5 h-5" /> WHATSAPP
                         </Button>
                       </div>
 
@@ -402,7 +375,7 @@ export default function OrdersManagementPage() {
                   </div>
                   <div>
                     <h3 className="text-[2.2rem] font-black italic uppercase tracking-tighter leading-none">Mis Compras</h3>
-                    <p className="text-slate-500 font-bold text-[9px] uppercase tracking-[0.3em] mt-2">Historial Personal de Consumo</p>
+                    <p className="text-slate-500 font-bold text-[9px] uppercase tracking-[0.3em] mt-2">Historial Personal</p>
                   </div>
                 </div>
                 <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -414,23 +387,23 @@ export default function OrdersManagementPage() {
         </main>
       )}
 
-      {/* DIÁLOGOS DE GESTIÓN (RESTAURADOS Y SINCRONIZADOS) */}
       <RatingDialog isOpen={!!ratingOrder} onOpenChange={(v) => !v && setRatingOrder(null)} orderId={ratingOrder?.id || ''} storeName={ratingOrder?.storeName || 'Tienda'} />
 
+      {/* DIÁLOGO BLINDADO PARA CHAT: Reset de posicionamiento para pantalla completa real */}
       <Dialog open={!!activeOrderId} onOpenChange={v => !v && handleCloseChat()}>
-        <DialogContent className="p-0 border-none bg-transparent shadow-none max-w-none w-screen h-[100dvh] sm:p-4 md:p-8">
+        <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col">
           <DialogHeader className="sr-only">
-            <DialogTitle>Chat Interno del Pedido</DialogTitle>
+            <DialogTitle>Chat Interno</DialogTitle>
             <DialogDescription>Canal de comunicación seguro.</DialogDescription>
           </DialogHeader>
           {activeOrderId && selectedOrderData ? (
-            <div key={activeOrderId} className="h-full w-full animate-in zoom-in duration-300">
+            <div key={activeOrderId} className="flex-1 min-h-0 w-full animate-in zoom-in duration-300">
               <OrderChat orderId={activeOrderId} orderData={selectedOrderData} onClose={handleCloseChat} />
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center bg-white rounded-[40px] shadow-2xl p-10 h-full">
+            <div className="flex-1 flex flex-col items-center justify-center bg-white p-10 h-full">
               <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
-              <p className="text-sm font-black uppercase tracking-widest text-slate-400">Conectando Canal Seguro...</p>
+              <p className="text-sm font-black uppercase tracking-widest text-slate-400">Sincronizando Entorno...</p>
             </div>
           )}
         </DialogContent>
@@ -440,15 +413,15 @@ export default function OrdersManagementPage() {
         <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px]">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter flex items-center gap-3 text-slate-900">
-              <Lock className="w-7 h-7 text-amber-500" /> Validación de Entrega
+              <Lock className="w-7 h-7 text-amber-500" /> Validación
             </DialogTitle>
             <DialogDescription className="text-slate-400 font-medium italic">
-              Pide al repartidor su código de 4 dígitos para transferir la responsabilidad física.
+              Ingresa el código del repartidor.
             </DialogDescription>
           </DialogHeader>
           <div className="py-8 grid grid-cols-1 gap-4">
             {validatingOrder && [validatingOrder.deliveryCode, (Number(validatingOrder.deliveryCode) + 123).toString().slice(-4), (Number(validatingOrder.deliveryCode) - 456).toString().slice(-4)].sort().map((code, idx) => (
-              <Button key={idx} onClick={() => handleValidateDriverCode(code)} variant="outline" className="h-20 rounded-[24px] text-3xl font-black tracking-[0.3em] italic border-2 hover:border-primary transition-all">{code}</Button>
+              <button key={idx} onClick={() => handleValidateDriverCode(code)} className="h-20 rounded-[24px] text-3xl font-black tracking-[0.3em] italic border-2 border-slate-100 hover:border-primary transition-all bg-slate-50">{code}</button>
             ))}
           </div>
         </DialogContent>
