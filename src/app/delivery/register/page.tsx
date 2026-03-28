@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,6 +21,13 @@ export default function DeliveryRegisterPage() {
   const [loading, setLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
+  // CORRECCIÓN QUIRÚRGICA: La redirección debe ser un efecto secundario, no ocurrir durante el renderizado.
+  useEffect(() => {
+    if (profile?.role === 'repartidor') {
+      router.push('/delivery/dashboard');
+    }
+  }, [profile, router]);
+
   const handleRegister = () => {
     if (!user || !firestore || !acceptedTerms) return;
     setLoading(true);
@@ -36,8 +43,8 @@ export default function DeliveryRegisterPage() {
     setTimeout(() => router.push('/delivery/dashboard'), 1500);
   };
 
+  // Si ya es repartidor, no renderizamos nada para evitar parpadeos visuales
   if (profile?.role === 'repartidor') {
-    router.push('/delivery/dashboard');
     return null;
   }
 
