@@ -10,4 +10,6 @@ import '@/ai/agents/cliente/tools/calculate-total.ts';
 import '@/ai/agents/cliente/tools/create-order.ts';
 import '@/ai/agents/cliente/tools/get-nearby-stores.ts';
 import '@/ai/agents/tienda/tools/inventory-sync.ts';
-import '@/ai/agents/asignador/flows/match-engine.ts';
+import '@/ai/agents/asignador/index.ts';
+import '@/ai/agents/asignador/tools/calculate-score.ts';
+import '@/ai/agents/asignador/tools/find-drivers.ts';
