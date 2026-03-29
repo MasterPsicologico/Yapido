@@ -26,3 +26,6 @@ import '@/ai/agents/notificaciones/index.ts';
 import '@/ai/agents/notificaciones/tools/send-push.ts';
 import '@/ai/agents/notificaciones/tools/send-sms.ts';
 import '@/ai/agents/notificaciones/tools/send-email.ts';
+import '@/ai/agents/prediccion/index.ts';
+import '@/ai/agents/prediccion/tools/predict-demand.ts';
+import '@/ai/agents/prediccion/tools/analyze-history.ts';
