@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -91,6 +91,13 @@ export function ChatNotificationListener() {
                   notifiedIds.current.add(msgId);
                 }
               });
+            }, async (error) => {
+              if (error.code === 'permission-denied') {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                  path: `orders/${orderId}/messages`,
+                  operation: 'list',
+                }));
+              }
             });
             messageUnsubs.set(orderId, unsubMsg);
             unsubscribers.push(unsubMsg);
@@ -103,6 +110,13 @@ export function ChatNotificationListener() {
           messageUnsubs.delete(orderId);
         }
       });
+    }, async (error) => {
+      if (error.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: 'orders',
+          operation: 'list',
+        }));
+      }
     });
 
     unsubscribers.push(unsubOrders);
