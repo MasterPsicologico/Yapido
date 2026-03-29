@@ -19,3 +19,6 @@ import '@/ai/agents/rutas/tools/get-route.ts';
 import '@/ai/agents/rutas/tools/optimize-multi-route.ts';
 import '@/ai/agents/precios/index.ts';
 import '@/ai/agents/precios/tools/calculate-multiplier.ts';
+import '@/ai/agents/pagos/index.ts';
+import '@/ai/agents/pagos/tools/split-payment.ts';
+import '@/ai/agents/pagos/tools/verify-payment.ts';
