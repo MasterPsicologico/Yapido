@@ -22,3 +22,7 @@ import '@/ai/agents/precios/tools/calculate-multiplier.ts';
 import '@/ai/agents/pagos/index.ts';
 import '@/ai/agents/pagos/tools/split-payment.ts';
 import '@/ai/agents/pagos/tools/verify-payment.ts';
+import '@/ai/agents/notificaciones/index.ts';
+import '@/ai/agents/notificaciones/tools/send-push.ts';
+import '@/ai/agents/notificaciones/tools/send-sms.ts';
+import '@/ai/agents/notificaciones/tools/send-email.ts';
