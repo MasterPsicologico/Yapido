@@ -17,3 +17,5 @@ import '@/ai/agents/rutas/index.ts';
 import '@/ai/agents/rutas/tools/calculate-eta.ts';
 import '@/ai/agents/rutas/tools/get-route.ts';
 import '@/ai/agents/rutas/tools/optimize-multi-route.ts';
+import '@/ai/agents/precios/index.ts';
+import '@/ai/agents/precios/tools/calculate-multiplier.ts';
