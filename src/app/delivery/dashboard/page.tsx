@@ -36,18 +36,21 @@ import {
   Phone,
   Wallet,
   Info,
-  Clock
+  Clock,
+  ChevronRight
 } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, useDoc } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, doc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format, addMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { WeeklyChallenge } from '@/components/delivery/WeeklyChallenge';
 import Image from 'next/image';
+import { OrderChat } from '@/components/chat/OrderChat';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export default function DeliveryDashboardPage() {
   const { user } = useUser();
@@ -55,6 +58,7 @@ export default function DeliveryDashboardPage() {
   const firestore = useFirestore();
   const [activeTab, setActiveTab] = useState("available");
   const [isOnline, setIsOnline] = useState(true);
+  const [currentTime, setCurrentTime] = useState(new Date());
   
   // Estados de Cámara e Identidad
   const [showCamera, setShowCamera] = useState(false);
@@ -62,9 +66,14 @@ export default function DeliveryDashboardPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
 
-  // Estados de Geovalla y Seguimiento
-  const [currentLocation, setCurrentLocation] = useState<GeolocationCoordinates | null>(null);
-  const watchId = useRef<number | null>(null);
+  // Estado de Chat Interno en Misión
+  const [isMissionChatOpen, setIsMissionChatOpen] = useState(false);
+
+  // Reloj en tiempo real
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || profile?.role === 'admin';
 
@@ -111,23 +120,9 @@ export default function DeliveryDashboardPage() {
 
   const activeMission = useMemo(() => myDeliveries.find(o => o.status === 'shipped' || o.status === 'at_store' || o.status === 'delivered_to_driver'), [myDeliveries]);
 
-  // LÓGICA DE GEOLOCALIZACIÓN Y LLEGADA AUTOMÁTICA
-  useEffect(() => {
-    if (activeMission && activeMission.status === 'shipped' && typeof window !== 'undefined' && navigator.geolocation) {
-      watchId.current = navigator.geolocation.watchPosition(
-        (position) => {
-          setCurrentLocation(position.coords);
-          // Motor de geovalla: en un entorno real compararíamos coords de la tienda
-        },
-        (error) => console.error("Error GPS:", error),
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-      );
-    }
-
-    return () => {
-      if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
-    };
-  }, [activeMission]);
+  // Obtener perfil del cliente real si hay misión activa
+  const customerRef = useMemoFirebase(() => (!firestore || !activeMission?.customerId) ? null : doc(firestore, 'users', activeMission.customerId), [firestore, activeMission?.customerId]);
+  const { data: customerProfile } = useDoc(customerRef);
 
   const handleAcceptOrder = (orderId: string) => {
     if (!firestore || !user) return;
@@ -231,32 +226,56 @@ export default function DeliveryDashboardPage() {
   }
 
   const LevelIcon = level.icon;
+  // Sugerencia de tiempo: 15-20 mins basado en hora actual
+  const suggestedArrival = activeMission ? format(addMinutes(currentTime, 18), 'HH:mm') : null;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
       
-      {/* VISTA DE MISIÓN ACTIVA: DISEÑO DE ALTO RENDIMIENTO (SIN CONTENEDOR CENTRAL) */}
       {activeMission ? (
         <div className="fixed inset-0 z-[100] bg-[#f8fafc] flex flex-col animate-in slide-in-from-bottom duration-500 overflow-hidden">
-          {/* Status Bar Operativo */}
-          <div className="h-16 bg-slate-900 flex items-center justify-between px-6 text-white shrink-0 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <Navigation className="w-5 h-5 text-primary animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] italic">Misión de Élite</span>
+          {/* CABECERA TÁCTICA REMODELADA */}
+          <div className="h-16 bg-slate-900 flex items-center justify-between px-4 text-white shrink-0 shadow-2xl relative">
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => window.location.reload()} 
+                className="h-10 w-10 text-white/40 hover:text-white rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+              {activeMission.status === 'shipped' ? (
+                <Button 
+                  onClick={() => handleManualArrival(activeMission.id)}
+                  className="h-10 bg-primary hover:bg-primary/90 text-white font-black text-[10px] uppercase tracking-widest px-4 rounded-full shadow-lg border-none"
+                >
+                  LLEGUÉ A TIENDA
+                </Button>
+              ) : (
+                <Badge className="bg-green-500 text-white border-none font-black italic px-4 py-1 h-8 uppercase text-[10px] tracking-widest">
+                  EN TIENDA
+                </Badge>
+              )}
             </div>
-            <div className="flex items-center gap-3">
-              <Badge className="bg-primary text-white border-none font-black italic px-4 py-1 h-7 uppercase text-[10px]">
-                {activeMission.status === 'shipped' ? 'EN RUTA' : 'EN TIENDA'}
-              </Badge>
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-white/60" />
+
+            <div className="flex items-center gap-4">
+              <div className="text-right flex flex-col justify-center">
+                <span className="text-[14px] font-black text-white leading-none tracking-tighter">
+                  {format(currentTime, 'HH:mm')}
+                </span>
+                <p className="text-[8px] font-black text-primary uppercase tracking-widest mt-0.5 italic">
+                  ETA: {suggestedArrival}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center border border-white/5">
+                <Clock className="w-5 h-5 text-primary animate-pulse" />
               </div>
             </div>
           </div>
 
           <main className="flex-1 overflow-y-auto no-scrollbar pb-32">
-            {/* HERO SECTION: PRODUCTO Y TIENDA */}
             <section className="px-6 pt-10 pb-8 space-y-4 text-center">
               <div className="space-y-1">
                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mb-3">PEDIDO #{activeMission.id.slice(-6).toUpperCase()}</p>
@@ -273,7 +292,6 @@ export default function DeliveryDashboardPage() {
               </div>
             </section>
 
-            {/* ACCIÓN LOGÍSTICA: NAVEGACIÓN */}
             <section className="px-6 py-6 flex flex-col gap-4">
               <Button 
                 onClick={() => handleOpenMaps(activeMission.storeAddress)}
@@ -284,19 +302,8 @@ export default function DeliveryDashboardPage() {
                 </div>
                 INICIAR RUTA
               </Button>
-
-              {activeMission.status === 'shipped' && (
-                <Button 
-                  onClick={() => handleManualArrival(activeMission.id)}
-                  variant="outline"
-                  className="h-16 rounded-[24px] border-2 border-slate-200 bg-white text-slate-900 font-black text-sm uppercase tracking-widest gap-3 shadow-sm hover:bg-slate-50 transition-all"
-                >
-                  <CheckCircle2 className="w-5 h-5 text-secondary" /> YA ESTOY EN LA TIENDA
-                </Button>
-              )}
             </section>
 
-            {/* DETALLES TÉCNICOS DEL PEDIDO */}
             <section className="px-6 py-8 space-y-8">
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
@@ -321,7 +328,6 @@ export default function DeliveryDashboardPage() {
                 </div>
               </div>
 
-              {/* FINANZAS Y PAGO */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-6 rounded-[32px] bg-slate-900 text-white shadow-xl space-y-1">
                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Total a Validar</p>
@@ -339,12 +345,15 @@ export default function DeliveryDashboardPage() {
               </div>
             </section>
 
-            {/* CONEXIÓN CON EL CLIENTE */}
+            {/* CONEXIÓN REAL CON EL CLIENTE */}
             <section className="px-6 py-8 border-t border-dashed border-slate-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <Avatar className="w-14 h-14 border-4 border-white shadow-xl ring-1 ring-slate-100">
-                    <AvatarFallback className="bg-primary text-white font-black text-xl">C</AvatarFallback>
+                    <AvatarImage src={customerProfile?.photoURL} className="object-cover" />
+                    <AvatarFallback className="bg-primary text-white font-black text-xl">
+                      {activeMission.customerName?.charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="space-y-0.5">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Entregando a</p>
@@ -353,10 +362,17 @@ export default function DeliveryDashboardPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="icon" className="rounded-full bg-white text-slate-600 h-12 w-12 shadow-md border border-slate-50">
-                    <Phone className="w-5 h-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="rounded-full bg-slate-900 text-white h-12 w-12 shadow-xl">
+                  <a href={`tel:${activeMission.customerPhone}`}>
+                    <Button variant="ghost" size="icon" className="rounded-full bg-white text-slate-600 h-12 w-12 shadow-md border border-slate-50 active:scale-95 transition-all">
+                      <Phone className="w-5 h-5" />
+                    </Button>
+                  </a>
+                  <Button 
+                    onClick={() => setIsMissionChatOpen(true)}
+                    variant="ghost" 
+                    size="icon" 
+                    className="rounded-full bg-slate-900 text-white h-12 w-12 shadow-xl active:scale-95 transition-all"
+                  >
                     <MessageCircle className="w-5 h-5 text-primary" />
                   </Button>
                 </div>
@@ -364,7 +380,6 @@ export default function DeliveryDashboardPage() {
             </section>
           </main>
 
-          {/* FOOTER DE SEGURIDAD OPERATIVA */}
           <div className="fixed bottom-0 inset-x-0 p-6 bg-white/80 backdrop-blur-xl border-t border-slate-100 z-[110]">
             <div className="flex flex-col items-center gap-2">
               <div className="flex items-center gap-2">
@@ -376,6 +391,17 @@ export default function DeliveryDashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* CHAT INTERNO EN MISIÓN */}
+          <Dialog open={isMissionChatOpen} onOpenChange={setIsMissionChatOpen}>
+            <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[200]">
+              <DialogHeader className="sr-only">
+                <DialogTitle>Chat Interno</DialogTitle>
+                <DialogDescription>Comunicación directa por pedido.</DialogDescription>
+              </DialogHeader>
+              <OrderChat orderId={activeMission.id} orderData={activeMission} onClose={() => setIsMissionChatOpen(false)} />
+            </DialogContent>
+          </Dialog>
         </div>
       ) : (
         <>
