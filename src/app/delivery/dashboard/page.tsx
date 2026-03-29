@@ -32,7 +32,11 @@ import {
   Award,
   Calendar,
   MapPinned,
-  ChevronLeft
+  ChevronLeft,
+  Phone,
+  Wallet,
+  Info,
+  Clock
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -43,6 +47,7 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { WeeklyChallenge } from '@/components/delivery/WeeklyChallenge';
+import Image from 'next/image';
 
 export default function DeliveryDashboardPage() {
   const { user } = useUser();
@@ -112,9 +117,7 @@ export default function DeliveryDashboardPage() {
       watchId.current = navigator.geolocation.watchPosition(
         (position) => {
           setCurrentLocation(position.coords);
-          // Simulación de geovalla para demo (en un entorno real necesitaríamos lat/lng de la tienda)
-          // Si el usuario está activo y la misión es 'shipped', monitoreamos.
-          // Por ahora, como no tenemos coordenadas reales en el backend, dejamos el motor listo para cuando se integren.
+          // Motor de geovalla: en un entorno real compararíamos coords de la tienda
         },
         (error) => console.error("Error GPS:", error),
         { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
@@ -233,85 +236,145 @@ export default function DeliveryDashboardPage() {
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
       
-      {/* VISTA DE MISIÓN ACTIVA (PANTALLA COMPLETA) */}
+      {/* VISTA DE MISIÓN ACTIVA: DISEÑO DE ALTO RENDIMIENTO (SIN CONTENEDOR CENTRAL) */}
       {activeMission ? (
-        <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in slide-in-from-bottom duration-500">
-          <div className="h-16 bg-slate-900 flex items-center justify-between px-6 text-white shrink-0">
+        <div className="fixed inset-0 z-[100] bg-[#f8fafc] flex flex-col animate-in slide-in-from-bottom duration-500 overflow-hidden">
+          {/* Status Bar Operativo */}
+          <div className="h-16 bg-slate-900 flex items-center justify-between px-6 text-white shrink-0 shadow-2xl">
             <div className="flex items-center gap-3">
               <Navigation className="w-5 h-5 text-primary animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] italic">Misión en Curso</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] italic">Misión de Élite</span>
             </div>
-            <Badge className="bg-primary text-white border-none font-black italic px-4 uppercase">{activeMission.status === 'shipped' ? 'EN RUTA' : 'EN TIENDA'}</Badge>
+            <div className="flex items-center gap-3">
+              <Badge className="bg-primary text-white border-none font-black italic px-4 py-1 h-7 uppercase text-[10px]">
+                {activeMission.status === 'shipped' ? 'EN RUTA' : 'EN TIENDA'}
+              </Badge>
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-white/60" />
+              </div>
+            </div>
           </div>
 
-          <main className="flex-1 overflow-y-auto bg-[#f8fafc] p-6 space-y-10">
-            <div className="space-y-2 text-center pt-4">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-2">Producto a Recoger</p>
-              <h1 className="text-[3.2rem] font-black italic uppercase tracking-tighter leading-[0.85] text-slate-900">
-                {activeMission.productName}
-              </h1>
-              <div className="flex items-center justify-center gap-2 mt-4">
-                <StoreIcon className="w-4 h-4 text-primary" />
-                <p className="text-sm font-black uppercase italic text-slate-600">{activeMission.storeName}</p>
+          <main className="flex-1 overflow-y-auto no-scrollbar pb-32">
+            {/* HERO SECTION: PRODUCTO Y TIENDA */}
+            <section className="px-6 pt-10 pb-8 space-y-4 text-center">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mb-3">PEDIDO #{activeMission.id.slice(-6).toUpperCase()}</p>
+                <h1 className="text-5xl sm:text-7xl font-black italic uppercase tracking-tighter leading-[0.85] text-slate-900 drop-shadow-sm">
+                  {activeMission.productName}
+                </h1>
               </div>
-            </div>
-
-            <div className="bg-white p-8 rounded-[40px] shadow-2xl space-y-8 ring-1 ring-black/[0.03]">
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-100">
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0">
-                    <MapPin className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ubicación Tienda</p>
-                    <p className="text-lg font-black uppercase italic text-slate-800 truncate">{activeMission.storeAddress || 'Aguachica'}</p>
-                  </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2 rounded-full shadow-lg">
+                  <StoreIcon className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-black uppercase italic tracking-widest">{activeMission.storeName}</span>
                 </div>
-
-                <div className="grid grid-cols-1 gap-4">
-                  <Button 
-                    onClick={() => handleOpenMaps(activeMission.storeAddress)}
-                    className="h-20 rounded-[28px] bg-slate-900 hover:bg-black text-white font-black text-xl uppercase tracking-tighter italic gap-4 shadow-2xl active:scale-95 transition-all"
-                  >
-                    <MapPinned className="w-8 h-8 text-primary" /> DIRIGIRME A LA TIENDA
-                  </Button>
-                  
-                  {activeMission.status === 'shipped' ? (
-                    <Button 
-                      onClick={() => handleManualArrival(activeMission.id)}
-                      className="h-20 rounded-[28px] bg-secondary hover:bg-secondary/90 text-white font-black text-xl uppercase tracking-tighter italic gap-4 shadow-xl active:scale-95 transition-all"
-                    >
-                      <CheckCircle2 className="w-8 h-8" /> YA ESTOY EN LA TIENDA
-                    </Button>
-                  ) : (
-                    <div className="bg-green-50 border-2 border-green-100 p-6 rounded-[28px] flex flex-col items-center gap-2 text-center animate-in zoom-in">
-                      <ShieldCheck className="w-10 h-10 text-green-500" />
-                      <p className="text-sm font-black uppercase text-green-700">Estado: Notificando Despacho</p>
-                      <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest">El vendedor está preparando tu entrega</p>
-                    </div>
-                  )}
-                </div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{activeMission.storeAddress || 'Aguachica, Cesar'}</p>
               </div>
+            </section>
 
-              <div className="pt-6 border-t border-dashed flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Avatar className="w-10 h-10 border-2 border-slate-100">
-                    <AvatarFallback className="bg-slate-50 text-slate-400 font-black">C</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Cliente</p>
-                    <p className="text-xs font-black uppercase">{activeMission.customerName}</p>
-                  </div>
+            {/* ACCIÓN LOGÍSTICA: NAVEGACIÓN */}
+            <section className="px-6 py-6 flex flex-col gap-4">
+              <Button 
+                onClick={() => handleOpenMaps(activeMission.storeAddress)}
+                className="h-24 rounded-[32px] bg-primary hover:bg-primary/90 text-white font-black text-2xl uppercase tracking-tighter italic gap-5 shadow-[0_20px_50px_rgba(59,130,246,0.3)] active:scale-95 transition-all"
+              >
+                <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
+                  <MapPinned className="w-8 h-8" />
                 </div>
-                <Button variant="ghost" size="icon" className="rounded-full bg-slate-100 text-slate-600 h-12 w-12">
-                  <MessageCircle className="w-6 h-6" />
+                INICIAR RUTA
+              </Button>
+
+              {activeMission.status === 'shipped' && (
+                <Button 
+                  onClick={() => handleManualArrival(activeMission.id)}
+                  variant="outline"
+                  className="h-16 rounded-[24px] border-2 border-slate-200 bg-white text-slate-900 font-black text-sm uppercase tracking-widest gap-3 shadow-sm hover:bg-slate-50 transition-all"
+                >
+                  <CheckCircle2 className="w-5 h-5 text-secondary" /> YA ESTOY EN LA TIENDA
                 </Button>
+              )}
+            </section>
+
+            {/* DETALLES TÉCNICOS DEL PEDIDO */}
+            <section className="px-6 py-8 space-y-8">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-6 bg-secondary rounded-full" />
+                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 italic">Contenido del Pedido</h3>
+                </div>
+                <div className="space-y-3">
+                  {activeMission.items?.map((item: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between p-4 rounded-3xl bg-white border border-slate-100 shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-50">
+                          <Image src={item.imageUrl || 'https://picsum.photos/seed/p/200'} alt={item.name} fill className="object-cover" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black uppercase italic leading-none text-slate-800">{item.name}</p>
+                          <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Cantidad: x{item.quantity}</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-slate-50 text-slate-600 border-none font-black text-[10px]">SKU-{idx+1}</Badge>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+
+              {/* FINANZAS Y PAGO */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-6 rounded-[32px] bg-slate-900 text-white shadow-xl space-y-1">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Total a Validar</p>
+                  <p className="text-xl font-black italic tracking-tighter">
+                    {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(activeMission.totalPrice || 0)}
+                  </p>
+                </div>
+                <div className="p-6 rounded-[32px] bg-white border border-slate-100 shadow-sm space-y-1">
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Método de Pago</p>
+                  <div className="flex items-center gap-2">
+                    {activeMission.paymentMethod === 'digital' ? <CreditCard className="w-4 h-4 text-primary" /> : <Wallet className="w-4 h-4 text-green-500" />}
+                    <p className="text-xs font-black uppercase italic text-slate-800">{activeMission.paymentMethod === 'digital' ? 'ONLINE' : 'EFECTIVO'}</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* CONEXIÓN CON EL CLIENTE */}
+            <section className="px-6 py-8 border-t border-dashed border-slate-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Avatar className="w-14 h-14 border-4 border-white shadow-xl ring-1 ring-slate-100">
+                    <AvatarFallback className="bg-primary text-white font-black text-xl">C</AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-0.5">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Entregando a</p>
+                    <p className="text-lg font-black uppercase italic text-slate-900 leading-none">{activeMission.customerName}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter truncate max-w-[150px]">{activeMission.customerAddress}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="icon" className="rounded-full bg-white text-slate-600 h-12 w-12 shadow-md border border-slate-50">
+                    <Phone className="w-5 h-5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="rounded-full bg-slate-900 text-white h-12 w-12 shadow-xl">
+                    <MessageCircle className="w-5 h-5 text-primary" />
+                  </Button>
+                </div>
+              </div>
+            </section>
           </main>
 
-          <div className="p-6 bg-white border-t">
-            <p className="text-[8px] text-center text-slate-300 font-black uppercase tracking-[0.4em]">Seguimiento GPS Activo • Vitriniando Seguro</p>
+          {/* FOOTER DE SEGURIDAD OPERATIVA */}
+          <div className="fixed bottom-0 inset-x-0 p-6 bg-white/80 backdrop-blur-xl border-t border-slate-100 z-[110]">
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-green-500" />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Seguimiento GPS Activo</span>
+              </div>
+              <div className="h-1 w-20 bg-slate-100 rounded-full overflow-hidden relative">
+                <div className="absolute inset-0 bg-green-500 animate-progress-loading" />
+              </div>
+            </div>
           </div>
         </div>
       ) : (
