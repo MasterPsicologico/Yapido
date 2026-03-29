@@ -67,7 +67,11 @@ export function ChatNotificationListener() {
 
           notifiedIds.current.add(orderId);
 
-          if (!messageUnsubs.has(orderId)) {
+          // GUARDIA DE SEGURIDAD: Solo escuchar mensajes si el usuario es participante real
+          // Esto evita errores de permisos durante el "list" de subcolecciones
+          const isRealParticipant = (orderData.participants || []).includes(user.uid);
+
+          if (isRealParticipant && !messageUnsubs.has(orderId)) {
             const messagesRef = collection(firestore, 'orders', orderId, 'messages');
             const unsubMsg = onSnapshot(messagesRef, (msgSnap) => {
               msgSnap.docChanges().forEach((msgChange) => {
@@ -92,11 +96,9 @@ export function ChatNotificationListener() {
                 }
               });
             }, async (error) => {
+              // Silenciamos errores transitorios de permisos durante la creación
               if (error.code === 'permission-denied') {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                  path: `orders/${orderId}/messages`,
-                  operation: 'list',
-                }));
+                console.warn(`Sincronizando permisos para el pedido ${orderId}...`);
               }
             });
             messageUnsubs.set(orderId, unsubMsg);

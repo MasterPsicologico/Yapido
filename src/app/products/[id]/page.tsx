@@ -57,6 +57,10 @@ export default function ProductPage() {
         }
       }
       
+      // Construcción quirúrgica del array de participantes para evitar errores de permisos
+      const ownerId = storeData?.ownerId || product.storeOwnerId;
+      const participants = [user.uid, ownerId].filter((id): id is string => typeof id === 'string' && id.length > 0);
+
       const orderData = {
         customerId: user.uid,
         customerName: profile?.displayName || user.displayName || 'Cliente',
@@ -64,7 +68,7 @@ export default function ProductPage() {
         customerAddress: profile?.address || 'Por definir',
         storeId: product.storeId,
         storeName: product.storeName,
-        storeOwnerId: storeData?.ownerId || product.storeOwnerId,
+        storeOwnerId: ownerId,
         storeAddress: storeData?.address || 'Ubicación de tienda',
         storePhone: storePhone,
         productId: product.id,
@@ -82,7 +86,7 @@ export default function ProductPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isLogisticsPublic: false,
-        participants: [user.uid, storeData?.ownerId || product.storeOwnerId]
+        participants: participants
       };
 
       await addDoc(collection(firestore, 'orders'), orderData);

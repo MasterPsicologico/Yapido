@@ -36,24 +36,23 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    // ARQUITECTURA DE ÓRDENES: Seguridad Segmentada
+    // ARQUITECTURA DE ÓRDENES: Seguridad Segmentada y Blindada
     match /orders/{orderId} {
-      // Lectura individual (get)
+      function isParticipant() {
+        return request.auth.uid in resource.data.get('participants', []);
+      }
+
       allow get: if isSignedIn() && (
-        request.auth.uid in resource.data.get('participants', []) || 
+        isParticipant() || 
         resource.data.get('isLogisticsPublic', false) == true ||
         resource.data.get('deliveryDriverId', '') == request.auth.uid ||
         resource.data.get('customerId', '') == request.auth.uid ||
         resource.data.get('storeOwnerId', '') == request.auth.uid
       );
 
-      // Reglas de Listado (list): Segmentadas para optimización del analizador de consultas
-      // Rama 1: El usuario es participante directo
-      allow list: if isSignedIn() && (request.auth.uid in resource.data.get('participants', []));
-      // Rama 2: La ruta es pública para logística
-      allow list: if isSignedIn() && (resource.data.get('isLogisticsPublic', false) == true);
-      // Rama 3: El usuario tiene un rol específico asignado
       allow list: if isSignedIn() && (
+        isParticipant() ||
+        resource.data.get('isLogisticsPublic', false) == true ||
         resource.data.get('deliveryDriverId', '') == request.auth.uid ||
         resource.data.get('customerId', '') == request.auth.uid ||
         resource.data.get('storeOwnerId', '') == request.auth.uid
@@ -62,8 +61,8 @@ service cloud.firestore {
       allow create: if isSignedIn();
       
       allow update: if isSignedIn() && (
-        (request.auth.uid in resource.data.get('participants', [])) ||
-        (resource.data.get('isLogisticsPublic', false) == true)
+        isParticipant() ||
+        resource.data.get('isLogisticsPublic', false) == true
       );
       
       allow delete: if isSignedIn() && (
@@ -72,6 +71,7 @@ service cloud.firestore {
       );
 
       match /messages/{messageId} {
+        // Regla robusta para subcolecciones que dependen del padre
         allow read, write: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/orders/$(orderId)).data.get('participants', []);
       }
     }
