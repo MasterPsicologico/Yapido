@@ -13,3 +13,7 @@ import '@/ai/agents/tienda/tools/inventory-sync.ts';
 import '@/ai/agents/asignador/index.ts';
 import '@/ai/agents/asignador/tools/calculate-score.ts';
 import '@/ai/agents/asignador/tools/find-drivers.ts';
+import '@/ai/agents/rutas/index.ts';
+import '@/ai/agents/rutas/tools/calculate-eta.ts';
+import '@/ai/agents/rutas/tools/get-route.ts';
+import '@/ai/agents/rutas/tools/optimize-multi-route.ts';
