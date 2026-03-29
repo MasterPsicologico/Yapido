@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -126,6 +127,10 @@ export default function CheckoutPage() {
         }
       }
 
+      // SANEAMIENTO QUIRÚRGICO DE PARTICIPANTES
+      const ownerId = storeData?.ownerId || '';
+      const participants = [user.uid, ownerId].filter(id => id && typeof id === 'string');
+
       const orderData = {
         customerId: user.uid,
         customerName: profile?.displayName || user.displayName || 'Cliente',
@@ -133,7 +138,7 @@ export default function CheckoutPage() {
         customerAddress: tempAddress,
         storeId: items[0].storeId,
         storeName: items[0].storeName,
-        storeOwnerId: storeData?.ownerId,
+        storeOwnerId: ownerId,
         storeAddress: storeData?.address || 'Tienda',
         storePhone: storePhone,
         items: items.map(i => ({
@@ -152,7 +157,7 @@ export default function CheckoutPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isLogisticsPublic: false,
-        participants: [user.uid, storeData?.ownerId].filter(Boolean)
+        participants: participants
       };
 
       const docRef = await addDoc(collection(firestore, 'orders'), orderData);

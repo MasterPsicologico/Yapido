@@ -36,9 +36,10 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    // ARQUITECTURA DE ÓRDENES: Seguridad Segmentada y Blindada
+    // ARQUITECTURA DE ÓRDENES: Seguridad Sincronizada
     match /orders/{orderId} {
       function isParticipant() {
+        // Validación robusta de participantes
         return request.auth.uid in resource.data.get('participants', []);
       }
 
@@ -51,7 +52,8 @@ service cloud.firestore {
       );
 
       allow list: if isSignedIn() && (
-        isParticipant() ||
+        // Permitimos listar si eres parte del array de participantes
+        request.auth.uid in resource.data.get('participants', []) ||
         resource.data.get('isLogisticsPublic', false) == true ||
         resource.data.get('deliveryDriverId', '') == request.auth.uid ||
         resource.data.get('customerId', '') == request.auth.uid ||
@@ -71,7 +73,7 @@ service cloud.firestore {
       );
 
       match /messages/{messageId} {
-        // Regla robusta para subcolecciones que dependen del padre
+        // Regla atómica para subcolecciones: Depende de la validación del documento padre
         allow read, write: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/orders/$(orderId)).data.get('participants', []);
       }
     }

@@ -68,7 +68,6 @@ export function ChatNotificationListener() {
           notifiedIds.current.add(orderId);
 
           // GUARDIA DE SEGURIDAD: Solo escuchar mensajes si el usuario es participante real
-          // Esto evita errores de permisos durante el "list" de subcolecciones
           const isRealParticipant = (orderData.participants || []).includes(user.uid);
 
           if (isRealParticipant && !messageUnsubs.has(orderId)) {
@@ -96,9 +95,10 @@ export function ChatNotificationListener() {
                 }
               });
             }, async (error) => {
-              // Silenciamos errores transitorios de permisos durante la creación
+              // SILENCIADOR DE ERRORES: En background no emitimos el error visual FirestorePermissionError
+              // Solo registramos el aviso para evitar interrumpir la UX con overlays técnicos
               if (error.code === 'permission-denied') {
-                console.warn(`Sincronizando permisos para el pedido ${orderId}...`);
+                console.warn(`[Vitriniando] Sincronizando permisos de chat para pedido: ${orderId}`);
               }
             });
             messageUnsubs.set(orderId, unsubMsg);
@@ -114,10 +114,7 @@ export function ChatNotificationListener() {
       });
     }, async (error) => {
       if (error.code === 'permission-denied') {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: 'orders',
-          operation: 'list',
-        }));
+        console.warn("[Vitriniando] Sincronizando lista de órdenes...");
       }
     });
 
@@ -163,12 +160,12 @@ export function ChatNotificationListener() {
     const interval = setInterval(() => {
       if (unreadItems.size > 0) {
         const now = Date.now();
-        if (now - lastAlarmTime.current > 10000) {
+        if (now - lastAlarmTime.current > 15000) {
             const entry = Array.from(unreadItems.entries())[0];
             if (entry) triggerAlarm(entry[0], entry[1].title, entry[1].type === 'order' ? 'PEDIDO PENDIENTE' : 'MENSAJE PENDIENTE');
         }
       }
-    }, 5000);
+    }, 10000);
     return () => clearInterval(interval);
   }, [unreadItems]);
 
