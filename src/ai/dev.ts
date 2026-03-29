@@ -29,3 +29,6 @@ import '@/ai/agents/notificaciones/tools/send-email.ts';
 import '@/ai/agents/prediccion/index.ts';
 import '@/ai/agents/prediccion/tools/predict-demand.ts';
 import '@/ai/agents/prediccion/tools/analyze-history.ts';
+import '@/ai/agents/fraude/index.ts';
+import '@/ai/agents/fraude/tools/calculate-risk.ts';
+import '@/ai/agents/fraude/tools/gps-checker.ts';
