@@ -37,12 +37,14 @@ import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 export default function ManagePage() {
   const { user } = useUser();
   const { profile, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
+  const router = useRouter();
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -50,6 +52,18 @@ export default function ManagePage() {
   const [isCompressing, setIsCompressing] = useState(false);
   const [aiProductName, setAiProductName] = useState("");
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
+
+  // PROTECCIÓN QUIRÚRGICA: Redirección si no hay teléfono
+  useEffect(() => {
+    if (!loadingProfile && profile && !profile.phoneNumber) {
+      toast({ 
+        title: "Acceso Restringido", 
+        description: "Debes registrar tu teléfono para gestionar tu negocio.", 
+        variant: "destructive" 
+      });
+      router.push('/profile');
+    }
+  }, [profile, loadingProfile, router]);
 
   const storesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || loadingProfile) return null;
@@ -59,7 +73,6 @@ export default function ManagePage() {
   const { data: stores, isLoading: loadingStore } = useCollection(storesQuery);
   const currentStore = stores?.[0];
 
-  // CONSULTA DE ÓRDENES CORREGIDA: Sincronizada con el campo 'participants'
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || loadingProfile) return null;
     return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid));
@@ -123,6 +136,11 @@ export default function ManagePage() {
         <Loader2 className="w-12 h-12 animate-spin text-primary" />
       </div>
     );
+  }
+
+  // Si no tiene teléfono, no renderizamos el panel
+  if (profile && !profile.phoneNumber) {
+    return null;
   }
 
   if (!currentStore && !loadingStore) {

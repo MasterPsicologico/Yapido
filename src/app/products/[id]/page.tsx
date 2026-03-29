@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, ArrowLeft, Loader2, Minus, Plus, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Loader2, Minus, Plus, CheckCircle2, AlertCircle, UserCircle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -13,8 +13,6 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocki
 import { useProfile } from '@/firebase/auth/use-profile';
 import { doc, serverTimestamp, collection, addDoc, getDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 export default function ProductPage() {
   const params = useParams();
@@ -27,25 +25,27 @@ export default function ProductPage() {
   const [quantity, setQuantity] = useState(1);
   const [isOrdering, setIsOrdering] = useState(false);
   const [orderConfirmed, setOrderConfirmed] = useState(false);
-  const [tempPhone, setTempPhone] = useState("");
 
   const productRef = useMemoFirebase(() => (!firestore || !id) ? null : doc(firestore, 'products', id), [firestore, id]);
   const { data: product, isLoading } = useDoc(productRef);
 
-  useEffect(() => {
-    if (profile?.phoneNumber) setTempPhone(profile.phoneNumber);
-  }, [profile]);
+  const hasPhone = !!profile?.phoneNumber;
 
   const handlePlaceOrder = async () => {
     if (!user || !firestore || !product) return;
-    if (!tempPhone || tempPhone.length < 10) {
-      toast({ title: "WhatsApp Requerido", description: "Es necesario para la entrega.", variant: "destructive" });
+    
+    if (!hasPhone) {
+      toast({ 
+        title: "Perfil Incompleto", 
+        description: "Debes registrar tu WhatsApp en tu perfil antes de pedir.", 
+        variant: "destructive" 
+      });
+      router.push('/profile');
       return;
     }
 
     setIsOrdering(true);
     try {
-      // Obtener dirección de tienda, ID del dueño y teléfono de la tienda con fallback inteligente
       const storeSnap = await getDoc(doc(firestore, 'stores', product.storeId));
       const storeData = storeSnap.data();
       
@@ -60,7 +60,7 @@ export default function ProductPage() {
       const orderData = {
         customerId: user.uid,
         customerName: profile?.displayName || user.displayName || 'Cliente',
-        customerPhone: tempPhone,
+        customerPhone: profile?.phoneNumber,
         customerAddress: profile?.address || 'Por definir',
         storeId: product.storeId,
         storeName: product.storeName,
@@ -87,10 +87,6 @@ export default function ProductPage() {
 
       await addDoc(collection(firestore, 'orders'), orderData);
       
-      if (tempPhone !== profile?.phoneNumber) {
-        updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { phoneNumber: tempPhone });
-      }
-
       setOrderConfirmed(true);
       toast({ title: "¡Pedido Enviado!" });
     } catch (e: any) {
@@ -132,10 +128,18 @@ export default function ProductPage() {
               </div>
             ) : (
               <div className="mt-auto space-y-6">
-                <div className="space-y-3 bg-red-50 p-5 rounded-3xl border-2 border-red-500">
-                  <Label className="text-xs font-black uppercase text-red-600 flex items-center gap-2"><AlertCircle className="w-4 h-4" /> TU WHATSAPP ES OBLIGATORIO</Label>
-                  <Input type="tel" value={tempPhone} onChange={(e) => setTempPhone(e.target.value)} className="h-12 rounded-2xl bg-white border-none font-black" placeholder="Ej: 300 123 4567" />
-                </div>
+                {!hasPhone && (
+                  <div className="bg-slate-50 p-5 rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center text-center gap-2">
+                    <UserCircle className="w-8 h-8 text-slate-400" />
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
+                      Completa tu perfil con un número de contacto para poder comprar.
+                    </p>
+                    <Button variant="link" asChild className="text-primary font-black text-xs uppercase p-0 h-auto">
+                      <Link href="/profile">Completar Perfil</Link>
+                    </Button>
+                  </div>
+                )}
+                
                 <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
                   <span className="font-black text-slate-400 text-xs">CANTIDAD</span>
                   <div className="flex items-center gap-4">
@@ -144,7 +148,12 @@ export default function ProductPage() {
                     <Button variant="outline" size="icon" className="rounded-full h-10 w-10" onClick={() => setQuantity(quantity + 1)}><Plus className="w-4 h-4" /></Button>
                   </div>
                 </div>
-                <Button onClick={handlePlaceOrder} disabled={isOrdering} className="w-full h-16 rounded-full text-xl font-black bg-primary shadow-xl gap-3">
+                
+                <Button 
+                  onClick={handlePlaceOrder} 
+                  disabled={isOrdering || !hasPhone} 
+                  className="w-full h-16 rounded-full text-xl font-black bg-primary shadow-xl gap-3 disabled:grayscale disabled:opacity-50"
+                >
                   {isOrdering ? <Loader2 className="w-6 h-6 animate-spin" /> : <><ShoppingCart /> Solicitar Pedido</>}
                 </Button>
               </div>

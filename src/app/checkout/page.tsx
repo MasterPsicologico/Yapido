@@ -14,11 +14,11 @@ import {
   Loader2,
   AlertCircle,
   Truck,
-  Zap,
   Tag,
   Wallet,
   Globe,
-  X
+  X,
+  UserCircle
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
@@ -28,7 +28,6 @@ import { toast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
@@ -41,19 +40,18 @@ export default function CheckoutPage() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
-  const [tempPhone, setTempPhone] = useState("");
   const [tempAddress, setTempAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'digital'>('cash');
   
-  // Coupon State
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
   useEffect(() => {
-    if (profile?.phoneNumber) setTempPhone(profile.phoneNumber);
     if (profile?.address) setTempAddress(profile.address);
   }, [profile]);
+
+  const hasPhone = !!profile?.phoneNumber;
 
   const discountAmount = useMemo(() => {
     if (!appliedCoupon) return 0;
@@ -103,8 +101,9 @@ export default function CheckoutPage() {
   const handleCompleteOrder = async () => {
     if (!user || !firestore || items.length === 0) return;
     
-    if (!tempPhone || tempPhone.length < 10) {
-      toast({ title: "WhatsApp Requerido", description: "Es necesario para la entrega.", variant: "destructive" });
+    if (!hasPhone) {
+      toast({ title: "Perfil Incompleto", description: "Registra tu número en tu perfil.", variant: "destructive" });
+      router.push('/profile');
       return;
     }
 
@@ -119,7 +118,6 @@ export default function CheckoutPage() {
       const storeSnap = await getDoc(storeRef);
       const storeData = storeSnap.data();
 
-      // INTELIGENCIA DE CONTACTO: Fallback al perfil del dueño si el teléfono de tienda está vacío
       let storePhone = storeData?.phoneNumber || '';
       if (!storePhone && storeData?.ownerId) {
         const ownerSnap = await getDoc(doc(firestore, 'users', storeData.ownerId));
@@ -131,7 +129,7 @@ export default function CheckoutPage() {
       const orderData = {
         customerId: user.uid,
         customerName: profile?.displayName || user.displayName || 'Cliente',
-        customerPhone: tempPhone,
+        customerPhone: profile?.phoneNumber,
         customerAddress: tempAddress,
         storeId: items[0].storeId,
         storeName: items[0].storeName,
@@ -160,10 +158,9 @@ export default function CheckoutPage() {
       const docRef = await addDoc(collection(firestore, 'orders'), orderData);
       
       const userRef = doc(firestore, 'users', user.uid);
-      const updateData: any = {};
-      if (tempPhone !== profile?.phoneNumber) updateData.phoneNumber = tempPhone;
-      if (tempAddress !== profile?.address) updateData.address = tempAddress;
-      if (Object.keys(updateData).length > 0) updateDocumentNonBlocking(userRef, updateData);
+      if (tempAddress !== profile?.address) {
+        updateDocumentNonBlocking(userRef, { address: tempAddress, updatedAt: serverTimestamp() });
+      }
 
       setOrderId(docRef.id);
       clearCart();
@@ -216,7 +213,6 @@ export default function CheckoutPage() {
             <div className="lg:col-span-2 space-y-6">
               <Card className="border-none rounded-[32px] shadow-sm overflow-hidden bg-white">
                 <CardContent className="p-8 space-y-10">
-                  {/* Punto de Entrega */}
                   <div className="space-y-6">
                     <div className="flex items-center gap-3 text-primary">
                       <MapPin className="w-5 h-5" />
@@ -232,22 +228,26 @@ export default function CheckoutPage() {
                           className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">WhatsApp de Contacto</Label>
-                        <div className="relative">
-                          <MessageCircle className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
-                          <Input 
-                            value={tempPhone}
-                            onChange={(e) => setTempPhone(e.target.value)}
-                            placeholder="300 000 0000" 
-                            className="h-14 rounded-2xl bg-slate-50 border-none pl-14 font-bold text-lg"
-                          />
+                      
+                      <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                            <MessageCircle className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">WhatsApp Registrado</p>
+                            <p className="text-sm font-black text-slate-800">{profile?.phoneNumber || 'No registrado'}</p>
+                          </div>
                         </div>
+                        {!hasPhone && (
+                          <Button variant="ghost" size="sm" asChild className="text-primary font-black text-[10px] uppercase">
+                            <Link href="/profile">REGISTRAR</Link>
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Método de Pago */}
                   <div className="pt-8 border-t space-y-6">
                     <div className="flex items-center gap-3 text-slate-400">
                       <CreditCard className="w-5 h-5" />
@@ -288,7 +288,6 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* Sección de Cupones */}
                   <div className="pt-8 border-t space-y-6">
                     <div className="flex items-center gap-3 text-slate-400">
                       <Tag className="w-5 h-5" />
@@ -387,11 +386,17 @@ export default function CheckoutPage() {
 
                   <Button 
                     onClick={handleCompleteOrder}
-                    disabled={isProcessing}
-                    className="w-full h-16 rounded-[24px] bg-primary text-white font-black text-lg uppercase tracking-widest gap-3 shadow-[0_20px_50px_rgba(59,130,246,0.3)] hover:scale-[1.02] transition-all"
+                    disabled={isProcessing || !hasPhone}
+                    className="w-full h-16 rounded-[24px] bg-primary text-white font-black text-lg uppercase tracking-widest gap-3 shadow-[0_20px_50px_rgba(59,130,246,0.3)] hover:scale-[1.02] transition-all disabled:grayscale disabled:opacity-50"
                   >
                     {isProcessing ? <Loader2 className="animate-spin" /> : <>PEDIR AHORA <ArrowRight className="w-5 h-5" /></>}
                   </Button>
+                  
+                  {!hasPhone && (
+                    <p className="text-[9px] text-center text-red-400 font-black uppercase tracking-widest animate-pulse">
+                      Debes completar tu perfil para pedir
+                    </p>
+                  )}
                   
                   <div className="flex items-center justify-center gap-2 text-white/30">
                     <AlertCircle className="w-3 h-3" />

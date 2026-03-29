@@ -45,6 +45,7 @@ import { collection, query, where, doc, serverTimestamp, arrayUnion } from 'fire
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { formatDistanceToNow, format, addMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { WeeklyChallenge } from '@/components/delivery/WeeklyChallenge';
@@ -56,20 +57,31 @@ export default function DeliveryDashboardPage() {
   const { user } = useUser();
   const { profile, level, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
+  const router = useRouter();
+  
   const [activeTab, setActiveTab] = useState("available");
   const [isOnline, setIsOnline] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   
-  // Estados de Cámara e Identidad
   const [showCamera, setShowCamera] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
 
-  // Estado de Chat Interno en Misión
   const [isMissionChatOpen, setIsMissionChatOpen] = useState(false);
 
-  // Reloj en tiempo real
+  // PROTECCIÓN QUIRÚRGICA: Redirección si no hay teléfono
+  useEffect(() => {
+    if (!loadingProfile && profile && !profile.phoneNumber) {
+      toast({ 
+        title: "Acceso Restringido", 
+        description: "Registra tu teléfono para operar como repartidor.", 
+        variant: "destructive" 
+      });
+      router.push('/profile');
+    }
+  }, [profile, loadingProfile, router]);
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -120,7 +132,6 @@ export default function DeliveryDashboardPage() {
 
   const activeMission = useMemo(() => myDeliveries.find(o => o.status === 'shipped' || o.status === 'at_store' || o.status === 'delivered_to_driver'), [myDeliveries]);
 
-  // Obtener perfil del cliente real si hay misión activa
   const customerRef = useMemoFirebase(() => (!firestore || !activeMission?.customerId) ? null : doc(firestore, 'users', activeMission.customerId), [firestore, activeMission?.customerId]);
   const { data: customerProfile } = useDoc(customerRef);
 
@@ -212,6 +223,11 @@ export default function DeliveryDashboardPage() {
     return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
   }
 
+  // Si no tiene teléfono, no renderizamos el panel
+  if (profile && !profile.phoneNumber) {
+    return null;
+  }
+
   if (!isConfirmedRepartidor) {
     return (
       <div className="flex flex-col min-h-screen bg-slate-50">
@@ -226,7 +242,6 @@ export default function DeliveryDashboardPage() {
   }
 
   const LevelIcon = level.icon;
-  // Sugerencia de tiempo: 15-20 mins basado en hora actual
   const suggestedArrival = activeMission ? format(addMinutes(currentTime, 18), 'HH:mm') : null;
 
   return (
@@ -235,7 +250,6 @@ export default function DeliveryDashboardPage() {
       
       {activeMission ? (
         <div className="fixed inset-0 z-[100] bg-[#f8fafc] flex flex-col animate-in slide-in-from-bottom duration-500 overflow-hidden">
-          {/* CABECERA TÁCTICA REMODELADA */}
           <div className="h-16 bg-slate-900 flex items-center justify-between px-4 text-white shrink-0 shadow-2xl relative">
             <div className="flex items-center gap-2">
               <Button 
@@ -345,7 +359,6 @@ export default function DeliveryDashboardPage() {
               </div>
             </section>
 
-            {/* CONEXIÓN REAL CON EL CLIENTE */}
             <section className="px-6 py-8 border-t border-dashed border-slate-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -392,7 +405,6 @@ export default function DeliveryDashboardPage() {
             </div>
           </div>
 
-          {/* CHAT INTERNO EN MISIÓN */}
           <Dialog open={isMissionChatOpen} onOpenChange={setIsMissionChatOpen}>
             <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[200]">
               <DialogHeader className="sr-only">

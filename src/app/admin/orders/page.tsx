@@ -42,6 +42,7 @@ import { RatingDialog } from '@/components/order/RatingDialog';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg 
@@ -71,17 +72,29 @@ export default function OrdersManagementPage() {
   const { profile, isLoading: profileLoading } = useProfile();
   const firestore = useFirestore();
   const { addToCart } = useCart();
+  const router = useRouter();
   
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [showMyPurchases, setShowMyPurchases] = useState(false);
   const [validatingOrder, setValidatingOrder] = useState<any | null>(null);
   
-  // ESTADOS DE RATING MULTI-ACTOR
   const [ratingOrder, setRatingOrder] = useState<any | null>(null);
   const [ratingType, setRatingType] = useState<'to_store' | 'to_driver' | 'to_customer'>('to_store');
 
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
+
+  // PROTECCIÓN QUIRÚRGICA: Redirección si no hay teléfono
+  useEffect(() => {
+    if (!profileLoading && profile && !profile.phoneNumber) {
+      toast({ 
+        title: "Acceso Restringido", 
+        description: "Registra tu teléfono para gestionar órdenes.", 
+        variant: "destructive" 
+      });
+      router.push('/profile');
+    }
+  }, [profile, profileLoading, router]);
 
   useEffect(() => {
     const syncFromHash = () => {
@@ -212,6 +225,11 @@ export default function OrdersManagementPage() {
     );
   }
 
+  // Si no tiene teléfono, no renderizamos el panel
+  if (profile && !profile.phoneNumber) {
+    return null;
+  }
+
   const isDetailView = selectedStoreId || showMyPurchases;
   const contextName = showMyPurchases ? "Mis Compras" : storeSummaries.find(s => s.id === selectedStoreId)?.name;
   const filteredOrders = isDetailView ? rawOrders?.filter(o => {
@@ -318,7 +336,6 @@ export default function OrdersManagementPage() {
                           {order.status === 'preparing' && <Button onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')} className="w-full h-16 rounded-[24px] bg-indigo-600 text-white font-black uppercase tracking-widest gap-3 shadow-xl"><CheckCircle2 className="w-6 h-6" /> MARCAR COMO LISTO</Button>}
                           {order.status === 'at_store' && <Button onClick={() => setValidatingOrder(order)} className="w-full h-16 rounded-[24px] bg-amber-500 text-white font-black uppercase tracking-widest gap-3 shadow-xl animate-pulse"><ShieldCheck className="w-6 h-6" /> VALIDAR REPARTIDOR</Button>}
                           
-                          {/* SISTEMA DE RATING 360 PARA VENDEDOR */}
                           {order.status === 'delivered' && (
                             <div className="flex gap-2">
                               {!order.driverRatingByStore && order.deliveryDriverId && (
@@ -345,7 +362,6 @@ export default function OrdersManagementPage() {
                             {(order.status === 'delivered' || order.status === 'cancelled') && <Button onClick={() => handleReorder(order)} variant="outline" className="flex-1 h-16 rounded-[24px] border-2 border-slate-100 font-black uppercase tracking-widest gap-3 hover:bg-slate-50 text-slate-600"><RotateCcw className="w-6 h-6 text-primary" /> REORDENAR</Button>}
                           </div>
                           
-                          {/* RATING AL REPARTIDOR DESDE CLIENTE */}
                           {order.status === 'delivered' && !order.driverRatingByCustomer && order.deliveryDriverId && (
                             <Button onClick={() => { setRatingType('to_driver'); setRatingOrder(order); }} variant="secondary" className="w-full h-12 rounded-[20px] font-black uppercase tracking-widest gap-2 text-[10px]">
                               <Truck className="w-4 h-4" /> CALIFICAR AL REPARTIDOR
