@@ -1,5 +1,3 @@
-
-'use server';
 import { ai } from '@/ai/genkit';
 import { OptimizationAgentInputSchema, OptimizationAgentOutputSchema } from '../schema';
 

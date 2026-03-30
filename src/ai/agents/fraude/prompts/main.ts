@@ -1,4 +1,3 @@
-'use server';
 import { ai } from '@/ai/genkit';
 import { FraudAgentInputSchema, FraudAgentOutputSchema } from '../schema';
 

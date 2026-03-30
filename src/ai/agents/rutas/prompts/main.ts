@@ -1,5 +1,3 @@
-
-'use server';
 import { ai } from '@/ai/genkit';
 import { RoutingAgentInputSchema, RoutingAgentOutputSchema } from '../schema';
 
