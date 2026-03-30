@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview Orquestador de Liberación de Pedidos.
- * Maneja la lógica de abandono de ruta y penalizaciones financieras.
+ * Ejecuta agentes en paralelo para máxima velocidad de respuesta.
  */
 
 import { ai } from '@/ai/genkit';
@@ -37,27 +37,24 @@ const releaseOrderFlow = ai.defineFlow(
     }),
   },
   async (input) => {
-    const logs: string[] = [];
+    const logs: string[] = ["Protocolo de liberación activado"];
     let debtApplied = 0;
 
     try {
-      // 1. AGENTE SOPORTE: Registro del incidente
-      logs.push("Agente Soporte: Registrando deserción de ruta...");
-      await soporteAgent({
-        orderId: input.orderId,
-        issueDescription: `Liberación: ${input.reason}. Carga: ${input.hasProducts}`,
-        reporterRole: 'sistema',
-        context: { 
-          driverId: input.driverId,
-          orderData: { value: input.orderValue } 
-        }
-      });
+      // EJECUCIÓN EN PARALELO PARA VELOCIDAD MÁXIMA (GENKIT 1.x)
+      logs.push("Sincronizando agentes especializados en paralelo...");
+      
+      const agentPromises = [
+        // 1. Soporte
+        soporteAgent({
+          orderId: input.orderId,
+          issueDescription: `Liberación: ${input.reason}. Carga: ${input.hasProducts}`,
+          reporterRole: 'sistema',
+          context: { driverId: input.driverId, orderData: { value: input.orderValue } }
+        }).then(() => "Agente Soporte: Incidente registrado."),
 
-      // 2. AGENTE PAGOS: Gestión de Deuda
-      if (input.hasProducts) {
-        logs.push(`Agente Pagos: Calculando penalización...`);
-        debtApplied = input.orderValue;
-        await pagosAgent({
+        // 2. Pagos (Si hay productos)
+        input.hasProducts ? pagosAgent({
           orderId: input.orderId,
           customerId: "SYSTEM",
           totalAmount: input.orderValue,
@@ -65,44 +62,46 @@ const releaseOrderFlow = ai.defineFlow(
           paymentMethod: 'digital',
           currentState: 'PAYMENT_PENDING',
           context: { 
-            reason: `LIBERACION_CON_PRODUCTOS_${input.reason.toUpperCase().replace(/\s/g, '_')}`,
+            reason: `LIBERACION_CON_PRODUCTOS`,
             isCancelled: true 
           }
-        });
-      }
+        }).then(() => {
+          debtApplied = input.orderValue;
+          return "Agente Pagos: Penalización aplicada.";
+        }) : Promise.resolve("Agente Pagos: Sin deuda pendiente."),
 
-      // 3. AGENTE ASIGNADOR: Reposicionamiento
-      logs.push("Agente Asignador: Devolviendo pedido al pool...");
-      await asignadorAgent({
-        orderId: input.orderId,
-        storeLocation: { lat: 0, lng: 0 },
-        customerLocation: { lat: 0, lng: 0 },
-        orderValue: input.orderValue,
-        currentState: 'REASSIGNING'
-      });
+        // 3. Asignador
+        asignadorAgent({
+          orderId: input.orderId,
+          storeLocation: { lat: 0, lng: 0 },
+          customerLocation: { lat: 0, lng: 0 },
+          orderValue: input.orderValue,
+          currentState: 'REASSIGNING'
+        }).then(() => "Agente Asignador: Pedido devuelto al pool."),
 
-      // 4. AGENTE NOTIFICACIONES: Alerta a tienda
-      logs.push("Agente Notificaciones: Informando a la tienda...");
-      await notificacionesAgent({
-        orderId: input.orderId,
-        event: "DRIVER_UNASSIGNED",
-        status: "searching",
-        recipients: [{
-          userId: input.storeId,
-          role: "tienda",
-          name: input.storeName,
-          contactInfo: {}
-        }],
-        priority: "high",
-        context: { reason: input.reason }
-      });
+        // 4. Notificaciones
+        notificacionesAgent({
+          orderId: input.orderId,
+          event: "DRIVER_UNASSIGNED",
+          status: "searching",
+          recipients: [{
+            userId: input.storeId,
+            role: "tienda",
+            name: input.storeName,
+            contactInfo: {}
+          }],
+          priority: "high",
+          context: { reason: input.reason }
+        }).then(() => "Agente Notificaciones: Tienda alertada.")
+      ];
+
+      const results = await Promise.all(agentPromises);
+      logs.push(...results);
 
       return {
         success: true,
         debtApplied,
-        message: input.hasProducts 
-          ? `Pedido liberado. Deuda aplicada: $${input.orderValue}` 
-          : "Pedido liberado exitosamente.",
+        message: "Liberación completada exitosamente.",
         agentLogs: logs
       };
 
@@ -110,7 +109,7 @@ const releaseOrderFlow = ai.defineFlow(
       console.error("Error en Flow de Liberación:", e);
       return {
         success: false,
-        message: "Error en la orquestación de liberación",
+        message: "Error en la orquestación",
         agentLogs: [...logs, `ERROR: ${e.message}`]
       };
     }
