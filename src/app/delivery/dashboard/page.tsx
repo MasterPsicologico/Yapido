@@ -472,6 +472,26 @@ export default function DeliveryDashboardPage() {
                 </div>
               </div>
             </section>
+
+            {/* SECCIÓN DE SOPORTE Y LIBERACIÓN (NUEVA Y VISIBLE) */}
+            <section className="px-6 py-12 border-t border-slate-100 bg-slate-50/50">
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5 text-orange-500" />
+                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 italic">¿Problemas con la ruta?</h3>
+                </div>
+                <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                  Si no puedes completar esta entrega por una causa de fuerza mayor, debes liberar la ruta para que la Ciudadela de Agentes pueda reasignarla inmediatamente.
+                </p>
+                <Button 
+                  onClick={() => setIsReleaseDialogOpen(true)}
+                  variant="outline"
+                  className="w-full h-14 rounded-2xl border-red-100 text-red-500 hover:bg-red-50 hover:text-red-600 font-black uppercase text-[10px] tracking-[0.2em] gap-2 transition-all shadow-sm"
+                >
+                  <RotateCcw className="w-4 h-4" /> LIBERAR PEDIDO AHORA
+                </Button>
+              </div>
+            </section>
           </main>
 
           <Dialog open={isReleaseDialogOpen} onOpenChange={setIsReleaseDialogOpen}>
