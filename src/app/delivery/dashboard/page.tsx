@@ -33,7 +33,8 @@ import {
   Wallet,
   Clock,
   AlertTriangle,
-  RotateCcw
+  RotateCcw,
+  Lock
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
