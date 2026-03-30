@@ -259,7 +259,7 @@ export default function DeliveryDashboardPage() {
               </section>
 
               <Button onClick={() => handleOpenMaps(activeMission.storeAddress)} className="w-full h-20 rounded-[28px] bg-primary text-white font-black text-xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all">
-                <MapPinned className="w-7 h-7" /> INICIAR NAVEGACIÓN
+                <MapPinned className="w-7 h-7" /> RECOGER PEDIDO
               </Button>
 
               <div className="space-y-4">
