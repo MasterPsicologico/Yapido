@@ -20,3 +20,4 @@ export * from './inventario';
 export * from './tiempo-real';
 export * from './legal';
 export * from './seguridad';
+export * from './supervisor';

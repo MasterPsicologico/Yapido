@@ -1,3 +1,4 @@
+
 import { config } from 'dotenv';
 config();
 
@@ -34,3 +35,6 @@ import '@/ai/agents/fraude/tools/gps-checker.ts';
 import '@/ai/agents/soporte/index.ts';
 import '@/ai/agents/soporte/tools/create-ticket.ts';
 import '@/ai/agents/soporte/tools/analyze-issue.ts';
+import '@/ai/agents/supervisor/index.ts';
+import '@/ai/agents/supervisor/tools/calculate-system-state.ts';
+import '@/ai/agents/supervisor/tools/monitor-system.ts';
