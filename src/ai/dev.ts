@@ -41,3 +41,6 @@ import '@/ai/agents/supervisor/tools/monitor-system.ts';
 import '@/ai/agents/analytics/index.ts';
 import '@/ai/agents/analytics/tools/calculate-metrics.ts';
 import '@/ai/agents/analytics/tools/analyze-performance.ts';
+import '@/ai/agents/optimizacion/index.ts';
+import '@/ai/agents/optimizacion/tools/optimize-batching.ts';
+import '@/ai/agents/optimizacion/tools/optimize-driver-position.ts';
