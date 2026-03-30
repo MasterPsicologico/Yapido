@@ -37,11 +37,13 @@ import {
   Wallet,
   Info,
   Clock,
-  ChevronRight
+  ChevronRight,
+  AlertTriangle,
+  RotateCcw
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, useDoc } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, doc, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -51,7 +53,18 @@ import { es } from 'date-fns/locale';
 import { WeeklyChallenge } from '@/components/delivery/WeeklyChallenge';
 import Image from 'next/image';
 import { OrderChat } from '@/components/chat/OrderChat';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { releaseOrder } from '@/ai/flows/release-order-flow';
+import { AgentProgressOverlay } from '@/components/agents/AgentProgressOverlay';
+
+const RELEASE_REASONS = [
+  "Falla técnica en el vehículo",
+  "Problema de salud imprevisto",
+  "Emergencia personal",
+  "Dirección inalcanzable o peligrosa",
+  "Demasiado tiempo de espera en tienda",
+  "Otro motivo"
+];
 
 export default function DeliveryDashboardPage() {
   const { user } = useUser();
@@ -69,8 +82,13 @@ export default function DeliveryDashboardPage() {
   const [stream, setStream] = useState<MediaStream | null>(null);
 
   const [isMissionChatOpen, setIsMissionChatOpen] = useState(false);
+  
+  // ESTADOS DE LIBERACIÓN
+  const [isReleaseDialogOpen, setIsReleaseDialogOpen] = useState(false);
+  const [selectedReason, setSelectedReason] = useState("");
+  const [isReleasing, setIsReleasing] = useState(false);
+  const [releaseLogs, setReleaseLogs] = useState<string[]>([]);
 
-  // PROTECCIÓN QUIRÚRGICA: Redirección si no hay teléfono
   useEffect(() => {
     if (!loadingProfile && profile && !profile.phoneNumber) {
       toast({ 
@@ -163,6 +181,65 @@ export default function DeliveryDashboardPage() {
     });
   };
 
+  const handleReleaseOrderAction = async () => {
+    if (!activeMission || !user || !firestore || !selectedReason) return;
+
+    setIsReleasing(true);
+    setReleaseLogs([]);
+
+    try {
+      const result = await releaseOrder({
+        orderId: activeMission.id,
+        driverId: user.uid,
+        reason: selectedReason,
+        hasProducts: activeMission.status === 'delivered_to_driver',
+        orderValue: activeMission.totalPrice || 0,
+        storeId: activeMission.storeId,
+        storeName: activeMission.storeName
+      });
+
+      setReleaseLogs(result.agentLogs);
+
+      if (result.success) {
+        // ACTUALIZACIÓN FÍSICA EN FIRESTORE
+        const orderRef = doc(firestore, 'orders', activeMission.id);
+        const updateData: any = {
+          status: 'ready_for_pickup',
+          deliveryDriverId: null,
+          deliveryDriverName: null,
+          isLogisticsPublic: true,
+          updatedAt: serverTimestamp(),
+          participants: arrayRemove(user.uid)
+        };
+
+        updateDocumentNonBlocking(orderRef, updateData);
+
+        // Si hay deuda, actualizar el balance del repartidor
+        if (result.debtApplied) {
+          const userRef = doc(firestore, 'users', user.uid);
+          const currentBalance = profile?.balance || 0;
+          updateDocumentNonBlocking(userRef, {
+            balance: currentBalance - result.debtApplied,
+            updatedAt: serverTimestamp()
+          });
+        }
+
+        setTimeout(() => {
+          setIsReleaseDialogOpen(false);
+          setIsReleasing(false);
+          toast({ 
+            title: "Pedido Liberado", 
+            description: result.message,
+            variant: result.debtApplied ? "destructive" : "default"
+          });
+        }, 2000);
+      }
+    } catch (e) {
+      toast({ title: "Error al liberar", variant: "destructive" });
+      setIsReleasing(false);
+    }
+  };
+
   const handleOpenMaps = (address: string) => {
     if (!address) return;
     const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
@@ -223,10 +300,7 @@ export default function DeliveryDashboardPage() {
     return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
   }
 
-  // Si no tiene teléfono, no renderizamos el panel
-  if (profile && !profile.phoneNumber) {
-    return null;
-  }
+  if (profile && !profile.phoneNumber) return null;
 
   if (!isConfirmedRepartidor) {
     return (
@@ -243,11 +317,15 @@ export default function DeliveryDashboardPage() {
 
   const LevelIcon = level.icon;
   const suggestedArrival = activeMission ? format(addMinutes(currentTime, 18), 'HH:mm') : null;
+  const hasProducts = activeMission?.status === 'delivered_to_driver';
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
       
+      {/* OVERLAY DE INTELIGENCIA PARA LIBERACIÓN */}
+      <AgentProgressOverlay isOpen={isReleasing} logs={releaseLogs} />
+
       {activeMission ? (
         <div className="fixed inset-0 z-[100] bg-[#f8fafc] flex flex-col animate-in slide-in-from-bottom duration-500 overflow-hidden">
           <div className="h-16 bg-slate-900 flex items-center justify-between px-4 text-white shrink-0 shadow-2xl relative">
@@ -255,8 +333,8 @@ export default function DeliveryDashboardPage() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={() => window.location.reload()} 
-                className="h-10 w-10 text-white/40 hover:text-white rounded-full"
+                onClick={() => setIsReleaseDialogOpen(true)} 
+                className="h-10 w-10 text-white/40 hover:text-red-400 rounded-full transition-colors"
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -268,8 +346,11 @@ export default function DeliveryDashboardPage() {
                   LLEGUÉ A TIENDA
                 </Button>
               ) : (
-                <Badge className="bg-green-500 text-white border-none font-black italic px-4 py-1 h-8 uppercase text-[10px] tracking-widest">
-                  EN TIENDA
+                <Badge className={cn(
+                  "text-white border-none font-black italic px-4 py-1 h-8 uppercase text-[10px] tracking-widest",
+                  hasProducts ? "bg-purple-600" : "bg-green-500"
+                )}>
+                  {hasProducts ? "CON PRODUCTO" : "EN TIENDA"}
                 </Badge>
               )}
             </div>
@@ -393,6 +474,71 @@ export default function DeliveryDashboardPage() {
             </section>
           </main>
 
+          <Dialog open={isReleaseDialogOpen} onOpenChange={setIsReleaseDialogOpen}>
+            <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] overflow-hidden">
+              <DialogHeader className="items-center text-center">
+                <div className={cn("w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-in zoom-in", hasProducts ? "bg-red-100 text-red-600" : "bg-orange-100 text-orange-600")}>
+                  <RotateCcw className="w-8 h-8" />
+                </div>
+                <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter text-slate-900">
+                  Liberar Pedido
+                </DialogTitle>
+                <DialogDescription className="text-slate-400 font-medium">
+                  Selecciona el motivo por el cual no puedes completar esta ruta.
+                </DialogDescription>
+              </DialogHeader>
+
+              {hasProducts && (
+                <div className="bg-red-50 border-2 border-red-100 p-5 rounded-3xl space-y-3 animate-pulse">
+                  <div className="flex items-center gap-3 text-red-600">
+                    <AlertTriangle className="w-6 h-6 shrink-0" />
+                    <h4 className="font-black text-xs uppercase tracking-widest">AVISO DE DEUDA TÉCNICA</h4>
+                  </div>
+                  <p className="text-[11px] font-bold text-red-700/80 leading-relaxed uppercase">
+                    Has recibido los productos de la tienda. Al liberar este pedido, se generará una **deuda inmediata de {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(activeMission.totalPrice || 0)}** en tu cuenta.
+                  </p>
+                </div>
+              )}
+
+              <div className="py-6 space-y-3 max-h-[300px] overflow-y-auto no-scrollbar">
+                {RELEASE_REASONS.map((reason) => (
+                  <button
+                    key={reason}
+                    onClick={() => setSelectedReason(reason)}
+                    className={cn(
+                      "w-full p-4 rounded-2xl text-left text-xs font-black uppercase tracking-widest transition-all border-2",
+                      selectedReason === reason 
+                        ? "bg-slate-900 text-white border-slate-900 scale-[1.02] shadow-lg" 
+                        : "bg-slate-50 text-slate-400 border-transparent hover:border-slate-200"
+                    )}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+
+              <DialogFooter className="sm:justify-center gap-3">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setIsReleaseDialogOpen(false)}
+                  className="rounded-full h-14 font-black uppercase text-slate-400 hover:text-slate-600"
+                >
+                  VOLVER
+                </Button>
+                <Button 
+                  onClick={handleReleaseOrderAction}
+                  disabled={!selectedReason || isReleasing}
+                  className={cn(
+                    "flex-1 h-14 rounded-full font-black uppercase tracking-widest shadow-xl transition-all active:scale-95",
+                    hasProducts ? "bg-red-600 hover:bg-red-700 text-white" : "bg-slate-900 hover:bg-slate-800 text-white"
+                  )}
+                >
+                  CONFIRMAR LIBERACIÓN
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           <div className="fixed bottom-0 inset-x-0 p-6 bg-white/80 backdrop-blur-xl border-t border-slate-100 z-[110]">
             <div className="flex flex-col items-center gap-2">
               <div className="flex items-center gap-2">
@@ -493,7 +639,7 @@ export default function DeliveryDashboardPage() {
                 </div>
                 <div className="bg-white p-5 rounded-[28px] shadow-sm border border-slate-50 flex items-center gap-4">
                   <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-green-500"><Award className="w-5 h-5" /></div>
-                  <div><p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Garantía</p><p className="text-sm font-black italic uppercase">VIP</p></div>
+                  <div><p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Balance</p><p className={cn("text-sm font-black italic uppercase", (profile?.balance || 0) < 0 ? "text-red-500" : "text-green-600")}>{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(profile?.balance || 0)}</p></div>
                 </div>
               </div>
             </div>

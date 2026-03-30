@@ -4,6 +4,8 @@ config();
 
 // Registro de flujos y herramientas para el entorno de desarrollo
 import '@/ai/flows/generate-product-description.ts';
+import '@/ai/flows/order-orchestrator.ts';
+import '@/ai/flows/release-order-flow.ts';
 import '@/ai/agents/cliente/index.ts';
 import '@/ai/agents/cliente/tools/validate-address.ts';
 import '@/ai/agents/cliente/tools/calculate-total.ts';
