@@ -61,7 +61,7 @@ const STATUS_CONFIG = {
   preparing: { label: "PREPARANDO", color: "text-blue-500", bg: "bg-blue-50", border: "border-blue-100", icon: Package },
   ready_for_pickup: { label: "LISTO EN TIENDA", color: "text-indigo-500", bg: "bg-indigo-50", border: "border-indigo-100", icon: CheckCircle2 },
   at_store: { label: "REPARTIDOR EN TIENDA", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100", icon: ShieldCheck },
-  delivered_to_driver: { label: "CON REPARTIDOR", color: "text-purple-500", bg: "bg-purple-50", border: "border-purple-100", icon: Zap },
+  delivered_to_driver: { label: "CON REPARTIDOR", color: "text-purple-500", bg: "bg-purple-100", border: "border-purple-200", icon: Zap },
   shipped: { label: "EN REPARTO", color: "text-purple-500", bg: "bg-purple-50", border: "border-purple-100", icon: Zap },
   delivered: { label: "ENTREGADO", color: "text-green-500", bg: "bg-green-100", border: "border-green-200", icon: CheckCircle2 },
   cancelled: { label: "CANCELADO", color: "text-red-500", bg: "bg-red-100", border: "border-red-200", icon: AlertTriangle }
@@ -84,7 +84,6 @@ export default function OrdersManagementPage() {
 
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
 
-  // PROTECCIÓN QUIRÚRGICA: Redirección si no hay teléfono
   useEffect(() => {
     if (!profileLoading && profile && !profile.phoneNumber) {
       toast({ 
@@ -95,34 +94,6 @@ export default function OrdersManagementPage() {
       router.push('/profile');
     }
   }, [profile, profileLoading, router]);
-
-  useEffect(() => {
-    const syncFromHash = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (hash && hash !== activeOrderId) {
-        setActiveOrderId(hash);
-      }
-    };
-
-    const handleGlobalEvent = (e: any) => {
-      const id = e.detail?.orderId;
-      if (id) {
-        setActiveOrderId(id);
-        window.location.hash = id;
-      }
-    };
-
-    syncFromHash();
-    window.addEventListener('hashchange', syncFromHash);
-    window.addEventListener('chat-opened' as any, handleGlobalEvent);
-    window.addEventListener('order-attended' as any, handleGlobalEvent);
-
-    return () => {
-      window.removeEventListener('hashchange', syncFromHash);
-      window.removeEventListener('chat-opened' as any, handleGlobalEvent);
-      window.removeEventListener('order-attended' as any, handleGlobalEvent);
-    };
-  }, [activeOrderId]);
 
   const myStoresQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -135,6 +106,64 @@ export default function OrdersManagementPage() {
     return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid));
   }, [firestore, user?.uid]);
   const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
+
+  // LÓGICA DE ATENCIÓN INMEDIATA: Diferencia entre abrir chat y atender pedido
+  useEffect(() => {
+    const handleOrderAttended = (e: any) => {
+      const id = e.detail?.orderId;
+      if (!id || !rawOrders) return;
+
+      const order = rawOrders.find(o => o.id === id);
+      if (order) {
+        // 1. Navegar al contexto correcto (Venta o Compra)
+        if (order.storeOwnerId === user?.uid) {
+          setSelectedStoreId(order.storeId);
+          setShowMyPurchases(false);
+        } else {
+          setShowMyPurchases(true);
+          setSelectedStoreId(null);
+        }
+
+        // 2. Expandir la tarjeta automáticamente
+        setExpandedOrders(prev => ({ ...prev, [id]: true }));
+
+        // 3. Scroll quirúrgico al pedido
+        setTimeout(() => {
+          const el = document.getElementById(id);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      }
+    };
+
+    const handleChatOpened = (e: any) => {
+      const id = e.detail?.orderId;
+      if (id) {
+        setActiveOrderId(id);
+        window.location.hash = id;
+      }
+    };
+
+    // Sincronizar desde el hash de la URL al cargar
+    const syncFromHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) {
+        // Por defecto, si viene de una URL con hash, intentamos "atender"
+        // Si no se especifica evento, expandimos la tarjeta
+        handleOrderAttended({ detail: { orderId: hash } });
+      }
+    };
+
+    syncFromHash();
+    window.addEventListener('order-attended' as any, handleOrderAttended);
+    window.addEventListener('chat-opened' as any, handleChatOpened);
+    window.addEventListener('hashchange', syncFromHash);
+
+    return () => {
+      window.removeEventListener('order-attended' as any, handleOrderAttended);
+      window.removeEventListener('chat-opened' as any, handleChatOpened);
+      window.removeEventListener('hashchange', syncFromHash);
+    };
+  }, [rawOrders, user?.uid]);
 
   const storeSummaries = useMemo(() => {
     if (!myStores || !rawOrders) return [];
@@ -166,7 +195,7 @@ export default function OrdersManagementPage() {
     const updateData: any = { status: newStatus, updatedAt: serverTimestamp() };
     if (newStatus === 'preparing') updateData.isLogisticsPublic = true;
     updateDocumentNonBlocking(orderRef, updateData);
-    toast({ title: "Estado Actualizado" });
+    toast({ title: "Estado Actualizado", description: `Pedido movido a ${newStatus.toUpperCase()}` });
   };
 
   const handleWhatsAppRedirect = (order: any) => {
@@ -180,13 +209,9 @@ export default function OrdersManagementPage() {
 
     const cleanPhone = targetPhone.replace(/\D/g, '');
     const phoneWithCode = cleanPhone.startsWith('57') ? cleanPhone : '57' + cleanPhone;
-    
-    let message = "";
-    if (isVenta) {
-      message = `¡Hola! 👋 Soy de la tienda *${order.storeName}*. Te contacto por tu pedido de *${order.productName}*. ID: ${order.id.slice(-6)}.`;
-    } else {
-      message = `¡Hola! 👋 Te contacto por mi pedido de *${order.productName}* realizado en *${order.storeName}*. Mi nombre es ${order.customerName}.`;
-    }
+    const message = isVenta 
+      ? `¡Hola! 👋 Soy de la tienda *${order.storeName}*. Te contacto por tu pedido de *${order.productName}*.`
+      : `¡Hola! 👋 Te contacto por mi pedido de *${order.productName}* en *${order.storeName}*.`;
 
     const url = `https://wa.me/${phoneWithCode}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -197,7 +222,7 @@ export default function OrdersManagementPage() {
     if (code === validatingOrder.deliveryCode) {
       const orderRef = doc(firestore, 'orders', validatingOrder.id);
       updateDocumentNonBlocking(orderRef, { status: 'delivered_to_driver', updatedAt: serverTimestamp() });
-      toast({ title: "¡Código Correcto!", description: "Pedido entregado." });
+      toast({ title: "¡Código Correcto!", description: "Pedido entregado al repartidor." });
       setValidatingOrder(null);
     } else {
       toast({ title: "Código Incorrecto", variant: "destructive" });
@@ -225,17 +250,18 @@ export default function OrdersManagementPage() {
     );
   }
 
-  // Si no tiene teléfono, no renderizamos el panel
-  if (profile && !profile.phoneNumber) {
-    return null;
-  }
+  if (profile && !profile.phoneNumber) return null;
 
   const isDetailView = selectedStoreId || showMyPurchases;
   const contextName = showMyPurchases ? "Mis Compras" : storeSummaries.find(s => s.id === selectedStoreId)?.name;
   const filteredOrders = isDetailView ? rawOrders?.filter(o => {
     if (showMyPurchases) return o.customerId === user?.uid;
     return o.storeId === selectedStoreId;
-  }).sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)) : [];
+  }).sort((a, b) => {
+    const timeA = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
+    const timeB = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
+    return timeB - timeA;
+  }) : [];
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
@@ -257,7 +283,7 @@ export default function OrdersManagementPage() {
               const isExpanded = expandedOrders[order.id];
 
               return (
-                <Card key={order.id} id={order.id} className="border-none rounded-[48px] overflow-hidden shadow-2xl bg-white ring-1 ring-black/[0.03]">
+                <Card key={order.id} id={order.id} className={cn("border-none rounded-[48px] overflow-hidden shadow-2xl bg-white ring-1 transition-all duration-500", isExpanded ? "ring-primary/20 scale-[1.02]" : "ring-black/[0.03]")}>
                   <CardContent className="p-8 space-y-8">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
@@ -270,7 +296,7 @@ export default function OrdersManagementPage() {
                         </div>
                       </div>
                       <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-                        {order.createdAt ? format(order.createdAt.toDate(), "dd MMM, HH:mm", { locale: es }) : ''}
+                        {order.updatedAt ? format(order.updatedAt.toDate(), "dd MMM, HH:mm", { locale: es }) : order.createdAt ? format(order.createdAt.toDate(), "dd MMM, HH:mm", { locale: es }) : ''}
                       </span>
                     </div>
 
@@ -282,7 +308,7 @@ export default function OrdersManagementPage() {
                         <Button 
                           variant="ghost" 
                           onClick={() => toggleOrderDetails(order.id)}
-                          className="text-primary font-black uppercase text-[10px] tracking-widest h-auto p-0 mt-1 hover:bg-transparent hover:underline"
+                          className={cn("text-[10px] font-black uppercase tracking-widest h-auto p-0 mt-1 hover:bg-transparent hover:underline", isExpanded ? "text-slate-400" : "text-primary")}
                         >
                           {isExpanded ? "Ocultar" : "ver pedido"}
                         </Button>
@@ -292,14 +318,26 @@ export default function OrdersManagementPage() {
                       </p>
                     </div>
 
-                    {isExpanded && order.items && (
-                      <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="bg-slate-50/80 rounded-[32px] p-6 space-y-4 border border-slate-100">
+                    {isExpanded && (
+                      <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                        {/* Dirección Dinámica */}
+                        <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex items-start gap-4">
+                          <div className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary shrink-0">
+                            <MapPin className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Punto de Entrega</p>
+                            <p className="text-sm font-bold text-slate-700 leading-snug">{order.customerAddress || 'Por definir'}</p>
+                          </div>
+                        </div>
+
+                        {/* Desglose de Productos */}
+                        <div className="bg-white rounded-[32px] p-6 space-y-4 border border-slate-100 shadow-inner">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Desglose de productos</p>
-                          {order.items.map((item: any, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between gap-4 border-b border-slate-200/30 pb-3 last:border-none last:pb-0">
+                          {order.items?.map((item: any, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between gap-4 border-b border-slate-50 pb-3 last:border-none last:pb-0">
                               <div className="flex items-center gap-3">
-                                <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm shrink-0 border border-white">
+                                <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-sm shrink-0 border border-slate-50">
                                   <Image src={item.imageUrl || 'https://picsum.photos/seed/product/200'} alt={item.name} fill className="object-cover" />
                                 </div>
                                 <div>
@@ -312,28 +350,21 @@ export default function OrdersManagementPage() {
                               </span>
                             </div>
                           ))}
+                          <div className="pt-4 mt-2 border-t border-slate-50 flex items-center justify-between">
+                            <span className="text-[10px] font-black text-slate-400 uppercase">Total Final</span>
+                            <span className="text-xl font-black text-primary tracking-tighter">
+                              {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice || 0)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     <div className="space-y-4">
-                      <div className="flex flex-col gap-3">
-                        <Button onClick={() => { setActiveOrderId(order.id); window.location.hash = order.id; }} className="w-full h-12 rounded-[20px] bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-transform">
-                          <MessageCircle className="w-4 h-4 text-primary" /> CHAT INTERNO
-                        </Button>
-                        
-                        <Button 
-                          onClick={() => handleWhatsAppRedirect(order)}
-                          className="w-full h-12 rounded-[20px] bg-[#25d366] hover:bg-[#128c7e] text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-transform"
-                        >
-                          <WhatsAppIcon className="w-4 h-4" /> CONTACTO WHATSAPP
-                        </Button>
-                      </div>
-
                       {isVenta ? (
                         <div className="grid gap-3">
-                          {order.status === 'pending' && <Button onClick={() => handleUpdateStatus(order.id, 'preparing')} className="w-full h-16 rounded-[24px] bg-primary text-white font-black uppercase tracking-widest gap-3 shadow-xl"><Package className="w-6 h-6" /> INICIAR PREPARACIÓN</Button>}
-                          {order.status === 'preparing' && <Button onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')} className="w-full h-16 rounded-[24px] bg-indigo-600 text-white font-black uppercase tracking-widest gap-3 shadow-xl"><CheckCircle2 className="w-6 h-6" /> MARCAR COMO LISTO</Button>}
+                          {order.status === 'pending' && <Button onClick={() => handleUpdateStatus(order.id, 'preparing')} className="w-full h-16 rounded-[24px] bg-primary text-white font-black uppercase tracking-widest gap-3 shadow-xl hover:scale-[1.02] transition-all"><Package className="w-6 h-6" /> INICIAR PREPARACIÓN</Button>}
+                          {order.status === 'preparing' && <Button onClick={() => handleUpdateStatus(order.id, 'ready_for_pickup')} className="w-full h-16 rounded-[24px] bg-indigo-600 text-white font-black uppercase tracking-widest gap-3 shadow-xl hover:scale-[1.02] transition-all"><CheckCircle2 className="w-6 h-6" /> MARCAR COMO LISTO</Button>}
                           {order.status === 'at_store' && <Button onClick={() => setValidatingOrder(order)} className="w-full h-16 rounded-[24px] bg-amber-500 text-white font-black uppercase tracking-widest gap-3 shadow-xl animate-pulse"><ShieldCheck className="w-6 h-6" /> VALIDAR REPARTIDOR</Button>}
                           
                           {order.status === 'delivered' && (
@@ -361,14 +392,17 @@ export default function OrdersManagementPage() {
                             )}
                             {(order.status === 'delivered' || order.status === 'cancelled') && <Button onClick={() => handleReorder(order)} variant="outline" className="flex-1 h-16 rounded-[24px] border-2 border-slate-100 font-black uppercase tracking-widest gap-3 hover:bg-slate-50 text-slate-600"><RotateCcw className="w-6 h-6 text-primary" /> REORDENAR</Button>}
                           </div>
-                          
-                          {order.status === 'delivered' && !order.driverRatingByCustomer && order.deliveryDriverId && (
-                            <Button onClick={() => { setRatingType('to_driver'); setRatingOrder(order); }} variant="secondary" className="w-full h-12 rounded-[20px] font-black uppercase tracking-widest gap-2 text-[10px]">
-                              <Truck className="w-4 h-4" /> CALIFICAR AL REPARTIDOR
-                            </Button>
-                          )}
                         </div>
                       )}
+
+                      <div className="flex gap-3">
+                        <Button onClick={() => { setActiveOrderId(order.id); window.location.hash = order.id; }} className="flex-1 h-12 rounded-[20px] bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-transform">
+                          <MessageCircle className="w-4 h-4 text-primary" /> CHAT
+                        </Button>
+                        <Button onClick={() => handleWhatsAppRedirect(order)} className="flex-1 h-12 rounded-[20px] bg-[#25d366] hover:bg-[#128c7e] text-white font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg active:scale-95 transition-transform">
+                          <WhatsAppIcon className="w-4 h-4" /> WHATSAPP
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -395,7 +429,7 @@ export default function OrdersManagementPage() {
               <Card 
                 key={store.id} 
                 onClick={() => setSelectedStoreId(store.id)} 
-                className="group border-none rounded-[48px] shadow-[0_15px_50px_-15px_rgba(0,0,0,0.08)] bg-white cursor-pointer hover:shadow-[0_30px_80px_-20px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-500 overflow-hidden relative"
+                className="group border-none rounded-[48px] shadow-[0_15px_50px_-15px_rgba(0,0,0,0.08)] bg-white cursor-pointer hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-500 overflow-hidden relative"
               >
                 {store.activeCount > 0 && <div className="absolute top-0 left-0 w-2 h-full bg-orange-500 animate-pulse" />}
                 
