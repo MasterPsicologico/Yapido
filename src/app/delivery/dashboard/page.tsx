@@ -184,8 +184,9 @@ export default function DeliveryDashboardPage() {
   const handleReleaseOrderAction = async () => {
     if (!activeMission || !user || !firestore || !selectedReason) return;
 
+    setIsReleaseDialogOpen(false); // Cerramos el diálogo inmediatamente para mostrar el overlay
     setIsReleasing(true);
-    setReleaseLogs([]);
+    setReleaseLogs(["Iniciando Protocolo de Liberación..."]);
 
     try {
       // 1. PERSISTENCIA DE INCIDENTE PARA EL AGENTE DE SOPORTE (ADMIN CENTER)
@@ -215,7 +216,7 @@ export default function DeliveryDashboardPage() {
         storeName: activeMission.storeName
       });
 
-      setReleaseLogs(result.agentLogs);
+      setReleaseLogs(prev => [...prev, ...result.agentLogs]);
 
       if (result.success) {
         const orderRef = doc(firestore, 'orders', activeMission.id);
@@ -238,18 +239,19 @@ export default function DeliveryDashboardPage() {
             updatedAt: serverTimestamp()
           });
         }
-
-        // REDIRECCIÓN QUIRÚRGICA: Evita quedar atrapado en la pantalla
-        setTimeout(() => {
-          setIsReleaseDialogOpen(false);
-          setIsReleasing(false);
-          router.push('/delivery/release-success');
-        }, 2000);
+      } else {
+        toast({ title: "Error en la IA", description: result.message, variant: "destructive" });
+        setIsReleasing(false);
       }
     } catch (e) {
-      toast({ title: "Error al liberar", variant: "destructive" });
+      toast({ title: "Error crítico", variant: "destructive" });
       setIsReleasing(false);
     }
+  };
+
+  const handleFinishRelease = () => {
+    setIsReleasing(false);
+    router.replace('/delivery/dashboard'); // Forzamos recarga del panel para nuevas rutas
   };
 
   const handleOpenMaps = (address: string) => {
@@ -335,8 +337,12 @@ export default function DeliveryDashboardPage() {
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
       
-      {/* OVERLAY DE INTELIGENCIA PARA LIBERACIÓN */}
-      <AgentProgressOverlay isOpen={isReleasing} logs={releaseLogs} />
+      {/* OVERLAY DE INTELIGENCIA PARA LIBERACIÓN CON AUTO-RETORNO */}
+      <AgentProgressOverlay 
+        isOpen={isReleasing} 
+        logs={releaseLogs} 
+        onComplete={handleFinishRelease}
+      />
 
       {activeMission ? (
         <div className="fixed inset-0 z-[40] bg-[#f8fafc] flex flex-col animate-in slide-in-from-bottom duration-500 overflow-hidden">

@@ -18,7 +18,8 @@ import {
   User,
   Truck,
   ArrowUpRight,
-  Database
+  Database,
+  Sparkles
 } from 'lucide-react';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';

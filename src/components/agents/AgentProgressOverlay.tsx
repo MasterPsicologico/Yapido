@@ -9,7 +9,8 @@ import {
   MapPinned, 
   Sparkles, 
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,13 +24,33 @@ interface AgentProgressOverlayProps {
 
 export function AgentProgressOverlay({ isOpen, logs, isError, errorMsg, onComplete }: AgentProgressOverlayProps) {
   const [currentLogIdx, setCurrentLogIdx] = useState(0);
+  const [showFinishButton, setShowFinishButton] = useState(false);
 
   useEffect(() => {
-    if (logs.length > currentLogIdx) {
-      const timer = setTimeout(() => setCurrentLogIdx(prev => prev + 1), 800);
+    if (isOpen) {
+      setCurrentLogIdx(0);
+      setShowFinishButton(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && logs.length > currentLogIdx) {
+      const timer = setTimeout(() => {
+        if (currentLogIdx < logs.length - 1) {
+          setCurrentLogIdx(prev => prev + 1);
+        } else {
+          // PROCESO TERMINADO: Esperar un momento para que el usuario lea y luego activar el fin
+          setShowFinishButton(true);
+          if (onComplete && !isError) {
+            // Auto-redirección tras 2.5 segundos de lectura
+            const redirectTimer = setTimeout(onComplete, 2500);
+            return () => clearTimeout(redirectTimer);
+          }
+        }
+      }, 1000); // Un segundo por log para legibilidad quirúrgica
       return () => clearTimeout(timer);
     }
-  }, [logs, currentLogIdx]);
+  }, [isOpen, logs, currentLogIdx, onComplete, isError]);
 
   if (!isOpen) return null;
 
@@ -41,6 +62,8 @@ export function AgentProgressOverlay({ isOpen, logs, isError, errorMsg, onComple
           <div className="relative w-32 h-32 bg-slate-800 rounded-[40px] border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden">
             {isError ? (
               <AlertCircle className="w-16 h-16 text-red-500 animate-vibrate" />
+            ) : showFinishButton ? (
+              <CheckCircle2 className="w-16 h-16 text-green-500 animate-in zoom-in duration-500" />
             ) : (
               <div className="relative">
                 <Loader2 className="w-16 h-16 text-primary animate-spin" />
@@ -55,14 +78,14 @@ export function AgentProgressOverlay({ isOpen, logs, isError, errorMsg, onComple
             "text-3xl font-black italic uppercase tracking-tighter leading-none",
             isError ? "text-red-400" : "text-white"
           )}>
-            {isError ? "Intervención de Seguridad" : "Vitriniando AI"}
+            {isError ? "Intervención de Seguridad" : showFinishButton ? "Sincronización Exitosa" : "Vitriniando AI"}
           </h2>
           <p className="text-primary/60 text-[10px] font-black uppercase tracking-[0.5em] ml-1">
-            {isError ? "Protocolo Detenido" : "Ciudadela de Agentes Activa"}
+            {isError ? "Protocolo Detenido" : showFinishButton ? "Finalizando Operación" : "Ciudadela de Agentes Activa"}
           </p>
         </div>
 
-        <div className="bg-black/40 border border-white/5 rounded-[32px] p-8 space-y-4 text-left min-h-[180px] flex flex-col justify-center shadow-inner">
+        <div className="bg-black/40 border border-white/5 rounded-[32px] p-8 space-y-4 text-left min-h-[180px] flex flex-col justify-center shadow-inner relative overflow-hidden">
           {logs.slice(0, currentLogIdx + 1).map((log, i) => (
             <div key={i} className="flex items-start gap-3 animate-in slide-in-from-left-4 fade-in duration-500">
               <div className={cn(
@@ -77,21 +100,31 @@ export function AgentProgressOverlay({ isOpen, logs, isError, errorMsg, onComple
               </p>
             </div>
           ))}
+          
           {isError && (
             <div className="pt-4 flex items-center gap-3 text-red-400 animate-in zoom-in duration-300">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <p className="text-xs font-black uppercase italic">{errorMsg || "Error desconocido"}</p>
             </div>
           )}
+
+          {showFinishButton && !isError && (
+            <div className="absolute inset-0 bg-primary/10 flex items-center justify-center animate-in fade-in duration-500">
+               <div className="flex items-center gap-2 bg-white px-6 py-2 rounded-full shadow-2xl">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">Redirigiendo...</span>
+                  <Loader2 className="w-3 h-3 animate-spin text-primary" />
+               </div>
+            </div>
+          )}
         </div>
 
-        {!isError && logs.length > 0 && currentLogIdx >= logs.length - 1 && (
-          <div className="pt-4 flex flex-col items-center gap-4 animate-in slide-in-from-bottom-4 duration-700">
-            <div className="flex items-center gap-2 bg-green-500/10 text-green-400 px-6 py-2 rounded-full border border-green-500/20">
-              <CheckCircle2 className="w-4 h-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Sincronización Exitosa</span>
-            </div>
-          </div>
+        {isError && (
+          <button 
+            onClick={() => window.location.reload()}
+            className="h-14 rounded-full bg-white text-slate-900 font-black uppercase tracking-widest px-10 shadow-xl"
+          >
+            REINTENTAR
+          </button>
         )}
       </div>
     </div>
