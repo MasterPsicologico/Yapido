@@ -2,9 +2,9 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from 'recharts';
+import { Bar, BarChart, XAxis, Cell } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Timer, Star, TrendingUp } from 'lucide-react';
+import { Timer, Star, TrendingUp, CalendarClock } from 'lucide-react';
 import { es } from 'date-fns/locale';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 
@@ -43,23 +43,17 @@ export function WeeklyChallenge({ orders }: WeeklyChallengeProps) {
   return (
     <Card className="border-none rounded-[40px] shadow-2xl bg-white overflow-hidden ring-1 ring-black/[0.03]">
       <CardHeader className="p-8 pb-2">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Reto de la Semana</p>
-            <CardTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 flex items-center gap-3">
-              <TrendingUp className="text-primary w-7 h-7" /> Rendimiento
-            </CardTitle>
-          </div>
-          <div className="bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100 flex flex-col items-end">
-            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Cierre de Ciclo</p>
-            <p className="text-[10px] font-bold text-slate-600 flex items-center gap-1">
-              <Timer className="w-3 h-3 text-orange-500" /> Domingo 23:59
-            </p>
-          </div>
+        <div className="space-y-1">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Reto de la Semana</p>
+          <CardTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 flex items-center gap-3">
+            <TrendingUp className="text-primary w-7 h-7" /> Rendimiento
+          </CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="p-8 pt-4">
-        <div className="h-[200px] w-full">
+      
+      <CardContent className="p-8 pt-4 space-y-6">
+        {/* GRÁFICO */}
+        <div className="h-[180px] w-full">
           <ChartContainer config={chartConfig}>
             <BarChart data={days}>
               <XAxis 
@@ -77,24 +71,37 @@ export function WeeklyChallenge({ orders }: WeeklyChallengeProps) {
             </BarChart>
           </ChartContainer>
         </div>
+
+        {/* INDICADOR DE CIERRE DE CICLO REUBICADO */}
+        <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3 flex items-center justify-between px-5">
+          <div className="flex items-center gap-2">
+            <CalendarClock className="w-4 h-4 text-slate-400" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cierre de Ciclo</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Timer className="w-3.5 h-3.5 text-orange-500 animate-pulse" />
+            <span className="text-[11px] font-black text-slate-700 italic uppercase">Domingo 23:59</span>
+          </div>
+        </div>
         
-        <div className="grid grid-cols-2 gap-4 mt-6">
-          <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100 flex items-center gap-4">
-            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+        {/* STATS INFERIORES */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white p-4 rounded-3xl border border-slate-100 flex items-center gap-4 shadow-sm">
+            <div className="w-10 h-10 bg-yellow-50 rounded-2xl flex items-center justify-center shrink-0">
               <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
             </div>
-            <div>
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Promedio</p>
-              <p className="text-xl font-black italic text-slate-900 tracking-tighter">5.0 Estrellas</p>
+            <div className="min-w-0">
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest truncate">Promedio</p>
+              <p className="text-lg font-black italic text-slate-900 tracking-tighter">5.0</p>
             </div>
           </div>
-          <div className="bg-primary/5 p-4 rounded-3xl border border-primary/10 flex items-center gap-4">
-            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+          <div className="bg-white p-4 rounded-3xl border border-slate-100 flex items-center gap-4 shadow-sm">
+            <div className="w-10 h-10 bg-primary/5 rounded-2xl flex items-center justify-center shrink-0">
               <Timer className="w-5 h-5 text-primary" />
             </div>
-            <div>
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Estado</p>
-              <p className="text-xl font-black italic text-primary tracking-tighter">EN CURSO</p>
+            <div className="min-w-0">
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest truncate">Estado</p>
+              <p className="text-lg font-black italic text-primary tracking-tighter uppercase">ACTIVO</p>
             </div>
           </div>
         </div>
