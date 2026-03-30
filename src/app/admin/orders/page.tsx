@@ -62,7 +62,7 @@ const STATUS_CONFIG = {
   ready_for_pickup: { label: "LISTO EN TIENDA", color: "text-indigo-500", bg: "bg-indigo-50", border: "border-indigo-100", icon: CheckCircle2 },
   at_store: { label: "REPARTIDOR EN TIENDA", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100", icon: ShieldCheck },
   delivered_to_driver: { label: "CON REPARTIDOR", color: "text-purple-500", bg: "bg-purple-100", border: "border-purple-200", icon: Zap },
-  shipped: { label: "EN REPARTO", color: "text-purple-500", bg: "bg-purple-50", border: "border-purple-100", icon: Zap },
+  shipped: { label: "EN REPARTO", color: "text-purple-500", bg: "bg-purple-100", border: "border-purple-200", icon: Zap },
   delivered: { label: "ENTREGADO", color: "text-green-500", bg: "bg-green-100", border: "border-green-200", icon: CheckCircle2 },
   cancelled: { label: "CANCELADO", color: "text-red-500", bg: "bg-red-100", border: "border-red-200", icon: AlertTriangle }
 };
@@ -107,7 +107,6 @@ export default function OrdersManagementPage() {
   }, [firestore, user?.uid]);
   const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
 
-  // LÓGICA DE ATENCIÓN INMEDIATA: Diferencia entre abrir chat y atender pedido
   useEffect(() => {
     const handleOrderAttended = (e: any) => {
       const id = e.detail?.orderId;
@@ -115,7 +114,6 @@ export default function OrdersManagementPage() {
 
       const order = rawOrders.find(o => o.id === id);
       if (order) {
-        // 1. Navegar al contexto correcto (Venta o Compra)
         if (order.storeOwnerId === user?.uid) {
           setSelectedStoreId(order.storeId);
           setShowMyPurchases(false);
@@ -123,11 +121,7 @@ export default function OrdersManagementPage() {
           setShowMyPurchases(true);
           setSelectedStoreId(null);
         }
-
-        // 2. Expandir la tarjeta automáticamente
         setExpandedOrders(prev => ({ ...prev, [id]: true }));
-
-        // 3. Scroll quirúrgico al pedido
         setTimeout(() => {
           const el = document.getElementById(id);
           if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -143,12 +137,9 @@ export default function OrdersManagementPage() {
       }
     };
 
-    // Sincronizar desde el hash de la URL al cargar
     const syncFromHash = () => {
       const hash = window.location.hash.replace('#', '');
       if (hash) {
-        // Por defecto, si viene de una URL con hash, intentamos "atender"
-        // Si no se especifica evento, expandimos la tarjeta
         handleOrderAttended({ detail: { orderId: hash } });
       }
     };
@@ -300,27 +291,34 @@ export default function OrdersManagementPage() {
                       </span>
                     </div>
 
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between gap-4">
-                        <h3 className="text-4xl font-black text-slate-900 italic uppercase leading-[0.85] tracking-tighter flex-1">
+                    <div className="space-y-4">
+                      {/* DISEÑO REFORMADO: Nombre de producto prioritario y botón de visualización inteligente */}
+                      <div className="space-y-3">
+                        <h3 className="text-4xl sm:text-5xl font-black text-slate-900 italic uppercase leading-[0.9] tracking-tighter break-words">
                           {order.productName}
                         </h3>
-                        <Button 
-                          variant="ghost" 
-                          onClick={() => toggleOrderDetails(order.id)}
-                          className={cn("text-[10px] font-black uppercase tracking-widest h-auto p-0 mt-1 hover:bg-transparent hover:underline", isExpanded ? "text-slate-400" : "text-primary")}
-                        >
-                          {isExpanded ? "Ocultar" : "ver pedido"}
-                        </Button>
+                        <div className="flex items-center justify-between gap-4">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <StoreIcon className="w-3.5 h-3.5 text-primary" /> {order.storeName}
+                          </p>
+                          <Button 
+                            variant="ghost" 
+                            onClick={() => toggleOrderDetails(order.id)}
+                            className={cn(
+                              "h-9 rounded-full px-5 text-[10px] font-black uppercase tracking-widest transition-all shadow-sm border",
+                              isExpanded 
+                                ? "bg-slate-100 text-slate-400 border-slate-200" 
+                                : "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                            )}
+                          >
+                            {isExpanded ? "Cerrar Detalles" : "Ver Pedido Completo"}
+                          </Button>
+                        </div>
                       </div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        <StoreIcon className="w-3 h-3" /> {order.storeName}
-                      </p>
                     </div>
 
                     {isExpanded && (
                       <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                        {/* Dirección Dinámica */}
                         <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100 flex items-start gap-4">
                           <div className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary shrink-0">
                             <MapPin className="w-5 h-5" />
@@ -331,7 +329,6 @@ export default function OrdersManagementPage() {
                           </div>
                         </div>
 
-                        {/* Desglose de Productos */}
                         <div className="bg-white rounded-[32px] p-6 space-y-4 border border-slate-100 shadow-inner">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Desglose de productos</p>
                           {order.items?.map((item: any, idx: number) => (
