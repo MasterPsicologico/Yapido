@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { ActivityTrigger } from './ActivityTrigger';
 import { ActivityItem } from './ActivityItem';
 
-const SEEN_ORDERS_KEY = 'vitriniando_seen_orders_v1';
+const SEEN_ORDERS_KEY = 'vitriniando_seen_activity_v1';
 
 export function ActivityCenter() {
   const { user } = useUser();
@@ -60,23 +60,38 @@ export function ActivityCenter() {
 
   const activities = useMemo(() => {
     if (!rawOrders || !user) return [];
-    return rawOrders.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0))
+    
+    // ORDENAMIENTO SMART-FLOW: Prioriza la última actualización (updatedAt o createdAt)
+    return rawOrders
+      .filter(order => order.status !== 'delivered' && order.status !== 'cancelled')
+      .sort((a, b) => {
+        const timeA = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
+        const timeB = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
+        return timeB - timeA;
+      })
       .map(order => {
-        if (order.status === 'delivered' || order.status === 'cancelled') return null;
         let task = null;
+        const timestamp = order.updatedAt || order.createdAt;
+
         if (order.storeOwnerId === user.uid) {
           if (order.status === 'pending') task = { label: "Venta: Nuevo Pedido", desc: order.productName, icon: Zap, color: "text-orange-500", bg: "bg-orange-50" };
           else if (order.status === 'preparing') task = { label: "Venta: Preparando", desc: order.productName, icon: Clock, color: "text-blue-500", bg: "bg-blue-50" };
           else if (order.status === 'ready_for_pickup') task = { label: "Venta: Listo en Tienda", desc: order.productName, icon: CheckCircle2, color: "text-indigo-500", bg: "bg-indigo-50" };
           else if (order.status === 'shipped') task = { label: "Venta: En Reparto", desc: order.productName, icon: Truck, color: "text-purple-500", bg: "bg-purple-50" };
         } 
-        else if (order.deliveryDriverId === user.uid && order.status === 'shipped') task = { label: "Ruta: Entrega en Curso", desc: order.productName, icon: Navigation, color: "text-secondary", bg: "bg-secondary/10" };
+        else if (order.deliveryDriverId === user.uid && (order.status === 'shipped' || order.status === 'at_store')) {
+          task = { label: "Ruta: Entrega en Curso", desc: order.productName, icon: Navigation, color: "text-secondary", bg: "bg-secondary/10" };
+        }
         else if (order.customerId === user.uid) {
           if (order.status === 'shipped') task = { label: "Compra: Confirmar Entrega", desc: order.productName, icon: Package, color: "text-blue-500", bg: "bg-blue-50" };
           else task = { label: "Compra: En Seguimiento", desc: order.productName, icon: Timer, color: "text-slate-500", bg: "bg-slate-50" };
         }
-        if (!task && profile?.role === 'repartidor' && order.status === 'ready_for_pickup' && !order.deliveryDriverId) task = { label: "Ruta: Disponible ahora", desc: order.productName, icon: Truck, color: "text-green-500", bg: "bg-green-50" };
-        return task ? { ...task, orderId: order.id } : null;
+
+        if (!task && profile?.role === 'repartidor' && order.status === 'ready_for_pickup' && !order.deliveryDriverId) {
+          task = { label: "Ruta: Disponible ahora", desc: order.productName, icon: Truck, color: "text-green-500", bg: "bg-green-50" };
+        }
+
+        return task ? { ...task, orderId: order.id, timestamp } : null;
       }).filter(Boolean);
   }, [rawOrders, user, profile]);
 
@@ -103,11 +118,16 @@ export function ActivityCenter() {
         <DropdownMenuSeparator className="bg-slate-50" />
         <div className="max-h-[350px] overflow-y-auto p-1 space-y-2 no-scrollbar">
           {activities.length > 0 ? activities.map((act, i) => (
-            <ActivityItem key={i} {...act!} onClick={() => handleItemClick(act!.orderId)} />
+            <ActivityItem 
+              key={act!.orderId} 
+              {...act!} 
+              isUnread={!seenIds.includes(act!.orderId)}
+              onClick={() => handleItemClick(act!.orderId)} 
+            />
           )) : (
             <div className="py-10 text-center">
               <Bell className="w-12 h-12 bg-slate-50 rounded-full p-3 mx-auto mb-3 text-slate-200" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Sin notificaciones</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Sin actividad reciente</p>
             </div>
           )}
         </div>
