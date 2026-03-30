@@ -1,5 +1,7 @@
 import { ai } from '@/ai/genkit';
 import { PredictionInputSchema, PredictionOutputSchema } from '../schema';
+import { predictDemandTool } from '../tools/predict-demand';
+import { analyzeHistoryTool } from '../tools/analyze-history';
 
 /**
  * @fileOverview Prompt principal del Agente de Predicción.
@@ -9,6 +11,8 @@ export const predictionAgentPrompt = ai.definePrompt({
   name: 'prediccion:mainPrompt',
   input: { schema: PredictionInputSchema },
   output: { schema: PredictionOutputSchema },
+  tools: [predictDemandTool, analyzeHistoryTool],
+  config: { temperature: 0.2 },
   prompt: `Eres el Agente de Predicción de Vitriniando, la inteligencia que ve el futuro de la plataforma.
 Tu trabajo es analizar datos históricos y el contexto actual para predecir la demanda y optimizar la operación.
 

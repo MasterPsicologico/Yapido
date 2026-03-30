@@ -1,24 +1,11 @@
-
 'use server';
 /**
  * @fileOverview Agente Asignador - Cerebro del Matchmaking Logístico.
  */
-import { ai } from '@/ai/genkit';
 import { asignadorAgentPrompt } from './prompts/main';
-import { calculateScoreTool } from './tools/calculate-score';
-import { findDriversTool } from './tools/find-drivers';
+import { AsignadorAgentInput, AsignadorAgentOutput } from './schema';
 
-export async function asignadorAgent(input: any) {
-  const result = await ai.generate({
-    prompt: asignadorAgentPrompt(input),
-    tools: [
-      calculateScoreTool,
-      findDriversTool
-    ],
-    config: {
-      temperature: 0.1, // Máxima precisión matemática
-    }
-  });
-
-  return result.output as any;
+export async function asignadorAgent(input: AsignadorAgentInput): Promise<AsignadorAgentOutput> {
+  const { output } = await asignadorAgentPrompt(input);
+  return output!;
 }

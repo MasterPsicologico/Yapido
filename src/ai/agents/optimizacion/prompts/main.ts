@@ -1,5 +1,7 @@
 import { ai } from '@/ai/genkit';
 import { OptimizationAgentInputSchema, OptimizationAgentOutputSchema } from '../schema';
+import { optimizeBatchingTool } from '../tools/optimize-batching';
+import { optimizeDriverPositionTool } from '../tools/optimize-driver-position';
 
 /**
  * @fileOverview Prompt principal del Agente de Optimización.
@@ -9,6 +11,8 @@ export const optimizationAgentPrompt = ai.definePrompt({
   name: 'optimizacion:mainPrompt',
   input: { schema: OptimizationAgentInputSchema },
   output: { schema: OptimizationAgentOutputSchema },
+  tools: [optimizeBatchingTool, optimizeDriverPositionTool],
+  config: { temperature: 0.2 },
   prompt: `Eres el Agente de Optimización de Vitriniando, el ingeniero maestro de procesos. 
 Tu misión es maximizar la eficiencia global del sistema usando la fórmula:
 Optimization = (Profit * Orders) / (Cost * Time)

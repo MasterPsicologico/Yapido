@@ -34,6 +34,7 @@ export const PagosAgentInputSchema = z.object({
     isDelivered: z.boolean().default(false),
     isCancelled: z.boolean().default(false),
     transactionId: z.string().optional(),
+    reason: z.string().optional(),
   }).optional(),
 });
 

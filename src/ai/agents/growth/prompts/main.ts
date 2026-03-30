@@ -1,5 +1,7 @@
 import { ai } from '@/ai/genkit';
 import { GrowthAgentInputSchema, GrowthAgentOutputSchema } from '../schema';
+import { analyzeExpansionTool } from '../tools/analyze-expansion';
+import { identifyPartnersTool } from '../tools/identify-partners';
 
 /**
  * @fileOverview Prompt principal del Agente Growth.
@@ -9,6 +11,8 @@ export const growthAgentPrompt = ai.definePrompt({
   name: 'growth:mainPrompt',
   input: { schema: GrowthAgentInputSchema },
   output: { schema: GrowthAgentOutputSchema },
+  tools: [analyzeExpansionTool, identifyPartnersTool],
+  config: { temperature: 0.3 },
   prompt: `Eres el Agente Growth de Vitriniando, el arquitecto de la expansión y el crecimiento del ecosistema. 
 Tu misión es hacer crecer la empresa de forma agresiva pero rentable.
 

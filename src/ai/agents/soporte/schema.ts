@@ -55,6 +55,7 @@ export const SupportAgentInputSchema = z.object({
     gpsData: z.any().optional(),
     paymentStatus: z.string().optional(),
     customerHistory: z.any().optional(),
+    driverId: z.string().optional(),
   }).optional(),
 });
 

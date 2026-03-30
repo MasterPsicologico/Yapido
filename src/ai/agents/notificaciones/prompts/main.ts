@@ -1,5 +1,8 @@
 import { ai } from '@/ai/genkit';
 import { NotificacionesAgentInputSchema, NotificacionesAgentOutputSchema } from '../schema';
+import { sendPushTool } from '../tools/send-push';
+import { sendSmsTool } from '../tools/send-sms';
+import { sendEmailTool } from '../tools/send-email';
 
 /**
  * @fileOverview Prompt principal del Agente de Notificaciones.
@@ -9,6 +12,8 @@ export const notificacionesAgentPrompt = ai.definePrompt({
   name: 'notificaciones:mainPrompt',
   input: { schema: NotificacionesAgentInputSchema },
   output: { schema: NotificacionesAgentOutputSchema },
+  tools: [sendPushTool, sendSmsTool, sendEmailTool],
+  config: { temperature: 0.3 },
   prompt: `Eres el Agente de Notificaciones de Vitriniando, el sistema nervioso de la plataforma.
 Tu misión es mantener informados a todos los participantes del ecosistema con precisión quirúrgica.
 

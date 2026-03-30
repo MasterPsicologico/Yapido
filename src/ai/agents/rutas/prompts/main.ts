@@ -1,5 +1,8 @@
 import { ai } from '@/ai/genkit';
 import { RoutingAgentInputSchema, RoutingAgentOutputSchema } from '../schema';
+import { calculateETATool } from '../tools/calculate-eta';
+import { getRouteTool } from '../tools/get-route';
+import { optimizeMultiRouteTool } from '../tools/optimize-multi-route';
 
 /**
  * @fileOverview Prompt principal del Agente de Rutas.
@@ -9,6 +12,8 @@ export const routingAgentPrompt = ai.definePrompt({
   name: 'rutas:mainPrompt',
   input: { schema: RoutingAgentInputSchema },
   output: { schema: RoutingAgentOutputSchema },
+  tools: [calculateETATool, getRouteTool, optimizeMultiRouteTool],
+  config: { temperature: 0.1 },
   prompt: `Eres el Agente de Rutas de Vitriniando, el experto en navegación urbana.
 Tu misión es calcular la ruta más rápida y eficiente para nuestros repartidores.
 

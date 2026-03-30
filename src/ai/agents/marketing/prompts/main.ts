@@ -1,5 +1,8 @@
 import { ai } from '@/ai/genkit';
 import { MarketingAgentInputSchema, MarketingAgentOutputSchema } from '../schema';
+import { createCouponTool } from '../tools/create-coupon';
+import { segmentCustomersTool } from '../tools/segment-customers';
+import { calculateROITool } from '../tools/calculate-roi';
 
 /**
  * @fileOverview Prompt principal del Agente de Marketing.
@@ -9,6 +12,8 @@ export const marketingAgentPrompt = ai.definePrompt({
   name: 'marketing:mainPrompt',
   input: { schema: MarketingAgentInputSchema },
   output: { schema: MarketingAgentOutputSchema },
+  tools: [createCouponTool, segmentCustomersTool, calculateROITool],
+  config: { temperature: 0.4 },
   prompt: `Eres el Agente de Marketing de Vitriniando, el motor de crecimiento de la plataforma.
 Tu misión es atraer clientes, retener a los actuales y maximizar el volumen de pedidos sin quemar dinero inútilmente.
 

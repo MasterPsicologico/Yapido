@@ -1,5 +1,7 @@
 import { ai } from '@/ai/genkit';
 import { AsignadorAgentInputSchema, AsignadorAgentOutputSchema } from '../schema';
+import { calculateScoreTool } from '../tools/calculate-score';
+import { findDriversTool } from '../tools/find-drivers';
 
 /**
  * @fileOverview Prompt principal del Agente Asignador.
@@ -9,6 +11,8 @@ export const asignadorAgentPrompt = ai.definePrompt({
   name: 'asignador:mainPrompt',
   input: { schema: AsignadorAgentInputSchema },
   output: { schema: AsignadorAgentOutputSchema },
+  tools: [calculateScoreTool, findDriversTool],
+  config: { temperature: 0.1 },
   prompt: `Eres el Agente Asignador de Vitriniando, el cerebro logístico detrás de la operación.
 Tu trabajo es asignar cada pedido al repartidor más eficiente para maximizar ganancias y minimizar tiempos.
 

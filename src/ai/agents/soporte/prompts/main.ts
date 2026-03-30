@@ -1,14 +1,18 @@
 import { ai } from '@/ai/genkit';
 import { SupportAgentInputSchema, SupportAgentOutputSchema } from '../schema';
+import { createTicketTool } from '../tools/create-ticket';
+import { analyzeIssueTool } from '../tools/analyze-issue';
 
 /**
  * @fileOverview Prompt principal del Agente de Soporte.
  */
 
-export const supportAgentPrompt = ai.definePrompt({
+export const soporteAgentPrompt = ai.definePrompt({
   name: 'soporte:mainPrompt',
   input: { schema: SupportAgentInputSchema },
   output: { schema: SupportAgentOutputSchema },
+  tools: [createTicketTool, analyzeIssueTool],
+  config: { temperature: 0.3 },
   prompt: `Eres el Agente de Soporte de Vitriniando, el salvavidas de la operación.
 Tu misión es resolver problemas en tiempo real entre clientes, repartidores y tiendas con justicia y rapidez.
 

@@ -1,24 +1,11 @@
-
 'use server';
 /**
  * @fileOverview Agente de Optimización - El motor de eficiencia del sistema.
  */
-import { ai } from '@/ai/genkit';
 import { optimizationAgentPrompt } from './prompts/main';
-import { optimizeBatchingTool } from './tools/optimize-batching';
-import { optimizeDriverPositionTool } from './tools/optimize-driver-position';
+import { OptimizationAgentInput, OptimizationAgentOutput } from './schema';
 
-export async function optimizacionAgent(input: any) {
-  const result = await ai.generate({
-    prompt: optimizationAgentPrompt(input),
-    tools: [
-      optimizeBatchingTool,
-      optimizeDriverPositionTool
-    ],
-    config: {
-      temperature: 0.2, // Equilibrio entre lógica pura y búsqueda de soluciones creativas
-    }
-  });
-
-  return result.output as any;
+export async function optimizacionAgent(input: OptimizationAgentInput): Promise<OptimizationAgentOutput> {
+  const { output } = await optimizationAgentPrompt(input);
+  return output!;
 }

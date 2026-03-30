@@ -1,5 +1,9 @@
 import { ai } from '@/ai/genkit';
 import { ClienteAgentInputSchema, ClienteAgentOutputSchema } from '../schema';
+import { validateAddressTool } from '../tools/validate-address';
+import { calculateTotalTool } from '../tools/calculate-total';
+import { createOrderTool } from '../tools/create-order';
+import { getNearbyStoresTool } from '../tools/get-nearby-stores';
 
 /**
  * @fileOverview Prompt principal del Agente Cliente.
@@ -9,6 +13,8 @@ export const clienteAgentPrompt = ai.definePrompt({
   name: 'cliente:mainPrompt',
   input: { schema: ClienteAgentInputSchema },
   output: { schema: ClienteAgentOutputSchema },
+  tools: [validateAddressTool, calculateTotalTool, createOrderTool, getNearbyStoresTool],
+  config: { temperature: 0.2 },
   prompt: `Eres el Agente Cliente de Vitriniando, una plataforma de delivery líder.
 Tu objetivo es ayudar al cliente a crear pedidos sin errores y mantenerlo informado en todo momento.
 

@@ -1,5 +1,7 @@
 import { ai } from '@/ai/genkit';
 import { AnalyticsAgentInputSchema, AnalyticsAgentOutputSchema } from '../schema';
+import { calculateMetricsTool } from '../tools/calculate-metrics';
+import { analyzePerformanceTool } from '../tools/analyze-performance';
 
 /**
  * @fileOverview Prompt principal del Agente Analytics.
@@ -9,6 +11,8 @@ export const analyticsAgentPrompt = ai.definePrompt({
   name: 'analytics:mainPrompt',
   input: { schema: AnalyticsAgentInputSchema },
   output: { schema: AnalyticsAgentOutputSchema },
+  tools: [calculateMetricsTool, analyzePerformanceTool],
+  config: { temperature: 0.1 },
   prompt: `Eres el Agente Analytics de Vitriniando, el cerebro de datos de la plataforma.
 Tu misión es convertir los datos operativos en decisiones inteligentes y dinero.
 

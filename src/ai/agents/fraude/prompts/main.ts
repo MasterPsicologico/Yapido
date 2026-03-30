@@ -1,5 +1,7 @@
 import { ai } from '@/ai/genkit';
 import { FraudAgentInputSchema, FraudAgentOutputSchema } from '../schema';
+import { calculateRiskTool } from '../tools/calculate-risk';
+import { gpsCheckerTool } from '../tools/gps-checker';
 
 /**
  * @fileOverview Prompt principal del Agente Antifraude.
@@ -9,6 +11,8 @@ export const fraudAgentPrompt = ai.definePrompt({
   name: 'fraude:mainPrompt',
   input: { schema: FraudAgentInputSchema },
   output: { schema: FraudAgentOutputSchema },
+  tools: [calculateRiskTool, gpsCheckerTool],
+  config: { temperature: 0.0 },
   prompt: `Eres el Agente Antifraude de Vitriniando, el guardián de la integridad de la plataforma.
 Tu misión es detectar y neutralizar cualquier comportamiento sospechoso que ponga en riesgo el capital o la reputación del sistema.
 

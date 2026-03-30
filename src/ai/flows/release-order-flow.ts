@@ -42,19 +42,21 @@ const releaseOrderFlow = ai.defineFlow(
 
     try {
       // 1. AGENTE SOPORTE: Registro del incidente
-      logs.push("Agente Soporte: Registrando deserción de ruta y creando ticket de auditoría...");
+      logs.push("Agente Soporte: Registrando deserción de ruta...");
       await soporteAgent({
         orderId: input.orderId,
-        issueDescription: `Liberación de pedido por el repartidor. Motivo: ${input.reason}. Posesión de productos: ${input.hasProducts}`,
+        issueDescription: `Liberación: ${input.reason}. Carga: ${input.hasProducts}`,
         reporterRole: 'sistema',
-        context: { driverId: input.driverId }
+        context: { 
+          driverId: input.driverId,
+          orderData: { value: input.orderValue } 
+        }
       });
 
-      // 2. AGENTE PAGOS: Gestión de Deuda si tiene productos
+      // 2. AGENTE PAGOS: Gestión de Deuda
       if (input.hasProducts) {
-        logs.push(`Agente Pagos: Calculando penalización por artículos en posesión ($${input.orderValue})...`);
+        logs.push(`Agente Pagos: Calculando penalización...`);
         debtApplied = input.orderValue;
-        // En una implementación real, aquí se actualizaría el balance del driver en Firestore
         await pagosAgent({
           orderId: input.orderId,
           customerId: "SYSTEM",
@@ -62,12 +64,15 @@ const releaseOrderFlow = ai.defineFlow(
           deliveryFee: 0,
           paymentMethod: 'digital',
           currentState: 'PAYMENT_PENDING',
-          context: { reason: "DEUDA_POR_LIBERACION_CON_CARGA" }
+          context: { 
+            reason: `LIBERACION_CON_PRODUCTOS_${input.reason.toUpperCase().replace(/\s/g, '_')}`,
+            isCancelled: true 
+          }
         });
       }
 
-      // 3. AGENTE ASIGNADOR: Reposicionamiento del pedido
-      logs.push("Agente Asignador: Devolviendo pedido al pool de rutas disponibles...");
+      // 3. AGENTE ASIGNADOR: Reposicionamiento
+      logs.push("Agente Asignador: Devolviendo pedido al pool...");
       await asignadorAgent({
         orderId: input.orderId,
         storeLocation: { lat: 0, lng: 0 },
@@ -76,8 +81,8 @@ const releaseOrderFlow = ai.defineFlow(
         currentState: 'REASSIGNING'
       });
 
-      // 4. AGENTE NOTIFICACIONES: Alerta a la tienda
-      logs.push("Agente Notificaciones: Informando a la tienda sobre el cambio de repartidor...");
+      // 4. AGENTE NOTIFICACIONES: Alerta a tienda
+      logs.push("Agente Notificaciones: Informando a la tienda...");
       await notificacionesAgent({
         orderId: input.orderId,
         event: "DRIVER_UNASSIGNED",
@@ -88,23 +93,25 @@ const releaseOrderFlow = ai.defineFlow(
           name: input.storeName,
           contactInfo: {}
         }],
-        priority: "high"
+        priority: "high",
+        context: { reason: input.reason }
       });
 
       return {
         success: true,
         debtApplied,
         message: input.hasProducts 
-          ? `Pedido liberado. Se ha generado una deuda de $${input.orderValue} en tu cuenta.` 
+          ? `Pedido liberado. Deuda aplicada: $${input.orderValue}` 
           : "Pedido liberado exitosamente.",
         agentLogs: logs
       };
 
     } catch (e: any) {
+      console.error("Error en Flow de Liberación:", e);
       return {
         success: false,
         message: "Error en la orquestación de liberación",
-        agentLogs: logs
+        agentLogs: [...logs, `ERROR: ${e.message}`]
       };
     }
   }

@@ -1,5 +1,6 @@
 import { ai } from '@/ai/genkit';
 import { PricingAgentInputSchema, PricingAgentOutputSchema } from '../schema';
+import { calculateMultiplierTool } from '../tools/calculate-multiplier';
 
 /**
  * @fileOverview Prompt principal del Agente de Precios Dinámicos.
@@ -9,6 +10,8 @@ export const pricingAgentPrompt = ai.definePrompt({
   name: 'precios:mainPrompt',
   input: { schema: PricingAgentInputSchema },
   output: { schema: PricingAgentOutputSchema },
+  tools: [calculateMultiplierTool],
+  config: { temperature: 0.1 },
   prompt: `Eres el Agente de Precios Dinámicos de Vitriniando. Tu misión es garantizar que cada pedido sea rentable para la plataforma y atractivo para el repartidor.
 
 REGLAS DE ORO:

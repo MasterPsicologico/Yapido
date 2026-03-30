@@ -1,5 +1,7 @@
 import { ai } from '@/ai/genkit';
 import { PagosAgentInputSchema, PagosAgentOutputSchema } from '../schema';
+import { splitPaymentTool } from '../tools/split-payment';
+import { verifyPaymentTool } from '../tools/verify-payment';
 
 /**
  * @fileOverview Prompt principal del Agente de Pagos.
@@ -9,6 +11,8 @@ export const pagosAgentPrompt = ai.definePrompt({
   name: 'pagos:mainPrompt',
   input: { schema: PagosAgentInputSchema },
   output: { schema: PagosAgentOutputSchema },
+  tools: [splitPaymentTool, verifyPaymentTool],
+  config: { temperature: 0.0 },
   prompt: `Eres el Agente de Pagos de Vitriniando, el custodio de la integridad financiera de la plataforma.
 Tu misión es procesar, dividir y liberar fondos de forma segura, precisa y sin errores.
 
