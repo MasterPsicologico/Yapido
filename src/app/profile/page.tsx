@@ -21,13 +21,15 @@ import {
   Search,
   Trash2,
   AlertTriangle,
-  Sparkles
+  Sparkles,
+  ArrowLeft
 } from 'lucide-react';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { Loader } from '@googlemaps/js-api-loader';
+import { useRouter } from 'next/navigation';
 
 function cleanGoogleMapsOverlays() {
   if (typeof document === 'undefined') return;
@@ -76,6 +78,7 @@ function AddressAutocompleteInput({ value, onChange, onRemove, canRemove, mapsEn
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { profile, user, isLoading } = useProfile();
   const firestore = useFirestore();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -162,6 +165,18 @@ export default function ProfilePage() {
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
+        {/* BOTÓN DE RETORNO QUIRÚRGICO */}
+        <Button 
+          variant="ghost" 
+          onClick={() => router.back()} 
+          className="mb-6 gap-2 text-slate-400 font-bold hover:text-primary p-0 h-auto hover:bg-transparent transition-colors group"
+        >
+          <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+            <ArrowLeft className="w-4 h-4" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest">Volver</span>
+        </Button>
+
         <div className="flex items-center gap-4 mb-10">
           <div className="w-16 h-16 bg-primary rounded-[24px] flex items-center justify-center text-white shadow-2xl shadow-primary/30"> <UserIcon className="w-8 h-8" /> </div>
           <div> <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Mi Perfil</h1> <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2 ml-1">Personaliza tu experiencia</p> </div>
