@@ -6,6 +6,10 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
     match /users/{userId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && request.auth.uid == userId;
@@ -13,7 +17,7 @@ service cloud.firestore {
 
     match /mainCategories/{categoryId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /stores/{storeId} {
@@ -36,10 +40,8 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
-    // ARQUITECTURA DE ÓRDENES: Seguridad Sincronizada
     match /orders/{orderId} {
       function isParticipant() {
-        // Validación robusta de participantes
         return request.auth.uid in resource.data.get('participants', []);
       }
 
@@ -52,7 +54,6 @@ service cloud.firestore {
       );
 
       allow list: if isSignedIn() && (
-        // Permitimos listar si eres parte del array de participantes
         request.auth.uid in resource.data.get('participants', []) ||
         resource.data.get('isLogisticsPublic', false) == true ||
         resource.data.get('deliveryDriverId', '') == request.auth.uid ||
@@ -73,14 +74,25 @@ service cloud.firestore {
       );
 
       match /messages/{messageId} {
-        // Regla atómica para subcolecciones: Depende de la validación del documento padre
         allow read, write: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/orders/$(orderId)).data.get('participants', []);
       }
     }
 
+    match /incidents/{incidentId} {
+      // Regla para el Agente de Soporte: Permitir registro de incidentes y lectura para auditoría
+      allow create: if isSignedIn();
+      allow read: if isSignedIn();
+      allow update, delete: if false; // Los registros de incidentes son inmutables
+    }
+
     match /appConfig/{configId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /coupons/{couponId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
   }
 }

@@ -17,6 +17,7 @@
         },
         "favoriteStores": { "type": "array", "items": { "type": "string" } },
         "favoriteProducts": { "type": "array", "items": { "type": "string" } },
+        "balance": { "type": "number", "description": "Saldo actual del repartidor (puede ser negativo por deudas)." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "email", "role"]
@@ -49,18 +50,12 @@
           } 
         },
         "productName": { "type": "string" },
-        "quantity": { "type": "number" },
-        "subtotal": { "type": "number" },
-        "discountAmount": { "type": "number" },
         "totalPrice": { "type": "number" },
         "paymentMethod": { "type": "string", "enum": ["cash", "digital"] },
         "status": { 
           "type": "string", 
           "enum": ["pending", "preparing", "ready_for_pickup", "at_store", "delivered_to_driver", "shipped", "delivered", "cancelled"] 
         },
-        "rating": { "type": "number", "minimum": 1, "maximum": 5 },
-        "review": { "type": "string" },
-        "ratedAt": { "type": "string", "format": "date-time" },
         "deliveryDriverId": { "type": "string" },
         "deliveryDriverName": { "type": "string" },
         "deliveryCode": { "type": "string" },
@@ -70,35 +65,22 @@
       },
       "required": ["id", "customerId", "storeId", "status", "participants"]
     },
-    "Coupon": {
-      "title": "Coupon",
+    "Incident": {
+      "title": "Incident",
       "type": "object",
-      "description": "Cupones de descuento para el marketplace.",
+      "description": "Registros de incidentes operativos para el Agente de Soporte.",
       "properties": {
         "id": { "type": "string" },
-        "code": { "type": "string" },
-        "discountType": { "type": "string", "enum": ["percentage", "fixed"] },
-        "value": { "type": "number" },
-        "minOrderValue": { "type": "number" },
-        "active": { "type": "boolean" },
-        "expiresAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["code", "discountType", "value", "active"]
-    },
-    "Message": {
-      "title": "Message",
-      "type": "object",
-      "description": "Mensaje individual dentro del chat de un pedido.",
-      "properties": {
-        "id": { "type": "string" },
-        "senderId": { "type": "string" },
-        "senderName": { "type": "string" },
-        "text": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "type": { "type": "string", "enum": ["text", "image"] },
+        "orderId": { "type": "string" },
+        "driverId": { "type": "string" },
+        "reason": { "type": "string" },
+        "hasProducts": { "type": "boolean" },
+        "orderValue": { "type": "number" },
+        "type": { "type": "string" },
+        "agentOwner": { "type": "string", "enum": ["soporte"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["senderId", "senderName", "type", "createdAt"]
+      "required": ["orderId", "driverId", "reason", "type", "agentOwner"]
     }
   },
   "auth": {
@@ -123,19 +105,11 @@
         }
       },
       {
-        "path": "/coupons/{couponId}",
+        "path": "/incidents/{incidentId}",
         "definition": {
-          "entityName": "Coupon",
-          "schema": { "$ref": "#/backend/entities/Coupon" },
-          "description": "Cupones globales."
-        }
-      },
-      {
-        "path": "/orders/{orderId}/messages/{messageId}",
-        "definition": {
-          "entityName": "Message",
-          "schema": { "$ref": "#/backend/entities/Message" },
-          "description": "Chat interno del pedido."
+          "entityName": "Incident",
+          "schema": { "$ref": "#/backend/entities/Incident" },
+          "description": "Logs de incidentes operativos."
         }
       }
     ]
