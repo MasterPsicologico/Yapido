@@ -114,6 +114,13 @@ export default function DeliveryDashboardPage() {
   const { data: rawMy } = useCollection(myDeliveriesQuery);
   const { data: history } = useCollection(historyQuery);
 
+  const stats = useMemo(() => {
+    return {
+      rating: profile?.avgRating || 5.0,
+      deliveredCount: history?.length || 0
+    };
+  }, [profile, history]);
+
   const availableOrders = useMemo(() => {
     if (!rawAvailable) return [];
     return [...rawAvailable].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
@@ -143,20 +150,12 @@ export default function DeliveryDashboardPage() {
     setActiveTab("my-deliveries");
   };
 
-  const handleManualArrival = (orderId: string) => {
-    if (!firestore) return;
-    updateDocumentNonBlocking(doc(firestore, 'orders', orderId), { status: 'at_store', updatedAt: serverTimestamp() });
-    toast({ title: "LLEGADA CONFIRMADA" });
-  };
-
   const handleReleaseOrderAction = async () => {
     if (!activeMission || !user || !firestore || !selectedReason) return;
 
-    // 1. ACTUALIZACIÓN OPTIMISTA E INSTANTÁNEA (PERSISTENCIA PRIMERO)
     const orderRef = doc(firestore, 'orders', activeMission.id);
     const incidentRef = collection(firestore, 'incidents');
     
-    // Guardamos el log de inmediato para el administrador
     addDocumentNonBlocking(incidentRef, {
       orderId: activeMission.id,
       driverId: user.uid,
@@ -171,7 +170,6 @@ export default function DeliveryDashboardPage() {
       agentOwner: 'soporte'
     });
 
-    // Liberamos el pedido físicamente en Firestore
     updateDocumentNonBlocking(orderRef, {
       status: 'ready_for_pickup',
       deliveryDriverId: null,
@@ -181,7 +179,6 @@ export default function DeliveryDashboardPage() {
       participants: arrayRemove(user.uid)
     });
 
-    // 2. ACTIVAMOS LA IA EN PARALELO
     setIsReleaseDialogOpen(false);
     setIsReleasing(true);
     setReleaseLogs(["Ejecutando protocolo de liberación ultra-rápido..."]);
@@ -204,7 +201,7 @@ export default function DeliveryDashboardPage() {
         updateDocumentNonBlocking(userRef, { balance: (profile?.balance || 0) - result.debtApplied, updatedAt: serverTimestamp() });
       }
     } catch (e) {
-      console.warn("Fallo IA en background, pero el pedido ya fue liberado físicamente.");
+      console.warn("Fallo IA en background.");
     }
   };
 
@@ -218,38 +215,6 @@ export default function DeliveryDashboardPage() {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`, '_blank');
   };
 
-  const startCamera = async () => {
-    try {
-      const ms = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-      setStream(ms);
-      setShowCamera(true);
-    } catch (e) { toast({ title: "Cámara no disponible", variant: "destructive" }); }
-  };
-
-  const stopCamera = () => {
-    if (stream) stream.getTracks().forEach(t => t.stop());
-    setStream(null);
-    setShowCamera(false);
-  };
-
-  const capturePhoto = async () => {
-    if (videoRef.current && user && firestore) {
-      const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        setIsCapturing(true);
-        ctx.drawImage(videoRef.current, 0, 0);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { photoURL: dataUrl, updatedAt: serverTimestamp() });
-        toast({ title: "¡Foto Actualizada!" });
-        setIsCapturing(false);
-        stopCamera();
-      }
-    }
-  };
-
   if (loadingProfile) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
   if (!isConfirmedRepartidor) return <div className="flex flex-col min-h-screen items-center justify-center p-8 text-center gap-6"><Truck className="w-16 h-16 text-slate-200" /><h2 className="text-3xl font-black uppercase italic">Acceso Restringido</h2><Button onClick={() => router.push('/delivery/register')} className="rounded-full bg-secondary h-14 px-10">Unirme al Equipo</Button></div>;
 
@@ -257,13 +222,13 @@ export default function DeliveryDashboardPage() {
   const hasProducts = activeMission?.status === 'delivered_to_driver';
 
   return (
-    <div className="flex flex-col h-screen bg-[#f8fafc] overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-[#f8fafc] overflow-hidden">
       <Navbar />
       
       <AgentProgressOverlay isOpen={isReleasing} logs={releaseLogs} onComplete={handleFinishRelease} />
 
       {activeMission ? (
-        <div className="flex flex-col h-[calc(100dvh-64px)] animate-in slide-in-from-bottom duration-500 overflow-hidden">
+        <div className="flex flex-col h-[calc(100dvh-64px)] animate-in slide-in-from-bottom duration-500 overflow-hidden relative z-[40]">
           {/* HEADER DE MISIÓN */}
           <div className="h-16 bg-slate-900 flex items-center justify-between px-4 text-white shrink-0 shadow-xl z-20">
             <Button variant="ghost" size="icon" onClick={() => setIsReleaseDialogOpen(true)} className="h-10 w-10 text-white/40 hover:text-red-400 rounded-full"><X className="w-5 h-5" /></Button>
@@ -277,8 +242,8 @@ export default function DeliveryDashboardPage() {
           </div>
 
           {/* CONTENIDO SCROLLABLE */}
-          <main className="flex-1 overflow-y-auto no-scrollbar pb-32">
-            <div className="px-6 py-10 space-y-8 max-w-2xl mx-auto">
+          <main className="flex-1 overflow-y-auto no-scrollbar">
+            <div className="px-6 py-10 pb-20 space-y-8 max-w-2xl mx-auto">
               <section className="text-center space-y-4">
                 <p className="text-[9px] font-black text-primary uppercase tracking-[0.4em]">MISIÓN ACTIVA #{activeMission.id.slice(-6).toUpperCase()}</p>
                 <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900">{activeMission.productName}</h1>
