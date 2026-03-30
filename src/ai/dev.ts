@@ -48,3 +48,6 @@ import '@/ai/agents/marketing/index.ts';
 import '@/ai/agents/marketing/tools/create-coupon.ts';
 import '@/ai/agents/marketing/tools/segment-customers.ts';
 import '@/ai/agents/marketing/tools/calculate-roi.ts';
+import '@/ai/agents/growth/index.ts';
+import '@/ai/agents/growth/tools/analyze-expansion.ts';
+import '@/ai/agents/growth/tools/identify-partners.ts';
