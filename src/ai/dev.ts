@@ -44,3 +44,7 @@ import '@/ai/agents/analytics/tools/analyze-performance.ts';
 import '@/ai/agents/optimizacion/index.ts';
 import '@/ai/agents/optimizacion/tools/optimize-batching.ts';
 import '@/ai/agents/optimizacion/tools/optimize-driver-position.ts';
+import '@/ai/agents/marketing/index.ts';
+import '@/ai/agents/marketing/tools/create-coupon.ts';
+import '@/ai/agents/marketing/tools/segment-customers.ts';
+import '@/ai/agents/marketing/tools/calculate-roi.ts';

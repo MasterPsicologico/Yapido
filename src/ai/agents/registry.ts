@@ -22,3 +22,4 @@ export * from './legal';
 export * from './seguridad';
 export * from './supervisor';
 export * from './analytics';
+export * from './marketing';
