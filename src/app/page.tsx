@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -14,8 +15,10 @@ import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, doc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
-import { ShoppingBag, SearchX, Search } from 'lucide-react';
+import { ShoppingBag, SearchX, Search, Cpu, ArrowRight, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import Link from 'next/link';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -214,7 +217,38 @@ function AuthenticatedHome() {
         />
       </div>
 
-      {/* NUEVO BUSCADOR GLOBAL SUTIL */}
+      {/* ACCESO EXCLUSIVO ADMIN: CIUDADELA DE AGENTES */}
+      {isAdmin && (
+        <section className="px-4 sm:px-8">
+          <Link href="/admin/agents">
+            <Card className="border-none rounded-[40px] bg-slate-900 text-white overflow-hidden shadow-2xl group hover:scale-[1.01] transition-all duration-500 cursor-pointer relative">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-primary/20 transition-colors" />
+              <CardContent className="p-10 flex flex-col sm:flex-row items-center justify-between gap-8">
+                <div className="flex items-center gap-6">
+                  <div className="w-20 h-20 bg-white/10 rounded-[32px] flex items-center justify-center backdrop-blur-xl border border-white/5 relative">
+                    <Cpu className="w-10 h-10 text-primary animate-pulse" />
+                    <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-3xl sm:text-4xl font-black italic uppercase tracking-tighter leading-none">Ciudadela de Agentes</h3>
+                    <p className="text-primary/60 text-[10px] font-black uppercase tracking-[0.4em] ml-1">Administración de IA Centralizada</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="hidden md:flex flex-col items-end">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Estado Global</span>
+                    <span className="text-sm font-black text-green-400 italic">ACTIVO • 16 ESPECIALISTAS</span>
+                  </div>
+                  <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                    <ArrowRight className="w-6 h-6" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </section>
+      )}
+
       <section className="px-4 sm:px-8 max-w-2xl">
         <div className="relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-primary transition-colors" />

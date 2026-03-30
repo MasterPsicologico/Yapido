@@ -41,7 +41,7 @@ import {
   AlertTriangle,
   RotateCcw
 } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useUser as useFirebaseUser, updateDocumentNonBlocking, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -188,6 +188,23 @@ export default function DeliveryDashboardPage() {
     setReleaseLogs([]);
 
     try {
+      // 1. PERSISTENCIA DE INCIDENTE PARA EL AGENTE DE SOPORTE (ADMIN CENTER)
+      const incidentRef = collection(firestore, 'incidents');
+      addDocumentNonBlocking(incidentRef, {
+        orderId: activeMission.id,
+        driverId: user.uid,
+        driverName: profile?.displayName || 'Repartidor',
+        reason: selectedReason,
+        hasProducts: activeMission.status === 'delivered_to_driver',
+        orderValue: activeMission.totalPrice || 0,
+        storeId: activeMission.storeId,
+        storeName: activeMission.storeName,
+        createdAt: serverTimestamp(),
+        type: 'ORDER_RELEASE',
+        agentOwner: 'soporte'
+      });
+
+      // 2. INVOCACIÓN A LA IA
       const result = await releaseOrder({
         orderId: activeMission.id,
         driverId: user.uid,
@@ -201,7 +218,6 @@ export default function DeliveryDashboardPage() {
       setReleaseLogs(result.agentLogs);
 
       if (result.success) {
-        // ACTUALIZACIÓN FÍSICA EN FIRESTORE
         const orderRef = doc(firestore, 'orders', activeMission.id);
         const updateData: any = {
           status: 'ready_for_pickup',
@@ -214,7 +230,6 @@ export default function DeliveryDashboardPage() {
 
         updateDocumentNonBlocking(orderRef, updateData);
 
-        // Si hay deuda, actualizar el balance del repartidor
         if (result.debtApplied) {
           const userRef = doc(firestore, 'users', user.uid);
           const currentBalance = profile?.balance || 0;
@@ -224,14 +239,11 @@ export default function DeliveryDashboardPage() {
           });
         }
 
+        // REDIRECCIÓN QUIRÚRGICA: Evita quedar atrapado en la pantalla
         setTimeout(() => {
           setIsReleaseDialogOpen(false);
           setIsReleasing(false);
-          toast({ 
-            title: "Pedido Liberado", 
-            description: result.message,
-            variant: result.debtApplied ? "destructive" : "default"
-          });
+          router.push('/delivery/release-success');
         }, 2000);
       }
     } catch (e) {
@@ -494,7 +506,7 @@ export default function DeliveryDashboardPage() {
           </main>
 
           <Dialog open={isReleaseDialogOpen} onOpenChange={setIsReleaseDialogOpen}>
-            <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] overflow-hidden">
+            <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] overflow-hidden z-[300]">
               <DialogHeader className="items-center text-center">
                 <div className={cn("w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-in zoom-in", hasProducts ? "bg-red-100 text-red-600" : "bg-orange-100 text-orange-600")}>
                   <RotateCcw className="w-8 h-8" />
