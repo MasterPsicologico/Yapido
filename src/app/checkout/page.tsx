@@ -19,7 +19,8 @@ import {
   Wallet,
   Globe,
   X,
-  UserCircle
+  UserCircle,
+  Sparkles
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
@@ -31,6 +32,8 @@ import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { orchestrateOrder } from '@/ai/flows/order-orchestrator';
+import { AgentProgressOverlay } from '@/components/agents/AgentProgressOverlay';
 
 export default function CheckoutPage() {
   const { items, totalPrice: cartSubtotal, clearCart } = useCart();
@@ -47,6 +50,11 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+
+  // ESTADO DE LA CIUDADELA
+  const [isAgentWorking, setIsAgentWorking] = useState(false);
+  const [agentLogs, setAgentLogs] = useState<string[]>([]);
+  const [agentError, setAgentError] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile?.address) setTempAddress(profile.address);
@@ -113,21 +121,37 @@ export default function CheckoutPage() {
       return;
     }
 
-    setIsProcessing(true);
+    // ACTIVACIÓN DE LA CIUDADELA
+    setIsAgentWorking(true);
+    setAgentLogs([]);
+    setAgentError(null);
+
     try {
+      // 1. INVOCAR AL ORQUESTADOR DE AGENTES
+      const orchestratorResult = await orchestrateOrder({
+        userId: user.uid,
+        cartItems: items,
+        address: tempAddress,
+        paymentMethod: paymentMethod,
+        storeId: items[0].storeId,
+        totalPrice: finalTotal,
+        customerName: profile?.displayName || user.displayName || 'Cliente',
+        customerPhone: profile?.phoneNumber
+      });
+
+      setAgentLogs(orchestratorResult.agentLogs);
+
+      if (!orchestratorResult.success) {
+        setAgentError(orchestratorResult.error || "Fallo en la sincronización de agentes.");
+        setTimeout(() => setIsAgentWorking(false), 3000);
+        return;
+      }
+
+      // 2. OBTENER DATOS DE TIENDA Y GUARDAR ORDEN (PERSISTENCIA)
       const storeRef = doc(firestore, 'stores', items[0].storeId);
       const storeSnap = await getDoc(storeRef);
       const storeData = storeSnap.data();
 
-      let storePhone = storeData?.phoneNumber || '';
-      if (!storePhone && storeData?.ownerId) {
-        const ownerSnap = await getDoc(doc(firestore, 'users', storeData.ownerId));
-        if (ownerSnap.exists()) {
-          storePhone = ownerSnap.data().phoneNumber || '';
-        }
-      }
-
-      // SANEAMIENTO QUIRÚRGICO DE PARTICIPANTES
       const ownerId = storeData?.ownerId || '';
       const participants = [user.uid, ownerId].filter(id => id && typeof id === 'string');
 
@@ -140,7 +164,6 @@ export default function CheckoutPage() {
         storeName: items[0].storeName,
         storeOwnerId: ownerId,
         storeAddress: storeData?.address || 'Tienda',
-        storePhone: storePhone,
         items: items.map(i => ({
           id: i.id,
           name: i.name,
@@ -157,7 +180,9 @@ export default function CheckoutPage() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         isLogisticsPublic: false,
-        participants: participants
+        participants: participants,
+        // METADATOS INYECTADOS POR IA
+        agentMetadata: (orchestratorResult as any).data
       };
 
       const docRef = await addDoc(collection(firestore, 'orders'), orderData);
@@ -167,13 +192,17 @@ export default function CheckoutPage() {
         updateDocumentNonBlocking(userRef, { address: tempAddress, updatedAt: serverTimestamp() });
       }
 
-      setOrderId(docRef.id);
-      clearCart();
-      toast({ title: "¡Pedido Confirmado!", description: "La tienda ha recibido tu solicitud." });
+      // 3. FINALIZACIÓN EXITOSA
+      setTimeout(() => {
+        setOrderId(docRef.id);
+        clearCart();
+        setIsAgentWorking(false);
+        toast({ title: "¡Pedido Confirmado!", description: "La IA de Vitriniando ha procesado tu solicitud." });
+      }, 1500);
+
     } catch (e: any) {
-      toast({ title: "Error en Checkout", description: e.message, variant: "destructive" });
-    } finally {
-      setIsProcessing(false);
+      setAgentError(e.message);
+      setTimeout(() => setIsAgentWorking(false), 3000);
     }
   };
 
@@ -187,7 +216,7 @@ export default function CheckoutPage() {
           </div>
           <h1 className="text-4xl font-black italic tracking-tighter uppercase mb-4 text-slate-900">¡Misión Cumplida!</h1>
           <p className="text-slate-500 font-medium max-w-sm mb-10 leading-relaxed">
-            Tu pedido ha sido enviado con éxito. Puedes seguir el estado en tiempo real desde tu panel de órdenes.
+            Tu pedido ha sido procesado por la Ciudadela de Agentes. Puedes seguir el estado en tiempo real.
           </p>
           <div className="flex flex-col w-full max-w-xs gap-4">
             <Button asChild className="h-16 rounded-full bg-slate-900 font-black text-lg uppercase tracking-widest">
@@ -205,6 +234,15 @@ export default function CheckoutPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
+      
+      {/* OVERLAY DE INTELIGENCIA ARTIFICIAL */}
+      <AgentProgressOverlay 
+        isOpen={isAgentWorking} 
+        logs={agentLogs} 
+        isError={!!agentError} 
+        errorMsg={agentError || ''} 
+      />
+
       <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex flex-col gap-8">
           <div className="flex items-center gap-4">
@@ -391,10 +429,10 @@ export default function CheckoutPage() {
 
                   <Button 
                     onClick={handleCompleteOrder}
-                    disabled={isProcessing || !hasPhone}
+                    disabled={isProcessing || !hasPhone || isAgentWorking}
                     className="w-full h-16 rounded-[24px] bg-primary text-white font-black text-lg uppercase tracking-widest gap-3 shadow-[0_20px_50px_rgba(59,130,246,0.3)] hover:scale-[1.02] transition-all disabled:grayscale disabled:opacity-50"
                   >
-                    {isProcessing ? <Loader2 className="animate-spin" /> : <>PEDIR AHORA <ArrowRight className="w-5 h-5" /></>}
+                    {isAgentWorking ? <Loader2 className="animate-spin" /> : <>PEDIR AHORA <ArrowRight className="w-5 h-5" /></>}
                   </Button>
                   
                   {!hasPhone && (
@@ -404,8 +442,8 @@ export default function CheckoutPage() {
                   )}
                   
                   <div className="flex items-center justify-center gap-2 text-white/30">
-                    <AlertCircle className="w-3 h-3" />
-                    <span className="text-[8px] font-black uppercase tracking-[0.2em]">Compra Protegida por Vitriniando</span>
+                    <Sparkles className="w-3 h-3 text-primary" />
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em]">IA de Vitriniando Activa</span>
                   </div>
                 </CardContent>
               </Card>
