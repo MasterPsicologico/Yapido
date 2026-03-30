@@ -38,3 +38,6 @@ import '@/ai/agents/soporte/tools/analyze-issue.ts';
 import '@/ai/agents/supervisor/index.ts';
 import '@/ai/agents/supervisor/tools/calculate-system-state.ts';
 import '@/ai/agents/supervisor/tools/monitor-system.ts';
+import '@/ai/agents/analytics/index.ts';
+import '@/ai/agents/analytics/tools/calculate-metrics.ts';
+import '@/ai/agents/analytics/tools/analyze-performance.ts';
