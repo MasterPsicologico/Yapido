@@ -34,7 +34,7 @@ export function AgentProgressOverlay({ isOpen, logs, isError, errorMsg, onComple
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] bg-slate-900/95 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-500">
+    <div className="fixed inset-0 z-[500] bg-slate-900/95 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-500">
       <div className="max-w-md w-full space-y-10 text-center">
         <div className="relative mx-auto w-32 h-32">
           <div className="absolute inset-0 rounded-[40px] bg-primary/20 animate-ping duration-[3000ms]" />

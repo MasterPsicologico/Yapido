@@ -41,7 +41,7 @@ import {
   AlertTriangle,
   RotateCcw
 } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useUser as useFirebaseUser, updateDocumentNonBlocking, useDoc } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -327,7 +327,7 @@ export default function DeliveryDashboardPage() {
       <AgentProgressOverlay isOpen={isReleasing} logs={releaseLogs} />
 
       {activeMission ? (
-        <div className="fixed inset-0 z-[100] bg-[#f8fafc] flex flex-col animate-in slide-in-from-bottom duration-500 overflow-hidden">
+        <div className="fixed inset-0 z-[40] bg-[#f8fafc] flex flex-col animate-in slide-in-from-bottom duration-500 overflow-hidden">
           <div className="h-16 bg-slate-900 flex items-center justify-between px-4 text-white shrink-0 shadow-2xl relative">
             <div className="flex items-center gap-2">
               <Button 
@@ -473,7 +473,6 @@ export default function DeliveryDashboardPage() {
               </div>
             </section>
 
-            {/* SECCIÓN DE SOPORTE Y LIBERACIÓN (NUEVA Y VISIBLE) */}
             <section className="px-6 py-12 border-t border-slate-100 bg-slate-50/50">
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
