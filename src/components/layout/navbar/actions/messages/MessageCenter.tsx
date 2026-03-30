@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { MessageSquareText } from 'lucide-react';
+import { MessageSquareText, Clock } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,13 +68,24 @@ export function MessageCenter() {
 
   const activeChats = useMemo(() => {
     if (!rawOrders) return [];
-    return rawOrders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled')
-      .map(o => ({ id: o.id, name: o.productName || 'Chat de Pedido' }));
+    
+    // LOGICA DE SORPRESA: Ordenamiento por tiempo de llegada (updatedAt o createdAt)
+    // El primer chat será siempre el más reciente
+    return rawOrders
+      .filter(o => o.status !== 'delivered' && o.status !== 'cancelled')
+      .sort((a, b) => {
+        const timeA = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
+        const timeB = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
+        return timeB - timeA;
+      })
+      .map(o => ({ 
+        id: o.id, 
+        name: o.productName || 'Chat de Pedido',
+        timestamp: o.updatedAt || o.createdAt 
+      }));
   }, [rawOrders]);
 
   const unreadCount = useMemo(() => {
-    // El contador de mensajes debe priorizar lo que el listener detecta como nuevo
-    // pero también filtrar por lo que el usuario ya ha abierto en esta sesión
     const dynamicUnread = unreadSessionOrders.length;
     const historyUnseen = activeChats.filter(c => !seenIds.includes(c.id)).length;
     return Math.max(dynamicUnread, historyUnseen);
@@ -103,6 +114,7 @@ export function MessageCenter() {
               key={chat.id} 
               chatId={chat.id} 
               name={chat.name} 
+              timestamp={chat.timestamp}
               isUnread={unreadSessionOrders.some(([id]) => id === chat.id) || !seenIds.includes(chat.id)} 
               onClick={() => handleItemClick(chat.id)}
             />
