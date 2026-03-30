@@ -7,7 +7,6 @@ import { ai } from '@/ai/genkit';
 import { growthAgentPrompt } from './prompts/main';
 import { analyzeExpansionTool } from './tools/analyze-expansion';
 import { identifyPartnersTool } from './tools/identify-partners';
-import { GrowthAgentInputSchema, GrowthAgentOutputSchema } from './schema';
 
 export async function growthAgent(input: any) {
   const result = await ai.generate({
@@ -23,5 +22,3 @@ export async function growthAgent(input: any) {
 
   return result.output as any;
 }
-
-export * from './schema';

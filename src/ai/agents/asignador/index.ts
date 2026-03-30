@@ -22,5 +22,3 @@ export async function asignadorAgent(input: any) {
 
   return result.output as any;
 }
-
-export * from './schema';

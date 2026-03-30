@@ -23,5 +23,3 @@ export async function analyticsAgent(input: any) {
 
   return result.output as any;
 }
-
-export * from './schema';

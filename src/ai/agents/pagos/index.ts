@@ -7,7 +7,6 @@ import { ai } from '@/ai/genkit';
 import { pagosAgentPrompt } from './prompts/main';
 import { splitPaymentTool } from './tools/split-payment';
 import { verifyPaymentTool } from './tools/verify-payment';
-import { PagosAgentInputSchema, PagosAgentOutputSchema } from './schema';
 
 export async function pagosAgent(input: any) {
   const result = await ai.generate({
@@ -23,5 +22,3 @@ export async function pagosAgent(input: any) {
 
   return result.output as any;
 }
-
-export * from './schema';

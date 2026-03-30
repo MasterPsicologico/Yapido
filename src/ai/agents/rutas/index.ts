@@ -24,5 +24,3 @@ export async function rutasAgent(input: any) {
 
   return result.output as any;
 }
-
-export * from './schema';

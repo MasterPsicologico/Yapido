@@ -8,7 +8,6 @@ import { marketingAgentPrompt } from './prompts/main';
 import { createCouponTool } from './tools/create-coupon';
 import { segmentCustomersTool } from './tools/segment-customers';
 import { calculateROITool } from './tools/calculate-roi';
-import { MarketingAgentInputSchema, MarketingAgentOutputSchema } from './schema';
 
 export async function marketingAgent(input: any) {
   const result = await ai.generate({
@@ -25,5 +24,3 @@ export async function marketingAgent(input: any) {
 
   return result.output as any;
 }
-
-export * from './schema';

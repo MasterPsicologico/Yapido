@@ -7,7 +7,6 @@ import { ai } from '@/ai/genkit';
 import { optimizationAgentPrompt } from './prompts/main';
 import { optimizeBatchingTool } from './tools/optimize-batching';
 import { optimizeDriverPositionTool } from './tools/optimize-driver-position';
-import { OptimizationAgentInputSchema, OptimizationAgentOutputSchema } from './schema';
 
 export async function optimizacionAgent(input: any) {
   const result = await ai.generate({
@@ -23,5 +22,3 @@ export async function optimizacionAgent(input: any) {
 
   return result.output as any;
 }
-
-export * from './schema';

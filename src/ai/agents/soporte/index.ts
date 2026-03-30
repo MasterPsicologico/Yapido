@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Agente de Soporte - El Resolutor de Conflictos.
@@ -6,7 +7,6 @@ import { ai } from '@/ai/genkit';
 import { supportAgentPrompt } from './prompts/main';
 import { createTicketTool } from './tools/create-ticket';
 import { analyzeIssueTool } from './tools/analyze-issue';
-import { SupportAgentInputSchema, SupportAgentOutputSchema } from './schema';
 
 export async function soporteAgent(input: any) {
   const result = await ai.generate({
@@ -22,5 +22,3 @@ export async function soporteAgent(input: any) {
 
   return result.output as any;
 }
-
-export * from './schema';

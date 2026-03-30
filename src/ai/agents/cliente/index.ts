@@ -4,7 +4,6 @@
  * @fileOverview Agente Cliente - Orquestador Maestro de Pedidos.
  */
 import { ai } from '@/ai/genkit';
-import { ClienteAgentInputSchema, ClienteAgentOutputSchema } from './schema';
 import { clienteAgentPrompt } from './prompts/main';
 import { validateAddressTool } from './tools/validate-address';
 import { calculateTotalTool } from './tools/calculate-total';
@@ -27,5 +26,3 @@ export async function clienteAgent(input: any) {
 
   return result.output as any;
 }
-
-export * from './schema';

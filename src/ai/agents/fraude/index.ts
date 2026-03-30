@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Agente Antifraude - El Escudo de Seguridad de la Plataforma.
@@ -6,7 +7,6 @@ import { ai } from '@/ai/genkit';
 import { fraudAgentPrompt } from './prompts/main';
 import { calculateRiskTool } from './tools/calculate-risk';
 import { gpsCheckerTool } from './tools/gps-checker';
-import { FraudAgentInputSchema, FraudAgentOutputSchema } from './schema';
 
 export async function fraudeAgent(input: any) {
   const result = await ai.generate({
@@ -22,5 +22,3 @@ export async function fraudeAgent(input: any) {
 
   return result.output as any;
 }
-
-export * from './schema';

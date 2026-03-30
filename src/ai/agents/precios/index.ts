@@ -6,7 +6,6 @@
 import { ai } from '@/ai/genkit';
 import { pricingAgentPrompt } from './prompts/main';
 import { calculateMultiplierTool } from './tools/calculate-multiplier';
-import { PricingAgentInputSchema, PricingAgentOutputSchema } from './schema';
 
 export async function preciosAgent(input: any) {
   const result = await ai.generate({
@@ -21,5 +20,3 @@ export async function preciosAgent(input: any) {
 
   return result.output as any;
 }
-
-export * from './schema';

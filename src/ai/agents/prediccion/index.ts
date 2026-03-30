@@ -7,7 +7,6 @@ import { ai } from '@/ai/genkit';
 import { predictionAgentPrompt } from './prompts/main';
 import { predictDemandTool } from './tools/predict-demand';
 import { analyzeHistoryTool } from './tools/analyze-history';
-import { PredictionInputSchema, PredictionOutputSchema } from './schema';
 
 export async function prediccionAgent(input: any) {
   const result = await ai.generate({
@@ -23,5 +22,3 @@ export async function prediccionAgent(input: any) {
 
   return result.output as any;
 }
-
-export * from './schema';

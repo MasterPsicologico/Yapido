@@ -7,7 +7,6 @@ import { ai } from '@/ai/genkit';
 import { supervisorAgentPrompt } from './prompts/main';
 import { calculateSystemStateTool } from './tools/calculate-system-state';
 import { monitorSystemTool } from './tools/monitor-system';
-import { SupervisorAgentInputSchema, SupervisorAgentOutputSchema } from './schema';
 
 export async function supervisorAgent(input: any) {
   const result = await ai.generate({
@@ -23,5 +22,3 @@ export async function supervisorAgent(input: any) {
 
   return result.output as any;
 }
-
-export * from './schema';
