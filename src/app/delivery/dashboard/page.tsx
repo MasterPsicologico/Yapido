@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -68,11 +69,6 @@ export default function DeliveryDashboardPage() {
   const [isOnline, setIsOnline] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   
-  const [showCamera, setShowCamera] = useState(false);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-
   const [isMissionChatOpen, setIsMissionChatOpen] = useState(false);
   
   // ESTADOS DE LIBERACIÓN
@@ -156,6 +152,7 @@ export default function DeliveryDashboardPage() {
     const orderRef = doc(firestore, 'orders', activeMission.id);
     const incidentRef = collection(firestore, 'incidents');
     
+    // 1. REGISTRO INMEDIATO EN FIRESTORE (OPTIMISTA)
     addDocumentNonBlocking(incidentRef, {
       orderId: activeMission.id,
       driverId: user.uid,
@@ -179,11 +176,13 @@ export default function DeliveryDashboardPage() {
       participants: arrayRemove(user.uid)
     });
 
+    // 2. ACTIVAR OVERLAY DE IA
     setIsReleaseDialogOpen(false);
     setIsReleasing(true);
-    setReleaseLogs(["Ejecutando protocolo de liberación ultra-rápido..."]);
+    setReleaseLogs(["Protocolo de liberación activado...", "Sincronizando Ciudadela de Agentes..."]);
 
     try {
+      // 3. LLAMAR AL ORQUESTADOR EN BACKGROUND (PARA VELOCIDAD)
       const result = await releaseOrder({
         orderId: activeMission.id,
         driverId: user.uid,
@@ -202,12 +201,14 @@ export default function DeliveryDashboardPage() {
       }
     } catch (e) {
       console.warn("Fallo IA en background.");
+      setReleaseLogs(prev => [...prev, "Finalizando procesos internos..."]);
     }
   };
 
   const handleFinishRelease = () => {
     setIsReleasing(false);
-    router.replace('/delivery/dashboard');
+    // REDIRECCIÓN MAESTRA A LA PÁGINA DE ÉXITO
+    router.replace('/delivery/release-success');
   };
 
   const handleOpenMaps = (address: string) => {
@@ -218,14 +219,18 @@ export default function DeliveryDashboardPage() {
   if (loadingProfile) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
   if (!isConfirmedRepartidor) return <div className="flex flex-col min-h-screen items-center justify-center p-8 text-center gap-6"><Truck className="w-16 h-16 text-slate-200" /><h2 className="text-3xl font-black uppercase italic">Acceso Restringido</h2><Button onClick={() => router.push('/delivery/register')} className="rounded-full bg-secondary h-14 px-10">Unirme al Equipo</Button></div>;
 
-  const LevelIcon = level.icon;
   const hasProducts = activeMission?.status === 'delivered_to_driver';
 
   return (
     <div className="flex flex-col h-[100dvh] bg-[#f8fafc] overflow-hidden">
       <Navbar />
       
-      <AgentProgressOverlay isOpen={isReleasing} logs={releaseLogs} onComplete={handleFinishRelease} />
+      {/* OVERLAY DE PROGRESO DE IA (LIBERACIÓN) */}
+      <AgentProgressOverlay 
+        isOpen={isReleasing} 
+        logs={releaseLogs} 
+        onComplete={handleFinishRelease} 
+      />
 
       {activeMission ? (
         <div className="flex flex-col h-[calc(100dvh-64px)] animate-in slide-in-from-bottom duration-500 overflow-hidden relative z-[40]">
@@ -292,10 +297,18 @@ export default function DeliveryDashboardPage() {
                 </div>
               </div>
 
+              {/* SECCIÓN DE SOPORTE OPERATIVO */}
               <section className="pt-10 border-t space-y-4">
-                <div className="flex items-center gap-3 text-orange-500"><AlertTriangle className="w-5 h-5" /><h3 className="text-sm font-black uppercase tracking-widest italic">¿Problemas Críticos?</h3></div>
-                <Button onClick={() => setIsReleaseDialogOpen(true)} variant="outline" className="w-full h-14 rounded-2xl border-red-100 text-red-500 font-black uppercase text-[10px] tracking-widest gap-2">
-                  <RotateCcw className="w-4 h-4" /> SOLICITAR LIBERACIÓN
+                <div className="flex items-center gap-3 text-orange-500">
+                  <AlertTriangle className="w-5 h-5" />
+                  <h3 className="text-sm font-black uppercase tracking-widest italic">¿Problemas Críticos?</h3>
+                </div>
+                <Button 
+                  onClick={() => setIsReleaseDialogOpen(true)} 
+                  variant="outline" 
+                  className="w-full h-14 rounded-2xl border-red-100 text-red-500 font-black uppercase text-[10px] tracking-widest gap-2 hover:bg-red-50"
+                >
+                  <RotateCcw className="w-4 h-4" /> LIBERAR PEDIDO AHORA
                 </Button>
               </section>
             </div>
@@ -309,8 +322,18 @@ export default function DeliveryDashboardPage() {
             </div>
           </div>
 
-          <Dialog open={isMissionChatOpen} onOpenChange={setIsMissionChatOpen}><DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[300]"><OrderChat orderId={activeMission.id} orderData={activeMission} onClose={() => setIsMissionChatOpen(false)} /></DialogContent></Dialog>
+          {/* DIÁLOGO DE CHAT DE MISIÓN (CON ACCESIBILIDAD) */}
+          <Dialog open={isMissionChatOpen} onOpenChange={setIsMissionChatOpen}>
+            <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[300]">
+              <DialogHeader className="sr-only">
+                <DialogTitle>Chat de Misión</DialogTitle>
+                <DialogDescription>Canal de comunicación con el cliente del pedido.</DialogDescription>
+              </DialogHeader>
+              <OrderChat orderId={activeMission.id} orderData={activeMission} onClose={() => setIsMissionChatOpen(false)} />
+            </DialogContent>
+          </Dialog>
           
+          {/* DIÁLOGO DE LIBERACIÓN */}
           <Dialog open={isReleaseDialogOpen} onOpenChange={setIsReleaseDialogOpen}>
             <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] z-[400]">
               <DialogHeader className="items-center text-center">
@@ -318,9 +341,48 @@ export default function DeliveryDashboardPage() {
                 <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter">Liberar Pedido</DialogTitle>
                 <DialogDescription className="text-slate-400 font-medium">Selecciona el motivo de deserción de ruta.</DialogDescription>
               </DialogHeader>
-              {hasProducts && <div className="bg-red-50 border-2 border-red-100 p-5 rounded-3xl space-y-2 animate-pulse"><div className="flex items-center gap-2 text-red-600 font-black text-[10px] uppercase"><AlertTriangle className="w-4 h-4" /> AVISO DE DEUDA</div><p className="text-[10px] font-bold text-red-700 uppercase">Se aplicará deuda inmediata por el valor total: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(activeMission.totalPrice || 0)}</p></div>}
-              <div className="py-6 space-y-2">{RELEASE_REASONS.map(r => <button key={r} onClick={() => setSelectedReason(r)} className={cn("w-full p-4 rounded-2xl text-left text-[10px] font-black uppercase tracking-widest border-2 transition-all", selectedReason === r ? "bg-slate-900 text-white border-slate-900 shadow-lg" : "bg-slate-50 text-slate-400 border-transparent hover:border-slate-200")}>{r}</button>)}</div>
-              <DialogFooter className="gap-2"><Button variant="ghost" onClick={() => setIsReleaseDialogOpen(false)} className="font-black uppercase text-[10px]">VOLVER</Button><Button onClick={handleReleaseOrderAction} disabled={!selectedReason} className={cn("flex-1 h-14 rounded-full font-black uppercase text-xs tracking-widest shadow-xl", hasProducts ? "bg-red-600" : "bg-slate-900 text-white")}>CONFIRMAR</Button></DialogFooter>
+              
+              {hasProducts && (
+                <div className="bg-red-50 border-2 border-red-100 p-5 rounded-3xl space-y-2 animate-pulse mb-4">
+                  <div className="flex items-center gap-2 text-red-600 font-black text-[10px] uppercase">
+                    <AlertTriangle className="w-4 h-4" /> AVISO DE DEUDA
+                  </div>
+                  <p className="text-[10px] font-bold text-red-700 uppercase">
+                    Se aplicará deuda inmediata por el valor total: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(activeMission.totalPrice || 0)}
+                  </p>
+                </div>
+              )}
+
+              <div className="py-6 space-y-2">
+                {RELEASE_REASONS.map(r => (
+                  <button 
+                    key={r} 
+                    onClick={() => setSelectedReason(r)} 
+                    className={cn(
+                      "w-full p-4 rounded-2xl text-left text-[10px] font-black uppercase tracking-widest border-2 transition-all",
+                      selectedReason === r 
+                        ? "bg-slate-900 text-white border-slate-900 shadow-lg" 
+                        : "bg-slate-50 text-slate-400 border-transparent hover:border-slate-200"
+                    )}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+
+              <DialogFooter className="gap-2">
+                <Button variant="ghost" onClick={() => setIsReleaseDialogOpen(false)} className="font-black uppercase text-[10px]">VOLVER</Button>
+                <Button 
+                  onClick={handleReleaseOrderAction} 
+                  disabled={!selectedReason} 
+                  className={cn(
+                    "flex-1 h-14 rounded-full font-black uppercase text-xs tracking-widest shadow-xl",
+                    hasProducts ? "bg-red-600 hover:bg-red-700" : "bg-slate-900 text-white"
+                  )}
+                >
+                  CONFIRMAR LIBERACIÓN
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
