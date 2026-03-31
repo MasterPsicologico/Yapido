@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
@@ -13,15 +12,14 @@ import {
   Camera, 
   ArrowRight,
   Waves,
-  WavesIcon,
   ShieldCheck,
   Zap,
   MapPin,
-  Calendar,
   CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -93,12 +91,15 @@ export function HomeActions({
       status: 'pending',
       details: fd.get('details'),
       createdAt: serverTimestamp(),
-      participants: [user.uid, 'ADMIN_WASHER_POOL'], // Sistema centralizado por ahora
-      isLogisticsPublic: true
+      participants: [user.uid, 'ADMIN_WASHER_POOL'],
+      isLogisticsPublic: true,
+      productName: 'Alquiler de Lavadora',
+      totalPrice: 0 // Se define en la negociación o panel
     };
 
     try {
-      await addDocumentNonBlocking(doc(firestore, 'orders'), requestData);
+      const ordersRef = collection(firestore, 'orders');
+      await addDocumentNonBlocking(ordersRef, requestData);
       toast({ title: "¡Solicitud Enviada!", description: "Un encargado de lavadoras te contactará pronto." });
       setOpenWasher(false);
     } catch (e) {
@@ -122,7 +123,6 @@ export function HomeActions({
               "shadow-[0_20px_60px_-10px_rgba(59,130,246,0.5)] active:scale-[0.99]"
             )}
           >
-            {/* Efectos Visuales Cyber */}
             <div className="absolute inset-0 opacity-20 bg-[url('https://picsum.photos/seed/tech/1920/1080')] bg-cover mix-blend-overlay" />
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-white/20 transition-all duration-700" />
             
@@ -150,14 +150,12 @@ export function HomeActions({
           </div>
         </DialogTrigger>
 
-        {/* DIÁLOGO INMERSIVO FULL SCREEN PARA SOLICITUD */}
         <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-white p-0 overflow-hidden flex flex-col z-[600] [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>Solicitar Lavadora</DialogTitle>
             <DialogDescription>Formulario instantáneo para alquiler.</DialogDescription>
           </DialogHeader>
 
-          {/* Header Cyber de Solicitud */}
           <div className="h-20 bg-slate-950 flex items-center justify-between px-6 shrink-0 border-b border-white/5">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
@@ -195,7 +193,7 @@ export function HomeActions({
                     <Input 
                       name="address"
                       defaultValue={profile?.address || ''}
-                      className="h-16 rounded-[24px] bg-white border border-slate-200 pl-14 font-black text-lg shadow-sm focus:ring-8 focus:ring-primary/5 transition-all"
+                      className="h-16 rounded-[24px] bg-white border border-slate-200 pl-14 font-black text-lg shadow-sm focus:ring-4 focus:ring-primary/5 transition-all"
                       placeholder="¿A qué dirección la llevamos?"
                       required
                     />
@@ -221,7 +219,7 @@ export function HomeActions({
                   <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Detalles adicionales</Label>
                   <Textarea 
                     name="details"
-                    className="min-h-[120px] rounded-[24px] border border-slate-200 font-bold p-5 focus:ring-8 focus:ring-primary/5 transition-all"
+                    className="min-h-[120px] rounded-[24px] border border-slate-200 font-bold p-5 focus:ring-4 focus:ring-primary/5 transition-all"
                     placeholder="Ej: Necesito que llegue después de las 2pm..."
                   />
                 </div>
@@ -244,7 +242,7 @@ export function HomeActions({
         </DialogContent>
       </Dialog>
 
-      {/* OTROS CONTROLES ADMIN (Márgenes Restaurados para el resto) */}
+      {/* OTROS CONTROLES ADMIN */}
       <div className="px-4 sm:px-8 mt-6 flex flex-col sm:flex-row gap-4">
         {isAdmin && (
           <>
