@@ -129,35 +129,77 @@ export function ActiveMissionView({ mission, customerProfile, onRelease, onOpenM
 
       <Dialog open={isMissionChatOpen} onOpenChange={setIsMissionChatOpen}>
         <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[300]">
-          <DialogHeader className="sr-only"><DialogTitle>Chat de Misión</DialogTitle><DialogDescription>Canal de comunicación seguro.</DialogDescription></DialogHeader>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Chat de Misión</DialogTitle>
+            <DialogDescription>Canal de comunicación seguro.</DialogDescription>
+          </DialogHeader>
           <OrderChat orderId={mission.id} orderData={mission} onClose={() => setIsMissionChatOpen(false)} />
         </DialogContent>
       </Dialog>
       
       <Dialog open={isReleaseDialogOpen} onOpenChange={setIsReleaseDialogOpen}>
-        <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] z-[400]">
-          <DialogHeader className="items-center text-center">
-            <RotateCcw className={cn("w-12 h-12 mb-4", hasProducts ? "text-red-500" : "text-orange-500")} />
-            <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter">Liberar Pedido</DialogTitle>
-            <DialogDescription className="text-slate-400 font-medium">Selecciona el motivo de deserción.</DialogDescription>
+        <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] z-[400] bg-slate-900/95 backdrop-blur-2xl text-white">
+          <DialogHeader className="items-center text-center space-y-4">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+              <RotateCcw className={cn("relative w-14 h-14", hasProducts ? "text-red-500" : "text-primary")} />
+            </div>
+            <div className="space-y-1">
+              <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-white leading-none">Liberar Pedido</DialogTitle>
+              <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]">Protocolo de Deserción Logística</DialogDescription>
+            </div>
           </DialogHeader>
           
           {hasProducts && (
-            <div className="bg-red-50 border-2 border-red-100 p-5 rounded-3xl space-y-2 animate-pulse mb-4">
-              <div className="flex items-center gap-2 text-red-600 font-black text-[10px] uppercase"><AlertTriangle className="w-4 h-4" /> AVISO DE DEUDA</div>
-              <p className="text-[10px] font-bold text-red-700 uppercase">Se aplicará deuda por: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(mission.totalPrice || 0)}</p>
+            <div className="bg-red-500/10 border border-red-500/20 p-5 rounded-3xl space-y-2 animate-in fade-in zoom-in duration-500 my-4">
+              <div className="flex items-center gap-2 text-red-500 font-black text-[10px] uppercase tracking-widest">
+                <AlertTriangle className="w-4 h-4" /> AVISO DE PENALIZACIÓN
+              </div>
+              <p className="text-[11px] font-bold text-red-400/80 uppercase leading-relaxed text-left">
+                Tienes productos en posesión. Se aplicará una deuda de {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(mission.totalPrice || 0)} a tu balance técnico.
+              </p>
             </div>
           )}
 
-          <div className="py-6 space-y-2">
-            {RELEASE_REASONS.map(r => (
-              <button key={r} onClick={() => setSelectedReason(r)} className={cn("w-full p-4 rounded-2xl text-left text-[10px] font-black uppercase tracking-widest border-2 transition-all", selectedReason === r ? "bg-slate-900 text-white border-slate-900 shadow-lg" : "bg-slate-50 text-slate-400 border-transparent hover:border-slate-200")}>{r}</button>
+          <div className="py-6 space-y-3">
+            {RELEASE_REASONS.map((r, idx) => (
+              <button 
+                key={r} 
+                onClick={() => setSelectedReason(r)} 
+                className={cn(
+                  "w-full p-4 rounded-2xl text-left text-[10px] font-black uppercase tracking-widest border transition-all duration-300 animate-in slide-in-from-left-4",
+                  selectedReason === r 
+                    ? "bg-primary text-white border-primary shadow-[0_0_20px_rgba(59,130,246,0.4)]" 
+                    : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:border-white/20"
+                )}
+                style={{ animationDelay: `${idx * 100}ms` }}
+              >
+                {r}
+              </button>
             ))}
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setIsReleaseDialogOpen(false)} className="font-black uppercase text-[10px]">VOLVER</Button>
-            <Button onClick={() => onRelease(selectedReason)} disabled={!selectedReason} className={cn("flex-1 h-14 rounded-full font-black uppercase text-xs tracking-widest shadow-xl", hasProducts ? "bg-red-600" : "bg-slate-900 text-white")}>CONFIRMAR</Button>
+          <DialogFooter className="flex flex-col sm:flex-col gap-4">
+            <Button 
+              onClick={() => onRelease(selectedReason)} 
+              disabled={!selectedReason} 
+              className={cn(
+                "w-full h-16 rounded-[24px] font-black uppercase text-sm tracking-widest transition-all shadow-2xl",
+                hasProducts 
+                  ? "bg-red-600 hover:bg-red-700 text-white shadow-red-900/20" 
+                  : "bg-primary hover:bg-primary/90 text-white shadow-primary/20",
+                !selectedReason && "opacity-20"
+              )}
+            >
+              CONFIRMAR LIBERACIÓN
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsReleaseDialogOpen(false)} 
+              className="text-slate-500 hover:text-white font-black uppercase text-[10px] tracking-[0.3em] h-10"
+            >
+              CANCELAR Y VOLVER
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
