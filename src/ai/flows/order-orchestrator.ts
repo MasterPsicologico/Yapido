@@ -122,7 +122,6 @@ const orchestrateOrderFlow = ai.defineFlow(
             role: "tienda",
             name: "Dueño de Negocio",
             contactInfo: {
-              // En producción aquí iría el token real de la tienda
               pushToken: "TOKEN_PLACEHOLDER"
             }
           }

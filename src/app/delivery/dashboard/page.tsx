@@ -40,21 +40,22 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || profile?.role === 'admin';
 
-  // CONSULTAS FIRESTORE OPTIMIZADAS PARA FLOTA PRIVADA
+  // CONSULTAS FIRESTORE OPTIMIZADAS PARA CUMPLIR CON REGLAS DE SEGURIDAD
   const availableOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
     
-    // Si el repartidor tiene una tienda vinculada, priorizamos esas órdenes
+    // Si el repartidor tiene una tienda vinculada, vemos las de esa tienda que sean públicas para logística
     if (profile?.linkedStoreId) {
       return query(
         collection(firestore, 'orders'), 
         where('storeId', '==', profile.linkedStoreId),
+        where('isLogisticsPublic', '==', true),
         where('status', 'in', ['pending', 'preparing', 'ready_for_pickup']),
         orderBy('createdAt', 'desc')
       );
     }
 
-    // Si no, vemos las públicas
+    // Si no, vemos las públicas generales
     return query(
       collection(firestore, 'orders'), 
       where('isLogisticsPublic', '==', true), 

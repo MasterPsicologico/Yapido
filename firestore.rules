@@ -41,10 +41,13 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      // Regla de lectura simplificada para evitar errores de listado (queries)
+      // Regla de lectura unificada y robusta para evitar errores de listado
       allow read: if isSignedIn() && (
         request.auth.uid in resource.data.get('participants', []) ||
         resource.data.get('isLogisticsPublic', false) == true ||
+        request.auth.uid == resource.data.get('storeOwnerId', '') ||
+        request.auth.uid == resource.data.get('customerId', '') ||
+        request.auth.uid == resource.data.get('deliveryDriverId', '') ||
         isAdmin()
       );
 
@@ -53,7 +56,8 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         request.auth.uid in resource.data.get('participants', []) ||
         isAdmin() ||
-        resource.data.get('isLogisticsPublic', false) == true
+        resource.data.get('isLogisticsPublic', false) == true ||
+        request.auth.uid == resource.data.get('storeOwnerId', '')
       );
       
       allow delete: if isSignedIn() && (

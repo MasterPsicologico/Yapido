@@ -37,13 +37,15 @@ export default function WasherAdminPage() {
   }, [store, user, profileLoading, loadingStore, router]);
 
   const ordersQuery = useMemoFirebase(() => {
-    if (!firestore || !id) return null;
+    if (!firestore || !id || !user?.uid) return null;
+    // Usamos participants array-contains para cumplir con las reglas de seguridad
     return query(
       collection(firestore, 'orders'),
       where('storeId', '==', id),
+      where('participants', 'array-contains', user.uid),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, id]);
+  }, [firestore, id, user?.uid]);
 
   const { data: orders, isLoading: loadingOrders } = useCollection(ordersQuery);
 
