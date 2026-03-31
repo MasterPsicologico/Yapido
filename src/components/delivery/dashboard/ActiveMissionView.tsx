@@ -130,7 +130,7 @@ export function ActiveMissionView({ mission, customerProfile, onRelease, onOpenM
       </div>
 
       <Dialog open={isMissionChatOpen} onOpenChange={setIsMissionChatOpen}>
-        <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[300]">
+        <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[300] [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>Chat de Misión</DialogTitle>
             <DialogDescription>Canal de comunicación seguro.</DialogDescription>
@@ -140,8 +140,8 @@ export function ActiveMissionView({ mission, customerProfile, onRelease, onOpenM
       </Dialog>
       
       <Dialog open={isReleaseDialogOpen} onOpenChange={setIsReleaseDialogOpen}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto no-scrollbar rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] z-[400] bg-slate-900/95 backdrop-blur-2xl text-white outline-none">
-          {/* BOTÓN X SUPERIOR DERECHA */}
+        <DialogContent className="max-h-[92vh] overflow-y-auto no-scrollbar rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] z-[400] bg-slate-900/95 backdrop-blur-2xl text-white outline-none [&>button:last-child]:hidden">
+          {/* BOTÓN X SUPERIOR DERECHA (EL ÚNICO QUE SE MANTIENE) */}
           <div className="absolute top-6 right-6 z-50">
             <button 
               onClick={() => setIsReleaseDialogOpen(false)} 
