@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { UserCircle, Store, LogOut } from 'lucide-react';
+import { UserCircle, Store, LogOut, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -37,14 +37,17 @@ export function NavbarUserMenu({ user, profile, canAccessManage, onLogout }: Nav
             <span className="font-bold text-slate-700">Mi Perfil</span>
           </Link>
         </DropdownMenuItem>
+        
+        {/* LINK SOLICITADO: Ver mi negocio */}
         {canAccessManage && (
-          <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/5">
+          <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/5 bg-primary/5">
             <Link href="/admin/manage" className="flex items-center">
-              <Store className="mr-3 h-4 w-4 text-primary" />
-              <span className="font-bold text-slate-700">Gestionar Mi Negocio</span>
+              <LayoutGrid className="mr-3 h-4 w-4 text-primary" />
+              <span className="font-black italic uppercase tracking-tighter text-primary text-[11px]">Gestionar Mi Negocio</span>
             </Link>
           </DropdownMenuItem>
         )}
+
         <DropdownMenuSeparator className="bg-slate-50" />
         <DropdownMenuItem onClick={onLogout} className="text-red-500 rounded-xl h-11 cursor-pointer hover:bg-red-50 hover:text-red-600">
           <LogOut className="mr-3 h-4 w-4" />

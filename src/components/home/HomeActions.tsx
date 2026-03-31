@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
@@ -19,7 +20,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useAuth, useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { useAuth, useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { collection, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -130,6 +131,12 @@ export function HomeActions({
         privateDrivers: []
       });
 
+      // ACTUALIZACIÓN DE ROL QUIRÚRGICA: El usuario ahora es un Dueño oficial
+      if (profile?.role !== 'admin' && profile?.role !== 'moderador') {
+        const userRef = doc(firestore, 'users', user.uid);
+        updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
+      }
+
       toast({ title: "¡Vitrina de Lavadoras Creada!", description: "Ahora puedes gestionar tu flota." });
       setOpenAddWasherStore(false);
     } catch (e) {
@@ -209,7 +216,7 @@ export function HomeActions({
             <div className="max-w-md mx-auto space-y-8 py-10">
               <div className="bg-blue-50 p-6 rounded-[32px] border border-blue-100 flex items-start gap-4">
                 <ShieldCheck className="w-6 h-6 text-primary shrink-0" />
-                <p className="text-slate-600 text-sm font-bold italic italic leading-tight">"Hola {profile?.displayName || 'Usuario'}, tus datos están listos. Solo confirma dónde la llevamos."</p>
+                <p className="text-slate-600 text-sm font-bold italic leading-tight">"Hola {profile?.displayName || 'Usuario'}, tus datos están listos. Solo confirma dónde la llevamos."</p>
               </div>
               <form onSubmit={handleWasherRequest} className="space-y-6">
                 <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Dirección de entrega</Label><div className="relative"><MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" /><Input name="address" defaultValue={profile?.address || ''} className="h-16 rounded-[24px] border-none shadow-sm pl-14 font-black" required /></div></div>
