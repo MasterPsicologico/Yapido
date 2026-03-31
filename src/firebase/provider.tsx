@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -104,7 +103,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [firebaseApp, firestore, auth, userAuthState]);
 
-  // Se ha eliminado la clase "contents" para asegurar que los eventos de clic funcionen correctamente en el Navbar
   return (
     <FirebaseContext.Provider value={contextValue}>
       <div key={userAuthState.user?.uid || 'guest'}>

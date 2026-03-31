@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -8,14 +7,12 @@ import { HomeActions } from '@/components/home/HomeActions';
 import { HomeCategorySection } from '@/components/home/HomeCategorySection';
 import { HomePromoBanner } from '@/components/home/HomePromoBanner';
 import { UnauthenticatedLanding } from '@/components/home/UnauthenticatedLanding';
-import { StoreCard } from '@/components/store/StoreCard';
-import { useUser, useAuth, useFirestore, useCollection, useDoc, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, doc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
-import { ShoppingBag, SearchX, Search, Cpu, ArrowRight, Sparkles } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { ShoppingBag, Cpu, ArrowRight, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
 
@@ -165,7 +162,7 @@ function AuthenticatedHome() {
 
   return (
     <div className="w-full space-y-8">
-      {/* SECCIÓN DE ACCIÓN PRINCIPAL: Banner 100% ancho sin márgenes */}
+      {/* SECCIÓN DE ACCIÓN PRINCIPAL (ALQUILER DE LAVADORAS) */}
       <HomeActions 
         isAdmin={isAdmin}
         profile={profile}

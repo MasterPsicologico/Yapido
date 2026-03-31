@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -85,19 +84,13 @@ export function StoreCard({ store }: { store: any }) {
     e.stopPropagation();
     if (!user || !firestore) return;
     const userRef = doc(firestore, 'users', user.uid);
-    if (isFavorite) updateDocumentNonBlocking(userRef, { favoriteStores: arrayRemove(store.id) });
-    else updateDocumentNonBlocking(userRef, { favoriteStores: arrayUnion(store.id) });
+    if (isFavorite) updateDocumentNonBlocking(userRef, { favoriteProducts: arrayRemove(store.id) });
+    else updateDocumentNonBlocking(userRef, { favoriteProducts: arrayUnion(store.id) });
   };
 
   const handleAddBadge = (badgeKey: BadgeKey) => {
     if (!firestore) return;
     const newBadges = [...activeBadgeIds, badgeKey].slice(-4);
-    updateDocumentNonBlocking(doc(firestore, 'stores', store.id), { activeBadgeIds: newBadges });
-  };
-
-  const handleRemoveBadge = (badgeKey: BadgeKey) => {
-    if (!firestore) return;
-    const newBadges = activeBadgeIds.filter(id => id !== badgeKey);
     updateDocumentNonBlocking(doc(firestore, 'stores', store.id), { activeBadgeIds: newBadges });
   };
 
