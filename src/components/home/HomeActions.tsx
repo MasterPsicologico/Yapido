@@ -167,7 +167,13 @@ export function HomeActions({
         </DialogTrigger>
         
         <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-white p-0 overflow-hidden flex flex-col z-[500] [&>button:last-child]:hidden">
-          {/* Header Inmersivo */}
+          {/* REQUERIDO PARA ACCESIBILIDAD */}
+          <DialogHeader className="sr-only">
+            <DialogTitle>Inscripción de Negocio</DialogTitle>
+            <DialogDescription>Formulario inmersivo para registrar una nueva vitrina en Vitriniando.</DialogDescription>
+          </DialogHeader>
+
+          {/* Header Inmersivo Visual */}
           <div className="h-20 bg-slate-950 flex items-center justify-between px-6 sm:px-10 shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
