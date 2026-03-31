@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -71,7 +72,7 @@ export default function Home() {
 function AuthenticatedHome() {
   const firestore = useFirestore();
   const { user } = useUser();
-  const { isAdmin } = useProfile();
+  const { isAdmin, profile } = useProfile();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [openStore, setOpenStore] = useState(false);
@@ -163,30 +164,28 @@ function AuthenticatedHome() {
   };
 
   return (
-    <div className="w-full py-4 sm:py-8 space-y-8">
-      {/* SECCIÓN DE ACCIÓN PRINCIPAL: MÁRGENES ESTRECHOS Y BOTÓN PREMIUM */}
-      <div className="px-4 sm:px-8 flex justify-center">
-        <HomeActions 
-          isAdmin={isAdmin}
-          openCategory={openCategory} 
-          setOpenCategory={(val) => { setOpenCategory(val); if(!val) setIsImageRemoved(false); }} 
-          openStore={openStore} 
-          setOpenStore={setOpenStore}
-          editingCategory={editingCategory} 
-          mainCategories={mainCategories} 
-          base64Image={base64Image} 
-          setBase64Image={setBase64Image}
-          isImageRemoved={isImageRemoved}
-          setIsImageRemoved={setIsImageRemoved}
-          isRegistering={isRegistering} 
-          isCompressing={isCompressing} 
-          onImageUpload={handleImageUpload} 
-          onCategorySubmit={handleCategorySubmit} 
-          onStoreSubmit={handleStoreSubmit}
-        />
-      </div>
+    <div className="w-full space-y-8">
+      {/* SECCIÓN DE ACCIÓN PRINCIPAL: Banner 100% ancho sin márgenes */}
+      <HomeActions 
+        isAdmin={isAdmin}
+        profile={profile}
+        openCategory={openCategory} 
+        setOpenCategory={(val) => { setOpenCategory(val); if(!val) setIsImageRemoved(false); }} 
+        openStore={openStore} 
+        setOpenStore={setOpenStore}
+        editingCategory={editingCategory} 
+        mainCategories={mainCategories} 
+        base64Image={base64Image} 
+        setBase64Image={setBase64Image}
+        isImageRemoved={isImageRemoved}
+        setIsImageRemoved={setIsImageRemoved}
+        isRegistering={isRegistering} 
+        isCompressing={isCompressing} 
+        onImageUpload={handleImageUpload} 
+        onCategorySubmit={handleCategorySubmit} 
+        onStoreSubmit={handleStoreSubmit}
+      />
 
-      {/* ACCESO EXCLUSIVO ADMIN: CIUDADELA DE AGENTES */}
       {isAdmin && (
         <section className="px-4 sm:px-8">
           <Link href="/admin/agents">
@@ -218,43 +217,17 @@ function AuthenticatedHome() {
         </section>
       )}
 
-      {/* EL BUSCADOR HA SIDO RETIRADO POR ORDEN SUPERIOR PARA LIMPIAR LA INTERFAZ */}
-
-      {searchTerm && filteredData.stores && filteredData.stores.length > 0 && (
-        <section className="px-4 sm:px-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-1.5 h-6 bg-secondary rounded-full" />
-            <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Tiendas encontradas</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredData.stores.map(store => (
-              <StoreCard key={store.id} store={store} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {searchTerm && (!filteredData.categories || filteredData.categories.length === 0) && (!filteredData.stores || filteredData.stores.length === 0) ? (
-        <div className="py-20 flex flex-col items-center justify-center text-center px-4">
-          <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-            <SearchX className="w-10 h-10 text-slate-300" />
-          </div>
-          <h3 className="text-2xl font-black text-slate-400 italic">No encontramos resultados</h3>
-          <p className="text-slate-400 font-medium max-w-xs mt-2">Intenta con otras palabras o navega por las categorías.</p>
-        </div>
-      ) : (
-        <HomeCategorySection 
-          isAdmin={isAdmin} 
-          categories={filteredData.categories} 
-          isLoading={loadingCategories} 
-          onEdit={(c) => { 
-            setEditingCategory(c); 
-            setOpenCategory(true); 
-            setIsImageRemoved(false);
-            setBase64Image(null);
-          }} 
-        />
-      )}
+      <HomeCategorySection 
+        isAdmin={isAdmin} 
+        categories={filteredData.categories} 
+        isLoading={loadingCategories} 
+        onEdit={(c) => { 
+          setEditingCategory(c); 
+          setOpenCategory(true); 
+          setIsImageRemoved(false);
+          setBase64Image(null);
+        }} 
+      />
       
       {!searchTerm && <HomePromoBanner onAction={() => setOpenStore(true)} />}
     </div>
