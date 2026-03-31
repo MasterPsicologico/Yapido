@@ -163,8 +163,9 @@ function AuthenticatedHome() {
   };
 
   return (
-    <div className="w-full py-6 sm:py-10 space-y-12">
-      <div className="px-4 sm:px-8 flex flex-col lg:flex-row items-start lg:items-center justify-center gap-10">
+    <div className="w-full py-4 sm:py-8 space-y-8">
+      {/* SECCIÓN DE ACCIÓN PRINCIPAL: MÁRGENES ESTRECHOS Y BOTÓN PREMIUM */}
+      <div className="px-4 sm:px-8 flex justify-center">
         <HomeActions 
           isAdmin={isAdmin}
           openCategory={openCategory} 
@@ -217,18 +218,7 @@ function AuthenticatedHome() {
         </section>
       )}
 
-      <section className="px-4 sm:px-8 max-w-2xl mx-auto">
-        <div className="relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-primary transition-colors" />
-          <Input 
-            type="text"
-            placeholder="¿Qué tienda o categoría buscas hoy?" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="h-14 rounded-[20px] bg-white border-slate-100 pl-12 pr-6 text-sm font-bold shadow-sm focus:ring-4 focus:ring-primary/5 transition-all"
-          />
-        </div>
-      </section>
+      {/* EL BUSCADOR HA SIDO RETIRADO POR ORDEN SUPERIOR PARA LIMPIAR LA INTERFAZ */}
 
       {searchTerm && filteredData.stores && filteredData.stores.length > 0 && (
         <section className="px-4 sm:px-8 animate-in fade-in slide-in-from-bottom-4 duration-500">

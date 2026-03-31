@@ -1,4 +1,3 @@
-
 "use client";
 
 import { LayoutGrid } from 'lucide-react';
@@ -14,10 +13,13 @@ interface HomeCategorySectionProps {
 
 export function HomeCategorySection({ isAdmin, categories, isLoading, onEdit }: HomeCategorySectionProps) {
   return (
-    <section className="px-4 sm:px-8">
-      <div className="flex items-center gap-2 mb-6">
-        <div className="w-1.5 h-6 bg-primary rounded-full" />
-        <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Vitrinas por Categoría</h2>
+    <section className="px-4 sm:px-8 mt-4 sm:mt-6">
+      <div className="flex items-center gap-3 mb-6 sm:mb-8">
+        <div className="w-1.5 h-8 bg-primary rounded-full shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight italic uppercase italic leading-none">Vitrinas por Categoría</h2>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Exploración Local Sincronizada</p>
+        </div>
       </div>
 
       {isLoading ? (
@@ -35,9 +37,9 @@ export function HomeCategorySection({ isAdmin, categories, isLoading, onEdit }: 
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-white border border-slate-100">
-          <LayoutGrid className="w-12 h-12 mx-auto text-slate-200 mb-2" />
-          <h3 className="text-lg font-bold text-slate-400 italic">No hay categorías globales.</h3>
+        <div className="text-center py-20 bg-white border border-dashed border-slate-200 rounded-[40px]">
+          <LayoutGrid className="w-16 h-16 mx-auto text-slate-100 mb-4" />
+          <h3 className="text-lg font-black text-slate-300 italic uppercase">Sincronizando categorías...</h3>
         </div>
       )}
     </section>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { LayoutGrid, Store as StoreIcon, Plus, Loader2, ImageIcon, X, Sparkles, Camera } from 'lucide-react';
@@ -11,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Image from 'next/image';
 import { UnauthenticatedLanding } from './UnauthenticatedLanding';
 import { useAuth, useUser } from '@/firebase';
+import { cn } from '@/lib/utils';
+import { useRef, useEffect } from 'react';
 
 interface HomeActionsProps {
   isAdmin: boolean;
@@ -40,15 +41,30 @@ export function HomeActions({
   
   const auth = useAuth();
   const { user } = useUser();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // Sonido Premium de Clic Digital
+    audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    audioRef.current.volume = 0.4;
+  }, []);
+
+  const playClickSound = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+    }
+  };
+
   const currentPreviewImage = base64Image || (isImageRemoved ? null : editingCategory?.imageUrl);
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+    <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto px-4 sm:px-0">
       {/* Botón de Gestión de Portada: Solo para ADMIN */}
       {isAdmin && (
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" className="rounded-full h-12 px-6 gap-2 border-primary/20 hover:bg-primary/5 text-primary font-bold w-full sm:w-auto">
+            <Button variant="outline" className="rounded-full h-12 px-6 gap-2 border-primary/20 hover:bg-primary/5 text-primary font-bold w-full sm:w-auto transition-all active:scale-95">
               <Camera className="w-4 h-4" /> Portada App
             </Button>
           </DialogTrigger>
@@ -68,7 +84,7 @@ export function HomeActions({
       {isAdmin && (
         <Dialog open={openCategory} onOpenChange={setOpenCategory}>
           <DialogTrigger asChild>
-            <Button variant="outline" className="rounded-full h-12 px-6 gap-2 border-primary/20 hover:bg-primary/5 text-primary font-bold w-full sm:w-auto">
+            <Button variant="outline" className="rounded-full h-12 px-6 gap-2 border-primary/20 hover:bg-primary/5 text-primary font-bold w-full sm:w-auto transition-all active:scale-95">
               <LayoutGrid className="w-4 h-4" /> Categoría Pro
             </Button>
           </DialogTrigger>
@@ -113,29 +129,57 @@ export function HomeActions({
         </Dialog>
       )}
 
+      {/* BOTÓN REGISTRAR MI VITRINA: DISEÑO ULTRA PREMIUM */}
       <Dialog open={openStore} onOpenChange={setOpenStore}>
         <DialogTrigger asChild>
-          <Button className="rounded-full h-12 px-8 gap-2 bg-primary hover:bg-primary/90 text-white font-black shadow-lg w-full sm:w-auto">
-            <StoreIcon className="w-4 h-4" /> Registrar Mi Vitrina
+          <Button 
+            onClick={playClickSound}
+            className={cn(
+              "relative overflow-hidden group",
+              "w-full sm:w-[280px] h-16 sm:h-14 rounded-full",
+              "bg-gradient-to-r from-primary via-blue-500 to-primary bg-[length:200%_auto]",
+              "text-white font-black text-lg sm:text-base uppercase tracking-widest italic",
+              "shadow-[0_10px_30px_-5px_rgba(59,130,246,0.4)] hover:shadow-[0_20px_50px_-5px_rgba(59,130,246,0.6)]",
+              "transition-all duration-500 active:scale-95 animate-gradient",
+              "border border-white/10"
+            )}
+          >
+            {/* Efecto de Brillo (Shimmer) */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+              <div className="absolute top-0 left-0 w-1/3 h-full bg-white/20 blur-xl animate-shimmer" />
+            </div>
+
+            <div className="relative z-10 flex items-center justify-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-[15deg] transition-transform">
+                <StoreIcon className="w-4 h-4 text-white" />
+              </div>
+              <span>Registrar Mi Vitrina</span>
+            </div>
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px] rounded-[40px] border-none shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-black">Lanza tu Negocio</DialogTitle>
-            <DialogDescription>Completa el registro para destacar tu negocio en el marketplace local.</DialogDescription>
+            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">Lanza tu Negocio</DialogTitle>
+            <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em] mt-1">Sincronización con Marketplace Local</DialogDescription>
           </DialogHeader>
-          <form onSubmit={onStoreSubmit} className="space-y-4 pt-4">
-            <div className="space-y-2"><Label>Nombre del Negocio</Label><Input name="name" required /></div>
+          <form onSubmit={onStoreSubmit} className="space-y-6 pt-6">
             <div className="space-y-2">
-              <Label>Categoría Global</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Nombre Comercial</Label>
+              <Input name="name" className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-lg" placeholder="Ej: Café El Morrocoy" required />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Categoría Global</Label>
               <Select name="mainCategoryId" required>
-                <SelectTrigger className="h-12"><SelectValue placeholder="Selecciona..." /></SelectTrigger>
-                <SelectContent>{mainCategories?.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}</SelectContent>
+                <SelectTrigger className="h-14 rounded-2xl bg-slate-50 border-none font-bold"><SelectValue placeholder="Selecciona una especialidad..." /></SelectTrigger>
+                <SelectContent className="rounded-2xl border-none shadow-xl">{mainCategories?.map(cat => <SelectItem key={cat.id} value={cat.id} className="rounded-xl h-12 font-bold">{cat.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-2"><Label>Dirección</Label><Input name="address" required /></div>
-            <Button type="submit" className="w-full h-14 font-black text-lg bg-secondary shadow-lg" disabled={isRegistering || isCompressing}>
-              {isRegistering ? <Loader2 className="animate-spin" /> : <Sparkles className="mr-2" />} Registrar Mi Vitrina
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Dirección de Despacho</Label>
+              <Input name="address" className="h-14 rounded-2xl bg-slate-50 border-none font-bold" placeholder="Ej: Calle 5 con Carrera 20" required />
+            </div>
+            <Button type="submit" className="w-full h-18 rounded-[28px] font-black text-xl bg-slate-900 hover:bg-black text-white shadow-2xl transition-all gap-3 mt-4" disabled={isRegistering || isCompressing}>
+              {isRegistering ? <Loader2 className="animate-spin" /> : <><Sparkles className="w-6 h-6 text-yellow-400" /> REGISTRAR AHORA</>}
             </Button>
           </form>
         </DialogContent>
