@@ -52,8 +52,12 @@ export function ActivityCenter() {
   }, []);
 
   const ordersQuery = useMemoFirebase(() => {
+    // Solo disparar la consulta si el usuario está autenticado y el perfil no está cargando
     if (!firestore || !user?.uid || profileLoading) return null;
-    return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid));
+    return query(
+      collection(firestore, 'orders'), 
+      where('participants', 'array-contains', user.uid)
+    );
   }, [firestore, user?.uid, profileLoading]);
 
   const { data: rawOrders } = useCollection(ordersQuery);
@@ -61,7 +65,6 @@ export function ActivityCenter() {
   const activities = useMemo(() => {
     if (!rawOrders || !user) return [];
     
-    // ORDENAMIENTO SMART-FLOW: Prioriza la última actualización (updatedAt o createdAt)
     return rawOrders
       .filter(order => order.status !== 'delivered' && order.status !== 'cancelled')
       .sort((a, b) => {
@@ -79,11 +82,11 @@ export function ActivityCenter() {
           else if (order.status === 'ready_for_pickup') task = { label: "Venta: Listo en Tienda", desc: order.productName, icon: CheckCircle2, color: "text-indigo-500", bg: "bg-indigo-50" };
           else if (order.status === 'shipped') task = { label: "Venta: En Reparto", desc: order.productName, icon: Truck, color: "text-purple-500", bg: "bg-purple-50" };
         } 
-        else if (order.deliveryDriverId === user.uid && (order.status === 'shipped' || order.status === 'at_store')) {
+        else if (order.deliveryDriverId === user.uid && (order.status === 'shipped' || order.status === 'at_store' || order.status === 'delivered_to_driver')) {
           task = { label: "Ruta: Entrega en Curso", desc: order.productName, icon: Navigation, color: "text-secondary", bg: "bg-secondary/10" };
         }
         else if (order.customerId === user.uid) {
-          if (order.status === 'shipped') task = { label: "Compra: Confirmar Entrega", desc: order.productName, icon: Package, color: "text-blue-500", bg: "bg-blue-50" };
+          if (order.status === 'shipped' || order.status === 'delivered_to_driver') task = { label: "Compra: Confirmar Entrega", desc: order.productName, icon: Package, color: "text-blue-500", bg: "bg-blue-50" };
           else task = { label: "Compra: En Seguimiento", desc: order.productName, icon: Timer, color: "text-slate-500", bg: "bg-slate-50" };
         }
 
@@ -104,7 +107,7 @@ export function ActivityCenter() {
   };
 
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <ActivityTrigger count={unreadCount} />
       </DropdownMenuTrigger>
@@ -117,7 +120,7 @@ export function ActivityCenter() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-slate-50" />
         <div className="max-h-[350px] overflow-y-auto p-1 space-y-2 no-scrollbar">
-          {activities.length > 0 ? activities.map((act, i) => (
+          {activities.length > 0 ? activities.map((act) => (
             <ActivityItem 
               key={act!.orderId} 
               {...act!} 
