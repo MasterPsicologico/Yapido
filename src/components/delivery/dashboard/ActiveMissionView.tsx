@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { 
   X, Clock, Store as StoreIcon, MapPinned, MessageCircle, Phone, 
-  Wallet, ShieldCheck, AlertTriangle, RotateCcw 
+  Wallet, ShieldCheck, AlertTriangle, RotateCcw, CheckCircle2, Navigation
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import Image from 'next/image';
 interface ActiveMissionViewProps {
   mission: any;
   customerProfile: any;
+  onUpdateStatus: (status: string) => void;
   onRelease: (reason: string) => void;
   onOpenMaps: (address: string) => void;
 }
@@ -30,7 +31,7 @@ const RELEASE_REASONS = [
   "Otro motivo"
 ];
 
-export function ActiveMissionView({ mission, customerProfile, onRelease, onOpenMaps }: ActiveMissionViewProps) {
+export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, onRelease, onOpenMaps }: ActiveMissionViewProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMissionChatOpen, setIsMissionChatOpen] = useState(false);
   const [isReleaseDialogOpen, setIsReleaseDialogOpen] = useState(false);
@@ -41,7 +42,11 @@ export function ActiveMissionView({ mission, customerProfile, onRelease, onOpenM
     return () => clearInterval(timer);
   }, []);
 
-  const hasProducts = mission.status === 'delivered_to_driver';
+  const isWithDriver = mission.status === 'delivered_to_driver' || mission.status === 'shipped';
+  const isAtStore = mission.status === 'at_store' || mission.status === 'ready_for_pickup' || (mission.status === 'shipped' && !isWithDriver);
+
+  const pickupTime = mission.acceptedAt ? format(mission.acceptedAt.toDate(), 'HH:mm') : '--:--';
+  const etaTime = mission.acceptedAt ? format(new Date(mission.acceptedAt.toDate().getTime() + 30 * 60000), 'HH:mm') : '--:--';
 
   return (
     <div className="flex flex-col h-[calc(100dvh-64px)] animate-in slide-in-from-bottom duration-500 overflow-hidden relative z-[40]">
@@ -50,9 +55,10 @@ export function ActiveMissionView({ mission, customerProfile, onRelease, onOpenM
         <Button variant="ghost" size="icon" onClick={() => setIsReleaseDialogOpen(true)} className="h-10 w-10 text-white/40 hover:text-red-400 rounded-full">
           <RotateCcw className="w-5 h-5" />
         </Button>
-        <Badge className={cn("text-white border-none font-black px-4 h-8 uppercase text-[10px] tracking-widest", hasProducts ? "bg-purple-600" : "bg-green-500")}>
-          {hasProducts ? "CON PRODUCTO" : "EN TIENDA"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <div className={cn("w-2 h-2 rounded-full animate-pulse", isWithDriver ? "bg-purple-500" : "bg-green-500")} />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isWithDriver ? "EN RUTA" : "BUSCANDO PAQUETE"}</span>
+        </div>
         <div className="flex items-center gap-3">
           <span className="text-sm font-black italic">{format(currentTime, 'HH:mm')}</span>
           <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"><Clock className="w-4 h-4 text-primary" /></div>
@@ -71,31 +77,43 @@ export function ActiveMissionView({ mission, customerProfile, onRelease, onOpenM
             </div>
           </section>
 
-          <Button onClick={() => onOpenMaps(mission.storeAddress)} className="w-full h-20 rounded-[28px] bg-primary text-white font-black text-xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all">
-            <MapPinned className="w-7 h-7" /> RECOGER PEDIDO
+          {/* CRONOGRAMA DE OPERACIÓN */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 flex flex-col items-center text-center gap-1">
+              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Hora Inicio</span>
+              <span className="text-xl font-black text-slate-900 italic tracking-tighter">{pickupTime}</span>
+            </div>
+            <div className="bg-primary/5 p-5 rounded-[32px] border border-primary/10 flex flex-col items-center text-center gap-1">
+              <span className="text-[8px] font-black text-primary uppercase tracking-widest">Hora Entrega (Est.)</span>
+              <span className="text-xl font-black text-primary italic tracking-tighter">{etaTime}</span>
+            </div>
+          </div>
+
+          {!isWithDriver ? (
+            <Button onClick={() => onUpdateStatus('delivered_to_driver')} className="w-full h-24 rounded-[32px] bg-primary text-white font-black text-2xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all animate-in zoom-in">
+              <CheckCircle2 className="w-8 h-8" /> RECOGÍ EL PEDIDO
+            </Button>
+          ) : (
+            <Button onClick={() => onUpdateStatus('delivered')} className="w-full h-24 rounded-[32px] bg-green-500 text-white font-black text-2xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all animate-in zoom-in">
+              <Navigation className="w-8 h-8" /> ENTREGAR AL CLIENTE
+            </Button>
+          )}
+
+          <Button variant="outline" onClick={() => onOpenMaps(isWithDriver ? mission.customerAddress : mission.storeAddress)} className="w-full h-16 rounded-[24px] border-slate-200 text-slate-600 font-black uppercase text-xs tracking-widest gap-3">
+            <MapPinned className="w-5 h-5 text-primary" /> VER EN EL MAPA
           </Button>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 italic">Lista de Artículos</h3>
-            {mission.items?.map((item: any, idx: number) => (
-              <div key={idx} className="flex items-center justify-between p-4 rounded-3xl bg-white border border-slate-100 shadow-sm">
-                <div className="flex items-center gap-4">
-                  <div className="relative w-12 h-12 rounded-xl overflow-hidden border"><Image src={item.imageUrl || 'https://picsum.photos/seed/p/200'} alt={item.name} fill className="object-cover" /></div>
-                  <div><p className="text-sm font-black uppercase italic leading-none">{item.name}</p><p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Cant: x{item.quantity}</p></div>
-                </div>
-                <Badge className="bg-slate-50 text-slate-400 border-none">#{idx+1}</Badge>
+            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 italic">Datos de la Entrega</h3>
+            <div className="p-6 rounded-[32px] bg-white border border-slate-100 shadow-sm space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center shrink-0"><MapPinned className="w-5 h-5 text-slate-400" /></div>
+                <div><p className="text-[9px] font-black text-slate-400 uppercase">Dirección Cliente</p><p className="text-sm font-bold text-slate-700 leading-tight">{mission.customerAddress}</p></div>
               </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-6 rounded-[32px] bg-slate-900 text-white shadow-xl">
-              <p className="text-[8px] font-black text-slate-400 uppercase">A cobrar</p>
-              <p className="text-xl font-black italic">{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(mission.totalPrice || 0)}</p>
-            </div>
-            <div className="p-6 rounded-[32px] bg-white border border-slate-100 shadow-sm">
-              <p className="text-[8px] font-black text-slate-400 uppercase">Pago</p>
-              <div className="flex items-center gap-2"><Wallet className="w-4 h-4 text-green-500" /><p className="text-xs font-black uppercase italic">{mission.paymentMethod?.toUpperCase()}</p></div>
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center shrink-0"><Wallet className="w-5 h-5 text-slate-400" /></div>
+                <div><p className="text-[9px] font-black text-slate-400 uppercase">Total a Cobrar</p><p className="text-lg font-black text-slate-900">{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(mission.totalPrice || 0)}</p></div>
+              </div>
             </div>
           </div>
 
@@ -109,22 +127,12 @@ export function ActiveMissionView({ mission, customerProfile, onRelease, onOpenM
               <Button onClick={() => setIsMissionChatOpen(true)} className="rounded-full bg-slate-900 text-white h-12 w-12 shadow-xl"><MessageCircle className="w-5 h-5 text-primary" /></Button>
             </div>
           </div>
-
-          <section className="pt-10 border-t space-y-4">
-            <div className="flex items-center gap-3 text-orange-500">
-              <AlertTriangle className="w-5 h-5" />
-              <h3 className="text-sm font-black uppercase tracking-widest italic">¿Problemas Críticos?</h3>
-            </div>
-            <Button onClick={() => setIsReleaseDialogOpen(true)} variant="outline" className="w-full h-14 rounded-2xl border-red-100 text-red-500 font-black uppercase text-[10px] tracking-widest gap-2 hover:bg-red-50">
-              <RotateCcw className="w-4 h-4" /> LIBERAR PEDIDO AHORA
-            </Button>
-          </section>
         </div>
       </main>
 
       <div className="shrink-0 p-6 bg-white/80 backdrop-blur-xl border-t border-slate-100">
         <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center gap-2"><ShieldCheck className="w-3.5 h-3.5 text-green-500" /><span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Monitoreo Satelital Activo</span></div>
+          <div className="flex items-center gap-2"><ShieldCheck className="w-3.5 h-3.5 text-green-500" /><span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Protocolo de Entrega Activo</span></div>
           <div className="h-1 w-20 bg-slate-100 rounded-full overflow-hidden relative"><div className="absolute inset-0 bg-green-500 animate-progress-loading" /></div>
         </div>
       </div>
@@ -141,77 +149,21 @@ export function ActiveMissionView({ mission, customerProfile, onRelease, onOpenM
       
       <Dialog open={isReleaseDialogOpen} onOpenChange={setIsReleaseDialogOpen}>
         <DialogContent className="max-h-[92vh] overflow-y-auto no-scrollbar rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] z-[400] bg-slate-900/95 backdrop-blur-2xl text-white outline-none [&>button:last-child]:hidden">
-          {/* BOTÓN X SUPERIOR DERECHA (EL ÚNICO QUE SE MANTIENE) */}
           <div className="absolute top-6 right-6 z-50">
-            <button 
-              onClick={() => setIsReleaseDialogOpen(false)} 
-              className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-90"
-            >
-              <X className="w-6 h-6" />
-            </button>
+            <button onClick={() => setIsReleaseDialogOpen(false)} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all"><X className="w-6 h-6" /></button>
           </div>
-
           <DialogHeader className="items-center text-center space-y-4 pt-4">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
-              <RotateCcw className={cn("relative w-14 h-14", hasProducts ? "text-red-500" : "text-primary")} />
-            </div>
-            <div className="space-y-1">
-              <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-white leading-none">Liberar Pedido</DialogTitle>
-              <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]">Protocolo de Deserción Logística</DialogDescription>
-            </div>
+            <RotateCcw className="w-14 h-14 text-primary" />
+            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-white leading-none">Liberar Pedido</DialogTitle>
+            <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]">Protocolo de Deserción</DialogDescription>
           </DialogHeader>
-          
-          {hasProducts && (
-            <div className="bg-red-500/10 border border-red-500/20 p-5 rounded-3xl space-y-2 animate-in fade-in zoom-in duration-500 my-4">
-              <div className="flex items-center gap-2 text-red-500 font-black text-[10px] uppercase tracking-widest">
-                <AlertTriangle className="w-4 h-4" /> AVISO DE PENALIZACIÓN
-              </div>
-              <p className="text-[11px] font-bold text-red-400/80 uppercase leading-relaxed text-left">
-                Tienes productos en posesión. Se aplicará una deuda de {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(mission.totalPrice || 0)} a tu balance técnico.
-              </p>
-            </div>
-          )}
-
           <div className="py-6 space-y-3">
-            {RELEASE_REASONS.map((r, idx) => (
-              <button 
-                key={r} 
-                onClick={() => setSelectedReason(r)} 
-                className={cn(
-                  "w-full p-4 rounded-2xl text-left text-[10px] font-black uppercase tracking-widest border transition-all duration-300 animate-in slide-in-from-left-4",
-                  selectedReason === r 
-                    ? "bg-primary text-white border-primary shadow-[0_0_20px_rgba(59,130,246,0.4)]" 
-                    : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:border-white/20"
-                )}
-                style={{ animationDelay: `${idx * 100}ms` }}
-              >
-                {r}
-              </button>
+            {RELEASE_REASONS.map(r => (
+              <button key={r} onClick={() => setSelectedReason(r)} className={cn("w-full p-4 rounded-2xl text-left text-[10px] font-black uppercase tracking-widest border transition-all", selectedReason === r ? "bg-primary text-white border-primary shadow-xl" : "bg-white/5 text-slate-400 border-white/10")}>{r}</button>
             ))}
           </div>
-
-          <DialogFooter className="flex flex-col sm:flex-col gap-4">
-            <Button 
-              onClick={() => onRelease(selectedReason)} 
-              disabled={!selectedReason} 
-              className={cn(
-                "w-full h-16 rounded-[24px] font-black uppercase text-sm tracking-widest transition-all shadow-2xl",
-                hasProducts 
-                  ? "bg-red-600 hover:bg-red-700 text-white shadow-red-900/20" 
-                  : "bg-primary hover:bg-primary/90 text-white shadow-primary/20",
-                !selectedReason && "opacity-20"
-              )}
-            >
-              CONFIRMAR LIBERACIÓN
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={() => setIsReleaseDialogOpen(false)} 
-              className="text-slate-500 hover:text-white font-black uppercase text-[10px] tracking-[0.3em] h-10"
-            >
-              CANCELAR Y VOLVER
-            </Button>
+          <DialogFooter className="flex flex-col gap-4">
+            <Button onClick={() => onRelease(selectedReason)} disabled={!selectedReason} className="w-full h-16 rounded-[24px] bg-primary font-black uppercase text-sm tracking-widest">CONFIRMAR LIBERACIÓN</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

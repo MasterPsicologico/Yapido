@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 
 // Componentes Fragmentados
@@ -40,20 +40,45 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || profile?.role === 'admin';
 
-  // CONSULTAS FIRESTORE
+  // CONSULTAS FIRESTORE OPTIMIZADAS PARA FLOTA PRIVADA
   const availableOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
-    return query(collection(firestore, 'orders'), where('isLogisticsPublic', '==', true), where('status', 'in', ['preparing', 'ready_for_pickup']));
-  }, [firestore, isConfirmedRepartidor, isOnline]);
+    
+    // Si el repartidor tiene una tienda vinculada, priorizamos esas órdenes
+    if (profile?.linkedStoreId) {
+      return query(
+        collection(firestore, 'orders'), 
+        where('storeId', '==', profile.linkedStoreId),
+        where('status', 'in', ['pending', 'preparing', 'ready_for_pickup']),
+        orderBy('createdAt', 'desc')
+      );
+    }
+
+    // Si no, vemos las públicas
+    return query(
+      collection(firestore, 'orders'), 
+      where('isLogisticsPublic', '==', true), 
+      where('status', 'in', ['preparing', 'ready_for_pickup']),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore, isConfirmedRepartidor, isOnline, profile?.linkedStoreId]);
 
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
-    return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid), where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver']));
+    return query(
+      collection(firestore, 'orders'), 
+      where('participants', 'array-contains', user.uid), 
+      where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver'])
+    );
   }, [firestore, user?.uid, isConfirmedRepartidor]);
 
   const historyQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
-    return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid), where('status', '==', 'delivered'));
+    return query(
+      collection(firestore, 'orders'), 
+      where('participants', 'array-contains', user.uid), 
+      where('status', '==', 'delivered')
+    );
   }, [firestore, user?.uid, isConfirmedRepartidor]);
 
   const { data: rawAvailable } = useCollection(availableOrdersQuery);
@@ -85,11 +110,27 @@ export default function DeliveryDashboardPage() {
       deliveryDriverId: user.uid, 
       deliveryDriverName: profile?.displayName || user.displayName || 'Repartidor', 
       status: 'shipped', 
+      acceptedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       participants: arrayUnion(user.uid)
     });
-    toast({ title: "Ruta Aceptada" });
+    toast({ title: "Ruta Aceptada", description: "Iniciando misión logística." });
     setActiveTab("my-deliveries");
+  };
+
+  const handleUpdateMissionStatus = (newStatus: string) => {
+    if (!activeMission || !firestore) return;
+    const orderRef = doc(firestore, 'orders', activeMission.id);
+    const updateData: any = { 
+      status: newStatus, 
+      updatedAt: serverTimestamp() 
+    };
+    
+    if (newStatus === 'delivered_to_driver') updateData.pickedUpAt = serverTimestamp();
+    if (newStatus === 'delivered') updateData.deliveredAt = serverTimestamp();
+
+    updateDocumentNonBlocking(orderRef, updateData);
+    toast({ title: "Estado Actualizado", description: `Pedido movido a ${newStatus.toUpperCase()}` });
   };
 
   const handleReleaseOrder = async (reason: string) => {
@@ -98,7 +139,6 @@ export default function DeliveryDashboardPage() {
     const orderRef = doc(firestore, 'orders', activeMission.id);
     const incidentRef = collection(firestore, 'incidents');
     
-    // Registro Optimista
     addDocumentNonBlocking(incidentRef, {
       orderId: activeMission.id, driverId: user.uid, driverName: profile?.displayName || 'Repartidor',
       reason, hasProducts: activeMission.status === 'delivered_to_driver', orderValue: activeMission.totalPrice || 0,
@@ -121,17 +161,19 @@ export default function DeliveryDashboardPage() {
         storeId: activeMission.storeId, storeName: activeMission.storeName
       });
       setReleaseLogs(prev => [...prev, ...result.agentLogs]);
-      if (result.debtApplied) {
-        const userRef = doc(firestore, 'users', user.uid);
-        updateDocumentNonBlocking(userRef, { balance: (profile?.balance || 0) - result.debtApplied, updatedAt: serverTimestamp() });
-      }
     } catch (e) {
       setReleaseLogs(prev => [...prev, "Finalizando procesos internos..."]);
     }
   };
 
   if (loadingProfile) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
-  if (!isConfirmedRepartidor) return <div className="flex flex-col min-h-screen items-center justify-center p-8 text-center gap-6"><Loader2 className="w-16 h-16 text-slate-200" /></div>;
+  if (!isConfirmedRepartidor) return (
+    <div className="flex flex-col min-h-screen items-center justify-center p-8 text-center gap-6">
+      <h2 className="text-2xl font-black italic uppercase text-slate-400">Acceso Restringido</h2>
+      <p className="text-slate-400 max-w-xs">Debes ser un repartidor verificado para acceder al dashboard.</p>
+      <Button onClick={() => router.push('/profile')}>Configurar Perfil</Button>
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-[100dvh] bg-[#f8fafc] overflow-hidden">
@@ -147,6 +189,7 @@ export default function DeliveryDashboardPage() {
         <ActiveMissionView 
           mission={activeMission} 
           customerProfile={customerProfile} 
+          onUpdateStatus={handleUpdateMissionStatus}
           onRelease={handleReleaseOrder} 
           onOpenMaps={(addr) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank')} 
         />

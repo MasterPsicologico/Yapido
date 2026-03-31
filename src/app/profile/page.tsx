@@ -60,14 +60,22 @@ export default function ProfilePage() {
         
         // Vincular en ambos sentidos
         updateDocumentNonBlocking(storeRef, { privateDrivers: arrayUnion(user.uid) });
-        updateDocumentNonBlocking(userRef, { role: 'repartidor', linkedStoreId: storeDoc.id, updatedAt: serverTimestamp() });
+        updateDocumentNonBlocking(userRef, { 
+          role: 'repartidor', 
+          linkedStoreId: storeDoc.id, 
+          updatedAt: serverTimestamp(),
+          deliveryActive: true 
+        });
         
         toast({ 
           title: "¡Vinculación Exitosa!", 
           description: `Ahora eres repartidor de ${storeDoc.data().name}`,
           className: "bg-green-600 text-white border-none"
         });
+        
         setDriverCode("");
+        // REDIRECCIÓN INSTANTÁNEA AL PANEL DE OPERACIONES
+        setTimeout(() => router.push('/delivery/dashboard'), 1500);
       }
     } catch (e) {
       toast({ title: "Error al vincular", variant: "destructive" });
@@ -110,7 +118,7 @@ export default function ProfilePage() {
 
         <div className="flex items-center gap-4 mb-10">
           <div className="w-16 h-16 bg-primary rounded-[24px] flex items-center justify-center text-white shadow-2xl"><UserIcon className="w-8 h-8" /></div>
-          <div><h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Mi Perfil</h1><p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2">Gestión de Cuenta</p></div>
+          <div><h1 className="text-4xl font-black italic uppercase tracking-tighter leading-none">Mi Perfil</h1><p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2">Gestión de Cuenta</p></div>
         </div>
 
         <div className="space-y-8 pb-20">
