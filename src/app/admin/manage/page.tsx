@@ -18,7 +18,8 @@ import {
   Waves,
   ChevronRight,
   ArrowLeft,
-  Plus
+  Plus,
+  ShieldCheck
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
