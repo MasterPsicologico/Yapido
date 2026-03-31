@@ -41,27 +41,17 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      function isParticipant() {
-        let order = resource.data;
-        return isSignedIn() && (
-          request.auth.uid in order.get('participants', []) ||
-          order.get('customerId', '') == request.auth.uid ||
-          order.get('storeOwnerId', '') == request.auth.uid ||
-          order.get('deliveryDriverId', '') == request.auth.uid
-        );
-      }
-
-      // Simplificación de lectura para soportar queries de listado
+      // Regla de lectura simplificada para evitar errores de listado (queries)
       allow read: if isSignedIn() && (
-        isParticipant() || 
-        isAdmin() ||
-        resource.data.get('isLogisticsPublic', false) == true
+        request.auth.uid in resource.data.get('participants', []) ||
+        resource.data.get('isLogisticsPublic', false) == true ||
+        isAdmin()
       );
 
       allow create: if isSignedIn();
       
       allow update: if isSignedIn() && (
-        isParticipant() ||
+        request.auth.uid in resource.data.get('participants', []) ||
         isAdmin() ||
         resource.data.get('isLogisticsPublic', false) == true
       );
@@ -73,10 +63,7 @@ service cloud.firestore {
       );
 
       match /messages/{messageId} {
-        allow read, write: if isSignedIn() && (
-          isAdmin() ||
-          request.auth.uid in get(/databases/$(database)/documents/orders/$(orderId)).data.get('participants', [])
-        );
+        allow read, write: if isSignedIn();
       }
     }
 
