@@ -47,7 +47,9 @@ export function ActiveMissionView({ mission, customerProfile, onRelease, onOpenM
     <div className="flex flex-col h-[calc(100dvh-64px)] animate-in slide-in-from-bottom duration-500 overflow-hidden relative z-[40]">
       {/* HEADER DE MISIÓN */}
       <div className="h-16 bg-slate-900 flex items-center justify-between px-4 text-white shrink-0 shadow-xl z-20">
-        <Button variant="ghost" size="icon" onClick={() => setIsReleaseDialogOpen(true)} className="h-10 w-10 text-white/40 hover:text-red-400 rounded-full"><X className="w-5 h-5" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => setIsReleaseDialogOpen(true)} className="h-10 w-10 text-white/40 hover:text-red-400 rounded-full">
+          <RotateCcw className="w-5 h-5" />
+        </Button>
         <Badge className={cn("text-white border-none font-black px-4 h-8 uppercase text-[10px] tracking-widest", hasProducts ? "bg-purple-600" : "bg-green-500")}>
           {hasProducts ? "CON PRODUCTO" : "EN TIENDA"}
         </Badge>
@@ -138,8 +140,18 @@ export function ActiveMissionView({ mission, customerProfile, onRelease, onOpenM
       </Dialog>
       
       <Dialog open={isReleaseDialogOpen} onOpenChange={setIsReleaseDialogOpen}>
-        <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] z-[400] bg-slate-900/95 backdrop-blur-2xl text-white">
-          <DialogHeader className="items-center text-center space-y-4">
+        <DialogContent className="max-h-[92vh] overflow-y-auto no-scrollbar rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] z-[400] bg-slate-900/95 backdrop-blur-2xl text-white outline-none">
+          {/* BOTÓN X SUPERIOR DERECHA */}
+          <div className="absolute top-6 right-6 z-50">
+            <button 
+              onClick={() => setIsReleaseDialogOpen(false)} 
+              className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-90"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          <DialogHeader className="items-center text-center space-y-4 pt-4">
             <div className="relative">
               <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
               <RotateCcw className={cn("relative w-14 h-14", hasProducts ? "text-red-500" : "text-primary")} />
