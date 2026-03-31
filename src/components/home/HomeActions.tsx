@@ -12,7 +12,10 @@ import {
   MapPin,
   CheckCircle2,
   Store as StoreIcon,
-  ArrowRight
+  ArrowRight,
+  ImageIcon,
+  Sparkles,
+  Edit3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -131,7 +134,6 @@ export function HomeActions({
         privateDrivers: []
       });
 
-      // ACTUALIZACIÓN DE ROL QUIRÚRGICA: El usuario ahora es un Dueño oficial
       if (profile?.role !== 'admin' && profile?.role !== 'moderador') {
         const userRef = doc(firestore, 'users', user.uid);
         updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
@@ -185,7 +187,6 @@ export function HomeActions({
           </div>
         </div>
 
-        {/* BOTÓN DIMINUTO PARA AGREGAR TIENDA (PARTE SUPERIOR DERECHA) */}
         <button 
           onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }}
           className="absolute top-2 right-2 z-20 w-8 h-8 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all shadow-xl group/add"
@@ -198,7 +199,7 @@ export function HomeActions({
         </button>
       </div>
 
-      {/* DIALOG SOLICITUD CLIENTE */}
+      {/* DIALOG SOLICITUD CLIENTE (LAVADORAS) */}
       <Dialog open={openWasher} onOpenChange={setOpenWasher}>
         <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-white p-0 overflow-hidden flex flex-col z-[600] [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
@@ -268,6 +269,85 @@ export function HomeActions({
               </form>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG INSCRIBIR MI TIENDA (ESTÁNDAR) - RESTAURACIÓN QUIRÚRGICA */}
+      <Dialog open={openStore} onOpenChange={setOpenStore}>
+        <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[500px] overflow-y-auto max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">Inscribir mi tienda</DialogTitle>
+            <DialogDescription className="text-slate-400 font-medium">Datos de la tienda para comenzar a vender.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={onStoreSubmit} className="space-y-6 pt-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nombre de la tienda</Label>
+              <Input name="name" placeholder="Ej: Mi Negocio Local" className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-base" required />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Categoría</Label>
+              <select 
+                name="mainCategoryId" 
+                defaultValue=""
+                className="w-full h-14 rounded-2xl bg-slate-50 border-none px-5 font-bold text-base text-slate-900 focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                required
+              >
+                <option value="" disabled>Selecciona una categoría...</option>
+                {mainCategories?.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Dirección</Label>
+              <Input name="address" placeholder="Ubicación física" className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-base" required />
+            </div>
+            <Button type="submit" disabled={isRegistering} className="w-full h-16 rounded-[24px] bg-slate-900 text-white font-black uppercase tracking-widest gap-3 shadow-xl hover:scale-[1.02] transition-all">
+              {isRegistering ? <Loader2 className="animate-spin" /> : "Guardar y crear tienda"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG GESTIÓN DE CATEGORÍAS (ADMIN) - RESTAURACIÓN QUIRÚRGICA */}
+      <Dialog open={openCategory} onOpenChange={setOpenCategory}>
+        <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-primary">
+              {editingCategory ? "Editar Categoría" : "Nueva Categoría"}
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 font-medium italic">Define los detalles de la categoría global.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={onCategorySubmit} className="space-y-6 pt-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nombre</Label>
+              <Input name="name" defaultValue={editingCategory?.name} className="h-14 rounded-2xl bg-slate-50 border-none font-bold" required />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Foto Principal</Label>
+              <div className="relative aspect-video rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 overflow-hidden group hover:border-primary/50 transition-colors">
+                {base64Image ? (
+                  <>
+                    <img src={base64Image} alt="Preview" className="w-full h-full object-cover" />
+                    <Button type="button" size="icon" variant="destructive" className="absolute top-3 right-3 rounded-full h-10 w-10 shadow-lg" onClick={() => setBase64Image(null)}><X /></Button>
+                  </>
+                ) : (
+                  <label className="flex flex-col items-center justify-center h-full cursor-pointer hover:bg-slate-100 transition-all">
+                    <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center mb-2">{isCompressing ? <Loader2 className="animate-spin text-primary" /> : <ImageIcon className="text-slate-400" />}</div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Subir Banner</span>
+                    <input type="file" className="hidden" accept="image/*" onChange={onImageUpload} disabled={isCompressing} />
+                  </label>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Descripción</Label>
+              <Textarea name="description" defaultValue={editingCategory?.description} className="rounded-2xl bg-slate-50 border-none min-h-[100px] font-medium" required />
+            </div>
+            <Button type="submit" disabled={isRegistering || isCompressing} className="w-full h-16 rounded-[24px] bg-primary text-white font-black uppercase tracking-widest shadow-xl">
+              {isRegistering ? <Loader2 className="animate-spin" /> : <><Sparkles className="w-5 h-5 mr-2" /> Guardar Categoría</>}
+            </Button>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
