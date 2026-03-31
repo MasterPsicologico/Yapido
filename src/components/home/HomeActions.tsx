@@ -219,9 +219,10 @@ export function HomeActions({
                     <select 
                       name="mainCategoryId" 
                       required
+                      defaultValue=""
                       className="w-full h-14 rounded-2xl bg-white border border-slate-200 px-5 font-bold text-base text-slate-900 focus:ring-4 focus:ring-primary/5 transition-all appearance-none cursor-pointer"
                     >
-                      <option value="" disabled selected>Selecciona una categoría...</option>
+                      <option value="" disabled>Selecciona una categoría...</option>
                       {mainCategories?.map(cat => (
                         <option key={cat.id} value={cat.id}>
                           {cat.name}
