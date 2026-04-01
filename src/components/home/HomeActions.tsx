@@ -223,11 +223,9 @@ export function HomeActions({
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse" />
           <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px] animate-pulse delay-700" />
           
-          {/* Textos Masivos (Reposicionados hacia arriba) */}
+          {/* Contenedor de Textos y Badges */}
           <div className="relative z-10 space-y-8 max-w-4xl animate-in slide-in-from-top-8 duration-1000">
-            <h2 className="text-5xl sm:text-8xl md:text-9xl font-black italic uppercase tracking-tighter text-white leading-[0.85] drop-shadow-[0_10px_40px_rgba(0,0,0,0.4)]">
-              Alquiler de <br /> Lavadoras
-            </h2>
+            {/* Título "ALQUILER DE LAVADORAS" eliminado quirúrgicamente como solicitó el usuario */}
             
             <div className="flex flex-col items-center gap-6">
               <div className="flex flex-wrap items-center justify-center gap-3">
@@ -284,7 +282,7 @@ export function HomeActions({
             </div>
           </button>
 
-          {/* BOTÓN: ACCESO A VITRINAS (Inferior Derecho) - Ajustado más hacia la esquina */}
+          {/* BOTÓN: ACCESO A VITRINAS (Inferior Derecho) */}
           <button 
             onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }}
             className="absolute bottom-4 right-4 z-30 w-14 h-14 rounded-full bg-slate-950/40 backdrop-blur-2xl border border-white/10 flex items-center justify-center text-white hover:bg-slate-950/60 transition-all shadow-2xl group/list"
@@ -397,7 +395,7 @@ export function HomeActions({
               <Input name="name" placeholder="Ej: Mi Negocio Local" className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-base" required />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Categoría</Label>
+              <Label className="text-[10px) font-black uppercase text-slate-400 ml-2">Categoría</Label>
               <select 
                 name="mainCategoryId" 
                 defaultValue=""
