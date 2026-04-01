@@ -15,7 +15,8 @@ import {
   ArrowRight,
   ImageIcon,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  Camera
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,11 +24,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { collection, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { compressImage } from '@/lib/image-compression';
+import Image from 'next/image';
 
 interface HomeActionsProps {
   isAdmin: boolean;
@@ -61,7 +64,13 @@ export function HomeActions({
   const [openWasher, setOpenWasher] = useState(false);
   const [openAddWasherStore, setOpenAddWasherStore] = useState(false);
   const [isSendingRequest, setIsSendingRequest] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  // OBTENER CONFIGURACIÓN DE PORTADA DE LAVADORAS DESDE LA NUBE
+  const bannerConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_banner'), [firestore]);
+  const { data: bannerConfig } = useDoc(bannerConfigRef);
 
   useEffect(() => {
     audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
@@ -72,6 +81,37 @@ export function HomeActions({
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
+    }
+  };
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !isAdmin) return;
+
+    setIsUploadingBanner(true);
+    try {
+      const compressed = await compressImage(file, 1920, 1080, 0.8);
+      
+      // Guardar en la nube instantáneamente
+      if (bannerConfig) {
+        updateDocumentNonBlocking(bannerConfigRef, {
+          backgroundImage: compressed,
+          updatedAt: serverTimestamp(),
+          updatedBy: user?.uid
+        });
+      } else {
+        setDocumentNonBlocking(bannerConfigRef, {
+          backgroundImage: compressed,
+          createdAt: serverTimestamp(),
+          updatedBy: user?.uid
+        }, { merge: true });
+      }
+      
+      toast({ title: "Portada de Lavadoras actualizada" });
+    } catch (error) {
+      toast({ title: "Error al actualizar portada", variant: "destructive" });
+    } finally {
+      setIsUploadingBanner(false);
     }
   };
 
@@ -160,27 +200,32 @@ export function HomeActions({
           className={cn(
             "relative w-full min-h-[calc(100dvh-64px)] overflow-hidden cursor-pointer transition-all duration-700",
             "bg-gradient-to-br from-primary via-blue-600 to-indigo-900",
-            "flex flex-col items-center justify-center px-6 text-center",
+            "flex flex-col items-center justify-start pt-24 px-6 text-center",
             "shadow-[0_20px_100px_-10px_rgba(59,130,246,0.6)] active:scale-[0.995]"
           )}
         >
-          {/* Fondo Decorativo Inmersivo */}
-          <div className="absolute inset-0 opacity-10 bg-[url('https://picsum.photos/seed/tech/1920/1080')] bg-cover mix-blend-overlay" />
+          {/* Portada en la Nube */}
+          <div className="absolute inset-0 z-0">
+            {bannerConfig?.backgroundImage ? (
+              <Image 
+                src={bannerConfig.backgroundImage} 
+                alt="Portada Alquiler" 
+                fill 
+                className="object-cover opacity-60 mix-blend-overlay animate-in fade-in duration-1000" 
+                priority 
+              />
+            ) : (
+              <div className="absolute inset-0 opacity-10 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover mix-blend-overlay" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+          </div>
+
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse" />
           <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px] animate-pulse delay-700" />
           
-          {/* Elemento Visual Central Masivo */}
-          <div className="relative z-10 mb-12 animate-in zoom-in duration-1000">
-            <div className="w-32 h-32 sm:w-48 sm:h-48 rounded-[48px] bg-white/10 backdrop-blur-3xl border border-white/20 flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-700">
-              <Waves className="w-16 h-16 sm:w-24 sm:h-24 text-white animate-pulse" />
-            </div>
-            {/* Onda sutil bajo el icono */}
-            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-20 h-1 bg-white/20 rounded-full blur-md" />
-          </div>
-
-          {/* Textos Masivos */}
-          <div className="relative z-10 space-y-6 max-w-4xl animate-in slide-in-from-bottom-8 duration-1000">
-            <h2 className="text-5xl sm:text-8xl md:text-9xl font-black italic uppercase tracking-tighter text-white leading-[0.85] drop-shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
+          {/* Textos Masivos (Reposicionados hacia arriba) */}
+          <div className="relative z-10 space-y-8 max-w-4xl animate-in slide-in-from-top-8 duration-1000">
+            <h2 className="text-5xl sm:text-8xl md:text-9xl font-black italic uppercase tracking-tighter text-white leading-[0.85] drop-shadow-[0_10px_40px_rgba(0,0,0,0.4)]">
               Alquiler de <br /> Lavadoras
             </h2>
             
@@ -202,6 +247,28 @@ export function HomeActions({
             <span className="text-white/40 text-[9px] font-black uppercase tracking-[0.5em]">Toca para Solicitar</span>
             <ChevronDown className="w-6 h-6 text-white/20" />
           </div>
+
+          {/* BOTÓN: CARGAR FOTO (Solo Admin) */}
+          {isAdmin && (
+            <div className="absolute top-8 left-8 z-30 flex flex-col items-center gap-2">
+              <input 
+                type="file" 
+                ref={bannerInputRef} 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handleBannerUpload} 
+              />
+              <button 
+                onClick={(e) => { e.stopPropagation(); bannerInputRef.current?.click(); }}
+                disabled={isUploadingBanner}
+                className="w-12 h-12 rounded-[18px] bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/80 hover:bg-white/20 transition-all shadow-2xl"
+                title="Cambiar Foto de Fondo"
+              >
+                {isUploadingBanner ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
+              </button>
+              <span className="text-[7px] font-black text-white/40 uppercase tracking-widest">Admin Portada</span>
+            </div>
+          )}
 
           {/* BOTÓN: AGREGAR TIENDAS (Superior Derecho) */}
           <button 
