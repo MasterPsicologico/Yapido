@@ -27,6 +27,7 @@ import { useAuth, useUser, useFirestore, addDocumentNonBlocking, updateDocumentN
 import { cn } from '@/lib/utils';
 import { collection, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 interface HomeActionsProps {
   isAdmin: boolean;
@@ -57,6 +58,7 @@ export function HomeActions({
   
   const { user } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
   const [openWasher, setOpenWasher] = useState(false);
   const [openAddWasherStore, setOpenAddWasherStore] = useState(false);
   const [isSendingRequest, setIsSendingRequest] = useState(false);
@@ -141,6 +143,9 @@ export function HomeActions({
 
       toast({ title: "¡Vitrina de Lavadoras Creada!", description: "Ahora puedes gestionar tu flota." });
       setOpenAddWasherStore(false);
+      
+      // REDIRECCIÓN INSTANTÁNEA AL PANEL MAESTRO DE LAVADORAS
+      router.push(`/admin/washer/${storeRef.id}`);
     } catch (e) {
       toast({ title: "Error al crear vitrina", variant: "destructive" });
     } finally {

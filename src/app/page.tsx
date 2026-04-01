@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -70,6 +71,7 @@ function AuthenticatedHome() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { isAdmin, profile } = useProfile();
+  const router = useRouter();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [openStore, setOpenStore] = useState(false);
@@ -156,6 +158,9 @@ function AuthenticatedHome() {
       updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
       setOpenStore(false);
       toast({ title: "Vitrina registrada con éxito" });
+      
+      // REDIRECCIÓN INSTANTÁNEA AL PANEL DE LA TIENDA
+      router.push(`/stores/${ref.id}`);
     } catch (e) { toast({ title: "Error al registrar vitrina" }); }
     finally { setIsRegistering(false); }
   };
