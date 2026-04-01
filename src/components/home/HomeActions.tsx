@@ -86,10 +86,10 @@ export function HomeActions({
   const bannerConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_banner'), [firestore]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
 
-  // VALORES DE NEGOCIO (FINANCIEROS)
-  const minHours = pricingConfig?.minHours || 5;
-  const basePrice = pricingConfig?.basePrice || 15000;
-  const additionalHourPrice = pricingConfig?.additionalHourPrice || 3000;
+  // VALORES DE NEGOCIO (FINANCIEROS) - MATEMÁTICA BLINDADA
+  const minHours = Number(pricingConfig?.minHours || 5);
+  const basePrice = Number(pricingConfig?.basePrice || 15000);
+  const additionalHourPrice = Number(pricingConfig?.additionalHourPrice || 3000);
 
   // LÓGICA DE HORARIOS
   const openTime = pricingConfig?.openTime || "08:00";
@@ -128,10 +128,11 @@ export function HomeActions({
     }
   };
 
-  // LÓGICA MATEMÁTICA CORREGIDA: Mínimo 5h = Precio Base ($15k). Cada h adicional = +$3k.
+  // LÓGICA MATEMÁTICA EXACTA: Mínimo de horas = Precio Base. Solo suma si excede.
   const totalPrice = useMemo(() => {
-    if (requestHours <= minHours) return basePrice;
-    return basePrice + ((requestHours - minHours) * additionalHourPrice);
+    const current = Number(requestHours);
+    if (current <= minHours) return basePrice;
+    return basePrice + ((current - minHours) * additionalHourPrice);
   }, [requestHours, minHours, basePrice, additionalHourPrice]);
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,14 +288,14 @@ export function HomeActions({
                   {isBusinessOpen ? "Toca para iniciar solicitud" : `Abrimos a las ${openTime}`}
                 </span>
                 <div className="h-0.5 w-10 bg-white/20 rounded-full overflow-hidden">
-                  <div className={cn("h-full animate-progress-loading", isBusinessOpen ? "bg-red-500" : "bg-slate-500")} />
+                  <div className={cn("h-full [animation-duration:2000ms] animate-progress-loading", isBusinessOpen ? "bg-red-500" : "bg-slate-500")} />
                 </div>
               </div>
             </div>
           </div>
 
           {isAdmin && (
-            <div className="absolute top-12 left-12 z-30">
+            <div className="absolute top-4 left-4 z-30">
               <input type="file" ref={bannerInputRef} className="hidden" accept="image/*" onChange={handleBannerUpload} />
               <button onClick={(e) => { e.stopPropagation(); bannerInputRef.current?.click(); }} disabled={isUploadingBanner} className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl">
                 {isUploadingBanner ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
@@ -302,11 +303,11 @@ export function HomeActions({
             </div>
           )}
 
-          <button onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }} className="absolute top-12 right-12 z-30 w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-green-400 transition-all shadow-2xl">
+          <button onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }} className="absolute top-4 right-4 z-30 w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-green-400 transition-all shadow-2xl">
             <StoreIcon className="w-6 h-6" />
           </button>
 
-          <button onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }} className="absolute bottom-8 right-8 z-30 w-14 h-14 rounded-full bg-slate-950/40 backdrop-blur-2xl border border-white/10 flex items-center justify-center text-white/80 hover:bg-slate-950/60 transition-all shadow-2xl">
+          <button onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }} className="absolute bottom-4 right-4 z-30 w-14 h-14 rounded-full bg-slate-950/40 backdrop-blur-2xl border border-white/10 flex items-center justify-center text-white/80 hover:bg-slate-950/60 transition-all shadow-2xl">
             <div className="relative"><div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.6)]" /><Waves className="w-7 h-7 text-white/90" /></div>
           </button>
 
@@ -333,7 +334,7 @@ export function HomeActions({
           </div>
 
           <div className="flex-1 overflow-y-auto no-scrollbar bg-white rounded-t-[40px] mt-2">
-            <div className="max-w-md mx-auto space-y-10 py-12 px-6">
+            <div className="max-w-md mx-auto py-12 px-6 space-y-10">
               
               {/* PANEL DE AJUSTES ADMINISTRATIVOS */}
               {showAdminPricing && isAdmin && (
@@ -409,7 +410,7 @@ export function HomeActions({
                   </div>
                 </div>
 
-                {/* COTIZACIÓN REAL: Cálculos matemáticos precisos basados en configuración admin */}
+                {/* COTIZACIÓN REAL: Diseño ajustado para evitar solapamiento y tamaño elegante */}
                 <div className="bg-slate-900 p-8 rounded-[40px] text-white space-y-6 shadow-2xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
                   <div className="flex items-center justify-between border-b border-white/5 pb-4 relative z-10">
@@ -419,14 +420,16 @@ export function HomeActions({
                       <span className="text-xs font-black uppercase italic">Pagas al recibir</span>
                     </div>
                   </div>
-                  <div className="flex items-end justify-between relative z-10">
+                  <div className="flex flex-col gap-4 relative z-10">
                     <div className="space-y-1">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total a pagar</p>
-                      <h4 className="text-4xl font-black italic tracking-tighter leading-none">
+                      <h4 className="text-3xl font-black italic tracking-tighter leading-none text-white">
                         {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(totalPrice)}
                       </h4>
                     </div>
-                    <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-1 italic">Logística Pro Activa</p>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full w-fit">
+                      <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] italic">Logística Pro Activa</span>
+                    </div>
                   </div>
                 </div>
 
