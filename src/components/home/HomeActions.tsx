@@ -15,16 +15,15 @@ import {
   ArrowRight,
   ImageIcon,
   Sparkles,
-  Edit3,
-  LayoutGrid
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useAuth, useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { collection, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -53,7 +52,6 @@ interface HomeActionsProps {
 export function HomeActions({
   isAdmin, profile, openCategory, setOpenCategory, openStore, setOpenStore,
   editingCategory, mainCategories, base64Image, setBase64Image,
-  isImageRemoved, setIsImageRemoved,
   isRegistering, isCompressing, onImageUpload, onCategorySubmit, onStoreSubmit
 }: HomeActionsProps) {
   
@@ -155,52 +153,77 @@ export function HomeActions({
 
   return (
     <div className="flex flex-col w-full">
-      {/* BANNER ESPECIAL: ALQUILER DE LAVADORAS (100% ANCHO) */}
+      {/* BANNER FULL SCREEN: ALQUILER DE LAVADORAS */}
       <div className="relative w-full group">
         <div 
           onClick={() => { playClickSound(); setOpenWasher(true); }}
           className={cn(
-            "relative w-full h-32 sm:h-40 overflow-hidden cursor-pointer transition-all duration-500",
+            "relative w-full min-h-[calc(100dvh-64px)] overflow-hidden cursor-pointer transition-all duration-700",
             "bg-gradient-to-br from-primary via-blue-600 to-indigo-900",
-            "flex items-center justify-between px-8 sm:px-12",
-            "shadow-[0_20px_60px_-10px_rgba(59,130,246,0.5)] active:scale-[0.99]"
+            "flex flex-col items-center justify-center px-6 text-center",
+            "shadow-[0_20px_100px_-10px_rgba(59,130,246,0.6)] active:scale-[0.995]"
           )}
         >
-          <div className="absolute inset-0 opacity-20 bg-[url('https://picsum.photos/seed/tech/1920/1080')] bg-cover mix-blend-overlay" />
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-white/20 transition-all duration-700" />
+          {/* Fondo Decorativo Inmersivo */}
+          <div className="absolute inset-0 opacity-10 bg-[url('https://picsum.photos/seed/tech/1920/1080')] bg-cover mix-blend-overlay" />
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px] animate-pulse delay-700" />
           
-          <div className="relative z-10 flex items-center gap-6">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-[24px] bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-2xl group-hover:rotate-[15deg] transition-transform duration-500">
-              <Waves className="w-10 h-10 text-white animate-pulse" />
+          {/* Elemento Visual Central Masivo */}
+          <div className="relative z-10 mb-12 animate-in zoom-in duration-1000">
+            <div className="w-32 h-32 sm:w-48 sm:h-48 rounded-[48px] bg-white/10 backdrop-blur-3xl border border-white/20 flex items-center justify-center shadow-2xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-700">
+              <Waves className="w-16 h-16 sm:w-24 sm:h-24 text-white animate-pulse" />
             </div>
-            <div className="space-y-1">
-              <h2 className="text-3xl sm:text-5xl font-black italic uppercase tracking-tighter text-white leading-none drop-shadow-lg">
-                Alquiler de <br className="sm:hidden" /> Lavadoras
-              </h2>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-secondary text-white border-none font-black text-[10px] px-3 uppercase tracking-widest">SERVICIO EXPRESS</Badge>
-                <span className="text-white/60 text-[10px] font-bold uppercase tracking-[0.2em] hidden sm:inline">Solicitud Instantánea</span>
+            {/* Onda sutil bajo el icono */}
+            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-20 h-1 bg-white/20 rounded-full blur-md" />
+          </div>
+
+          {/* Textos Masivos */}
+          <div className="relative z-10 space-y-6 max-w-4xl animate-in slide-in-from-bottom-8 duration-1000">
+            <h2 className="text-5xl sm:text-8xl md:text-9xl font-black italic uppercase tracking-tighter text-white leading-[0.85] drop-shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
+              Alquiler de <br /> Lavadoras
+            </h2>
+            
+            <div className="flex flex-col items-center gap-6">
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Badge className="bg-secondary text-white border-none font-black text-xs sm:text-sm px-6 py-2 uppercase tracking-[0.2em] shadow-xl">SERVICIO EXPRESS</Badge>
+                <Badge variant="outline" className="text-white border-white/30 backdrop-blur-md font-black text-xs sm:text-sm px-6 py-2 uppercase tracking-[0.2em]">GARANTÍA TOTAL</Badge>
+              </div>
+              
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-white/60 text-xs sm:text-base font-bold uppercase tracking-[0.4em] italic">Solicitud Instantánea • Aguachica</p>
+                <div className="h-1 w-24 bg-primary/40 rounded-full" />
               </div>
             </div>
           </div>
 
-          <div className="relative z-10 hidden sm:flex flex-col items-end gap-2">
-            <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-primary shadow-xl group-hover:scale-110 transition-transform">
-              <ArrowRight className="w-6 h-6" />
-            </div>
-            <span className="text-white/40 text-[8px] font-black uppercase tracking-[0.3em]">CLIC PARA PEDIR</span>
+          {/* CTA Inferior (Click to Action) */}
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-4 animate-bounce">
+            <span className="text-white/40 text-[9px] font-black uppercase tracking-[0.5em]">Toca para Solicitar</span>
+            <ChevronDown className="w-6 h-6 text-white/20" />
           </div>
 
-          {/* BOTÓN REFINADO: ACCESO A VITRINAS (LAVADORA PULSANTE) */}
+          {/* BOTÓN: AGREGAR TIENDAS (Superior Derecho) */}
           <button 
-            onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }}
-            className="absolute bottom-4 right-4 z-20 w-10 h-10 rounded-full bg-slate-900/40 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white hover:bg-slate-900/60 transition-all shadow-2xl group/list"
+            onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }}
+            className="absolute top-8 right-8 z-30 w-12 h-12 rounded-[18px] bg-white/5 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/20 hover:text-white transition-all shadow-2xl group/add"
+            title="Inscribir mi alquiler"
           >
             <div className="relative">
-              {/* Pulsación Verde Sutil */}
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
-              
-              {/* Icono de Lavadora Inline SVG */}
+              <StoreIcon className="w-6 h-6" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900 flex items-center justify-center">
+                <Plus className="w-2 h-2 text-white" />
+              </div>
+            </div>
+          </button>
+
+          {/* BOTÓN: ACCESO A VITRINAS (Inferior Derecho) */}
+          <button 
+            onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }}
+            className="absolute bottom-8 right-8 z-30 w-14 h-14 rounded-full bg-slate-950/40 backdrop-blur-2xl border border-white/10 flex items-center justify-center text-white hover:bg-slate-950/60 transition-all shadow-2xl group/list"
+          >
+            <div className="relative">
+              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(34,197,94,0.8)]" />
               <svg 
                 viewBox="0 0 24 24" 
                 fill="none" 
@@ -208,7 +231,7 @@ export function HomeActions({
                 strokeWidth="2.5" 
                 strokeLinecap="round" 
                 strokeLinejoin="round" 
-                className="w-5 h-5 text-white/80 group-hover/list:text-white transition-colors"
+                className="w-7 h-7 text-white/80 group-hover/list:text-white transition-colors"
               >
                 <rect x="3" y="2" width="18" height="20" rx="2" ry="2"></rect>
                 <circle cx="12" cy="13" r="5"></circle>
@@ -219,26 +242,11 @@ export function HomeActions({
             </div>
           </button>
         </div>
-
-        <button 
-          onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }}
-          className="absolute top-2 right-2 z-20 w-8 h-8 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all shadow-xl group/add"
-          title="Inscribir mi alquiler de lavadoras"
-        >
-          <div className="relative">
-            <StoreIcon className="w-4 h-4" />
-            <Plus className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full text-white" />
-          </div>
-        </button>
       </div>
 
       {/* DIALOG SOLICITUD CLIENTE (LAVADORAS) */}
       <Dialog open={openWasher} onOpenChange={setOpenWasher}>
         <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-white p-0 overflow-hidden flex flex-col z-[600] [&>button:last-child]:hidden">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Solicitar Lavadora</DialogTitle>
-            <DialogDescription>Formulario instantáneo para alquiler.</DialogDescription>
-          </DialogHeader>
           <div className="h-20 bg-slate-950 flex items-center justify-between px-6 shrink-0 border-b border-white/5">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30"><Waves className="w-6 h-6 text-primary" /></div>
@@ -268,10 +276,6 @@ export function HomeActions({
       {/* DIALOG INSCRIBIR TIENDA DE LAVADORAS */}
       <Dialog open={openAddWasherStore} onOpenChange={setOpenAddWasherStore}>
         <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-white p-0 overflow-hidden flex flex-col z-[650] [&>button:last-child]:hidden">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Inscribir Alquiler</DialogTitle>
-            <DialogDescription>Crea tu propia vitrina de lavadoras.</DialogDescription>
-          </DialogHeader>
           <div className="h-20 bg-slate-900 flex items-center justify-between px-6 shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center border border-green-500/30"><StoreIcon className="w-6 h-6 text-green-500" /></div>
@@ -305,6 +309,7 @@ export function HomeActions({
         </DialogContent>
       </Dialog>
 
+      {/* DIALOG INSCRIBIR TIENDA ESTÁNDAR */}
       <Dialog open={openStore} onOpenChange={setOpenStore}>
         <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[500px] overflow-y-auto max-h-[90vh]">
           <DialogHeader>
@@ -341,6 +346,7 @@ export function HomeActions({
         </DialogContent>
       </Dialog>
 
+      {/* DIALOG EDITAR CATEGORÍA (ADMIN) */}
       <Dialog open={openCategory} onOpenChange={setOpenCategory}>
         <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[500px]">
           <DialogHeader>

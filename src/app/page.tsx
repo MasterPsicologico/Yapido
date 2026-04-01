@@ -80,7 +80,6 @@ function AuthenticatedHome() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [base64Image, setBase64Image] = useState<string | null>(null);
-  const [isImageRemoved, setIsImageRemoved] = useState(false);
 
   const catQ = useMemoFirebase(() => query(collection(firestore, 'mainCategories'), orderBy('createdAt', 'desc')), [firestore]);
   const { data: mainCategories, isLoading: loadingCategories } = useCollection(catQ);
@@ -113,7 +112,6 @@ function AuthenticatedHome() {
       try { 
         const comp = await compressImage(file); 
         setBase64Image(comp); 
-        setIsImageRemoved(false);
       }
       catch (e) { toast({ title: "Error de imagen" }); }
       finally { setIsCompressing(false); }
@@ -158,80 +156,79 @@ function AuthenticatedHome() {
       updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
       setOpenStore(false);
       toast({ title: "Vitrina registrada con éxito" });
-      
-      // REDIRECCIÓN INSTANTÁNEA AL PANEL DE LA TIENDA
       router.push(`/stores/${ref.id}`);
     } catch (e) { toast({ title: "Error al registrar vitrina" }); }
     finally { setIsRegistering(false); }
   };
 
   return (
-    <div className="w-full space-y-8">
-      {/* SECCIÓN DE ACCIÓN PRINCIPAL (ALQUILER DE LAVADORAS) */}
-      <HomeActions 
-        isAdmin={isAdmin}
-        profile={profile}
-        openCategory={openCategory} 
-        setOpenCategory={(val) => { setOpenCategory(val); if(!val) setIsImageRemoved(false); }} 
-        openStore={openStore} 
-        setOpenStore={setOpenStore}
-        editingCategory={editingCategory} 
-        mainCategories={mainCategories} 
-        base64Image={base64Image} 
-        setBase64Image={setBase64Image}
-        isImageRemoved={isImageRemoved}
-        setIsImageRemoved={setIsImageRemoved}
-        isRegistering={isRegistering} 
-        isCompressing={isCompressing} 
-        onImageUpload={handleImageUpload} 
-        onCategorySubmit={handleCategorySubmit} 
-        onStoreSubmit={handleStoreSubmit}
-      />
+    <div className="w-full flex flex-col items-center">
+      {/* SECCIÓN DE ACCIÓN PRINCIPAL (ALQUILER DE LAVADORAS) - SIN ESPACIADO SUPERIOR PARA FULL SCREEN */}
+      <div className="w-full">
+        <HomeActions 
+          isAdmin={isAdmin}
+          profile={profile}
+          openCategory={openCategory} 
+          setOpenCategory={(val) => { setOpenCategory(val); }} 
+          openStore={openStore} 
+          setOpenStore={setOpenStore}
+          editingCategory={editingCategory} 
+          mainCategories={mainCategories} 
+          base64Image={base64Image} 
+          setBase64Image={setBase64Image}
+          isRegistering={isRegistering} 
+          isCompressing={isCompressing} 
+          onImageUpload={handleImageUpload} 
+          onCategorySubmit={handleCategorySubmit} 
+          onStoreSubmit={handleStoreSubmit}
+        />
+      </div>
 
-      {isAdmin && (
-        <section className="px-4 sm:px-8">
-          <Link href="/admin/agents">
-            <Card className="border-none rounded-[40px] bg-slate-900 text-white overflow-hidden shadow-2xl group hover:scale-[1.01] transition-all duration-500 cursor-pointer relative">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-primary/20 transition-colors" />
-              <CardContent className="p-10 flex flex-col sm:flex-row items-center justify-between gap-8">
-                <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 bg-white/10 rounded-[32px] flex items-center justify-center backdrop-blur-xl border border-white/5 relative">
-                    <Cpu className="w-10 h-10 text-primary animate-pulse" />
-                    <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400" />
+      <div className="w-full max-w-7xl space-y-12 pb-20">
+        {isAdmin && (
+          <section className="px-4 sm:px-8 mt-12">
+            <Link href="/admin/agents">
+              <Card className="border-none rounded-[40px] bg-slate-900 text-white overflow-hidden shadow-2xl group hover:scale-[1.01] transition-all duration-500 cursor-pointer relative">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/20 transition-colors" />
+                <CardContent className="p-10 flex flex-col sm:flex-row items-center justify-between gap-8">
+                  <div className="flex items-center gap-6">
+                    <div className="w-20 h-20 bg-white/10 rounded-[32px] flex items-center justify-center backdrop-blur-xl border border-white/5 relative">
+                      <Cpu className="w-10 h-10 text-primary animate-pulse" />
+                      <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-3xl sm:text-4xl font-black italic uppercase tracking-tighter leading-none">Ciudadela de Agentes</h3>
+                      <p className="text-primary/60 text-[10px] font-black uppercase tracking-[0.4em] ml-1">Administración de IA Centralizada</p>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-3xl sm:text-4xl font-black italic uppercase tracking-tighter leading-none">Ciudadela de Agentes</h3>
-                    <p className="text-primary/60 text-[10px] font-black uppercase tracking-[0.4em] ml-1">Administración de IA Centralizada</p>
+                  <div className="flex items-center gap-4">
+                    <div className="hidden md:flex flex-col items-end">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Estado Global</span>
+                      <span className="text-sm font-black text-green-400 italic">ACTIVO • 16 ESPECIALISTAS</span>
+                    </div>
+                    <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                      <ArrowRight className="w-6 h-6" />
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="hidden md:flex flex-col items-end">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Estado Global</span>
-                    <span className="text-sm font-black text-green-400 italic">ACTIVO • 16 ESPECIALISTAS</span>
-                  </div>
-                  <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-                    <ArrowRight className="w-6 h-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        </section>
-      )}
+                </CardContent>
+              </Card>
+            </Link>
+          </section>
+        )}
 
-      <HomeCategorySection 
-        isAdmin={isAdmin} 
-        categories={filteredData.categories} 
-        isLoading={loadingCategories} 
-        onEdit={(c) => { 
-          setEditingCategory(c); 
-          setOpenCategory(true); 
-          setIsImageRemoved(false);
-          setBase64Image(null);
-        }} 
-      />
-      
-      {!searchTerm && <HomePromoBanner onAction={() => setOpenStore(true)} />}
+        <HomeCategorySection 
+          isAdmin={isAdmin} 
+          categories={filteredData.categories} 
+          isLoading={loadingCategories} 
+          onEdit={(c) => { 
+            setEditingCategory(c); 
+            setOpenCategory(true); 
+            setBase64Image(null);
+          }} 
+        />
+        
+        {!searchTerm && <div className="px-4 sm:px-8"><HomePromoBanner onAction={() => setOpenStore(true)} /></div>}
+      </div>
     </div>
   );
 }
