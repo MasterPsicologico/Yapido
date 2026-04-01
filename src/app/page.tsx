@@ -130,7 +130,7 @@ function AuthenticatedHome() {
         const ref = doc(firestore, 'mainCategories', editingCategory.id);
         const data: any = { name, description, updatedAt: serverTimestamp() };
         if (base64Image) data.imageUrl = base64Image;
-        updateDocumentNonBlocking(ref, data);
+        setDocumentNonBlocking(ref, data, { merge: true });
       } else {
         const ref = doc(collection(firestore, 'mainCategories'));
         setDocumentNonBlocking(ref, { id: ref.id, name, description, imageUrl: base64Image, createdAt: serverTimestamp() }, { merge: true });
@@ -144,16 +144,21 @@ function AuthenticatedHome() {
     e.preventDefault();
     if (!user) return;
     const fd = new FormData(e.currentTarget);
-    const mainCategoryId = fd.get('mainCategoryId');
-    const name = fd.get('name');
-    const address = fd.get('address');
+    const mainCategoryId = fd.get('mainCategoryId') as string;
+    const name = fd.get('name') as string;
+    const address = fd.get('address') as string;
     
     setIsRegistering(true);
     try {
       const ref = doc(collection(firestore, 'stores'));
       setDocumentNonBlocking(ref, { id: ref.id, ownerId: user.uid, mainCategoryId, name, address, status: 'active', createdAt: serverTimestamp(), imageUrl: `https://picsum.photos/seed/${ref.id}/800/600` }, { merge: true });
+      
       const userRef = doc(firestore, 'users', user.uid);
-      updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
+      // CORRECCIÓN: No degradar el rol de administrador si ya lo tiene
+      if (profile?.role === 'cliente') {
+        updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
+      }
+      
       setOpenStore(false);
       toast({ title: "Vitrina registrada con éxito" });
       router.push(`/stores/${ref.id}`);
@@ -163,7 +168,6 @@ function AuthenticatedHome() {
 
   return (
     <div className="w-full flex flex-col items-center">
-      {/* SECCIÓN DE ACCIÓN PRINCIPAL (ALQUILER DE LAVADORAS) - SIN ESPACIADO SUPERIOR PARA FULL SCREEN */}
       <div className="w-full">
         <HomeActions 
           isAdmin={isAdmin}

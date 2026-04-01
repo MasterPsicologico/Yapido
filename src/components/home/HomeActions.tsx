@@ -154,7 +154,6 @@ export function HomeActions({
     setIsSendingRequest(true);
     
     try {
-      // 1. SINCRONIZACIÓN INSTANTÁNEA DE PERFIL
       const userRef = doc(firestore, 'users', user.uid);
       const profileUpdates: any = {};
       if (tempAddress !== profile?.address) profileUpdates.address = tempAddress;
@@ -164,7 +163,6 @@ export function HomeActions({
         updateDocumentNonBlocking(userRef, { ...profileUpdates, updatedAt: serverTimestamp() });
       }
 
-      // 2. CREACIÓN DE LA SOLICITUD
       const requestData = {
         customerId: user.uid,
         customerName: profile?.displayName || user.displayName || 'Cliente',
@@ -208,7 +206,12 @@ export function HomeActions({
         imageUrl: `https://picsum.photos/seed/${storeRef.id}/800/600`, driverCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
         privateDrivers: []
       });
-      if (profile?.role !== 'admin') updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { role: 'dueño', updatedAt: serverTimestamp() });
+      
+      // CORRECCIÓN: Solo cambiar rol si es cliente
+      if (profile?.role === 'cliente') {
+        updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { role: 'dueño', updatedAt: serverTimestamp() });
+      }
+      
       toast({ title: "¡Vitrina de Lavadoras Lista!" });
       setOpenAddWasherStore(false);
       router.push(`/admin/washer/${storeRef.id}`);
@@ -221,24 +224,21 @@ export function HomeActions({
 
   return (
     <div className="flex flex-col w-full">
-      {/* BANNER FULL SCREEN REFINADO */}
       <div className="relative w-full group">
         <div 
           onClick={() => { playClickSound(); setOpenWasher(true); }}
           className="relative w-full min-h-[calc(100dvh-64px)] overflow-hidden cursor-pointer flex flex-col items-center justify-center px-6 text-center bg-[#0a0a0a] active:scale-[0.99] transition-all duration-500"
         >
-          {/* Portada Universal */}
           <div className="absolute inset-0 z-0">
             {bannerConfig?.backgroundImage ? (
               <Image src={bannerConfig.backgroundImage} alt="Portada" fill className="object-cover" priority />
             ) : (
-              <div className="absolute inset-0 opacity-40 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover" />
+              <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover" />
             )}
             <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/70" />
           </div>
 
           <div className="relative z-10 flex flex-col items-center gap-12 animate-in fade-in zoom-in duration-700">
-            {/* BOTÓN SOLICITAR: MÁS PEQUEÑO Y BAJO */}
             <div className="mt-20 group/cta">
               <div className="bg-red-600/80 hover:bg-red-600 backdrop-blur-md text-white px-8 py-4 rounded-full font-black text-lg uppercase italic tracking-tighter shadow-[0_10px_30px_rgba(220,38,38,0.4)] border border-white/10 flex items-center gap-3 transition-all hover:scale-105 active:scale-95">
                 <CheckCircle2 className="w-6 h-6 text-white drop-shadow-sm" />
@@ -253,7 +253,6 @@ export function HomeActions({
             </div>
           </div>
 
-          {/* BOTONES EXTREMOS */}
           {isAdmin && (
             <div className="absolute top-4 left-4 z-30">
               <input type="file" ref={bannerInputRef} className="hidden" accept="image/*" onChange={handleBannerUpload} />
@@ -275,7 +274,6 @@ export function HomeActions({
         </div>
       </div>
 
-      {/* DIALOG NUEVA SOLICITUD (DISEÑO REFERENCIA) */}
       <Dialog open={openWasher} onOpenChange={setOpenWasher}>
         <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-[#0a0a0a] p-0 overflow-hidden flex flex-col z-[600] animate-in slide-in-from-bottom duration-500 [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
@@ -296,7 +294,6 @@ export function HomeActions({
 
           <div className="flex-1 overflow-y-auto no-scrollbar bg-white rounded-t-[40px] mt-2">
             <div className="max-w-md mx-auto space-y-10 py-12 px-6">
-              {/* ADMIN PRICING PANEL */}
               {showAdminPricing && isAdmin && (
                 <form onSubmit={handleUpdatePricing} className="bg-slate-900 p-6 rounded-[32px] text-white space-y-4 animate-in slide-in-from-top-4 duration-300">
                   <h4 className="text-xs font-black uppercase tracking-widest text-primary italic">Ajustes Maestro de Precios</h4>
@@ -315,7 +312,6 @@ export function HomeActions({
               </div>
 
               <form onSubmit={handleWasherRequest} className="space-y-10">
-                {/* ITEMS EDITABLES CON DISEÑO REFERENCIA */}
                 <div className="space-y-8">
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">DIRECCIÓN DE ENTREGA</Label>
@@ -377,7 +373,6 @@ export function HomeActions({
         </DialogContent>
       </Dialog>
 
-      {/* DIALOG INSCRIBIR TIENDA ESTÁNDAR */}
       <Dialog open={openStore} onOpenChange={setOpenStore}>
         <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[500px] overflow-y-auto max-h-[90vh]">
           <DialogHeader>
@@ -401,7 +396,6 @@ export function HomeActions({
         </DialogContent>
       </Dialog>
 
-      {/* DIALOG INSCRIBIR TIENDA DE LAVADORAS */}
       <Dialog open={openAddWasherStore} onOpenChange={setOpenAddWasherStore}>
         <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-white p-0 overflow-hidden flex flex-col z-[650] [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">

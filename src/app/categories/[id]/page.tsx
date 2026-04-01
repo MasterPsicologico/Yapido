@@ -30,7 +30,7 @@ import { compressImage } from '@/lib/image-compression';
 export default function CategoryPage() {
   const params = useParams();
   const id = params?.id as string;
-  const { isAdmin, user } = useProfile();
+  const { isAdmin, user, profile } = useProfile();
   const firestore = useFirestore();
 
   const [openStore, setOpenStore] = useState(false);
@@ -96,7 +96,8 @@ export default function CategoryPage() {
         data.imageUrl = null;
       }
 
-      updateDocumentNonBlocking(catRef, data);
+      // USO DE SET CON MERGE PARA EVITAR PERMISSION DENIED SI EL DOC NO EXISTE
+      setDocumentNonBlocking(catRef, data, { merge: true });
       toast({ title: "Categoría actualizada correctamente" });
       setOpenEditCat(false);
       setEditBase64Image(null);
@@ -131,7 +132,10 @@ export default function CategoryPage() {
       }, { merge: true });
 
       const userRef = doc(firestore, 'users', user.uid);
-      updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
+      // CORRECCIÓN: No degradar el rol de administrador si ya lo tiene
+      if (profile?.role === 'cliente') {
+        updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
+      }
 
       toast({ title: "¡Vitrina Lanzada!", description: "Negocio registrado." });
       setOpenStore(false);
@@ -143,7 +147,6 @@ export default function CategoryPage() {
     }
   };
 
-  // SOPORTE PARA CATEGORÍA ESPECIAL DE LAVADORAS SI NO EXISTE EL DOC
   const displayCategory = category || (id === 'category-washer' ? {
     id: 'category-washer',
     name: 'Alquiler de Lavadoras',
