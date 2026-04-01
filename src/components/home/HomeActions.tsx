@@ -200,7 +200,7 @@ export function HomeActions({
           className={cn(
             "relative w-full min-h-[calc(100dvh-64px)] overflow-hidden cursor-pointer transition-all duration-700",
             "bg-gradient-to-br from-primary via-blue-600 to-indigo-900",
-            "flex flex-col items-center justify-start pt-24 px-6 text-center",
+            "flex flex-col items-center justify-start pt-32 px-6 text-center",
             "shadow-[0_20px_100px_-10px_rgba(59,130,246,0.6)] active:scale-[0.995]"
           )}
         >
@@ -225,30 +225,27 @@ export function HomeActions({
           
           {/* Contenedor de Textos y Badges */}
           <div className="relative z-10 space-y-8 max-w-4xl animate-in slide-in-from-top-8 duration-1000">
-            {/* Título "ALQUILER DE LAVADORAS" eliminado quirúrgicamente como solicitó el usuario */}
-            
             <div className="flex flex-col items-center gap-6">
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                <Badge className="bg-secondary text-white border-none font-black text-xs sm:text-sm px-6 py-2 uppercase tracking-[0.2em] shadow-xl">SERVICIO EXPRESS</Badge>
-                <Badge variant="outline" className="text-white border-white/30 backdrop-blur-md font-black text-xs sm:text-sm px-6 py-2 uppercase tracking-[0.2em]">GARANTÍA TOTAL</Badge>
+              <div className="flex flex-wrap items-center justify-center gap-4">
+                <Badge className="bg-secondary text-white border border-white/20 shadow-2xl font-black text-sm sm:text-base px-8 py-3 uppercase tracking-[0.2em]">SERVICIO EXPRESS</Badge>
+                <Badge variant="outline" className="text-white border-white/40 backdrop-blur-xl font-black text-sm sm:text-base px-8 py-3 uppercase tracking-[0.2em] shadow-2xl">GARANTÍA TOTAL</Badge>
               </div>
               
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-white/60 text-xs sm:text-base font-bold uppercase tracking-[0.4em] italic">Solicitud Instantánea • Aguachica</p>
-                <div className="h-1 w-24 bg-primary/40 rounded-full" />
+              <div className="flex flex-col items-center gap-4">
+                <div className="h-1.5 w-32 bg-primary/60 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
               </div>
             </div>
           </div>
 
           {/* CTA Inferior (Click to Action) */}
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-4 animate-bounce">
-            <span className="text-white/40 text-[9px] font-black uppercase tracking-[0.5em]">Toca para Solicitar</span>
-            <ChevronDown className="w-6 h-6 text-white/20" />
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-4 animate-bounce">
+            <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.6em] drop-shadow-lg">Toca para Solicitar</span>
+            <ChevronDown className="w-8 h-8 text-white/40" />
           </div>
 
-          {/* BOTÓN: CARGAR FOTO (Solo Admin) - Ajustado a la esquina superior izquierda */}
+          {/* BOTÓN: CARGAR FOTO (Solo Admin) - Bajado y más llamativo */}
           {isAdmin && (
-            <div className="absolute top-4 left-4 z-30 flex flex-col items-center gap-2">
+            <div className="absolute top-12 left-8 z-30 flex flex-col items-center gap-2">
               <input 
                 type="file" 
                 ref={bannerInputRef} 
@@ -259,36 +256,36 @@ export function HomeActions({
               <button 
                 onClick={(e) => { e.stopPropagation(); bannerInputRef.current?.click(); }}
                 disabled={isUploadingBanner}
-                className="w-12 h-12 rounded-[18px] bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/80 hover:bg-white/20 transition-all shadow-2xl"
+                className="w-14 h-14 rounded-[22px] bg-white/10 backdrop-blur-2xl border border-white/30 flex items-center justify-center text-white hover:bg-white/20 transition-all shadow-[0_15px_40px_rgba(0,0,0,0.3)] active:scale-90"
                 title="Cambiar Foto de Fondo"
               >
-                {isUploadingBanner ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
+                {isUploadingBanner ? <Loader2 className="w-7 h-7 animate-spin" /> : <Camera className="w-7 h-7 text-primary" />}
               </button>
-              <span className="text-[7px] font-black text-white/40 uppercase tracking-widest">Admin Portada</span>
+              <span className="text-[8px] font-black text-white/60 uppercase tracking-widest bg-black/20 px-3 py-1 rounded-full backdrop-blur-md">Admin Portada</span>
             </div>
           )}
 
-          {/* BOTÓN: AGREGAR TIENDAS (Superior Derecho) */}
+          {/* BOTÓN: AGREGAR TIENDAS (Superior Derecho) - Bajado */}
           <button 
             onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }}
-            className="absolute top-8 right-8 z-30 w-12 h-12 rounded-[18px] bg-white/5 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:bg-white/20 hover:text-white transition-all shadow-2xl group/add"
+            className="absolute top-12 right-8 z-30 w-14 h-14 rounded-[22px] bg-white/10 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white/80 hover:bg-white/30 transition-all shadow-[0_15px_40px_rgba(0,0,0,0.3)] active:scale-90 group/add"
             title="Inscribir mi alquiler"
           >
             <div className="relative">
-              <StoreIcon className="w-6 h-6" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900 flex items-center justify-center">
-                <Plus className="w-2 h-2 text-white" />
+              <StoreIcon className="w-7 h-7" />
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 flex items-center justify-center shadow-lg">
+                <Plus className="w-2.5 h-2.5 text-white" />
               </div>
             </div>
           </button>
 
-          {/* BOTÓN: ACCESO A VITRINAS (Inferior Derecho) */}
+          {/* BOTÓN: ACCESO A VITRINAS (Inferior Derecho) - Reposicionado */}
           <button 
             onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }}
-            className="absolute bottom-4 right-4 z-30 w-14 h-14 rounded-full bg-slate-950/40 backdrop-blur-2xl border border-white/10 flex items-center justify-center text-white hover:bg-slate-950/60 transition-all shadow-2xl group/list"
+            className="absolute bottom-8 right-8 z-30 w-16 h-16 rounded-full bg-slate-950/60 backdrop-blur-3xl border border-white/20 flex items-center justify-center text-white hover:bg-slate-950/80 transition-all shadow-[0_20px_50px_rgba(0,0,0,0.5)] active:scale-90 group/list"
           >
             <div className="relative">
-              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(34,197,94,0.8)]" />
+              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(34,197,94,0.8)]" />
               <svg 
                 viewBox="0 0 24 24" 
                 fill="none" 
@@ -296,7 +293,7 @@ export function HomeActions({
                 strokeWidth="2.5" 
                 strokeLinecap="round" 
                 strokeLinecap="round" 
-                className="w-7 h-7 text-white/80 group-hover/list:text-white transition-colors"
+                className="w-8 h-8 text-white/90 group-hover/list:text-white transition-colors"
               >
                 <rect x="3" y="2" width="18" height="20" rx="2" ry="2"></rect>
                 <circle cx="12" cy="13" r="5"></circle>
@@ -395,7 +392,7 @@ export function HomeActions({
               <Input name="name" placeholder="Ej: Mi Negocio Local" className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-base" required />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px) font-black uppercase text-slate-400 ml-2">Categoría</Label>
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Categoría</Label>
               <select 
                 name="mainCategoryId" 
                 defaultValue=""
