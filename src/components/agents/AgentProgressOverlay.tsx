@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -8,6 +9,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface AgentProgressOverlayProps {
   isOpen: boolean;
@@ -53,7 +55,7 @@ export function AgentProgressOverlay({ isOpen, logs, isError, errorMsg, onComple
     <div className="fixed inset-0 z-[1000] bg-slate-900/95 backdrop-blur-2xl flex items-center justify-center p-6 animate-in fade-in duration-300">
       <div className="max-w-md w-full space-y-10 text-center">
         <div className="relative mx-auto w-28 h-28">
-          <div className="absolute inset-0 rounded-[32px] bg-primary/20 animate-ping duration-[2000ms]" />
+          <div className="absolute inset-0 rounded-[32px] bg-primary/20 animate-ping [animation-duration:2000ms]" />
           <div className="relative w-28 h-28 bg-slate-800 rounded-[32px] border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden">
             {isError ? (
               <AlertCircle className="w-14 h-14 text-red-500" />

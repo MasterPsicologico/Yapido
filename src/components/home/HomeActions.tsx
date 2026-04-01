@@ -302,9 +302,9 @@ export function HomeActions({
                   <h4 className="text-xs font-black uppercase tracking-widest text-primary italic">Ajustes Maestro de Precios</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1"><Label className="text-[8px] uppercase">Mínimo Horas</Label><Input name="minHours" type="number" defaultValue={minHours} className="bg-white/5 border-none h-10 font-bold" /></div>
-                    <div className="space-y-1"><Label className="text-[8px] uppercase">Precio Base ($)</Label><Input name="basePrice" type="number" defaultValue={basePrice} className="bg-white/5 border-none h-10 font-bold" /></div>
+                    <div className="space-y-1"><Label className="text-[8px] uppercase">Precio Base ($)</Label><Input name="basePrice" type="number" defaultValue={pricingConfig?.basePrice} className="bg-white/5 border-none h-10 font-bold" /></div>
                   </div>
-                  <div className="space-y-1"><Label className="text-[8px] uppercase">Precio Hora Adicional ($)</Label><Input name="additionalHourPrice" type="number" defaultValue={additionalHourPrice} className="bg-white/5 border-none h-10 font-bold" /></div>
+                  <div className="space-y-1"><Label className="text-[8px] uppercase">Precio Hora Adicional ($)</Label><Input name="additionalHourPrice" type="number" defaultValue={pricingConfig?.additionalHourPrice} className="bg-white/5 border-none h-10 font-bold" /></div>
                   <Button type="submit" className="w-full bg-primary font-black uppercase text-[10px]">GUARDAR CAMBIOS</Button>
                 </form>
               )}
@@ -318,7 +318,7 @@ export function HomeActions({
                 {/* ITEMS EDITABLES CON DISEÑO REFERENCIA */}
                 <div className="space-y-8">
                   <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">DIRECCIÓN DE ENTREGA</lebel>
+                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">DIRECCIÓN DE ENTREGA</Label>
                     <div className="relative group">
                       <div className="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-primary shadow-sm"><MapPin className="w-5 h-5" /></div>
                       <Input value={tempAddress} onChange={(e) => setTempAddress(e.target.value)} className="h-20 rounded-[32px] border-none shadow-[0_10px_40px_rgba(0,0,0,0.03)] pl-20 font-black text-slate-800 text-lg bg-slate-50/30 focus:bg-white transition-all" required />
@@ -326,7 +326,7 @@ export function HomeActions({
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">WHATSAPP</lebel>
+                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">WHATSAPP</Label>
                     <div className="relative group">
                       <div className="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-500 shadow-sm"><Zap className="w-5 h-5" /></div>
                       <Input value={tempPhone} onChange={(e) => setTempPhone(e.target.value)} className="h-20 rounded-[32px] border-none shadow-[0_10px_40px_rgba(0,0,0,0.03)] pl-20 font-black text-slate-800 text-lg bg-slate-50/30 focus:bg-white transition-all" required />
@@ -335,7 +335,7 @@ export function HomeActions({
 
                   <div className="space-y-4 pt-4 border-t border-slate-50">
                     <div className="flex items-center justify-between px-2">
-                      <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">TIEMPO DE ALQUILER</lebel>
+                      <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">TIEMPO DE ALQUILER</Label>
                       <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black px-3 py-1">MIN. {minHours} HORAS</Badge>
                     </div>
                     <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-[32px]">
@@ -380,7 +380,10 @@ export function HomeActions({
       {/* DIALOG INSCRIBIR TIENDA ESTÁNDAR */}
       <Dialog open={openStore} onOpenChange={setOpenStore}>
         <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[500px] overflow-y-auto max-h-[90vh]">
-          <DialogHeader><DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">Inscribir mi tienda</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">Inscribir mi tienda</DialogTitle>
+            <DialogDescription>Ingresa los datos para registrar tu negocio en la plataforma.</DialogDescription>
+          </DialogHeader>
           <form onSubmit={onStoreSubmit} className="space-y-6 pt-6">
             <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nombre de la tienda</Label><Input name="name" placeholder="Ej: Mi Negocio Local" className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-base" required /></div>
             <div className="space-y-2">
@@ -401,7 +404,10 @@ export function HomeActions({
       {/* DIALOG INSCRIBIR TIENDA DE LAVADORAS */}
       <Dialog open={openAddWasherStore} onOpenChange={setOpenAddWasherStore}>
         <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-white p-0 overflow-hidden flex flex-col z-[650] [&>button:last-child]:hidden">
-          <DialogHeader className="sr-only"><DialogTitle>Inscribir Alquiler</DialogTitle></DialogHeader>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Inscribir Alquiler</DialogTitle>
+            <DialogDescription>Formulario de registro para flota de lavadoras.</DialogDescription>
+          </DialogHeader>
           <div className="h-20 bg-slate-900 flex items-center justify-between px-6 shrink-0"><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center border border-green-500/30"><StoreIcon className="w-6 h-6 text-green-500" /></div><div><h3 className="text-white font-black uppercase italic tracking-tighter text-xl leading-none">Mi Alquiler</h3><p className="text-green-500/60 text-[9px] font-black uppercase tracking-[0.3em] mt-1">Registro de Negocio</p></div></div><button onClick={() => setOpenAddWasherStore(false)} className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-all"><X className="w-6 h-6" /></button></div>
           <div className="flex-1 overflow-y-auto no-scrollbar p-6"><div className="max-w-md mx-auto py-10 space-y-10"><div className="text-center space-y-2"><h2 className="text-4xl font-black italic uppercase tracking-tighter text-slate-900">Inscribir mi Alquiler</h2><p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Configura tu flota y comienza a facturar</p></div><form onSubmit={handleCreateWasherStore} className="space-y-8"><div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Nombre de la Tienda</Label><Input name="name" placeholder="Ej: Lavadoras El Sol" className="h-16 rounded-[24px] bg-slate-50 border-none font-black text-lg" required /></div><div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">WhatsApp Comercial</Label><Input name="phone" defaultValue={profile?.phoneNumber || ''} placeholder="300 000 0000" className="h-16 rounded-[24px] bg-slate-50 border-none font-black text-lg" required /></div><div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Dirección Base</Label><Input name="address" placeholder="Ubicación de tu flota" className="h-16 rounded-[24px] bg-slate-50 border-none font-black text-lg" required /></div><Button type="submit" disabled={isSendingRequest} className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-2xl uppercase italic tracking-tighter shadow-2xl gap-4">{isSendingRequest ? <Loader2 className="animate-spin" /> : "GUARDAR Y LANZAR"}</Button></form></div></div>
         </DialogContent>

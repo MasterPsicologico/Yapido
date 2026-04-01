@@ -35,7 +35,7 @@ export default function Home() {
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0a0a]">
       <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700">
         <div className="relative">
-          <div className="absolute inset-0 rounded-[2.5rem] bg-primary/20 animate-ping duration-[2000ms]" />
+          <div className="absolute inset-0 rounded-[2.5rem] bg-primary/20 animate-ping [animation-duration:2000ms]" />
           <div className="relative w-24 h-24 bg-primary rounded-[2.5rem] flex items-center justify-center text-white shadow-[0_20px_50px_rgba(59,130,246,0.3)] border border-white/10">
             <ShoppingBag className="w-12 h-12" />
           </div>

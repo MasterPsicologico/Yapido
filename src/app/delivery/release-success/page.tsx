@@ -3,7 +3,7 @@
 
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Truck, ArrowRight, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Truck, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ReleaseSuccessPage() {
@@ -12,7 +12,7 @@ export default function ReleaseSuccessPage() {
       <Navbar />
       <main className="flex-1 flex flex-col items-center justify-center p-6 text-center animate-in zoom-in duration-500">
         <div className="relative mb-10">
-          <div className="absolute inset-0 rounded-[40px] bg-green-500/20 animate-ping duration-[3000ms]" />
+          <div className="absolute inset-0 rounded-[40px] bg-green-500/20 animate-ping [animation-duration:3000ms]" />
           <div className="relative w-28 h-28 bg-green-500 rounded-[40px] flex items-center justify-center text-white shadow-2xl shadow-green-200">
             <CheckCircle2 className="w-14 h-14" />
           </div>
