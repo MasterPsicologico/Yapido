@@ -73,8 +73,9 @@ export function HomeActions({
   const { data: bannerConfig } = useDoc(bannerConfigRef);
 
   useEffect(() => {
-    audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-    audioRef.current.volume = 0.4;
+    // Sonido de transición premium para una experiencia táctil superior
+    audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2568-preview.mp3');
+    audioRef.current.volume = 0.3;
   }, []);
 
   const playClickSound = () => {
@@ -92,7 +93,6 @@ export function HomeActions({
     try {
       const compressed = await compressImage(file, 1920, 1080, 0.8);
       
-      // Guardar en la nube instantáneamente
       if (bannerConfig) {
         updateDocumentNonBlocking(bannerConfigRef, {
           backgroundImage: compressed,
@@ -199,147 +199,116 @@ export function HomeActions({
           onClick={() => { playClickSound(); setOpenWasher(true); }}
           className={cn(
             "relative w-full min-h-[calc(100dvh-64px)] overflow-hidden cursor-pointer transition-all duration-700",
-            "bg-slate-900",
+            "bg-[#0a0a0a]",
             "flex flex-col items-center justify-center px-6 text-center",
-            "active:scale-[0.995]"
+            "active:scale-[0.99]"
           )}
         >
-          {/* Portada en la Nube con Máxima Vibrancia */}
+          {/* Portada Universal con Máxima Vibrancia */}
           <div className="absolute inset-0 z-0">
             {bannerConfig?.backgroundImage ? (
               <Image 
                 src={bannerConfig.backgroundImage} 
                 alt="Portada Alquiler" 
                 fill 
-                className="object-cover opacity-100 animate-in fade-in duration-1000" 
+                className="object-cover opacity-100 transition-opacity duration-1000" 
                 priority 
               />
             ) : (
-              <div className="absolute inset-0 opacity-20 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover" />
+              <div className="absolute inset-0 opacity-40 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover" />
             )}
-            {/* Overlay sutil para legibilidad sin matar el color */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
+            {/* Gradiente refinado para enfoque central */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
           </div>
 
-          {/* Efectos de Iluminación Dinámica */}
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/30 rounded-full blur-[120px] animate-pulse" />
-          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px] animate-pulse delay-700" />
+          {/* Luces de ambiente sutiles */}
+          <div className="absolute top-0 left-0 w-full h-full bg-primary/5 pointer-events-none" />
           
-          {/* Contenedor de Textos y Badges */}
-          <div className="relative z-10 space-y-10 max-w-4xl animate-in zoom-in duration-700">
-            <div className="flex flex-col items-center gap-6">
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                <Badge className="bg-[#00c9db] text-white border-none shadow-2xl font-black text-sm sm:text-base px-8 py-3 uppercase tracking-[0.2em] italic">SERVICIO EXPRESS</Badge>
-                <Badge variant="outline" className="text-white border-white/60 backdrop-blur-2xl font-black text-sm sm:text-base px-8 py-3 uppercase tracking-[0.2em] shadow-2xl">GARANTÍA TOTAL</Badge>
+          <div className="relative z-10 space-y-12 max-w-4xl animate-in fade-in zoom-in duration-1000">
+            {/* BOTÓN DE ACCIÓN REFINADO: SOLICITAR AHORA */}
+            <div className="flex flex-col items-center gap-6 group/cta">
+              <div className="bg-red-600/90 hover:bg-red-600 backdrop-blur-md text-white px-10 py-5 rounded-[24px] font-black text-xl uppercase italic tracking-tighter shadow-[0_15px_40px_rgba(220,38,38,0.3)] border border-white/10 flex items-center gap-4 transition-all hover:scale-105 active:scale-95 group-hover/cta:shadow-[0_20px_60px_rgba(220,38,38,0.5)]">
+                <CheckCircle2 className="w-7 h-7 text-white drop-shadow-sm" />
+                SOLICITAR AHORA
               </div>
-              
-              {/* BOTÓN DE ACCIÓN ROJO: SOLICITAR AHORA */}
-              <div className="mt-4 flex flex-col items-center gap-4 group/cta">
-                <div className="bg-red-600 hover:bg-red-500 text-white px-12 py-5 rounded-[28px] font-black text-2xl uppercase italic tracking-tighter shadow-[0_20px_60px_rgba(220,38,38,0.5)] border-4 border-white/20 flex items-center gap-4 transition-all hover:scale-105 active:scale-95 animate-pulse">
-                  <CheckCircle2 className="w-8 h-8 text-white drop-shadow-md" />
-                  SOLICITAR AHORA
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="h-1 w-8 bg-red-500 rounded-full" />
-                  <span className="text-white/80 text-[10px] font-black uppercase tracking-[0.4em]">Toca en cualquier parte</span>
-                  <div className="h-1 w-8 bg-red-500 rounded-full" />
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-white/60 text-[9px] font-black uppercase tracking-[0.5em] ml-1">Toca para iniciar</span>
+                <div className="h-0.5 w-12 bg-white/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-red-500 animate-progress-loading" />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Indicador de Scroll Inferior */}
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 animate-bounce">
-            <ChevronDown className="w-6 h-6 text-white/40" />
+          {/* Indicador de Navegación Inferior */}
+          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 opacity-40 animate-bounce">
+            <ChevronDown className="w-5 h-5 text-white" />
           </div>
 
-          {/* BOTONES EN EXTREMOS: MÁXIMA PEGADA A LOS BORDES */}
+          {/* BOTONES DE CONTROL: PEGADOS A LOS BORDES */}
           {isAdmin && (
-            <div className="absolute top-4 left-4 z-30 flex flex-col items-center gap-2">
-              <input 
-                type="file" 
-                ref={bannerInputRef} 
-                className="hidden" 
-                accept="image/*" 
-                onChange={handleBannerUpload} 
-              />
+            <div className="absolute top-4 left-4 z-30">
+              <input type="file" ref={bannerInputRef} className="hidden" accept="image/*" onChange={handleBannerUpload} />
               <button 
                 onClick={(e) => { e.stopPropagation(); bannerInputRef.current?.click(); }}
                 disabled={isUploadingBanner}
-                className="w-14 h-14 rounded-[22px] bg-white/10 backdrop-blur-2xl border border-white/30 flex items-center justify-center text-white hover:bg-white/20 transition-all shadow-2xl active:scale-90"
+                className="w-12 h-12 rounded-[18px] bg-white/10 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white/60 hover:text-primary hover:bg-white/20 transition-all shadow-xl active:scale-90"
               >
-                {isUploadingBanner ? <Loader2 className="w-7 h-7 animate-spin" /> : <Camera className="w-7 h-7 text-primary" />}
+                {isUploadingBanner ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
               </button>
-              <span className="text-[7px] font-black text-white/40 uppercase tracking-[0.3em] bg-black/40 px-3 py-1 rounded-full backdrop-blur-md">PORTADA</span>
             </div>
           )}
 
-          {/* Botón: Inscribir Mi Tienda (Superior Derecho) */}
           <button 
             onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }}
-            className="absolute top-4 right-4 z-30 w-14 h-14 rounded-[22px] bg-white/10 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white/80 hover:bg-white/30 transition-all shadow-2xl active:scale-90"
+            className="absolute top-4 right-4 z-30 w-12 h-12 rounded-[18px] bg-white/10 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white/60 hover:text-green-400 hover:bg-white/20 transition-all shadow-xl active:scale-90"
           >
             <div className="relative">
-              <StoreIcon className="w-7 h-7" />
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-slate-900 flex items-center justify-center shadow-lg">
-                <Plus className="w-2.5 h-2.5 text-white" />
+              <StoreIcon className="w-6 h-6" />
+              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-slate-900 flex items-center justify-center shadow-lg">
+                <Plus className="w-2 h-2 text-white" />
               </div>
             </div>
           </button>
 
-          {/* Botón: Directorio de Vitrinas (Inferior Derecho) */}
           <button 
             onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }}
-            className="absolute bottom-4 right-4 z-30 w-16 h-16 rounded-full bg-slate-950/60 backdrop-blur-3xl border border-white/20 flex items-center justify-center text-white hover:bg-slate-950/80 transition-all shadow-2xl active:scale-90"
+            className="absolute bottom-4 right-4 z-30 w-14 h-14 rounded-full bg-slate-950/40 backdrop-blur-3xl border border-white/10 flex items-center justify-center text-white/80 hover:bg-slate-950/60 transition-all shadow-2xl active:scale-90"
           >
             <div className="relative">
-              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(34,197,94,0.8)]" />
-              <svg 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2.5" 
-                strokeLinecap="round" 
-                strokeLinecap="round" 
-                className="w-8 h-8 text-white/90"
-              >
-                <rect x="3" y="2" width="18" height="20" rx="2" ry="2"></rect>
-                <circle cx="12" cy="13" r="5"></circle>
-                <line x1="7" y1="5" x2="7.01" y2="5"></line>
-                <line x1="11" y1="5" x2="11.01" y2="5"></line>
-                <line x1="15" y1="5" x2="15.01" y2="5"></line>
-              </svg>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.6)]" />
+              <Waves className="w-7 h-7 text-white/90" />
             </div>
           </button>
         </div>
       </div>
 
-      {/* DIALOG SOLICITUD CLIENTE (LAVADORAS) */}
+      {/* DIALOG SOLICITUD CLIENTE (LAVADORAS) - ANIMACIÓN PROFESIONAL */}
       <Dialog open={openWasher} onOpenChange={setOpenWasher}>
-        <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-white p-0 overflow-hidden flex flex-col z-[600] [&>button:last-child]:hidden">
+        <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-white p-0 overflow-hidden flex flex-col z-[600] animate-in slide-in-from-bottom duration-500 [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>Nueva Solicitud de Alquiler</DialogTitle>
-            <DialogDescription>Formulario para solicitar una lavadora.</DialogDescription>
+            <DialogDescription>Formulario especializado para la solicitud del servicio.</DialogDescription>
           </DialogHeader>
           <div className="h-20 bg-slate-950 flex items-center justify-between px-6 shrink-0 border-b border-white/5">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30"><Waves className="w-6 h-6 text-primary" /></div>
               <div><h3 className="text-white font-black uppercase italic tracking-tighter text-xl leading-none">Nueva Solicitud</h3><p className="text-primary/60 text-[9px] font-black uppercase tracking-[0.3em] mt-1">Alquiler de Lavadoras</p></div>
             </div>
-            <button onClick={() => setOpenWasher(false)} className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"><X className="w-6 h-6" /></button>
+            <button onClick={() => setOpenWasher(false)} className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-all"><X className="w-6 h-6" /></button>
           </div>
           <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50/30 p-6">
             <div className="max-w-md mx-auto space-y-8 py-10">
               <div className="bg-blue-50 p-6 rounded-[32px] border border-blue-100 flex items-start gap-4">
                 <ShieldCheck className="w-6 h-6 text-primary shrink-0" />
-                <p className="text-slate-600 text-sm font-bold italic leading-tight">"Hola {profile?.displayName || 'Usuario'}, tus datos están listos. Solo confirma dónde la llevamos."</p>
+                <p className="text-slate-600 text-sm font-bold italic leading-tight">"Confirmemos la dirección para enviarte la lavadora más cercana."</p>
               </div>
               <form onSubmit={handleWasherRequest} className="space-y-6">
-                <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Dirección de entrega</Label><div className="relative"><MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" /><Input name="address" defaultValue={profile?.address || ''} className="h-16 rounded-[24px] border-none shadow-sm pl-14 font-black" required /></div></div>
-                <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">WhatsApp</Label><div className="bg-green-50 p-5 rounded-[24px] border border-green-100 flex items-center gap-4"><Zap className="w-5 h-5 text-green-500" /><span className="font-black text-slate-700">{profile?.phoneNumber || 'No registrado'}</span></div></div>
-                <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Detalles</Label><Textarea name="details" className="min-h-[120px] rounded-[24px] font-bold p-5" placeholder="¿Alguna instrucción especial?" /></div>
-                <Button type="submit" disabled={isSendingRequest || !profile?.phoneNumber} className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-2xl uppercase italic tracking-tighter shadow-2xl active:scale-95 gap-4">
-                  {isSendingRequest ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="w-8 h-8" /> SOLICITAR AHORA</>}
+                <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Dirección de entrega</Label><div className="relative"><MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-primary" /><Input name="address" defaultValue={profile?.address || ''} className="h-16 rounded-[24px] border-none shadow-sm pl-14 font-black bg-white" required /></div></div>
+                <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">WhatsApp</Label><div className="bg-green-50 p-5 rounded-[24px] border border-green-100 flex items-center gap-4"><Zap className="w-5 h-5 text-green-500" /><span className="font-black text-slate-700">{profile?.phoneNumber || 'No registrado'}</span></div></div>
+                <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Instrucciones</Label><Textarea name="details" className="min-h-[120px] rounded-[24px] font-bold p-5 bg-white border-none shadow-sm" placeholder="¿Piso? ¿Número de casa?" /></div>
+                <Button type="submit" disabled={isSendingRequest || !profile?.phoneNumber} className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-xl uppercase italic tracking-tighter shadow-2xl active:scale-95 gap-4">
+                  {isSendingRequest ? <Loader2 className="animate-spin" /> : "CONFIRMAR SOLICITUD"}
                 </Button>
               </form>
             </div>
