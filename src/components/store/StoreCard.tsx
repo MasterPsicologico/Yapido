@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -100,7 +101,10 @@ export function StoreCard({ store }: { store: any }) {
   ];
 
   return (
-    <Card className="group flex flex-col h-full border-none rounded-[48px] shadow-[0_15px_50px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.12)] transition-all duration-700 bg-white overflow-hidden relative">
+    <Card className={cn(
+      "group flex flex-col h-full border-none rounded-[48px] shadow-[0_15px_50px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.12)] transition-all duration-700 bg-white overflow-hidden relative",
+      isWasherRental && "ring-4 ring-primary/5"
+    )}>
       {/* OVERLAY DE ADMINISTRACIÓN PARA DUEÑOS DE LAVADORAS */}
       {isWasherRental && isOwner && (
         <Link 
@@ -150,7 +154,10 @@ export function StoreCard({ store }: { store: any }) {
               <span className="text-[12px] font-black uppercase tracking-[0.1em] truncate">{store.address || 'Aguachica'}</span>
             </div>
             {isWasherRental && (
-              <Badge className="bg-secondary text-white border-none font-black text-[10px] px-4 py-2 uppercase tracking-tighter shadow-lg">ALQUILER ACTIVO</Badge>
+              <div className="flex flex-col items-end gap-1">
+                <Badge className="bg-secondary text-white border-none font-black text-[10px] px-4 py-2 uppercase tracking-tighter shadow-lg">ALQUILER ACTIVO</Badge>
+                {!isOwner && <span className="text-[7px] font-black text-white/40 uppercase tracking-widest leading-none">VISTA PROTEGIDA</span>}
+              </div>
             )}
           </div>
         </div>
@@ -205,7 +212,7 @@ export function StoreCard({ store }: { store: any }) {
               <span className={cn("text-[11px] font-black uppercase tracking-[0.12em] italic", statusInfo.color)}>{statusInfo.label}</span>
             </div>
             {isWasherRental && !isOwner ? (
-              <div className="text-[8px] font-black text-slate-300 uppercase tracking-widest">INFO PROTEGIDA</div>
+              <div className="text-[8px] font-black text-slate-300 uppercase tracking-widest">SÓLO DUEÑOS</div>
             ) : (
               <ChevronRight className="w-4 h-4 text-slate-300" />
             )}

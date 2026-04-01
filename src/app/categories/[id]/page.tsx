@@ -130,7 +130,6 @@ export default function CategoryPage() {
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
-      // Sincronizar automáticamente el rol de dueño
       const userRef = doc(firestore, 'users', user.uid);
       updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
 
@@ -143,6 +142,14 @@ export default function CategoryPage() {
       setIsRegistering(false);
     }
   };
+
+  // SOPORTE PARA CATEGORÍA ESPECIAL DE LAVADORAS SI NO EXISTE EL DOC
+  const displayCategory = category || (id === 'category-washer' ? {
+    id: 'category-washer',
+    name: 'Alquiler de Lavadoras',
+    description: 'Encuentra el servicio de lavandería más cercano a tu ubicación y solicita tu alquiler instantáneo.',
+    imageUrl: 'https://picsum.photos/seed/wash/1920/1080'
+  } : null);
 
   if (loadingCat) {
     return (
@@ -160,7 +167,7 @@ export default function CategoryPage() {
     );
   }
 
-  if (!category && !loadingCat) {
+  if (!displayCategory && !loadingCat) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -175,7 +182,7 @@ export default function CategoryPage() {
     );
   }
 
-  const currentPreviewImage = editBase64Image || (isImageRemoved ? null : category?.imageUrl);
+  const currentPreviewImage = editBase64Image || (isImageRemoved ? null : displayCategory?.imageUrl);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -183,10 +190,10 @@ export default function CategoryPage() {
       
       <main className="flex-1 w-full">
         <div className="relative h-[40vh] w-full overflow-hidden">
-          {category?.imageUrl && (
+          {displayCategory?.imageUrl && (
             <Image 
-              src={category.imageUrl} 
-              alt={category.name || "Categoría"} 
+              src={displayCategory.imageUrl} 
+              alt={displayCategory.name || "Categoría"} 
               fill 
               className="object-cover" 
               priority 
@@ -218,7 +225,7 @@ export default function CategoryPage() {
                   <form onSubmit={handleEditCategory} className="space-y-4 pt-4">
                     <div className="space-y-2">
                       <Label>Nombre de Categoría</Label>
-                      <Input name="name" defaultValue={category?.name} required />
+                      <Input name="name" defaultValue={displayCategory?.name} required />
                     </div>
                     <div className="space-y-2">
                       <Label>Imagen de Banner</Label>
@@ -249,7 +256,7 @@ export default function CategoryPage() {
                     </div>
                     <div className="space-y-2">
                       <Label>Descripción</Label>
-                      <Textarea name="description" defaultValue={category?.description} required />
+                      <Textarea name="description" defaultValue={displayCategory?.description} required />
                     </div>
                     <Button type="submit" className="w-full h-12 font-bold" disabled={isRegistering || isCompressing}>
                       {isRegistering ? <Loader2 className="animate-spin" /> : <Edit3 className="mr-2" />} Guardar Cambios
@@ -262,10 +269,10 @@ export default function CategoryPage() {
 
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10">
             <h1 className="text-3xl sm:text-6xl md:text-7xl font-black text-white tracking-tighter uppercase italic leading-[0.9] drop-shadow-lg break-words max-w-full">
-              {category?.name}
+              {displayCategory?.name}
             </h1>
             <p className="text-white/90 text-sm sm:text-lg font-medium max-w-xl mt-3 line-clamp-2 px-4 break-words">
-              {category?.description}
+              {displayCategory?.description}
             </p>
           </div>
         </div>
@@ -285,12 +292,12 @@ export default function CategoryPage() {
             <Dialog open={openStore} onOpenChange={setOpenStore}>
               <DialogTrigger asChild>
                 <Button className="rounded-full h-12 px-8 gap-2 bg-secondary hover:bg-secondary/90 text-white font-black shadow-lg shadow-secondary/20 w-full sm:w-auto">
-                  <Plus className="w-4 h-4" /> Unirme a {category?.name}
+                  <Plus className="w-4 h-4" /> Unirme a {displayCategory?.name}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-black">Tu vitrina en {category?.name}</DialogTitle>
+                  <DialogTitle className="text-2xl font-black">Tu vitrina en {displayCategory?.name}</DialogTitle>
                   <DialogDescription>Completa los datos para aparecer en esta sección.</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleRegisterStore} className="space-y-4 pt-4">
@@ -322,7 +329,7 @@ export default function CategoryPage() {
                     <Input name="address" placeholder="Ej: Calle 5 con Carrera 20" required />
                   </div>
                   <Button type="submit" className="w-full h-14 font-black text-lg bg-primary hover:bg-primary/90 shadow-xl" disabled={isRegistering || isCompressing}>
-                    {isRegistering ? <Loader2 className="animate-spin" /> : <Sparkles className="mr-2" />} Lanzar Mi Vitrina
+                    {isRegistering ? <Loader2 className="animate-spin" /> : <><Sparkles className="mr-2" /> Lanzar Mi Vitrina</>}
                   </Button>
                 </form>
               </DialogContent>

@@ -15,7 +15,8 @@ import {
   ArrowRight,
   ImageIcon,
   Sparkles,
-  Edit3
+  Edit3,
+  LayoutGrid
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -144,7 +145,6 @@ export function HomeActions({
       toast({ title: "¡Vitrina de Lavadoras Creada!", description: "Ahora puedes gestionar tu flota." });
       setOpenAddWasherStore(false);
       
-      // REDIRECCIÓN INSTANTÁNEA AL PANEL MAESTRO DE LAVADORAS
       router.push(`/admin/washer/${storeRef.id}`);
     } catch (e) {
       toast({ title: "Error al crear vitrina", variant: "destructive" });
@@ -190,6 +190,17 @@ export function HomeActions({
             </div>
             <span className="text-white/40 text-[8px] font-black uppercase tracking-[0.3em]">CLIC PARA PEDIR</span>
           </div>
+
+          {/* BOTÓN LLAMATIVO: VITRINAS ACTIVAS (PARTE INFERIOR DERECHA) */}
+          <button 
+            onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }}
+            className="absolute bottom-3 right-3 z-20 flex items-center gap-2 bg-slate-900/40 backdrop-blur-xl border border-white/10 pl-4 pr-2 py-2 rounded-full text-white hover:bg-slate-900/60 transition-all shadow-2xl group/list"
+          >
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] italic">Vitrinas Activas</span>
+            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white shadow-lg group-hover/list:rotate-90 transition-transform">
+              <LayoutGrid className="w-4 h-4" />
+            </div>
+          </button>
         </div>
 
         <button 
@@ -277,7 +288,6 @@ export function HomeActions({
         </DialogContent>
       </Dialog>
 
-      {/* DIALOG INSCRIBIR MI TIENDA (ESTÁNDAR) - RESTAURACIÓN QUIRÚRGICA */}
       <Dialog open={openStore} onOpenChange={setOpenStore}>
         <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[500px] overflow-y-auto max-h-[90vh]">
           <DialogHeader>
@@ -314,7 +324,6 @@ export function HomeActions({
         </DialogContent>
       </Dialog>
 
-      {/* DIALOG GESTIÓN DE CATEGORÍAS (ADMIN) - RESTAURACIÓN QUIRÚRGICA */}
       <Dialog open={openCategory} onOpenChange={setOpenCategory}>
         <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[500px]">
           <DialogHeader>
