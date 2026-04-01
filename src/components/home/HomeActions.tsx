@@ -18,7 +18,9 @@ import {
   Camera,
   Clock,
   Wallet,
-  Settings2
+  Settings2,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -77,17 +79,34 @@ export function HomeActions({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
-  // CARGAR CONFIGURACIÓN DE PRECIOS Y PORTADA
+  // CARGAR CONFIGURACIÓN DE PRECIOS, HORARIOS Y PORTADA
   const pricingRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_pricing'), [firestore]);
   const { data: pricingConfig } = useDoc(pricingRef);
 
   const bannerConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_banner'), [firestore]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
 
-  // VALORES POR DEFECTO DE NEGOCIO
+  // VALORES DE NEGOCIO (FINANCIEROS)
   const minHours = pricingConfig?.minHours || 5;
   const basePrice = pricingConfig?.basePrice || 15000;
   const additionalHourPrice = pricingConfig?.additionalHourPrice || 3000;
+
+  // LÓGICA DE HORARIOS
+  const openTime = pricingConfig?.openTime || "08:00";
+  const closeTime = pricingConfig?.closeTime || "20:00";
+
+  const isBusinessOpen = useMemo(() => {
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    
+    const [openH, openM] = openTime.split(':').map(Number);
+    const [closeH, closeM] = closeTime.split(':').map(Number);
+    
+    const openMinutes = openH * 60 + openM;
+    const closeMinutes = closeH * 60 + closeM;
+    
+    return currentTime >= openMinutes && currentTime < closeMinutes;
+  }, [openTime, closeTime]);
 
   useEffect(() => {
     audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2568-preview.mp3');
@@ -109,6 +128,7 @@ export function HomeActions({
     }
   };
 
+  // LÓGICA MATEMÁTICA CORREGIDA: Mínimo 5h = Precio Base ($15k). Cada h adicional = +$3k.
   const totalPrice = useMemo(() => {
     if (requestHours <= minHours) return basePrice;
     return basePrice + ((requestHours - minHours) * additionalHourPrice);
@@ -137,20 +157,32 @@ export function HomeActions({
       minHours: Number(fd.get('minHours')),
       basePrice: Number(fd.get('basePrice')),
       additionalHourPrice: Number(fd.get('additionalHourPrice')),
+      openTime: fd.get('openTime'),
+      closeTime: fd.get('closeTime'),
       updatedAt: serverTimestamp()
     };
     try {
       setDocumentNonBlocking(pricingRef, data, { merge: true });
-      toast({ title: "Precios de comisión actualizados" });
+      toast({ title: "Configuración global actualizada" });
       setShowAdminPricing(false);
     } catch (e) {
-      toast({ title: "Error", variant: "destructive" });
+      toast({ title: "Error al guardar configuración", variant: "destructive" });
     }
   };
 
   const handleWasherRequest = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user || !firestore) return;
+    
+    if (!isBusinessOpen) {
+      toast({ 
+        title: "Fuera de Horario", 
+        description: "El servicio está cerrado en este momento.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSendingRequest(true);
     
     try {
@@ -181,8 +213,8 @@ export function HomeActions({
 
       await addDocumentNonBlocking(collection(firestore, 'orders'), requestData);
       toast({ 
-        title: "¡Solicitud Lanzada!", 
-        description: "Un proveedor te contactará en breve.",
+        title: "¡Solicitud Enviada!", 
+        description: "Estamos procesando tu alquiler.",
         className: "bg-green-600 text-white border-none"
       });
       setOpenWasher(false);
@@ -207,16 +239,15 @@ export function HomeActions({
         privateDrivers: []
       });
       
-      // CORRECCIÓN: Solo cambiar rol si es cliente
       if (profile?.role === 'cliente') {
         updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { role: 'dueño', updatedAt: serverTimestamp() });
       }
       
-      toast({ title: "¡Vitrina de Lavadoras Lista!" });
+      toast({ title: "¡Vitrina de Lavadoras Creada!" });
       setOpenAddWasherStore(false);
       router.push(`/admin/washer/${storeRef.id}`);
     } catch (e) {
-      toast({ title: "Error", variant: "destructive" });
+      toast({ title: "Error al registrar", variant: "destructive" });
     } finally {
       setIsSendingRequest(false);
     }
@@ -235,39 +266,48 @@ export function HomeActions({
             ) : (
               <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/70" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
           </div>
 
-          <div className="relative z-10 flex flex-col items-center gap-12 animate-in fade-in zoom-in duration-700">
-            <div className="mt-20 group/cta">
-              <div className="bg-red-600/80 hover:bg-red-600 backdrop-blur-md text-white px-8 py-4 rounded-full font-black text-lg uppercase italic tracking-tighter shadow-[0_10px_30px_rgba(220,38,38,0.4)] border border-white/10 flex items-center gap-3 transition-all hover:scale-105 active:scale-95">
-                <CheckCircle2 className="w-6 h-6 text-white drop-shadow-sm" />
-                SOLICITAR AHORA
+          <div className="relative z-10 flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700">
+            <div className="group/cta">
+              <div className={cn(
+                "backdrop-blur-md text-white px-8 py-4 rounded-full font-black text-lg uppercase italic tracking-tighter shadow-2xl border border-white/10 flex items-center gap-3 transition-all hover:scale-105 active:scale-95",
+                isBusinessOpen ? "bg-red-600/80 hover:bg-red-600" : "bg-slate-800/80 grayscale"
+              )}>
+                {isBusinessOpen ? (
+                  <><CheckCircle2 className="w-6 h-6 text-white" /> SOLICITAR AHORA</>
+                ) : (
+                  <><Moon className="w-6 h-6 text-slate-400" /> NEGOCIO CERRADO</>
+                )}
               </div>
+              
               <div className="flex flex-col items-center gap-2 mt-4 opacity-60">
-                <span className="text-white text-[8px] font-black uppercase tracking-[0.4em]">Toca para iniciar solicitud</span>
+                <span className="text-white text-[8px] font-black uppercase tracking-[0.4em]">
+                  {isBusinessOpen ? "Toca para iniciar solicitud" : `Abrimos a las ${openTime}`}
+                </span>
                 <div className="h-0.5 w-10 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-red-500 animate-progress-loading" />
+                  <div className={cn("h-full animate-progress-loading", isBusinessOpen ? "bg-red-500" : "bg-slate-500")} />
                 </div>
               </div>
             </div>
           </div>
 
           {isAdmin && (
-            <div className="absolute top-4 left-4 z-30">
+            <div className="absolute top-12 left-12 z-30">
               <input type="file" ref={bannerInputRef} className="hidden" accept="image/*" onChange={handleBannerUpload} />
-              <button onClick={(e) => { e.stopPropagation(); bannerInputRef.current?.click(); }} disabled={isUploadingBanner} className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/60 hover:text-primary transition-all">
-                {isUploadingBanner ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+              <button onClick={(e) => { e.stopPropagation(); bannerInputRef.current?.click(); }} disabled={isUploadingBanner} className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl">
+                {isUploadingBanner ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
               </button>
             </div>
           )}
 
-          <button onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }} className="absolute top-4 right-4 z-30 w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/60 hover:text-green-400 transition-all">
-            <StoreIcon className="w-5 h-5" />
+          <button onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }} className="absolute top-12 right-12 z-30 w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-green-400 transition-all shadow-2xl">
+            <StoreIcon className="w-6 h-6" />
           </button>
 
-          <button onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }} className="absolute bottom-4 right-4 z-30 w-12 h-12 rounded-full bg-slate-950/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/80 hover:bg-slate-950/60 transition-all shadow-2xl">
-            <div className="relative"><div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.6)]" /><Waves className="w-6 h-6 text-white/90" /></div>
+          <button onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }} className="absolute bottom-8 right-8 z-30 w-14 h-14 rounded-full bg-slate-950/40 backdrop-blur-2xl border border-white/10 flex items-center justify-center text-white/80 hover:bg-slate-950/60 transition-all shadow-2xl">
+            <div className="relative"><div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.6)]" /><Waves className="w-7 h-7 text-white/90" /></div>
           </button>
 
           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-30 animate-bounce"><ChevronDown className="w-5 h-5 text-white" /></div>
@@ -284,7 +324,7 @@ export function HomeActions({
           <div className="h-20 bg-slate-950 flex items-center justify-between px-6 shrink-0 border-b border-white/5">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30 text-primary"><Waves className="w-6 h-6" /></div>
-              <div><h3 className="text-white font-black uppercase italic tracking-tighter text-2xl leading-none">NUEVA SOLICITUD</h3><p className="text-primary/60 text-[9px] font-black uppercase tracking-[0.3em] mt-1">ALQUILER DE LAVADORAS</p></div>
+              <div><h3 className="text-white font-black uppercase italic tracking-tighter text-2xl leading-none">NUEVA SOLICITUD</h3><p className="text-primary/60 text-[9px] font-black uppercase tracking-[0.3em] mt-1">SISTEMA INTELIGENTE</p></div>
             </div>
             <div className="flex items-center gap-2">
               {isAdmin && <button onClick={() => setShowAdminPricing(!showAdminPricing)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-primary transition-all"><Settings2 className="w-5 h-5" /></button>}
@@ -294,21 +334,45 @@ export function HomeActions({
 
           <div className="flex-1 overflow-y-auto no-scrollbar bg-white rounded-t-[40px] mt-2">
             <div className="max-w-md mx-auto space-y-10 py-12 px-6">
+              
+              {/* PANEL DE AJUSTES ADMINISTRATIVOS */}
               {showAdminPricing && isAdmin && (
-                <form onSubmit={handleUpdatePricing} className="bg-slate-900 p-6 rounded-[32px] text-white space-y-4 animate-in slide-in-from-top-4 duration-300">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-primary italic">Ajustes Maestro de Precios</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1"><Label className="text-[8px] uppercase">Mínimo Horas</Label><Input name="minHours" type="number" defaultValue={minHours} className="bg-white/5 border-none h-10 font-bold" /></div>
-                    <div className="space-y-1"><Label className="text-[8px] uppercase">Precio Base ($)</Label><Input name="basePrice" type="number" defaultValue={pricingConfig?.basePrice} className="bg-white/5 border-none h-10 font-bold" /></div>
+                <form onSubmit={handleUpdatePricing} className="bg-slate-900 p-8 rounded-[32px] text-white space-y-6 animate-in slide-in-from-top-4 duration-300">
+                  <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+                    <Settings2 className="w-5 h-5 text-primary" />
+                    <h4 className="text-sm font-black uppercase tracking-widest italic">Ajustes Maestro</h4>
                   </div>
-                  <div className="space-y-1"><Label className="text-[8px] uppercase">Precio Hora Adicional ($)</Label><Input name="additionalHourPrice" type="number" defaultValue={pricingConfig?.additionalHourPrice} className="bg-white/5 border-none h-10 font-bold" /></div>
-                  <Button type="submit" className="w-full bg-primary font-black uppercase text-[10px]">GUARDAR CAMBIOS</Button>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Min. Horas</Label><Input name="minHours" type="number" defaultValue={minHours} className="bg-white/5 border-none h-12 font-bold" /></div>
+                    <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Precio Base ($)</Label><Input name="basePrice" type="number" defaultValue={basePrice} className="bg-white/5 border-none h-12 font-bold" /></div>
+                  </div>
+                  
+                  <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Hora Adicional ($)</Label><Input name="additionalHourPrice" type="number" defaultValue={additionalHourPrice} className="bg-white/5 border-none h-12 font-bold" /></div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Apertura</Label><Input name="openTime" type="time" defaultValue={openTime} className="bg-white/5 border-none h-12 font-bold" /></div>
+                    <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Cierre</Label><Input name="closeTime" type="time" defaultValue={closeTime} className="bg-white/5 border-none h-12 font-bold" /></div>
+                  </div>
+
+                  <Button type="submit" className="w-full h-14 bg-primary text-white font-black uppercase text-xs tracking-widest shadow-xl">ACTUALIZAR SISTEMA</Button>
                 </form>
               )}
 
+              {/* AVISO DE CIERRE SI CORRESPONDE */}
+              {!isBusinessOpen && (
+                <div className="bg-red-50 p-8 rounded-[40px] border border-red-100 flex items-start gap-5 animate-pulse">
+                  <Moon className="w-8 h-8 text-red-500 shrink-0" />
+                  <div>
+                    <p className="text-red-900 text-sm font-black uppercase italic tracking-tighter">Negocio Cerrado</p>
+                    <p className="text-red-600 text-xs font-bold leading-snug mt-1">Actualmente no estamos laborando. Nuestro horario es de {openTime} a {closeTime}.</p>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-blue-50/50 p-8 rounded-[40px] border border-blue-100 flex items-start gap-5">
-                <ShieldCheck className="w-8 h-8 text-primary shrink-0" />
-                <p className="text-slate-600 text-sm font-bold italic leading-snug">"Confirmemos la dirección para enviarte la lavadora más cercana."</p>
+                <Sun className="w-8 h-8 text-primary shrink-0" />
+                <p className="text-slate-600 text-sm font-bold italic leading-snug">"Por favor confirma tus datos para procesar el alquiler de inmediato."</p>
               </div>
 
               <form onSubmit={handleWasherRequest} className="space-y-10">
@@ -345,25 +409,42 @@ export function HomeActions({
                   </div>
                 </div>
 
-                <div className="bg-slate-900 p-8 rounded-[40px] text-white space-y-6 shadow-2xl">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                {/* COTIZACIÓN REAL: Cálculos matemáticos precisos basados en configuración admin */}
+                <div className="bg-slate-900 p-8 rounded-[40px] text-white space-y-6 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
+                  <div className="flex items-center justify-between border-b border-white/5 pb-4 relative z-10">
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cotización Estimada</span>
                     <div className="flex items-center gap-2 text-primary">
                       <Wallet className="w-4 h-4" />
                       <span className="text-xs font-black uppercase italic">Pagas al recibir</span>
                     </div>
                   </div>
-                  <div className="flex items-end justify-between">
+                  <div className="flex items-end justify-between relative z-10">
                     <div className="space-y-1">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total a pagar</p>
-                      <h4 className="text-4xl font-black italic tracking-tighter leading-none">{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(totalPrice)}</h4>
+                      <h4 className="text-4xl font-black italic tracking-tighter leading-none">
+                        {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(totalPrice)}
+                      </h4>
                     </div>
                     <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-1 italic">Logística Pro Activa</p>
                   </div>
                 </div>
 
-                <Button type="submit" disabled={isSendingRequest} className="w-full h-24 rounded-[40px] bg-primary text-white font-black text-2xl uppercase italic tracking-tighter shadow-[0_20px_50px_rgba(59,130,246,0.3)] active:scale-95 transition-all gap-4">
-                  {isSendingRequest ? <Loader2 className="animate-spin" /> : <>LANZAR SOLICITUD <CheckCircle2 className="w-8 h-8" /></>}
+                <Button 
+                  type="submit" 
+                  disabled={isSendingRequest || !isBusinessOpen} 
+                  className={cn(
+                    "w-full h-24 rounded-[40px] text-white font-black text-2xl uppercase italic tracking-tighter shadow-2xl transition-all gap-4",
+                    isBusinessOpen ? "bg-primary active:scale-95 shadow-primary/20" : "bg-slate-300 cursor-not-allowed"
+                  )}
+                >
+                  {isSendingRequest ? (
+                    <Loader2 className="animate-spin" />
+                  ) : isBusinessOpen ? (
+                    <>LANZAR SOLICITUD <CheckCircle2 className="w-8 h-8" /></>
+                  ) : (
+                    "FUERA DE SERVICIO"
+                  )}
                 </Button>
                 
                 <p className="text-[8px] text-center text-slate-300 font-black uppercase tracking-[0.4em] pt-4">SISTEMA PROTEGIDO • VITRINIANDO AI KERNEL</p>
