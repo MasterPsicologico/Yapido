@@ -191,14 +191,31 @@ export function HomeActions({
             <span className="text-white/40 text-[8px] font-black uppercase tracking-[0.3em]">CLIC PARA PEDIR</span>
           </div>
 
-          {/* BOTÓN LLAMATIVO: VITRINAS ACTIVAS (PARTE INFERIOR DERECHA) */}
+          {/* BOTÓN REFINADO: ACCESO A VITRINAS (LAVADORA PULSANTE) */}
           <button 
             onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }}
-            className="absolute bottom-3 right-3 z-20 flex items-center gap-2 bg-slate-900/40 backdrop-blur-xl border border-white/10 pl-4 pr-2 py-2 rounded-full text-white hover:bg-slate-900/60 transition-all shadow-2xl group/list"
+            className="absolute bottom-4 right-4 z-20 w-10 h-10 rounded-full bg-slate-900/40 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white hover:bg-slate-900/60 transition-all shadow-2xl group/list"
           >
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] italic">Vitrinas Activas</span>
-            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-white shadow-lg group-hover/list:rotate-90 transition-transform">
-              <LayoutGrid className="w-4 h-4" />
+            <div className="relative">
+              {/* Pulsación Verde Sutil */}
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
+              
+              {/* Icono de Lavadora Inline SVG */}
+              <svg 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2.5" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className="w-5 h-5 text-white/80 group-hover/list:text-white transition-colors"
+              >
+                <rect x="3" y="2" width="18" height="20" rx="2" ry="2"></rect>
+                <circle cx="12" cy="13" r="5"></circle>
+                <line x1="7" y1="5" x2="7.01" y2="5"></line>
+                <line x1="11" y1="5" x2="11.01" y2="5"></line>
+                <line x1="15" y1="5" x2="15.01" y2="5"></line>
+              </svg>
             </div>
           </button>
         </div>
