@@ -199,53 +199,63 @@ export function HomeActions({
           onClick={() => { playClickSound(); setOpenWasher(true); }}
           className={cn(
             "relative w-full min-h-[calc(100dvh-64px)] overflow-hidden cursor-pointer transition-all duration-700",
-            "bg-gradient-to-br from-primary via-blue-600 to-indigo-900",
-            "flex flex-col items-center justify-start pt-32 px-6 text-center",
-            "shadow-[0_20px_100px_-10px_rgba(59,130,246,0.6)] active:scale-[0.995]"
+            "bg-slate-900",
+            "flex flex-col items-center justify-center px-6 text-center",
+            "active:scale-[0.995]"
           )}
         >
-          {/* Portada en la Nube */}
+          {/* Portada en la Nube con Máxima Vibrancia */}
           <div className="absolute inset-0 z-0">
             {bannerConfig?.backgroundImage ? (
               <Image 
                 src={bannerConfig.backgroundImage} 
                 alt="Portada Alquiler" 
                 fill 
-                className="object-cover opacity-60 mix-blend-overlay animate-in fade-in duration-1000" 
+                className="object-cover opacity-100 animate-in fade-in duration-1000" 
                 priority 
               />
             ) : (
-              <div className="absolute inset-0 opacity-10 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover mix-blend-overlay" />
+              <div className="absolute inset-0 opacity-20 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+            {/* Overlay sutil para legibilidad sin matar el color */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
           </div>
 
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+          {/* Efectos de Iluminación Dinámica */}
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/30 rounded-full blur-[120px] animate-pulse" />
           <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-[120px] animate-pulse delay-700" />
           
           {/* Contenedor de Textos y Badges */}
-          <div className="relative z-10 space-y-8 max-w-4xl animate-in slide-in-from-top-8 duration-1000">
+          <div className="relative z-10 space-y-10 max-w-4xl animate-in zoom-in duration-700">
             <div className="flex flex-col items-center gap-6">
               <div className="flex flex-wrap items-center justify-center gap-4">
-                <Badge className="bg-secondary text-white border border-white/20 shadow-2xl font-black text-sm sm:text-base px-8 py-3 uppercase tracking-[0.2em]">SERVICIO EXPRESS</Badge>
-                <Badge variant="outline" className="text-white border-white/40 backdrop-blur-xl font-black text-sm sm:text-base px-8 py-3 uppercase tracking-[0.2em] shadow-2xl">GARANTÍA TOTAL</Badge>
+                <Badge className="bg-[#00c9db] text-white border-none shadow-2xl font-black text-sm sm:text-base px-8 py-3 uppercase tracking-[0.2em] italic">SERVICIO EXPRESS</Badge>
+                <Badge variant="outline" className="text-white border-white/60 backdrop-blur-2xl font-black text-sm sm:text-base px-8 py-3 uppercase tracking-[0.2em] shadow-2xl">GARANTÍA TOTAL</Badge>
               </div>
               
-              <div className="flex flex-col items-center gap-4">
-                <div className="h-1.5 w-32 bg-primary/60 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+              {/* BOTÓN DE ACCIÓN ROJO: SOLICITAR AHORA */}
+              <div className="mt-4 flex flex-col items-center gap-4 group/cta">
+                <div className="bg-red-600 hover:bg-red-500 text-white px-12 py-5 rounded-[28px] font-black text-2xl uppercase italic tracking-tighter shadow-[0_20px_60px_rgba(220,38,38,0.5)] border-4 border-white/20 flex items-center gap-4 transition-all hover:scale-105 active:scale-95 animate-pulse">
+                  <CheckCircle2 className="w-8 h-8 text-white drop-shadow-md" />
+                  SOLICITAR AHORA
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-1 w-8 bg-red-500 rounded-full" />
+                  <span className="text-white/80 text-[10px] font-black uppercase tracking-[0.4em]">Toca en cualquier parte</span>
+                  <div className="h-1 w-8 bg-red-500 rounded-full" />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* CTA Inferior (Click to Action) */}
-          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-4 animate-bounce">
-            <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.6em] drop-shadow-lg">Toca para Solicitar</span>
-            <ChevronDown className="w-8 h-8 text-white/40" />
+          {/* Indicador de Scroll Inferior */}
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 animate-bounce">
+            <ChevronDown className="w-6 h-6 text-white/40" />
           </div>
 
-          {/* BOTÓN: CARGAR FOTO (Solo Admin) - Bajado y más llamativo */}
+          {/* BOTONES EN EXTREMOS: MÁXIMA PEGADA A LOS BORDES */}
           {isAdmin && (
-            <div className="absolute top-12 left-8 z-30 flex flex-col items-center gap-2">
+            <div className="absolute top-4 left-4 z-30 flex flex-col items-center gap-2">
               <input 
                 type="file" 
                 ref={bannerInputRef} 
@@ -256,20 +266,18 @@ export function HomeActions({
               <button 
                 onClick={(e) => { e.stopPropagation(); bannerInputRef.current?.click(); }}
                 disabled={isUploadingBanner}
-                className="w-14 h-14 rounded-[22px] bg-white/10 backdrop-blur-2xl border border-white/30 flex items-center justify-center text-white hover:bg-white/20 transition-all shadow-[0_15px_40px_rgba(0,0,0,0.3)] active:scale-90"
-                title="Cambiar Foto de Fondo"
+                className="w-14 h-14 rounded-[22px] bg-white/10 backdrop-blur-2xl border border-white/30 flex items-center justify-center text-white hover:bg-white/20 transition-all shadow-2xl active:scale-90"
               >
                 {isUploadingBanner ? <Loader2 className="w-7 h-7 animate-spin" /> : <Camera className="w-7 h-7 text-primary" />}
               </button>
-              <span className="text-[8px] font-black text-white/60 uppercase tracking-widest bg-black/20 px-3 py-1 rounded-full backdrop-blur-md">Admin Portada</span>
+              <span className="text-[7px] font-black text-white/40 uppercase tracking-[0.3em] bg-black/40 px-3 py-1 rounded-full backdrop-blur-md">PORTADA</span>
             </div>
           )}
 
-          {/* BOTÓN: AGREGAR TIENDAS (Superior Derecho) - Bajado */}
+          {/* Botón: Inscribir Mi Tienda (Superior Derecho) */}
           <button 
             onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }}
-            className="absolute top-12 right-8 z-30 w-14 h-14 rounded-[22px] bg-white/10 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white/80 hover:bg-white/30 transition-all shadow-[0_15px_40px_rgba(0,0,0,0.3)] active:scale-90 group/add"
-            title="Inscribir mi alquiler"
+            className="absolute top-4 right-4 z-30 w-14 h-14 rounded-[22px] bg-white/10 backdrop-blur-2xl border border-white/20 flex items-center justify-center text-white/80 hover:bg-white/30 transition-all shadow-2xl active:scale-90"
           >
             <div className="relative">
               <StoreIcon className="w-7 h-7" />
@@ -279,10 +287,10 @@ export function HomeActions({
             </div>
           </button>
 
-          {/* BOTÓN: ACCESO A VITRINAS (Inferior Derecho) - Reposicionado */}
+          {/* Botón: Directorio de Vitrinas (Inferior Derecho) */}
           <button 
             onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }}
-            className="absolute bottom-8 right-8 z-30 w-16 h-16 rounded-full bg-slate-950/60 backdrop-blur-3xl border border-white/20 flex items-center justify-center text-white hover:bg-slate-950/80 transition-all shadow-[0_20px_50px_rgba(0,0,0,0.5)] active:scale-90 group/list"
+            className="absolute bottom-4 right-4 z-30 w-16 h-16 rounded-full bg-slate-950/60 backdrop-blur-3xl border border-white/20 flex items-center justify-center text-white hover:bg-slate-950/80 transition-all shadow-2xl active:scale-90"
           >
             <div className="relative">
               <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(34,197,94,0.8)]" />
@@ -293,7 +301,7 @@ export function HomeActions({
                 strokeWidth="2.5" 
                 strokeLinecap="round" 
                 strokeLinecap="round" 
-                className="w-8 h-8 text-white/90 group-hover/list:text-white transition-colors"
+                className="w-8 h-8 text-white/90"
               >
                 <rect x="3" y="2" width="18" height="20" rx="2" ry="2"></rect>
                 <circle cx="12" cy="13" r="5"></circle>
