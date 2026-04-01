@@ -248,9 +248,9 @@ export function HomeActions({
             <ChevronDown className="w-6 h-6 text-white/20" />
           </div>
 
-          {/* BOTÓN: CARGAR FOTO (Solo Admin) */}
+          {/* BOTÓN: CARGAR FOTO (Solo Admin) - Ajustado a la esquina superior izquierda */}
           {isAdmin && (
-            <div className="absolute top-8 left-8 z-30 flex flex-col items-center gap-2">
+            <div className="absolute top-4 left-4 z-30 flex flex-col items-center gap-2">
               <input 
                 type="file" 
                 ref={bannerInputRef} 
@@ -284,10 +284,10 @@ export function HomeActions({
             </div>
           </button>
 
-          {/* BOTÓN: ACCESO A VITRINAS (Inferior Derecho) */}
+          {/* BOTÓN: ACCESO A VITRINAS (Inferior Derecho) - Ajustado más hacia la esquina */}
           <button 
             onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }}
-            className="absolute bottom-8 right-8 z-30 w-14 h-14 rounded-full bg-slate-950/40 backdrop-blur-2xl border border-white/10 flex items-center justify-center text-white hover:bg-slate-950/60 transition-all shadow-2xl group/list"
+            className="absolute bottom-4 right-4 z-30 w-14 h-14 rounded-full bg-slate-950/40 backdrop-blur-2xl border border-white/10 flex items-center justify-center text-white hover:bg-slate-950/60 transition-all shadow-2xl group/list"
           >
             <div className="relative">
               <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(34,197,94,0.8)]" />
@@ -297,7 +297,7 @@ export function HomeActions({
                 stroke="currentColor" 
                 strokeWidth="2.5" 
                 strokeLinecap="round" 
-                strokeLinejoin="round" 
+                strokeLinecap="round" 
                 className="w-7 h-7 text-white/80 group-hover/list:text-white transition-colors"
               >
                 <rect x="3" y="2" width="18" height="20" rx="2" ry="2"></rect>
