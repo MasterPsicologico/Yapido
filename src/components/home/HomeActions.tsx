@@ -247,6 +247,10 @@ export function HomeActions({
       {/* DIALOG SOLICITUD CLIENTE (LAVADORAS) */}
       <Dialog open={openWasher} onOpenChange={setOpenWasher}>
         <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-white p-0 overflow-hidden flex flex-col z-[600] [&>button:last-child]:hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Nueva Solicitud de Alquiler</DialogTitle>
+            <DialogDescription>Formulario para solicitar una lavadora.</DialogDescription>
+          </DialogHeader>
           <div className="h-20 bg-slate-950 flex items-center justify-between px-6 shrink-0 border-b border-white/5">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30"><Waves className="w-6 h-6 text-primary" /></div>
@@ -276,6 +280,10 @@ export function HomeActions({
       {/* DIALOG INSCRIBIR TIENDA DE LAVADORAS */}
       <Dialog open={openAddWasherStore} onOpenChange={setOpenAddWasherStore}>
         <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-white p-0 overflow-hidden flex flex-col z-[650] [&>button:last-child]:hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Inscribir Alquiler de Lavadoras</DialogTitle>
+            <DialogDescription>Configuración de nueva vitrina de lavadoras.</DialogDescription>
+          </DialogHeader>
           <div className="h-20 bg-slate-900 flex items-center justify-between px-6 shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center border border-green-500/30"><StoreIcon className="w-6 h-6 text-green-500" /></div>
