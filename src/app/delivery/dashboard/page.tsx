@@ -36,12 +36,17 @@ export default function DeliveryDashboardPage() {
   const [isOnline, setIsOnline] = useState(true);
   const [isReleasing, setIsReleasing] = useState(false);
   const [releaseLogs, setReleaseLogs] = useState<string[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingWelcome, setIsUploadingWelcome] = useState(false);
+  const [isUploadingDashboard, setIsUploadingDashboard] = useState(false);
   const [adminForceWelcome, setAdminForceWelcome] = useState(false);
 
-  // FETCH: Configuración de portada del Delivery
+  // FETCH: Configuración de portada del Delivery (BIENVENIDA)
   const welcomeConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_welcome'), [firestore]);
   const { data: welcomeConfig } = useDoc(welcomeConfigRef);
+
+  // FETCH: Configuración de fondo del Dashboard (OPERATIVO)
+  const dashboardConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_dashboard'), [firestore]);
+  const { data: dashboardConfig } = useDoc(dashboardConfigRef);
 
   useEffect(() => {
     if (!loadingProfile && profile && !profile.phoneNumber) {
@@ -164,10 +169,11 @@ export default function DeliveryDashboardPage() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // HANDLER: Actualizar portada de Bienvenida
+  const handleWelcomeImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setIsUploading(true);
+    setIsUploadingWelcome(true);
     try {
       const compressed = await compressImage(file, 1920, 1080, 0.85);
       await setDocumentNonBlocking(welcomeConfigRef, {
@@ -179,7 +185,27 @@ export default function DeliveryDashboardPage() {
     } catch (error) {
       toast({ title: "Error al actualizar", variant: "destructive" });
     } finally {
-      setIsUploading(false);
+      setIsUploadingWelcome(false);
+    }
+  };
+
+  // HANDLER: Actualizar fondo del Dashboard
+  const handleDashboardImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingDashboard(true);
+    try {
+      const compressed = await compressImage(file, 1920, 1080, 0.85);
+      await setDocumentNonBlocking(dashboardConfigRef, {
+        backgroundImage: compressed,
+        updatedAt: serverTimestamp(),
+        updatedBy: user?.uid
+      }, { merge: true });
+      toast({ title: "Fondo del Dashboard actualizado" });
+    } catch (error) {
+      toast({ title: "Error al actualizar", variant: "destructive" });
+    } finally {
+      setIsUploadingDashboard(false);
     }
   };
 
@@ -201,7 +227,7 @@ export default function DeliveryDashboardPage() {
               isAdmin && "cursor-pointer active:scale-[0.99] bg-slate-100"
             )}
           >
-            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleWelcomeImageUpload} />
             <div className="absolute inset-0 z-0">
               {welcomeConfig?.backgroundImage ? (
                 <Image src={welcomeConfig.backgroundImage} alt="Portada Personalizada" fill className="object-cover object-top" priority />
@@ -213,7 +239,7 @@ export default function DeliveryDashboardPage() {
             {isAdmin && (
               <div className="relative z-10 h-full flex items-center justify-center">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/30 shadow-2xl group-hover/welcome:scale-110 transition-all">
-                  {isUploading ? <Loader2 className="w-8 h-8 animate-spin text-green-500" /> : <Camera className="w-8 h-8 text-green-500" />}
+                  {isUploadingWelcome ? <Loader2 className="w-8 h-8 animate-spin text-green-500" /> : <Camera className="w-8 h-8 text-green-500" />}
                 </div>
               </div>
             )}
@@ -274,7 +300,10 @@ export default function DeliveryDashboardPage() {
           <DashboardHeader 
             profile={profile} level={level} stats={stats} 
             isOnline={isOnline} onToggleOnline={() => setIsOnline(!isOnline)} 
-            isAdmin={isAdmin} welcomeConfig={welcomeConfig} onImageUpload={handleImageUpload} isUploading={isUploading}
+            isAdmin={isAdmin} 
+            dashboardConfig={dashboardConfig} 
+            onImageUpload={handleDashboardImageUpload} 
+            isUploading={isUploadingDashboard}
           />
           <main className="container mx-auto px-4 py-8 max-w-2xl">
             {isAdmin && (

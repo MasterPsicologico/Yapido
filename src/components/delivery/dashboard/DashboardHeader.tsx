@@ -16,27 +16,27 @@ interface DashboardHeaderProps {
   isOnline: boolean;
   onToggleOnline: () => void;
   isAdmin?: boolean;
-  welcomeConfig?: any;
+  dashboardConfig?: any;
   onImageUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isUploading?: boolean;
 }
 
 export function DashboardHeader({ 
   profile, level, stats, isOnline, onToggleOnline,
-  isAdmin, welcomeConfig, onImageUpload, isUploading 
+  isAdmin, dashboardConfig, onImageUpload, isUploading 
 }: DashboardHeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="relative overflow-hidden border-b bg-slate-900 group/header">
-      {/* Fondo de Identidad Global */}
+      {/* Fondo de Identidad Global (ESPECÍFICO DEL DASHBOARD) */}
       <div className="absolute inset-0 z-0">
-        {welcomeConfig?.backgroundImage ? (
+        {dashboardConfig?.backgroundImage ? (
           <Image 
-            src={welcomeConfig.backgroundImage} 
+            src={dashboardConfig.backgroundImage} 
             alt="Dashboard Background" 
             fill 
-            className="object-cover opacity-40 group-hover/header:scale-105 transition-transform duration-[5000ms]" 
+            className="object-cover opacity-40 group-hover/header:scale-105 transition-transform duration-[5000ms] object-top" 
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-800" />
@@ -44,7 +44,7 @@ export function DashboardHeader({
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
       </div>
 
-      {/* Control Maestro de Fondo (Solo Admin) */}
+      {/* Control Maestro de Fondo (Solo Admin - AFECTA AL DASHBOARD) */}
       {isAdmin && (
         <div className="absolute top-4 right-4 z-30">
           <input 
