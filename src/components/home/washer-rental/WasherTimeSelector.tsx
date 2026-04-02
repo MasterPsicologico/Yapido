@@ -46,7 +46,6 @@ export function WasherTimeSelector({
           </button>
 
           <div className="text-center flex flex-col items-center">
-            {/* Fix de visibilidad total: Aumento de leading y padding vertical */}
             <div className="flex items-center justify-center py-4">
               <span className={cn(
                 "text-6xl font-black italic tracking-tighter transition-all duration-500 text-transparent bg-clip-text leading-[1.2] block",

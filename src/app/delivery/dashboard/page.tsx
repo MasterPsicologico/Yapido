@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Camera } from 'lucide-react';
+import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Camera, LayoutGrid, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
@@ -37,6 +37,7 @@ export default function DeliveryDashboardPage() {
   const [isReleasing, setIsReleasing] = useState(false);
   const [releaseLogs, setReleaseLogs] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [adminForceWelcome, setAdminForceWelcome] = useState(false);
 
   // FETCH: Configuración de portada del Delivery
   const welcomeConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_welcome'), [firestore]);
@@ -174,7 +175,7 @@ export default function DeliveryDashboardPage() {
         updatedAt: serverTimestamp(),
         updatedBy: user?.uid
       }, { merge: true });
-      toast({ title: "Fondo de Dashboard actualizado" });
+      toast({ title: "Fondo de Bienvenida actualizado" });
     } catch (error) {
       toast({ title: "Error al actualizar", variant: "destructive" });
     } finally {
@@ -184,37 +185,15 @@ export default function DeliveryDashboardPage() {
 
   if (loadingProfile) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
 
-  if (!isConfirmedRepartidor) {
-    if (profile?.deliveryRequested) {
-      return (
-        <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-          <Navbar />
-          <main className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-8 animate-in zoom-in duration-500">
-            <div className="relative">
-              <div className="absolute inset-0 bg-orange-500/20 rounded-[40px] animate-ping [animation-duration:3000ms]" />
-              <div className="relative w-28 h-28 bg-white rounded-[40px] shadow-2xl flex items-center justify-center text-orange-500 border border-orange-100">
-                <Clock className="w-14 h-14" />
-              </div>
-            </div>
-            <div className="space-y-3">
-              <h2 className="text-4xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Solicitud en Proceso</h2>
-              <p className="text-slate-500 max-w-sm mx-auto font-medium text-sm leading-relaxed uppercase tracking-tight">
-                Tu registro ha sido enviado. El administrador principal debe verificar tus datos para activarte en la red global de repartos.
-              </p>
-            </div>
-            <Button variant="outline" className="rounded-full h-12 px-8 font-black uppercase text-[10px] tracking-widest border-slate-200" onClick={() => router.push('/')}>
-              VOLVER AL MARKETPLACE
-            </Button>
-          </main>
-        </div>
-      );
-    }
+  const showWelcome = !isConfirmedRepartidor || (isAdmin && adminForceWelcome);
 
+  if (showWelcome) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
         <Navbar />
         <main className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
           
+          {/* SECCIÓN DE PORTADA PARA CARGAR IMAGEN */}
           <div 
             onClick={() => isAdmin && fileInputRef.current?.click()}
             className={cn(
@@ -264,9 +243,16 @@ export default function DeliveryDashboardPage() {
                   </div>
                 </div>
                 <div className="pt-4">
-                  <Button onClick={() => router.push('/delivery/register')} className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-sm uppercase tracking-[0.2em] gap-3 border-b-[10px] border-blue-800 shadow-xl active:translate-y-2 active:border-b-0 transition-all">
-                    QUIERO SER REPARTIDOR <ArrowRight className="w-4 h-4" />
-                  </Button>
+                  {!isAdmin && (
+                    <Button onClick={() => router.push('/delivery/register')} className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-sm uppercase tracking-[0.2em] gap-3 border-b-[10px] border-blue-800 shadow-xl active:translate-y-2 active:border-b-0 transition-all">
+                      QUIERO SER REPARTIDOR <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button onClick={() => setAdminForceWelcome(false)} className="w-full h-16 rounded-[24px] bg-slate-900 text-white font-black uppercase text-xs tracking-widest gap-2">
+                      <LayoutGrid className="w-4 h-4" /> VOLVER AL PANEL OPERATIVO
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -291,6 +277,15 @@ export default function DeliveryDashboardPage() {
             isAdmin={isAdmin} welcomeConfig={welcomeConfig} onImageUpload={handleImageUpload} isUploading={isUploading}
           />
           <main className="container mx-auto px-4 py-8 max-w-2xl">
+            {isAdmin && (
+              <Button 
+                onClick={() => setAdminForceWelcome(true)}
+                variant="outline" 
+                className="w-full mb-6 h-12 rounded-2xl border-dashed border-2 border-primary/30 text-primary font-black uppercase text-[10px] tracking-widest gap-2 hover:bg-primary/5"
+              >
+                <Edit3 className="w-4 h-4" /> EDITAR PORTADA DE BIENVENIDA
+              </Button>
+            )}
             <WeeklyChallenge orders={history} />
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mt-10 space-y-8">
               <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3">
