@@ -132,7 +132,7 @@ export default function DeliveryDashboardPage() {
     const updateData: any = { status: newStatus, updatedAt: serverTimestamp() };
     if (newStatus === 'delivered_to_driver') updateData.pickedUpAt = serverTimestamp();
     if (newStatus === 'delivered') updateData.deliveredAt = serverTimestamp();
-    updateDocumentNonBlocking(orderRef, updateData);
+    updateDocumentNonBlocking(orderRef, { ...updateData });
     toast({ title: "Estado Actualizado" });
   };
 
@@ -166,7 +166,7 @@ export default function DeliveryDashboardPage() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !isAdmin) return;
+    if (!file) return;
     setIsUploading(true);
     try {
       const compressed = await compressImage(file, 1920, 1080, 0.85);
@@ -183,8 +183,9 @@ export default function DeliveryDashboardPage() {
     }
   };
 
-  const handleTriggerUpload = () => {
-    if (isAdmin && fileInputRef.current) {
+  const handleTriggerUpload = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
@@ -231,7 +232,13 @@ export default function DeliveryDashboardPage() {
               isAdmin && "cursor-pointer active:scale-[0.99] bg-slate-100"
             )}
           >
-            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              onChange={handleImageUpload} 
+            />
             
             {/* Imagen de Fondo Permanente */}
             <div className="absolute inset-0 z-0">
@@ -245,11 +252,13 @@ export default function DeliveryDashboardPage() {
 
             {/* Cruz Verde Central para Añadir Imágenes */}
             <div className="relative z-10 h-full flex items-center justify-center">
-              <div className={cn(
-                "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500",
-                "bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl",
-                isUploading ? "animate-pulse" : "group-hover/welcome:scale-110 group-hover/welcome:bg-white/20"
-              )}>
+              <div 
+                className={cn(
+                  "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500",
+                  "bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl",
+                  isUploading ? "animate-pulse" : "group-hover/welcome:scale-110 group-hover/welcome:bg-white/20"
+                )}
+              >
                 {isUploading ? (
                   <Loader2 className="w-12 h-12 animate-spin text-green-500" />
                 ) : (
