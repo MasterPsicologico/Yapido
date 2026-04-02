@@ -49,7 +49,7 @@ export function WasherRentalCard({
           
           <div className={cn(
             "relative z-10 backdrop-blur-md text-white px-6 py-3 rounded-full font-black text-xs uppercase italic tracking-tighter shadow-2xl border border-white/20 flex items-center gap-2.5 transition-all hover:scale-105 active:scale-95",
-            isAnyStoreOpen ? "bg-red-600/90 hover:bg-red-600" : "bg-slate-800/80 grayscale"
+            isAnyStoreOpen ? "bg-red-600/30 hover:bg-red-600/50" : "bg-slate-800/20 grayscale"
           )}>
             {isAnyStoreOpen ? (
               <><Zap className="w-4 h-4 fill-white animate-pulse" /> SOLICITAR AHORA</>
