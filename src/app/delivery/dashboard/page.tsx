@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Star, Camera, ImageIcon, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -38,7 +38,6 @@ export default function DeliveryDashboardPage() {
   const [releaseLogs, setReleaseLogs] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
-  // CONFIGURACIÓN DE PORTADA DE BIENVENIDA
   const welcomeConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_welcome'), [firestore]);
   const { data: welcomeConfig } = useDoc(welcomeConfigRef);
 
@@ -51,7 +50,6 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
 
-  // CONSULTAS FIRESTORE OPTIMIZADAS
   const availableOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
     
@@ -185,14 +183,13 @@ export default function DeliveryDashboardPage() {
 
   const handleTriggerUpload = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (fileInputRef.current) {
+    if (isAdmin && fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
   if (loadingProfile) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
 
-  // PANTALLAS DE FLUJO DE REGISTRO SI NO ES REPARTIDOR CONFIRMADO
   if (!isConfirmedRepartidor) {
     if (profile?.deliveryRequested) {
       return (
@@ -224,7 +221,6 @@ export default function DeliveryDashboardPage() {
         <Navbar />
         <main className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
           
-          {/* CABECERA INTERACTIVA: FULL WIDTH MOBILE SIN PUNTAS */}
           <div 
             onClick={handleTriggerUpload}
             className={cn(
@@ -240,7 +236,6 @@ export default function DeliveryDashboardPage() {
               onChange={handleImageUpload} 
             />
             
-            {/* Imagen de Fondo Permanente */}
             <div className="absolute inset-0 z-0">
               {welcomeConfig?.backgroundImage ? (
                 <Image src={welcomeConfig.backgroundImage} alt="Portada Personalizada" fill className="object-cover" priority />
@@ -250,22 +245,23 @@ export default function DeliveryDashboardPage() {
               <div className="absolute inset-0 bg-black/10" />
             </div>
 
-            {/* Cruz Verde Central para Añadir Imágenes */}
-            <div className="relative z-10 h-full flex items-center justify-center">
-              <div 
-                className={cn(
-                  "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500",
-                  "bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl",
-                  isUploading ? "animate-pulse" : "group-hover/welcome:scale-110 group-hover/welcome:bg-white/20"
-                )}
-              >
-                {isUploading ? (
-                  <Loader2 className="w-12 h-12 animate-spin text-green-500" />
-                ) : (
-                  <Plus className="w-14 h-14 text-green-500 stroke-[4px]" />
-                )}
+            {isAdmin && (
+              <div className="relative z-10 h-full flex items-center justify-center">
+                <div 
+                  className={cn(
+                    "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500",
+                    "bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl",
+                    isUploading ? "animate-pulse" : "group-hover/welcome:scale-110 group-hover/welcome:bg-white/20"
+                  )}
+                >
+                  {isUploading ? (
+                    <Loader2 className="w-12 h-12 animate-spin text-green-500" />
+                  ) : (
+                    <Plus className="w-14 h-14 text-green-500 stroke-[4px]" />
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
           
           <div className="container mx-auto px-4 max-w-2xl">

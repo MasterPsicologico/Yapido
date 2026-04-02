@@ -26,7 +26,8 @@ import {
   User as UserIcon,
   CreditCard,
   Globe,
-  ArrowRight
+  ArrowRight,
+  LayoutGrid
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +41,7 @@ import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { compressImage } from '@/lib/image-compression';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface HomeActionsProps {
   isAdmin: boolean;
@@ -86,7 +88,6 @@ export function HomeActions({
   const firestore = useFirestore();
   const router = useRouter();
   
-  // Refs para validación forzada y enfoque
   const nameRef = useRef<HTMLInputElement>(null);
   const addressRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
@@ -105,7 +106,6 @@ export function HomeActions({
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
 
-  // Estado de errores para resaltado visual
   const [fieldErrors, setFieldErrors] = useState({
     name: false,
     address: false,
@@ -218,7 +218,6 @@ export function HomeActions({
 
     setIsSendingRequest(true);
     try {
-      // Sincronizar perfil automáticamente
       const userRef = doc(firestore, 'users', user.uid);
       updateDocumentNonBlocking(userRef, { 
         displayName: tempName, 
@@ -356,6 +355,16 @@ export function HomeActions({
               </div>
             </div>
           </div>
+
+          {/* BOTÓN CIRCULAR DE DIRECTORIO RESTAURADO */}
+          <Link 
+            href="/categories/category-washer"
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-10 right-10 z-[40] w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white shadow-2xl hover:bg-primary hover:border-primary transition-all duration-500 group/dir"
+          >
+            <LayoutGrid className="w-8 h-8 group-hover/dir:scale-110 transition-transform" />
+            <span className="absolute -top-10 right-0 bg-black/60 text-white text-[8px] font-black uppercase px-2 py-1 rounded opacity-0 group-hover/dir:opacity-100 transition-opacity whitespace-nowrap tracking-widest">Ver Catálogo</span>
+          </Link>
 
           {isAdmin && (
             <div className="absolute top-4 left-4 z-30">
