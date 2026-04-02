@@ -40,7 +40,7 @@ export function WasherRentalCard({
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
       </div>
 
-      {/* Activador Central - POSICIÓN MAESTRA */}
+      {/* Activador Central */}
       <div className="relative z-10 flex flex-col items-center gap-8 mt-16 animate-in fade-in zoom-in duration-700">
         <div className="relative group/cta">
           {isAnyStoreOpen && (
@@ -60,15 +60,6 @@ export function WasherRentalCard({
         </div>
       </div>
 
-      {/* Botón Circular de Directorio (Bottom Right) */}
-      <Link 
-        href="/categories/category-washer"
-        onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-6 right-6 z-[40] w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] hover:bg-primary hover:border-primary transition-all duration-500 group/dir active:scale-90"
-      >
-        <LayoutGrid className="w-6 h-6 group-hover/dir:scale-110 transition-transform" />
-      </Link>
-
       {/* Botón de Gestión / Registro de Tienda (Top Right) - RESTAURADO */}
       <button 
         onClick={(e) => { 
@@ -79,6 +70,15 @@ export function WasherRentalCard({
       >
         <StoreIcon className="w-6 h-6 group-hover/store:scale-110 transition-transform" />
       </button>
+
+      {/* Botón Circular de Directorio (Bottom Right) */}
+      <Link 
+        href="/categories/category-washer"
+        onClick={(e) => e.stopPropagation()}
+        className="absolute bottom-6 right-6 z-[40] w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] hover:bg-primary hover:border-primary transition-all duration-500 group/dir active:scale-90"
+      >
+        <LayoutGrid className="w-6 h-6 group-hover/dir:scale-110 transition-transform" />
+      </Link>
 
       {/* Controles de Administrador (Top Left) */}
       {isAdmin && (

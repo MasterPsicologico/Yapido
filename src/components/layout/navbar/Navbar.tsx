@@ -26,33 +26,44 @@ export function Navbar() {
   const { profile, isOwner, isAdmin } = useProfile();
   const auth = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() || '/';
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const isDeliveryZone = pathname?.startsWith('/delivery');
+  const isDeliveryZone = pathname.startsWith('/delivery');
   const isRepartidor = profile?.role === 'repartidor';
   const canAccessManage = isOwner || isAdmin || profile?.role === 'dueño';
 
   const handleModeSwitch = () => {
+    if (isTransitioning) return;
+    
     setIsTransitioning(true);
     let currentProgress = 0;
+    
     const interval = setInterval(() => {
       currentProgress += 10;
       setProgress(currentProgress);
+      
       if (currentProgress >= 100) {
         clearInterval(interval);
+        
+        // Determinamos la ruta de destino
+        const nextMode = isDeliveryZone ? 'stores' : 'delivery';
+        const nextPath = isDeliveryZone ? '/' : '/delivery/dashboard';
+        
+        localStorage.setItem(MODE_KEY, nextMode);
+        
+        // Redirección inmediata
+        router.push(nextPath);
+        
+        // Delay para reset visual
         setTimeout(() => {
-          const nextMode = isDeliveryZone ? 'stores' : 'delivery';
-          const nextPath = isDeliveryZone ? '/' : '/delivery/dashboard';
-          localStorage.setItem(MODE_KEY, nextMode);
-          router.push(nextPath);
           setIsTransitioning(false);
           setProgress(0);
-        }, 150);
+        }, 500);
       }
-    }, 25);
+    }, 30);
   };
 
   const handleLogin = () => initiateGoogleSignIn(auth);
