@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Waves, X, Sparkles } from 'lucide-react';
@@ -12,11 +13,11 @@ interface WasherSolicitationHeaderProps {
 /**
  * Función Aislada: Cabecera de Solicitud Élite
  * Mandamiento #1: Diseño dinámico, interactivo y con tipografía dorada de alta gama.
- * REVISIÓN: Implementación quirúrgica de botón de cierre (X) altamente visible.
+ * REVISIÓN: Ajuste quirúrgico de posición vertical para evitar desbordes superiores (Push down).
  */
 export function WasherSolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: WasherSolicitationHeaderProps) {
   return (
-    <div className="h-20 sm:h-24 bg-[#050505] flex items-center justify-between px-6 shrink-0 relative overflow-hidden border-b border-yellow-500/10 z-10">
+    <div className="h-24 sm:h-28 bg-[#050505] flex items-center justify-between px-6 shrink-0 relative overflow-hidden border-b border-yellow-500/10 z-10">
       
       {/* CAPA 1: FONDO DINÁMICO (Gradiente de Pulso) */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 animate-pulse [animation-duration:4s]" />
@@ -45,8 +46,8 @@ export function WasherSolicitationHeader({ isAdmin, onOpenAdminSettings, onClose
         </button>
       </div>
 
-      {/* SECCIÓN CENTRAL: TIPOGRAFÍA DORADA MAESTRA */}
-      <div className="flex-1 px-4 text-center relative z-10 flex flex-col justify-center items-center">
+      {/* SECCIÓN CENTRAL: TIPOGRAFÍA DORADA MAESTRA - OBLIGADA HACIA ABAJO */}
+      <div className="flex-1 px-4 text-center relative z-10 flex flex-col justify-center items-center pt-6">
         <h3 className={cn(
           "font-black italic uppercase tracking-tighter leading-[0.85] text-base sm:text-xl",
           "text-transparent bg-clip-text bg-gradient-to-b from-[#fef08a] via-[#eab308] to-[#a16207]",
@@ -65,7 +66,7 @@ export function WasherSolicitationHeader({ isAdmin, onOpenAdminSettings, onClose
         </div>
       </div>
       
-      {/* SECCIÓN DERECHA: BOTÓN DE CIERRE (X) QUIRÚRGICO Y VISIBLE */}
+      {/* SECCIÓN DERECHA: BOTÓN DE CIERRE (X) QUIRÚRGICO */}
       <div className="flex items-center gap-3 relative z-10 shrink-0">
         <button 
           onClick={onClose} 
