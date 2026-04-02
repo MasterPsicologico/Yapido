@@ -27,7 +27,8 @@ import {
   Zap,
   Info,
   Truck,
-  User as UserIcon
+  User as UserIcon,
+  XCircle
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -37,7 +38,7 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { OrderChat } from '@/components/chat/OrderChat';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { RatingDialog } from '@/components/order/RatingDialog';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
@@ -78,6 +79,7 @@ export default function OrdersManagementPage() {
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [showMyPurchases, setShowMyPurchases] = useState(false);
   const [validatingOrder, setValidatingOrder] = useState<any | null>(null);
+  const [cancellingOrder, setCancellingOrder] = useState<any | null>(null);
   
   const [ratingOrder, setRatingOrder] = useState<any | null>(null);
   const [ratingType, setRatingType] = useState<'to_store' | 'to_driver' | 'to_customer'>('to_store');
@@ -189,6 +191,34 @@ export default function OrdersManagementPage() {
     toast({ title: "Estado Actualizado", description: `Pedido movido a ${newStatus.toUpperCase()}` });
   };
 
+  const handleCancelOrder = async (order: any) => {
+    if (!firestore || !user) return;
+    const orderRef = doc(firestore, 'orders', order.id);
+    
+    // REGISTRAMOS INCIDENTE SI YA ESTABA EN MARCHA
+    if (order.status !== 'pending') {
+      const incidentRef = collection(firestore, 'incidents');
+      await addDocumentNonBlocking(incidentRef, {
+        orderId: order.id,
+        customerId: user.uid,
+        reason: "Cancelación de cliente con pedido en marcha",
+        type: 'CUSTOMER_CANCELLATION',
+        agentOwner: 'soporte',
+        createdAt: serverTimestamp()
+      });
+    }
+
+    updateDocumentNonBlocking(orderRef, { 
+      status: 'cancelled', 
+      updatedAt: serverTimestamp(),
+      cancelledBy: user.uid,
+      cancelReason: "Cancelado por el cliente"
+    });
+
+    toast({ title: "Pedido Cancelado", variant: "destructive" });
+    setCancellingOrder(null);
+  };
+
   const handleWhatsAppRedirect = (order: any) => {
     const isVenta = order.storeOwnerId === user?.uid;
     const targetPhone = isVenta ? order.customerPhone : order.storePhone;
@@ -271,6 +301,7 @@ export default function OrdersManagementPage() {
             {filteredOrders && filteredOrders.length > 0 ? filteredOrders.map(order => {
               const status = STATUS_CONFIG[order.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
               const isVenta = order.storeOwnerId === user?.uid;
+              const isCompra = order.customerId === user?.uid;
               const isExpanded = expandedOrders[order.id];
 
               return (
@@ -292,7 +323,6 @@ export default function OrdersManagementPage() {
                     </div>
 
                     <div className="space-y-4">
-                      {/* DISEÑO REFORMADO: Nombre de producto prioritario y botón de visualización inteligente */}
                       <div className="space-y-3">
                         <h3 className="text-4xl sm:text-5xl font-black text-slate-900 italic uppercase leading-[0.9] tracking-tighter break-words">
                           {order.productName}
@@ -388,6 +418,17 @@ export default function OrdersManagementPage() {
                               </Button>
                             )}
                             {(order.status === 'delivered' || order.status === 'cancelled') && <Button onClick={() => handleReorder(order)} variant="outline" className="flex-1 h-16 rounded-[24px] border-2 border-slate-100 font-black uppercase tracking-widest gap-3 hover:bg-slate-50 text-slate-600"><RotateCcw className="w-6 h-6 text-primary" /> REORDENAR</Button>}
+                            
+                            {/* BOTÓN DE CANCELACIÓN QUIRÚRGICA PARA EL COMPRADOR */}
+                            {isCompra && !['delivered', 'cancelled'].includes(order.status) && (
+                              <Button 
+                                onClick={() => setCancellingOrder(order)}
+                                variant="outline" 
+                                className="flex-1 h-16 rounded-[24px] border-2 border-red-50 text-red-500 font-black uppercase tracking-widest gap-3 hover:bg-red-50 hover:border-red-100"
+                              >
+                                <XCircle className="w-6 h-6" /> CANCELAR
+                              </Button>
+                            )}
                           </div>
                         </div>
                       )}
@@ -499,6 +540,41 @@ export default function OrdersManagementPage() {
           </div>
         </main>
       )}
+
+      {/* DIÁLOGO DE CANCELACIÓN CONFIRMADA */}
+      <Dialog open={!!cancellingOrder} onOpenChange={v => !v && setCancellingOrder(null)}>
+        <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px]">
+          <DialogHeader className="items-center text-center">
+            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
+              <AlertTriangle className="w-8 h-8 text-red-500" />
+            </div>
+            <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter text-slate-900">
+              ¿Cancelar Pedido?
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 font-medium italic">
+              {cancellingOrder?.status === 'pending' 
+                ? "Esta acción detendrá el proceso de compra inmediatamente."
+                : "¡Atención! Tu pedido ya está siendo procesado o en camino. Cancelar ahora activará un protocolo de soporte para evaluar la situación con el negocio."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex flex-col gap-3 sm:flex-col pt-6">
+            <Button 
+              onClick={() => handleCancelOrder(cancellingOrder)} 
+              className="w-full h-14 rounded-full bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest gap-2 shadow-xl shadow-red-100"
+            >
+              <XCircle className="w-5 h-5" /> CONFIRMAR CANCELACIÓN
+            </Button>
+            <Button 
+              variant="ghost"
+              onClick={() => setCancellingOrder(null)} 
+              className="w-full h-12 rounded-full font-black uppercase text-[10px] tracking-widest text-slate-400"
+            >
+              MANTENER PEDIDO
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <RatingDialog 
         isOpen={!!ratingOrder} 
