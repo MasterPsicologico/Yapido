@@ -270,14 +270,7 @@ export default function CategoryPage() {
             </div>
           )}
 
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10">
-            <h1 className="text-3xl sm:text-6xl md:text-7xl font-black text-white tracking-tighter uppercase italic leading-[0.9] drop-shadow-lg break-words max-w-full">
-              {displayCategory?.name}
-            </h1>
-            <p className="text-white/90 text-sm sm:text-lg font-medium max-w-xl mt-3 line-clamp-2 px-4 break-words">
-              {displayCategory?.description}
-            </p>
-          </div>
+          {/* Se ha eliminado el div que contenía el título y la descripción para dejar el banner limpio */}
         </div>
 
         <section className="w-full py-8 px-4 sm:px-8 border-b bg-slate-50/50">
