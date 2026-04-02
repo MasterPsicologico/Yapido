@@ -167,6 +167,10 @@ export function DashboardHeader({
       {/* VENTANA DE INFORMACIÓN DETALLADA (MODAL ÉLITE) */}
       <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
         <DialogContent className="rounded-[40px] border-none shadow-2xl p-0 bg-white overflow-hidden sm:max-w-[450px] z-[600] animate-in zoom-in duration-300">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Perfil del Repartidor</DialogTitle>
+            <DialogDescription>Información detallada y de contacto del repartidor.</DialogDescription>
+          </DialogHeader>
           <div className="h-32 bg-slate-900 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-50" />
             <Button 
