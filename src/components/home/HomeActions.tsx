@@ -33,7 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, setDocumentNonBlocking, useCollection } from '@/firebase';
+import { useUser, useAuth, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, setDocumentNonBlocking, useCollection } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { collection, serverTimestamp, doc, setDoc, query, where } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -61,7 +61,7 @@ interface HomeActionsProps {
 
 // UTILIDAD PARA VERIFICAR HORARIO (SOPORTE NOCTURNO Y VALIDACIÓN DE DATOS)
 export const checkIsBusinessOpen = (openTime?: string, closeTime?: string) => {
-  if (!openTime || !closeTime) return false; // Si falta configuración, está cerrado
+  if (!openTime || !closeTime) return false;
   const now = new Date();
   const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
   
@@ -72,7 +72,6 @@ export const checkIsBusinessOpen = (openTime?: string, closeTime?: string) => {
   const closeMinutes = closeH * 60 + closeM;
   
   if (closeMinutes < openMinutes) {
-    // Horario nocturno (ej: 23:00 a 06:00)
     return currentTotalMinutes >= openMinutes || currentTotalMinutes < closeMinutes;
   }
   return currentTotalMinutes >= openMinutes && currentTotalMinutes < closeMinutes;
@@ -96,7 +95,7 @@ export function HomeActions({
   const [tempName, setTempName] = useState("");
   const [tempAddress, setTempAddress] = useState("");
   const [tempPhone, setTempPhone] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'digital'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'digital' | null>(null);
   const [isSendingRequest, setIsSendingRequest] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
@@ -104,14 +103,12 @@ export function HomeActions({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
-  // CONFIGURACIÓN GLOBAL (PARA EL BANNER)
   const pricingRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_pricing'), [firestore]);
   const { data: pricingConfig } = useDoc(pricingRef);
 
   const bannerConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_banner'), [firestore]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
 
-  // CONSULTAR TODAS LAS TIENDAS DE LAVADORAS PARA DETERMINAR ESTADO GLOBAL
   const washerStoresQuery = useMemoFirebase(() => query(
     collection(firestore, 'stores'), 
     where('type', '==', 'washer_rental'),
@@ -138,6 +135,7 @@ export function HomeActions({
       setTempAddress(profile.address || "");
       setTempPhone(profile.phoneNumber || "");
       setRequestHours(minHours);
+      setPaymentMethod('cash');
     }
   }, [openWasher, profile, minHours]);
 
@@ -148,10 +146,7 @@ export function HomeActions({
     }
   };
 
-  const totalPrice = useMemo(() => {
-    // MULTIPLICACIÓN REAL SOLICITADA: horas * valor_base
-    return requestHours * valHoraBase;
-  }, [requestHours, valHoraBase]);
+  const totalPrice = useMemo(() => requestHours * valHoraBase, [requestHours, valHoraBase]);
 
   const formattedPrice = new Intl.NumberFormat('es-CO', { 
     style: 'currency', 
@@ -212,8 +207,18 @@ export function HomeActions({
     e.preventDefault();
     if (!user || !firestore) return;
     
+    // VALIDACIÓN OBLIGATORIA RIGUROSA
+    if (!tempName.trim() || !tempAddress.trim() || !tempPhone.trim() || !paymentMethod) {
+      toast({ 
+        title: "Solicitud Incompleta", 
+        description: "Todos los campos son obligatorios. Por favor, completa tu información.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     if (!isAnyStoreOpen) {
-      toast({ title: "No hay tiendas abiertas", variant: "destructive" });
+      toast({ title: "Tiendas Cerradas", description: "Vuelve en horario de operación.", variant: "destructive" });
       return;
     }
 
@@ -389,7 +394,7 @@ export function HomeActions({
                 </form>
               )}
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="space-y-1">
                   <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">NOMBRE COMPLETO</Label>
                   <div className="relative group">
@@ -493,7 +498,7 @@ export function HomeActions({
                     <div className="flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
                       <Wallet className="w-3.5 h-3.5 text-primary" />
                       <span className="text-[9px] font-black uppercase italic">
-                        {paymentMethod === 'cash' ? 'Pagas al recibir' : 'Liquidación Digital'}
+                        {paymentMethod === 'cash' ? 'Pagas al recibir' : paymentMethod === 'digital' ? 'Liquidación Digital' : 'Selecciona Pago'}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 px-4 py-1.5 bg-primary/20 border border-primary/30 rounded-full animate-pulse">
