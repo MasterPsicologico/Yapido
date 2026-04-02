@@ -20,14 +20,14 @@ import {
   Wallet,
   Settings2,
   Moon,
-  Sun
+  Sun,
+  Minus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { collection, serverTimestamp, doc, setDoc } from 'firebase/firestore';
@@ -83,7 +83,6 @@ export function HomeActions({
   const bannerConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_banner'), [firestore]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
 
-  // LOGICA MAESTRA: Multiplicación Real
   const minHours = Number(pricingConfig?.minHours || 5);
   const valHoraBase = Number(pricingConfig?.basePrice || 3000);
   const valHoraExtra = Number(pricingConfig?.additionalHourPrice || 3000);
@@ -130,11 +129,9 @@ export function HomeActions({
     const baseRate = Number(valHoraBase);
     const extraRate = Number(valHoraExtra);
 
-    // Si las horas pedidas son menores o iguales al mínimo, se cobra el valor base por cada hora
     if (hours <= min) {
       return hours * baseRate;
     } else {
-      // Si son más, se cobra el bloque base completo + el excedente a precio de hora extra
       const baseBlock = min * baseRate;
       const extraHours = hours - min;
       return baseBlock + (extraHours * extraRate);
@@ -260,14 +257,11 @@ export function HomeActions({
             ) : (
               <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover bg-top" />
             )}
-            {/* GRADIENTE DE VIBRANCIA PARA COLORES MÁS VIVOS */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
           </div>
 
-          {/* BOTÓN DE ACCIÓN REUBICADO CON ONDA PULSANTE PSICOLÓGICA */}
           <div className="relative z-10 flex flex-col items-center gap-8 mt-64 animate-in fade-in zoom-in duration-700">
             <div className="relative group/cta">
-              {/* ONDA PULSANTE PROFESIONAL */}
               {isBusinessOpen && (
                 <div className="absolute inset-0 rounded-full bg-red-500/40 [animation-duration:2000ms] animate-ping scale-125" />
               )}
@@ -398,12 +392,12 @@ export function HomeActions({
                       <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black px-3 py-1">MIN. {minHours} HORAS</Badge>
                     </div>
                     <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-[32px]">
-                      <Button type="button" onClick={() => setRequestHours(Math.max(minHours, requestHours - 1))} variant="ghost" className="w-14 h-14 rounded-2xl bg-white shadow-sm font-black text-xl">-</Button>
+                      <Button type="button" onClick={() => setRequestHours(Math.max(minHours, requestHours - 1))} variant="ghost" className="w-14 h-14 rounded-2xl bg-white shadow-sm font-black text-xl"><Minus className="w-6 h-6" /></Button>
                       <div className="flex-1 text-center">
-                        <span className="text-4xl font-black italic text-slate-900 tracking-tighter">{requestHours}</span>
+                        <span className="text-5xl font-black italic text-slate-950 tracking-tighter">{requestHours}</span>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Horas</span>
                       </div>
-                      <Button type="button" onClick={() => setRequestHours(requestHours + 1)} variant="ghost" className="w-14 h-14 rounded-2xl bg-white shadow-sm font-black text-xl">+</Button>
+                      <Button type="button" onClick={() => setRequestHours(requestHours + 1)} variant="ghost" className="w-14 h-14 rounded-2xl bg-white shadow-sm font-black text-xl"><Plus className="w-6 h-6" /></Button>
                     </div>
                   </div>
                 </div>
@@ -420,12 +414,12 @@ export function HomeActions({
                   <div className="flex flex-col gap-2 relative z-10">
                     <div className="space-y-1">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total a pagar</p>
-                      <h4 className="text-3xl font-black italic tracking-tighter leading-none text-white">
+                      <h4 className="text-4xl font-black italic tracking-tighter leading-none text-white animate-in slide-in-from-left-2 duration-300">
                         {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(totalPrice)}
                       </h4>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full w-fit">
-                      <span className="text-[8px] font-black text-primary uppercase tracking-[0.2em] italic">Logística Pro Activa</span>
+                    <div className="flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full w-fit">
+                      <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em] italic">Logística Pro Activa</span>
                     </div>
                   </div>
                 </div>
