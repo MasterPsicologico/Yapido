@@ -38,7 +38,6 @@ export default function WasherAdminPage() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !id || !user?.uid) return null;
-    // Usamos participants array-contains para cumplir con las reglas de seguridad
     return query(
       collection(firestore, 'orders'),
       where('storeId', '==', id),
@@ -50,7 +49,7 @@ export default function WasherAdminPage() {
   const { data: orders, isLoading: loadingOrders } = useCollection(ordersQuery);
 
   const stats = useMemo(() => {
-    if (!orders) return { dailyEarnings: [], totalNet: 0, totalPlatform: 0, totalGross: 0 };
+    if (!orders) return { dailyEarnings: [], totalNet: 0, totalPlatform: 0, totalGross: 0, totalCount: 0 };
     
     const last7Days = Array.from({ length: 7 }, (_, i) => {
       const date = new Date();
@@ -76,7 +75,7 @@ export default function WasherAdminPage() {
     const platformFee = totalGross * 0.05;
     const netProfit = totalGross - platformFee;
 
-    return { dailyEarnings, totalNet: netProfit, totalPlatform: platformFee, totalGross };
+    return { dailyEarnings, totalNet: netProfit, totalPlatform: platformFee, totalGross, totalCount: orders.length };
   }, [orders]);
 
   if (profileLoading || loadingStore) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
@@ -89,7 +88,9 @@ export default function WasherAdminPage() {
         <WasherHeader 
           storeName={store?.name} 
           activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
+          setActiveTab={setActiveTab}
+          driverCount={store?.privateDrivers?.length || 0}
+          orderCount={stats.totalCount}
         />
 
         {activeTab === 'stats' && <WasherDashboard stats={stats} />}
