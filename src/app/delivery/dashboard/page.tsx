@@ -38,6 +38,7 @@ export default function DeliveryDashboardPage() {
   const [releaseLogs, setReleaseLogs] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
+  // FETCH: Configuración de portada del Delivery
   const welcomeConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_welcome'), [firestore]);
   const { data: welcomeConfig } = useDoc(welcomeConfigRef);
 
@@ -168,12 +169,12 @@ export default function DeliveryDashboardPage() {
     setIsUploading(true);
     try {
       const compressed = await compressImage(file, 1920, 1080, 0.85);
-      setDocumentNonBlocking(welcomeConfigRef, {
+      await setDocumentNonBlocking(welcomeConfigRef, {
         backgroundImage: compressed,
         updatedAt: serverTimestamp(),
         updatedBy: user?.uid
       }, { merge: true });
-      toast({ title: "Portada actualizada" });
+      toast({ title: "Portada actualizada permanentemente" });
     } catch (error) {
       toast({ title: "Error al actualizar", variant: "destructive" });
     } finally {
@@ -221,10 +222,11 @@ export default function DeliveryDashboardPage() {
         <Navbar />
         <main className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
           
+          {/* BANNER DE BIENVENIDA CON CARGA INSTANTÁNEA PARA ADMIN */}
           <div 
             onClick={handleTriggerUpload}
             className={cn(
-              "relative w-full aspect-video mb-2 overflow-hidden shadow-xl transition-all duration-500 group/welcome",
+              "relative w-full aspect-[16/7] mb-2 overflow-hidden shadow-xl transition-all duration-500 group/welcome",
               isAdmin && "cursor-pointer active:scale-[0.99] bg-slate-100"
             )}
           >
@@ -249,22 +251,22 @@ export default function DeliveryDashboardPage() {
               <div className="relative z-10 h-full flex items-center justify-center">
                 <div 
                   className={cn(
-                    "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500",
+                    "w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500",
                     "bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl",
                     isUploading ? "animate-pulse" : "group-hover/welcome:scale-110 group-hover/welcome:bg-white/20"
                   )}
                 >
                   {isUploading ? (
-                    <Loader2 className="w-12 h-12 animate-spin text-green-500" />
+                    <Loader2 className="w-10 h-10 animate-spin text-green-500" />
                   ) : (
-                    <Plus className="w-14 h-14 text-green-500 stroke-[4px]" />
+                    <Camera className="w-10 h-10 text-green-500" />
                   )}
                 </div>
               </div>
             )}
           </div>
           
-          <div className="container mx-auto px-4 max-w-2xl">
+          <div className="container mx-auto px-4 max-w-2xl -mt-16 relative z-20">
             <Card className="border-none shadow-2xl rounded-[48px] bg-white overflow-hidden ring-1 ring-black/[0.03]">
               <CardContent className="p-12 space-y-10">
                 <div className="space-y-8">
@@ -292,7 +294,7 @@ export default function DeliveryDashboardPage() {
                   <Button 
                     onClick={() => router.push('/delivery/register')}
                     className={cn(
-                      "w-full h-20 rounded-[32px] bg-primary text-white font-black text-[10px] sm:text-sm uppercase tracking-[0.2em] gap-3",
+                      "w-full h-20 rounded-[32px] bg-primary text-white font-black text-sm uppercase tracking-[0.2em] gap-3",
                       "relative transition-all duration-75 ease-out",
                       "border-b-[10px] border-blue-800",
                       "shadow-[0_15px_35px_-5px_rgba(59,130,246,0.5)]",
