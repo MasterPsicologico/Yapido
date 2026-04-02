@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Star, Camera, ImageIcon, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -183,6 +183,12 @@ export default function DeliveryDashboardPage() {
     }
   };
 
+  const handleTriggerUpload = () => {
+    if (isAdmin && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   if (loadingProfile) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
 
   // PANTALLAS DE FLUJO DE REGISTRO SI NO ES REPARTIDOR CONFIRMADO
@@ -215,14 +221,14 @@ export default function DeliveryDashboardPage() {
     return (
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
         <Navbar />
-        <main className="flex-1 container mx-auto px-4 py-12 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <main className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
           
-          {/* CABECERA INTERACTIVA: TARJETA DE PORTADA LIMPIA CON CRUZ VERDE */}
+          {/* CABECERA INTERACTIVA: FULL WIDTH MOBILE SIN PUNTAS */}
           <div 
-            onClick={() => isAdmin && fileInputRef.current?.click()}
+            onClick={handleTriggerUpload}
             className={cn(
-              "relative w-full aspect-[16/10] mb-12 rounded-[48px] overflow-hidden shadow-2xl transition-all duration-500 group/welcome",
-              isAdmin && "cursor-pointer active:scale-[0.98] hover:shadow-primary/20 bg-slate-100"
+              "relative w-full aspect-video mb-2 overflow-hidden shadow-xl transition-all duration-500 group/welcome",
+              isAdmin && "cursor-pointer active:scale-[0.99] bg-slate-100"
             )}
           >
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
@@ -234,66 +240,68 @@ export default function DeliveryDashboardPage() {
               ) : (
                 <div className="absolute inset-0 bg-slate-200" />
               )}
-              <div className="absolute inset-0 bg-black/5" />
+              <div className="absolute inset-0 bg-black/10" />
             </div>
 
             {/* Cruz Verde Central para Añadir Imágenes */}
             <div className="relative z-10 h-full flex items-center justify-center">
               <div className={cn(
-                "w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500",
+                "w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500",
                 "bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl",
                 isUploading ? "animate-pulse" : "group-hover/welcome:scale-110 group-hover/welcome:bg-white/20"
               )}>
                 {isUploading ? (
-                  <Loader2 className="w-10 h-10 animate-spin text-green-500" />
+                  <Loader2 className="w-12 h-12 animate-spin text-green-500" />
                 ) : (
-                  <Plus className="w-12 h-12 text-green-500 stroke-[4px]" />
+                  <Plus className="w-14 h-14 text-green-500 stroke-[4px]" />
                 )}
               </div>
             </div>
           </div>
           
-          <Card className="border-none shadow-2xl rounded-[48px] bg-white overflow-hidden ring-1 ring-black/[0.03]">
-            <CardContent className="p-12 space-y-10">
-              <div className="space-y-8">
-                <div className="flex items-start gap-6">
-                  <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 shrink-0 shadow-inner">
-                    <CheckCircle2 className="w-6 h-6" />
+          <div className="container mx-auto px-4 max-w-2xl">
+            <Card className="border-none shadow-2xl rounded-[48px] bg-white overflow-hidden ring-1 ring-black/[0.03]">
+              <CardContent className="p-12 space-y-10">
+                <div className="space-y-8">
+                  <div className="flex items-start gap-6">
+                    <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 shrink-0 shadow-inner">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="font-black text-lg uppercase italic tracking-tighter text-slate-900">Gana por cada entrega</h4>
+                      <p className="text-xs text-slate-400 font-medium leading-relaxed">Recibe el 70% del valor de cada envío de forma inmediata y directa a tu saldo.</p>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <h4 className="font-black text-lg uppercase italic tracking-tighter text-slate-900">Gana por cada entrega</h4>
-                    <p className="text-xs text-slate-400 font-medium leading-relaxed">Recibe el 70% del valor de cada envío de forma inmediata y directa a tu saldo.</p>
+                  <div className="flex items-start gap-6">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0 shadow-inner">
+                      <Zap className="w-6 h-6" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="font-black text-lg uppercase italic tracking-tighter text-slate-900">Autonomía Logística</h4>
+                      <p className="text-xs text-slate-400 font-medium leading-relaxed">Tú controlas tu tiempo. Conéctate cuando quieras y acepta las rutas que mejor te convengan.</p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-start gap-6">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0 shadow-inner">
-                    <Zap className="w-6 h-6" />
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="font-black text-lg uppercase italic tracking-tighter text-slate-900">Autonomía Logística</h4>
-                    <p className="text-xs text-slate-400 font-medium leading-relaxed">Tú controlas tu tiempo. Conéctate cuando quieras y acepta las rutas que mejor te convengan.</p>
-                  </div>
-                </div>
-              </div>
 
-              <div className="pt-4">
-                <Button 
-                  onClick={() => router.push('/delivery/register')}
-                  className={cn(
-                    "w-full h-20 rounded-[32px] bg-primary text-white font-black text-[10px] sm:text-sm uppercase tracking-[0.2em] gap-3",
-                    "relative transition-all duration-75 ease-out",
-                    "border-b-[10px] border-blue-800",
-                    "shadow-[0_15px_35px_-5px_rgba(59,130,246,0.5)]",
-                    "hover:border-b-[6px] hover:translate-y-[4px] hover:shadow-[0_10px_25px_-5px_rgba(59,130,246,0.4)]",
-                    "active:border-b-0 active:translate-y-[10px] active:shadow-inner"
-                  )}
-                >
-                  QUIERO SER REPARTIDOR <ArrowRight className="w-4 h-4" />
-                </Button>
-              </div>
-              <p className="text-[8px] text-center text-slate-300 font-black uppercase tracking-[0.4em]">SISTEMA PROTEGIDO • VITRINIANDO AI KERNEL</p>
-            </CardContent>
-          </Card>
+                <div className="pt-4">
+                  <Button 
+                    onClick={() => router.push('/delivery/register')}
+                    className={cn(
+                      "w-full h-20 rounded-[32px] bg-primary text-white font-black text-[10px] sm:text-sm uppercase tracking-[0.2em] gap-3",
+                      "relative transition-all duration-75 ease-out",
+                      "border-b-[10px] border-blue-800",
+                      "shadow-[0_15px_35px_-5px_rgba(59,130,246,0.5)]",
+                      "hover:border-b-[6px] hover:translate-y-[4px] hover:shadow-[0_10px_25px_-5px_rgba(59,130,246,0.4)]",
+                      "active:border-b-0 active:translate-y-[10px] active:shadow-inner"
+                    )}
+                  >
+                    QUIERO SER REPARTIDOR <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+                <p className="text-[8px] text-center text-slate-300 font-black uppercase tracking-[0.4em]">SISTEMA PROTEGIDO • VITRINIANDO AI KERNEL</p>
+              </CardContent>
+            </Card>
+          </div>
         </main>
       </div>
     );
