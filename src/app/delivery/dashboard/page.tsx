@@ -1,18 +1,20 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Star } from 'lucide-react';
+import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Star, Camera, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
+import { compressImage } from '@/lib/image-compression';
 
 // Componentes Fragmentados
 import { WeeklyChallenge } from '@/components/delivery/weekly-challenge';
@@ -28,11 +30,17 @@ export default function DeliveryDashboardPage() {
   const { profile, level, isAdmin, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [activeTab, setActiveTab] = useState("available");
   const [isOnline, setIsOnline] = useState(true);
   const [isReleasing, setIsReleasing] = useState(false);
   const [releaseLogs, setReleaseLogs] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // CONFIGURACIÓN DE PORTADA DE BIENVENIDA
+  const welcomeConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_welcome'), [firestore]);
+  const { data: welcomeConfig } = useDoc(welcomeConfigRef);
 
   useEffect(() => {
     if (!loadingProfile && profile && !profile.phoneNumber) {
@@ -156,6 +164,25 @@ export default function DeliveryDashboardPage() {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !isAdmin) return;
+    setIsUploading(true);
+    try {
+      const compressed = await compressImage(file, 1920, 1080, 0.85);
+      setDocumentNonBlocking(welcomeConfigRef, {
+        backgroundImage: compressed,
+        updatedAt: serverTimestamp(),
+        updatedBy: user?.uid
+      }, { merge: true });
+      toast({ title: "Portada actualizada" });
+    } catch (error) {
+      toast({ title: "Error al actualizar", variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   if (loadingProfile) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
 
   // PANTALLAS DE FLUJO DE REGISTRO SI NO ES REPARTIDOR CONFIRMADO
@@ -189,12 +216,51 @@ export default function DeliveryDashboardPage() {
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
         <Navbar />
         <main className="flex-1 container mx-auto px-4 py-12 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <div className="text-center mb-12 space-y-4">
-            <div className="w-24 h-24 bg-primary rounded-[36px] flex items-center justify-center text-white mx-auto shadow-2xl shadow-primary/20">
-              <Truck className="w-12 h-12" />
+          
+          {/* CABECERA INTERACTIVA: TARJETA DE PORTADA */}
+          <div 
+            onClick={() => isAdmin && fileInputRef.current?.click()}
+            className={cn(
+              "relative w-full aspect-[16/10] mb-12 rounded-[48px] overflow-hidden shadow-2xl transition-all duration-500 group/welcome",
+              isAdmin && "cursor-pointer active:scale-[0.98] hover:shadow-primary/20"
+            )}
+          >
+            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+            
+            {/* Imagen de Fondo */}
+            <div className="absolute inset-0 z-0">
+              {welcomeConfig?.backgroundImage ? (
+                <Image src={welcomeConfig.backgroundImage} alt="Bienvenida" fill className="object-cover" priority />
+              ) : (
+                <div className="absolute inset-0 bg-slate-100" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
             </div>
-            <h1 className="text-5xl font-black italic uppercase tracking-tighter text-slate-900">Bienvenido a Delivery</h1>
-            <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em]">Centro de Operaciones de Flota</p>
+
+            {/* Contenido Flotante */}
+            <div className="relative z-10 h-full flex flex-col items-center justify-center p-8 text-center space-y-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 rounded-[36px] animate-ping [animation-duration:3000ms]" />
+                <div className="relative w-20 h-20 bg-white/10 backdrop-blur-xl rounded-[36px] flex items-center justify-center text-white border border-white/20 shadow-2xl">
+                  {isUploading ? <Loader2 className="w-8 h-8 animate-spin" /> : <Truck className="w-10 h-10" />}
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-white drop-shadow-2xl leading-[0.9]">
+                  Bienvenido a <br /> <span className="text-primary">Delivery</span>
+                </h1>
+                <p className="text-white/60 font-bold text-[10px] uppercase tracking-[0.3em] max-w-[200px] mx-auto">
+                  Centro de Operaciones de Flota
+                </p>
+              </div>
+
+              {isAdmin && !welcomeConfig?.backgroundImage && (
+                <div className="absolute top-6 right-6 opacity-40 group-hover/welcome:opacity-100 transition-opacity">
+                  <Camera className="w-5 h-5 text-white" />
+                </div>
+              )}
+            </div>
           </div>
           
           <Card className="border-none shadow-2xl rounded-[48px] bg-white overflow-hidden ring-1 ring-black/[0.03]">
@@ -221,13 +287,12 @@ export default function DeliveryDashboardPage() {
               </div>
 
               <div className="pt-4">
-                {/* BOTÓN 3D AVANZADO DE ANCHO TOTAL */}
                 <Button 
                   onClick={() => router.push('/delivery/register')}
                   className={cn(
                     "w-full h-20 rounded-[32px] bg-primary text-white font-black text-[10px] sm:text-sm uppercase tracking-[0.2em] gap-3",
                     "relative transition-all duration-75 ease-out",
-                    "border-b-[10px] border-blue-800", // Efecto de profundidad física
+                    "border-b-[10px] border-blue-800",
                     "shadow-[0_15px_35px_-5px_rgba(59,130,246,0.5)]",
                     "hover:border-b-[6px] hover:translate-y-[4px] hover:shadow-[0_10px_25px_-5px_rgba(59,130,246,0.4)]",
                     "active:border-b-0 active:translate-y-[10px] active:shadow-inner"
