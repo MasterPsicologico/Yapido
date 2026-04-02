@@ -6,14 +6,10 @@ import { UserCircle, LogOut, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger,
-  DropdownMenuPortal
-} from "@/components/ui/dropdown-menu";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface NavbarUserMenuProps {
   user: any;
@@ -24,45 +20,43 @@ interface NavbarUserMenuProps {
 
 export function NavbarUserMenu({ user, profile, canAccessManage, onLogout }: NavbarUserMenuProps) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-full p-0 shrink-0 border-2 border-white shadow-md hover:border-primary/20 transition-all bg-white">
           <Avatar className="h-full w-full">
             <AvatarImage src={profile?.photoURL || user.photoURL || ''} />
             <AvatarFallback className="font-black text-[10px] bg-slate-100 text-primary">U</AvatarFallback>
           </Avatar>
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuPortal>
-        <DropdownMenuContent className="w-64 p-2 rounded-[28px] shadow-2xl mt-2 border-none z-[500]" align="end">
-          <DropdownMenuLabel className="font-normal p-4">
-            <p className="text-sm font-black italic text-slate-900">{profile?.displayName || user.displayName}</p>
-            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate mt-0.5">{user.email}</p>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-slate-50" />
-          <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/5">
-            <Link href="/profile" className="flex items-center">
-              <UserCircle className="mr-3 h-4 w-4 text-primary" />
-              <span className="font-bold text-slate-700">Mi Perfil</span>
-            </Link>
-          </DropdownMenuItem>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-2 rounded-[28px] shadow-2xl mt-2 border-none z-[1000]" align="end">
+        <div className="font-normal p-4">
+          <p className="text-sm font-black italic text-slate-900">{profile?.displayName || user.displayName}</p>
+          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate mt-0.5">{user.email}</p>
+        </div>
+        <div className="h-px bg-slate-50 mx-2" />
+        <div className="p-1 space-y-1">
+          <Link href="/profile" className="flex items-center h-11 px-3 rounded-xl hover:bg-primary/5 transition-colors group">
+            <UserCircle className="mr-3 h-4 w-4 text-primary" />
+            <span className="font-bold text-slate-700 group-hover:text-primary transition-colors">Mi Perfil</span>
+          </Link>
           
           {canAccessManage && (
-            <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/5 bg-primary/5">
-              <Link href="/admin/manage" className="flex items-center">
-                <LayoutGrid className="mr-3 h-4 w-4 text-primary" />
-                <span className="font-black italic uppercase tracking-tighter text-primary text-[11px]">Gestionar Mi Negocio</span>
-              </Link>
-            </DropdownMenuItem>
+            <Link href="/admin/manage" className="flex items-center h-11 px-3 rounded-xl bg-primary/5 hover:bg-primary/10 transition-colors">
+              <LayoutGrid className="mr-3 h-4 w-4 text-primary" />
+              <span className="font-black italic uppercase tracking-tighter text-primary text-[11px]">Gestionar Mi Negocio</span>
+            </Link>
           )}
+        </div>
 
-          <DropdownMenuSeparator className="bg-slate-50" />
-          <DropdownMenuItem onClick={onLogout} className="text-red-500 rounded-xl h-11 cursor-pointer hover:bg-red-50 hover:text-red-600">
+        <div className="h-px bg-slate-50 mx-2" />
+        <div className="p-1">
+          <button onClick={onLogout} className="flex items-center w-full h-11 px-3 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors">
             <LogOut className="mr-3 h-4 w-4" />
             <span className="font-bold">Cerrar Sesión</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenuPortal>
-    </DropdownMenu>
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

@@ -4,14 +4,10 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Bell, Clock, Package, Truck, Zap, CheckCircle2, Navigation, Timer } from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuPortal,
-} from "@/components/ui/dropdown-menu";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where } from 'firebase/firestore';
@@ -107,40 +103,44 @@ export function ActivityCenter() {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <ActivityTrigger count={unreadCount} />
-      </DropdownMenuTrigger>
-      <DropdownMenuPortal>
-        <DropdownMenuContent className="w-80 p-2 rounded-[28px] shadow-2xl border-none bg-white mt-2 z-[500]" align="center">
-          <DropdownMenuLabel className="px-4 py-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-black italic uppercase tracking-tighter text-slate-900">Actividad Viva</span>
-              <Badge variant="secondary" className="rounded-full text-[10px] font-black bg-primary/10 text-primary border-none">{unreadCount}</Badge>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-slate-50" />
-          <div className="max-h-[350px] overflow-y-auto p-1 space-y-2 no-scrollbar">
-            {activities.length > 0 ? activities.map((act) => (
-              <ActivityItem 
-                key={act!.orderId} 
-                {...act!} 
-                isUnread={!seenIds.includes(act!.orderId)}
-                onClick={() => handleItemClick(act!.orderId)} 
-              />
-            )) : (
-              <div className="py-10 text-center">
-                <Bell className="w-12 h-12 bg-slate-50 rounded-full p-3 mx-auto mb-3 text-slate-200" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Sin actividad reciente</p>
-              </div>
-            )}
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-2 rounded-[28px] shadow-2xl border-none bg-white mt-2 z-[1000]" align="center">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-black italic uppercase tracking-tighter text-slate-900">Actividad Viva</span>
+            <Badge variant="secondary" className="rounded-full text-[10px] font-black bg-primary/10 text-primary border-none">{unreadCount}</Badge>
           </div>
-          <DropdownMenuSeparator className="bg-slate-50" />
-          <DropdownMenuItem asChild className="rounded-xl justify-center h-10 focus:bg-primary/5">
-            <Link href="/admin/orders" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Ver historial completo</Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenuPortal>
-    </DropdownMenu>
+        </div>
+        <div className="h-px bg-slate-50 mx-2" />
+        <div className="max-h-[350px] overflow-y-auto p-1 space-y-2 no-scrollbar">
+          {activities.length > 0 ? activities.map((act) => (
+            <div key={act!.orderId} className="flex flex-col" onClick={() => handleItemClick(act!.orderId)}>
+              <ActivityItem 
+                orderId={act!.orderId} 
+                label={act!.label}
+                desc={act!.desc}
+                icon={act!.icon}
+                color={act!.color}
+                bg={act!.bg}
+                timestamp={act!.timestamp}
+                isUnread={!seenIds.includes(act!.orderId)}
+              />
+            </div>
+          )) : (
+            <div className="py-10 text-center">
+              <Bell className="w-12 h-12 bg-slate-50 rounded-full p-3 mx-auto mb-3 text-slate-200" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Sin actividad reciente</p>
+            </div>
+          )}
+        </div>
+        <div className="h-px bg-slate-50 mx-2 mt-2" />
+        <div className="p-1">
+          <Link href="/admin/orders" className="flex items-center justify-center h-10 rounded-xl hover:bg-primary/5 text-[10px] font-black uppercase tracking-[0.2em] text-primary">Ver historial completo</Link>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

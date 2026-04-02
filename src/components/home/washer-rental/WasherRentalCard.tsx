@@ -60,7 +60,7 @@ export function WasherRentalCard({
         </div>
       </div>
 
-      {/* Botón Circular de Directorio */}
+      {/* Botón Circular de Directorio (Bottom Right) */}
       <Link 
         href="/categories/category-washer"
         onClick={(e) => e.stopPropagation()}
@@ -69,27 +69,27 @@ export function WasherRentalCard({
         <LayoutGrid className="w-6 h-6 group-hover/dir:scale-110 transition-transform" />
       </Link>
 
-      {/* Botón de Gestión / Registro de Tienda (Top Right) */}
+      {/* Botón de Gestión / Registro de Tienda (Top Right) - RESTAURADO */}
       <button 
         onClick={(e) => { 
           e.stopPropagation(); 
           onOpenStoreCreation(); 
         }}
-        className="absolute top-4 right-4 z-[40] w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/60 hover:text-green-500 transition-all shadow-2xl active:scale-90"
+        className="absolute top-4 right-4 z-[40] w-12 h-12 rounded-[18px] bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-green-500 transition-all shadow-2xl active:scale-95 group/store"
       >
-        <StoreIcon className="w-5 h-5" />
+        <StoreIcon className="w-6 h-6 group-hover/store:scale-110 transition-transform" />
       </button>
 
       {/* Controles de Administrador (Top Left) */}
       {isAdmin && (
-        <div className="absolute top-4 left-4 z-30">
+        <div className="absolute top-4 left-4 z-[40]">
           <input type="file" className="hidden" accept="image/*" onChange={onBannerUpload} />
           <button 
             onClick={(e) => { e.stopPropagation(); (e.currentTarget.previousSibling as HTMLInputElement).click(); }} 
             disabled={isUploadingBanner} 
-            className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl"
+            className="w-12 h-12 rounded-[18px] bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl"
           >
-            {isUploadingBanner ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Camera className="w-5 h-5" />}
+            {isUploadingBanner ? <Loader2 className="w-5 h-5 animate-spin text-primary" /> : <Camera className="w-5 h-5" />}
           </button>
         </div>
       )}

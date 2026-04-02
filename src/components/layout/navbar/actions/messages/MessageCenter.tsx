@@ -4,14 +4,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { MessageSquareText, Clock } from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuPortal,
-} from "@/components/ui/dropdown-menu";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import Link from 'next/link';
@@ -95,42 +91,40 @@ export function MessageCenter() {
   };
 
   return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <MessageTrigger count={unreadCount} hasUnread={unreadSessionOrders.length > 0} />
-      </DropdownMenuTrigger>
-      <DropdownMenuPortal>
-        <DropdownMenuContent className="w-80 p-2 rounded-[28px] shadow-2xl border-none bg-white mt-2 z-[500]" align="center">
-          <DropdownMenuLabel className="px-4 py-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-black italic uppercase tracking-tighter text-slate-900">Chats Activos</span>
-              <Badge className="bg-secondary text-white rounded-full text-[10px] font-black border-none">{unreadCount}</Badge>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-slate-50" />
-          <div className="max-h-[350px] overflow-y-auto p-1 space-y-2 no-scrollbar">
-            {activeChats.length > 0 ? activeChats.map((chat) => (
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-2 rounded-[28px] shadow-2xl border-none bg-white mt-2 z-[1000]" align="center">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-black italic uppercase tracking-tighter text-slate-900">Chats Activos</span>
+            <Badge className="bg-secondary text-white rounded-full text-[10px] font-black border-none">{unreadCount}</Badge>
+          </div>
+        </div>
+        <div className="h-px bg-slate-50 mx-2" />
+        <div className="max-h-[350px] overflow-y-auto p-1 space-y-2 no-scrollbar">
+          {activeChats.length > 0 ? activeChats.map((chat) => (
+            <div key={chat.id} onClick={() => handleItemClick(chat.id)}>
               <MessageItem 
-                key={chat.id} 
                 chatId={chat.id} 
                 name={chat.name} 
                 timestamp={chat.timestamp}
                 isUnread={unreadSessionOrders.some(([id]) => id === chat.id) || !seenIds.includes(chat.id)} 
-                onClick={() => handleItemClick(chat.id)}
               />
-            )) : (
-              <div className="py-10 text-center">
-                <MessageSquareText className="w-12 h-12 bg-slate-50 rounded-full p-3 mx-auto mb-3 text-slate-200" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Bandeja vacía</p>
-              </div>
-            )}
-          </div>
-          <DropdownMenuSeparator className="bg-slate-50" />
-          <DropdownMenuItem asChild className="rounded-xl justify-center h-10 focus:bg-secondary/5">
-            <Link href="/admin/orders" className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Ir a todos los chats</Link>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenuPortal>
-    </DropdownMenu>
+            </div>
+          )) : (
+            <div className="py-10 text-center">
+              <MessageSquareText className="w-12 h-12 bg-slate-50 rounded-full p-3 mx-auto mb-3 text-slate-200" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Bandeja vacía</p>
+            </div>
+          )}
+        </div>
+        <div className="h-px bg-slate-50 mx-2 mt-2" />
+        <div className="p-1">
+          <Link href="/admin/orders" className="flex items-center justify-center h-10 rounded-xl hover:bg-secondary/5 text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Ir a todos los chats</Link>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
