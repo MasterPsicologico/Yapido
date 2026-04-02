@@ -121,16 +121,16 @@ export function DashboardHeader({
         </div>
       )}
 
-      {/* AVATAR DESPLAZADO A LA INFERIOR DERECHA (+25% TAMAÑO = 100px) */}
-      <div className="absolute bottom-6 right-6 z-20 animate-in fade-in slide-in-from-right duration-700">
+      {/* AVATAR COMPACTO EN LA ESQUINA INFERIOR DERECHA (TAMAÑO 75px) */}
+      <div className="absolute bottom-3 right-3 z-20 animate-in fade-in slide-in-from-right duration-700">
         <div className="relative">
           <div className={cn(
-            "absolute inset-0 rounded-full animate-pulse blur-xl transition-colors duration-1000",
+            "absolute inset-0 rounded-full animate-pulse blur-lg transition-colors duration-1000",
             isOnline ? "bg-primary/30" : "bg-white/10"
           )} />
-          <Avatar className="w-[100px] h-[100px] border-[6px] border-white/10 shadow-2xl relative z-10">
+          <Avatar className="w-[75px] h-[75px] border-[4px] border-white/10 shadow-2xl relative z-10">
             <AvatarImage src={profile?.photoURL} className="object-cover" />
-            <AvatarFallback className="bg-primary text-white font-black text-2xl">R</AvatarFallback>
+            <AvatarFallback className="bg-primary text-white font-black text-xl">R</AvatarFallback>
           </Avatar>
         </div>
       </div>
