@@ -40,34 +40,33 @@ export function WasherRentalCard({
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
       </div>
 
-      {/* Activador Central - AJUSTE DE UBICACIÓN: mt-44 para subir el botón */}
-      <div className="relative z-10 flex flex-col items-center gap-8 mt-44 animate-in fade-in zoom-in duration-700">
+      {/* Activador Central - POSICIÓN MAESTRA: mt-16 para máxima visibilidad superior */}
+      <div className="relative z-10 flex flex-col items-center gap-8 mt-16 animate-in fade-in zoom-in duration-700">
         <div className="relative group/cta">
           {isAnyStoreOpen && (
             <div className="absolute inset-0 rounded-full bg-red-500/40 [animation-duration:2000ms] animate-ping scale-125" />
           )}
           
           <div className={cn(
-            "relative z-10 backdrop-blur-md text-white px-6 py-3 rounded-full font-black text-xs uppercase italic tracking-tighter shadow-2xl border border-white/20 flex items-center gap-2.5 transition-all hover:scale-105 active:scale-95",
+            "relative z-10 backdrop-blur-md text-white px-8 py-4 rounded-full font-black text-sm uppercase italic tracking-tighter shadow-2xl border border-white/20 flex items-center gap-3 transition-all hover:scale-105 active:scale-95",
             isAnyStoreOpen ? "bg-red-600/30 hover:bg-red-600/50" : "bg-slate-800/20 grayscale"
           )}>
             {isAnyStoreOpen ? (
-              <><Zap className="w-4 h-4 fill-white animate-pulse" /> SOLICITAR AHORA</>
+              <><Zap className="w-5 h-5 fill-white animate-pulse" /> SOLICITAR AHORA</>
             ) : (
-              <><Moon className="w-4 h-4 text-slate-400" /> TIENDAS CERRADAS</>
+              <><Moon className="w-5 h-5 text-slate-400" /> TIENDAS CERRADAS</>
             )}
           </div>
         </div>
       </div>
 
-      {/* Botón Circular de Directorio - Micro-ajustado con Neón */}
+      {/* Botón Circular de Directorio */}
       <Link 
         href="/categories/category-washer"
         onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-4 right-4 z-[40] w-9 h-9 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] hover:bg-primary hover:border-primary hover:shadow-[0_0_30px_rgba(59,130,246,0.8)] transition-all duration-500 group/dir active:scale-90"
+        className="absolute bottom-6 right-6 z-[40] w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] hover:bg-primary hover:border-primary transition-all duration-500 group/dir active:scale-90"
       >
-        <LayoutGrid className="w-5 h-5 group-hover/dir:scale-110 transition-transform" />
-        <span className="absolute -top-10 right-0 bg-black/60 text-white text-[8px] font-black uppercase px-2 py-1 rounded opacity-0 group-hover/dir:opacity-100 transition-opacity whitespace-nowrap tracking-widest">Ver Catálogo</span>
+        <LayoutGrid className="w-6 h-6 group-hover/dir:scale-110 transition-transform" />
       </Link>
 
       {/* Controles de Administrador */}
@@ -77,22 +76,14 @@ export function WasherRentalCard({
           <button 
             onClick={(e) => { e.stopPropagation(); (e.currentTarget.previousSibling as HTMLInputElement).click(); }} 
             disabled={isUploadingBanner} 
-            className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl"
+            className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl"
           >
-            {isUploadingBanner ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Camera className="w-4 h-4" />}
+            {isUploadingBanner ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Camera className="w-5 h-5" />}
           </button>
         </div>
       )}
 
-      {/* Botón de Creación de Vitrina */}
-      <button 
-        onClick={(e) => { e.stopPropagation(); onOpenStoreCreation(); }} 
-        className="absolute top-4 right-4 z-30 w-9 h-9 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-green-400 transition-all shadow-2xl"
-      >
-        <StoreIcon className="w-4 h-4" />
-      </button>
-
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-30 animate-bounce"><ChevronDown className="w-5 h-5 text-white" /></div>
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-30 animate-bounce"><ChevronDown className="w-6 h-6 text-white" /></div>
     </div>
   );
 }
