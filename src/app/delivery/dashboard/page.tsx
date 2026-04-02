@@ -12,6 +12,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNo
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 // Componentes Fragmentados
 import { WeeklyChallenge } from '@/components/delivery/weekly-challenge';
@@ -220,9 +221,17 @@ export default function DeliveryDashboardPage() {
               </div>
 
               <div className="pt-4">
+                {/* BOTÓN 3D AVANZADO DE ANCHO TOTAL */}
                 <Button 
                   onClick={() => router.push('/delivery/register')}
-                  className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-xs sm:text-sm uppercase tracking-[0.2em] gap-3 shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all active:scale-95"
+                  className={cn(
+                    "w-full h-20 rounded-[32px] bg-primary text-white font-black text-[10px] sm:text-sm uppercase tracking-[0.2em] gap-3",
+                    "relative transition-all duration-75 ease-out",
+                    "border-b-[10px] border-blue-800", // Efecto de profundidad física
+                    "shadow-[0_15px_35px_-5px_rgba(59,130,246,0.5)]",
+                    "hover:border-b-[6px] hover:translate-y-[4px] hover:shadow-[0_10px_25px_-5px_rgba(59,130,246,0.4)]",
+                    "active:border-b-0 active:translate-y-[10px] active:shadow-inner"
+                  )}
                 >
                   QUIERO SER REPARTIDOR <ArrowRight className="w-4 h-4" />
                 </Button>
