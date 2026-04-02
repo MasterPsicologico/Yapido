@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -129,15 +130,15 @@ export function DashboardHeader({
                 "absolute inset-0 rounded-full animate-pulse blur-2xl transition-colors duration-1000",
                 isOnline ? "bg-primary/30" : "bg-white/10"
               )} />
-              <Avatar className="w-28 h-28 border-[6px] border-white/10 shadow-2xl relative z-10">
+              <Avatar className="w-20 h-20 border-[6px] border-white/10 shadow-2xl relative z-10">
                 <AvatarImage src={profile?.photoURL} className="object-cover" />
-                <AvatarFallback className="bg-primary text-white font-black text-3xl">R</AvatarFallback>
+                <AvatarFallback className="bg-primary text-white font-black text-xl">R</AvatarFallback>
               </Avatar>
             </div>
             
             <div className="space-y-2">
               <div className="flex flex-col items-center gap-2">
-                <h1 className="text-4xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-lg">
+                <h1 className="text-lg sm:text-3xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-lg">
                   {profile?.displayName || 'Repartidor'}
                 </h1>
                 <Badge className={cn("h-6 border-none font-black italic text-[10px] px-4", level.bg, level.color)}>
