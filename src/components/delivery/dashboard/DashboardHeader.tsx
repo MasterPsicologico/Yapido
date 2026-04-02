@@ -29,13 +29,13 @@ export function DashboardHeader({
   const inactiveInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="relative overflow-hidden border-b bg-slate-900 group/header min-h-[340px] flex flex-col justify-end">
-      {/* CAPA DE FONDO DUAL CON TRANSICIÓN DINÁMICA */}
+    <div className="relative overflow-hidden border-b group/header min-h-[340px] flex flex-col justify-end">
+      {/* CAPA DE FONDO DUAL CON NITIDEZ TOTAL (100% OPACIDAD) */}
       <div className="absolute inset-0 z-0">
         {/* FONDO ESTADO: DESCANSO (INACTIVO) */}
         <div className={cn(
           "absolute inset-0 transition-opacity duration-1000 ease-in-out",
-          isOnline ? "opacity-0" : "opacity-40"
+          isOnline ? "opacity-0" : "opacity-100"
         )}>
           {dashboardConfig?.bgInactive ? (
             <Image 
@@ -46,14 +46,14 @@ export function DashboardHeader({
               priority 
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-800" />
+            <div className="absolute inset-0 bg-slate-900" />
           )}
         </div>
 
         {/* FONDO ESTADO: TURNO (ACTIVO) */}
         <div className={cn(
           "absolute inset-0 transition-opacity duration-1000 ease-in-out",
-          isOnline ? "opacity-40" : "opacity-0"
+          isOnline ? "opacity-100" : "opacity-0"
         )}>
           {dashboardConfig?.bgActive ? (
             <Image 
@@ -64,12 +64,9 @@ export function DashboardHeader({
               priority 
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-blue-900/40" />
+            <div className="absolute inset-0 bg-primary" />
           )}
         </div>
-
-        {/* Degradado Maestro de Integración */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
       </div>
 
       {/* CONTROLES ADMINISTRATIVOS DE FONDO DUAL (SÓLO PARA ADMIN) */}
@@ -121,7 +118,7 @@ export function DashboardHeader({
         </div>
       )}
 
-      {/* AVATAR COMPACTO EN LA ESQUINA INFERIOR DERECHA (TAMAÑO 75px) */}
+      {/* AVATAR COMPACTO EN LA ESQUINA INFERIOR DERECHA */}
       <div className="absolute bottom-3 right-3 z-20 animate-in fade-in slide-in-from-right duration-700">
         <div className="relative">
           <div className={cn(
@@ -135,19 +132,19 @@ export function DashboardHeader({
         </div>
       </div>
 
-      {/* CONTENIDO DEL PERFIL (NOMBRE REUBICADO MÁS ARRIBA) */}
+      {/* CONTENIDO DEL PERFIL */}
       <div className="relative z-10 px-6 pb-12 pt-4">
         <div className="flex flex-col items-center text-center gap-6 max-w-4xl mx-auto">
           <div className="space-y-3">
             <div className="flex flex-col items-center gap-2">
-              <h1 className="text-lg sm:text-3xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-lg">
+              <h1 className="text-lg sm:text-3xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
                 {profile?.displayName || 'Repartidor'}
               </h1>
-              <Badge className={cn("h-6 border-none font-black italic text-[10px] px-4", level.bg, level.color)}>
+              <Badge className={cn("h-6 border-none font-black italic text-[10px] px-4 shadow-lg", level.bg, level.color)}>
                 {level.name}
               </Badge>
             </div>
-            <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.3em] flex items-center justify-center gap-2">
+            <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] flex items-center justify-center gap-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               <ShieldCheck className="w-3 h-3 text-primary" /> Verificado • {stats.rating} <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
             </p>
           </div>
@@ -156,9 +153,9 @@ export function DashboardHeader({
             <Button 
               onClick={onToggleOnline} 
               className={cn(
-                "w-full h-20 rounded-[32px] font-black text-lg uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 border-b-[8px]",
+                "w-full h-[60px] rounded-[32px] font-black text-base uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 border-b-[6px]",
                 isOnline 
-                  ? "bg-red-500/20 text-red-400 border-red-900/50 hover:bg-red-500/30" 
+                  ? "bg-red-500 text-white border-red-800 hover:bg-red-600 shadow-red-500/20" 
                   : "bg-green-500 text-white border-green-800 hover:bg-green-600 shadow-green-500/20"
               )}
             >
