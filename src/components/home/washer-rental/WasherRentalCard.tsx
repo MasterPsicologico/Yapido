@@ -40,8 +40,8 @@ export function WasherRentalCard({
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
       </div>
 
-      {/* Activador Central */}
-      <div className="relative z-10 flex flex-col items-center gap-8 mt-64 animate-in fade-in zoom-in duration-700">
+      {/* Activador Central - AJUSTE DE UBICACIÓN: mt-44 para subir el botón */}
+      <div className="relative z-10 flex flex-col items-center gap-8 mt-44 animate-in fade-in zoom-in duration-700">
         <div className="relative group/cta">
           {isAnyStoreOpen && (
             <div className="absolute inset-0 rounded-full bg-red-500/40 [animation-duration:2000ms] animate-ping scale-125" />
