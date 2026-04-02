@@ -21,7 +21,8 @@ import {
   Settings2,
   Moon,
   Sun,
-  Minus
+  Minus,
+  Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -129,14 +130,18 @@ export function HomeActions({
     const baseRate = Number(valHoraBase);
     const extraRate = Number(valHoraExtra);
 
-    if (hours <= min) {
-      return hours * baseRate;
-    } else {
-      const baseBlock = min * baseRate;
-      const extraHours = hours - min;
-      return baseBlock + (extraHours * extraRate);
-    }
+    const baseTotal = min * baseRate;
+    const extraHours = Math.max(0, hours - min);
+    const extraTotal = extraHours * extraRate;
+    
+    return baseTotal + extraTotal;
   }, [requestHours, minHours, valHoraBase, valHoraExtra]);
+
+  const formattedPrice = new Intl.NumberFormat('es-CO', { 
+    style: 'currency', 
+    currency: 'COP', 
+    maximumFractionDigits: 0 
+  }).format(totalPrice);
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -353,22 +358,7 @@ export function HomeActions({
                 </form>
               )}
 
-              {!isBusinessOpen && (
-                <div className="bg-red-50 p-8 rounded-[40px] border border-red-100 flex items-start gap-5 animate-pulse">
-                  <Moon className="w-8 h-8 text-red-500 shrink-0" />
-                  <div>
-                    <p className="text-red-900 text-sm font-black uppercase italic tracking-tighter">Negocio Cerrado</p>
-                    <p className="text-red-600 text-xs font-bold leading-snug mt-1">Nuestro horario es de {openTime} a {closeTime}.</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="bg-blue-50/50 p-8 rounded-[40px] border border-blue-100 flex items-start gap-5">
-                <Sun className="w-8 h-8 text-primary shrink-0" />
-                <p className="text-slate-600 text-sm font-bold italic leading-snug">"Confirma tus datos para procesar el alquiler de inmediato."</p>
-              </div>
-
-              <form onSubmit={handleWasherRequest} className="space-y-10">
+              <div className="space-y-10">
                 <div className="space-y-8">
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">DIRECCIÓN DE ENTREGA</Label>
@@ -386,63 +376,111 @@ export function HomeActions({
                     </div>
                   </div>
 
-                  <div className="space-y-4 pt-4 border-t border-slate-50">
+                  <div className="space-y-6 pt-4 border-t border-slate-50">
                     <div className="flex items-center justify-between px-2">
                       <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">TIEMPO DE ALQUILER</Label>
                       <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black px-3 py-1">MIN. {minHours} HORAS</Badge>
                     </div>
-                    <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-[32px]">
-                      <Button type="button" onClick={() => setRequestHours(Math.max(minHours, requestHours - 1))} variant="ghost" className="w-14 h-14 rounded-2xl bg-white shadow-sm font-black text-xl"><Minus className="w-6 h-6" /></Button>
-                      <div className="flex-1 text-center">
-                        <span className="text-5xl font-black italic text-slate-950 tracking-tighter">{requestHours}</span>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Horas</span>
+                    <div className="flex flex-col items-center gap-4 bg-slate-50 p-6 rounded-[40px] shadow-inner relative overflow-hidden">
+                      <div className="flex items-center gap-8 w-full justify-between px-4">
+                        <Button type="button" onClick={() => setRequestHours(Math.max(minHours, requestHours - 1))} variant="ghost" className="w-16 h-16 rounded-2xl bg-white shadow-md text-slate-400 hover:text-primary transition-all"><Minus className="w-8 h-8" /></Button>
+                        <div className="text-center flex flex-col">
+                          <div className="flex items-baseline gap-2 justify-center">
+                            <span className="text-6xl font-black italic text-slate-950 tracking-tighter">{requestHours}</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Horas</span>
+                          </div>
+                          {/* PRECIO REFLEJADO INSTANTÁNEAMENTE BAJO EL SELECTOR */}
+                          <div className="mt-2 text-xl font-black text-primary italic tracking-tighter animate-in fade-in zoom-in duration-300">
+                            {formattedPrice}
+                          </div>
+                        </div>
+                        <Button type="button" onClick={() => setRequestHours(requestHours + 1)} variant="ghost" className="w-16 h-16 rounded-2xl bg-white shadow-md text-slate-400 hover:text-primary transition-all"><Plus className="w-8 h-8" /></Button>
                       </div>
-                      <Button type="button" onClick={() => setRequestHours(requestHours + 1)} variant="ghost" className="w-14 h-14 rounded-2xl bg-white shadow-sm font-black text-xl"><Plus className="w-6 h-6" /></Button>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-slate-900 p-8 rounded-[40px] text-white space-y-6 shadow-2xl relative overflow-hidden">
+                <div className="bg-slate-900 p-8 rounded-[40px] text-white space-y-8 shadow-2xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
-                  <div className="flex items-center justify-between border-b border-white/5 pb-4 relative z-10">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cotización Estimada</span>
-                    <div className="flex items-center gap-2 text-primary">
-                      <Wallet className="w-4 h-4" />
-                      <span className="text-xs font-black uppercase italic">Pagas al recibir</span>
+                  
+                  <div className="space-y-6 relative z-10">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cotización Estimada</span>
+                        <div className="flex items-center gap-2 text-primary mt-1">
+                          <Wallet className="w-4 h-4" />
+                          <span className="text-xs font-black uppercase italic">Pagas al recibir</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col gap-2 relative z-10">
-                    <div className="space-y-1">
+
+                    <div className="flex flex-col gap-1">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total a pagar</p>
-                      <h4 className="text-4xl font-black italic tracking-tighter leading-none text-white animate-in slide-in-from-left-2 duration-300">
-                        {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(totalPrice)}
+                      <h4 className="text-5xl font-black italic tracking-tighter leading-none text-white transition-all duration-300">
+                        {formattedPrice}
                       </h4>
                     </div>
-                    <div className="flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full w-fit">
-                      <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em] italic">Logística Pro Activa</span>
+
+                    <div className="flex items-center gap-2 px-5 py-2 bg-primary/10 border border-primary/20 rounded-full w-fit">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                      <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] italic">Logística Pro Activa</span>
+                    </div>
+                  </div>
+
+                  {/* CONFIGURACIÓN Y DATOS DE INTERÉS */}
+                  <div className="pt-6 border-t border-white/5 space-y-4 relative z-10">
+                    <div className="flex items-center gap-2 text-white/40">
+                      <Info className="w-3.5 h-3.5" />
+                      <span className="text-[9px] font-black uppercase tracking-widest">Detalles del Servicio</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-black text-slate-500 uppercase">Tarifa por Hora</p>
+                        <p className="text-xs font-bold text-slate-200">{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valHoraBase)}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-black text-slate-500 uppercase">Transporte</p>
+                        <p className="text-xs font-bold text-green-400">INCLUIDO</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-black text-slate-500 uppercase">Respuesta</p>
+                        <p className="text-xs font-bold text-slate-200">&lt; 15 MINUTOS</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-black text-slate-500 uppercase">Garantía</p>
+                        <p className="text-xs font-bold text-slate-200">TOTAL PRO</p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  disabled={isSendingRequest || !isBusinessOpen} 
-                  className={cn(
-                    "w-full h-24 rounded-[40px] text-white font-black text-2xl uppercase italic tracking-tighter shadow-2xl transition-all gap-4",
-                    isBusinessOpen ? "bg-primary active:scale-95 shadow-primary/20" : "bg-slate-300 cursor-not-allowed"
+                <form onSubmit={handleWasherRequest} className="space-y-6">
+                  <Button 
+                    type="submit" 
+                    disabled={isSendingRequest || !isBusinessOpen} 
+                    className={cn(
+                      "w-full h-24 rounded-[40px] text-white font-black text-2xl uppercase italic tracking-tighter shadow-2xl transition-all gap-4",
+                      isBusinessOpen ? "bg-primary active:scale-95 shadow-primary/20" : "bg-slate-300 cursor-not-allowed"
+                    )}
+                  >
+                    {isSendingRequest ? (
+                      <Loader2 className="animate-spin" />
+                    ) : isBusinessOpen ? (
+                      <>LANZAR SOLICITUD <CheckCircle2 className="w-8 h-8" /></>
+                    ) : (
+                      "NEGOCIO CERRADO"
+                    )}
+                  </Button>
+                  {!isBusinessOpen && (
+                    <div className="flex items-center justify-center gap-2 text-red-500 animate-pulse">
+                      <Moon className="w-4 h-4" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Negocio cerrado hasta las {openTime}</span>
+                    </div>
                   )}
-                >
-                  {isSendingRequest ? (
-                    <Loader2 className="animate-spin" />
-                  ) : isBusinessOpen ? (
-                    <>LANZAR SOLICITUD <CheckCircle2 className="w-8 h-8" /></>
-                  ) : (
-                    "NEGOCIO CERRADO"
-                  )}
-                </Button>
+                </form>
                 
                 <p className="text-[8px] text-center text-slate-300 font-black uppercase tracking-[0.4em] pt-4">SISTEMA PROTEGIDO • VITRINIANDO AI KERNEL</p>
-              </form>
+              </div>
             </div>
           </div>
         </DialogContent>
