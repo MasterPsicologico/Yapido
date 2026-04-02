@@ -128,7 +128,7 @@ export function HomeActions({
     }
   };
 
-  // LÓGICA MATEMÁTICA EXACTA: Mínimo de horas = Precio Base. Solo suma si excede.
+  // LÓGICA MATEMÁTICA EXACTA: Mínimo de horas = Precio Base
   const totalPrice = useMemo(() => {
     const current = Number(requestHours);
     if (current <= minHours) return basePrice;
@@ -259,27 +259,27 @@ export function HomeActions({
       <div className="relative w-full group">
         <div 
           onClick={() => { playClickSound(); setOpenWasher(true); }}
-          className="relative w-full min-h-[calc(100dvh-64px)] overflow-hidden cursor-pointer flex flex-col items-center justify-center px-6 text-center bg-[#0a0a0a] active:scale-[0.99] transition-all duration-500"
+          className="relative w-full min-h-[calc(100dvh-64px)] overflow-hidden cursor-pointer flex flex-col items-center justify-start pt-32 px-6 text-center bg-[#0a0a0a] active:scale-[0.99] transition-all duration-500"
         >
           <div className="absolute inset-0 z-0">
             {bannerConfig?.backgroundImage ? (
-              <Image src={bannerConfig.backgroundImage} alt="Portada" fill className="object-cover" priority />
+              <Image src={bannerConfig.backgroundImage} alt="Portada" fill className="object-cover object-top" priority />
             ) : (
-              <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover" />
+              <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover bg-top" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
           </div>
 
-          <div className="relative z-10 flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700">
+          <div className="relative z-10 flex flex-col items-center gap-8 mt-24 animate-in fade-in zoom-in duration-700">
             <div className="group/cta">
               <div className={cn(
-                "backdrop-blur-md text-white px-8 py-4 rounded-full font-black text-lg uppercase italic tracking-tighter shadow-2xl border border-white/10 flex items-center gap-3 transition-all hover:scale-105 active:scale-95",
+                "backdrop-blur-md text-white px-6 py-3.5 rounded-full font-black text-base uppercase italic tracking-tighter shadow-2xl border border-white/10 flex items-center gap-3 transition-all hover:scale-105 active:scale-95",
                 isBusinessOpen ? "bg-red-600/80 hover:bg-red-600" : "bg-slate-800/80 grayscale"
               )}>
                 {isBusinessOpen ? (
-                  <><CheckCircle2 className="w-6 h-6 text-white" /> SOLICITAR AHORA</>
+                  <><CheckCircle2 className="w-5 h-5 text-white" /> SOLICITAR AHORA</>
                 ) : (
-                  <><Moon className="w-6 h-6 text-slate-400" /> NEGOCIO CERRADO</>
+                  <><Moon className="w-5 h-5 text-slate-400" /> NEGOCIO CERRADO</>
                 )}
               </div>
               
@@ -297,18 +297,18 @@ export function HomeActions({
           {isAdmin && (
             <div className="absolute top-4 left-4 z-30">
               <input type="file" ref={bannerInputRef} className="hidden" accept="image/*" onChange={handleBannerUpload} />
-              <button onClick={(e) => { e.stopPropagation(); bannerInputRef.current?.click(); }} disabled={isUploadingBanner} className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl">
-                {isUploadingBanner ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
+              <button onClick={(e) => { e.stopPropagation(); bannerInputRef.current?.click(); }} disabled={isUploadingBanner} className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl">
+                {isUploadingBanner ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
               </button>
             </div>
           )}
 
-          <button onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }} className="absolute top-4 right-4 z-30 w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-green-400 transition-all shadow-2xl">
-            <StoreIcon className="w-6 h-6" />
+          <button onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }} className="absolute top-4 right-4 z-30 w-10 h-10 rounded-xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-green-400 transition-all shadow-2xl">
+            <StoreIcon className="w-5 h-5" />
           </button>
 
-          <button onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }} className="absolute bottom-4 right-4 z-30 w-14 h-14 rounded-full bg-slate-950/40 backdrop-blur-2xl border border-white/10 flex items-center justify-center text-white/80 hover:bg-slate-950/60 transition-all shadow-2xl">
-            <div className="relative"><div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.6)]" /><Waves className="w-7 h-7 text-white/90" /></div>
+          <button onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }} className="absolute bottom-4 right-4 z-30 w-12 h-12 rounded-full bg-slate-950/40 backdrop-blur-2xl border border-white/10 flex items-center justify-center text-white/80 hover:bg-slate-950/60 transition-all shadow-2xl">
+            <div className="relative"><div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.6)]" /><Waves className="w-6 h-6 text-white/90" /></div>
           </button>
 
           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-30 animate-bounce"><ChevronDown className="w-5 h-5 text-white" /></div>
@@ -319,7 +319,7 @@ export function HomeActions({
         <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-[#0a0a0a] p-0 overflow-hidden flex flex-col z-[600] animate-in slide-in-from-bottom duration-500 [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>Nueva Solicitud Alquiler</DialogTitle>
-            <DialogDescription>Formulario de solicitud express.</DialogDescription>
+            <DialogDescription>Formulario de solicitud express para alquiler de lavadoras.</DialogDescription>
           </DialogHeader>
           
           <div className="h-20 bg-slate-950 flex items-center justify-between px-6 shrink-0 border-b border-white/5">
@@ -336,7 +336,6 @@ export function HomeActions({
           <div className="flex-1 overflow-y-auto no-scrollbar bg-white rounded-t-[40px] mt-2">
             <div className="max-w-md mx-auto py-12 px-6 space-y-10">
               
-              {/* PANEL DE AJUSTES ADMINISTRATIVOS */}
               {showAdminPricing && isAdmin && (
                 <form onSubmit={handleUpdatePricing} className="bg-slate-900 p-8 rounded-[32px] text-white space-y-6 animate-in slide-in-from-top-4 duration-300">
                   <div className="flex items-center gap-3 border-b border-white/10 pb-4">
@@ -360,7 +359,6 @@ export function HomeActions({
                 </form>
               )}
 
-              {/* AVISO DE CIERRE SI CORRESPONDE */}
               {!isBusinessOpen && (
                 <div className="bg-red-50 p-8 rounded-[40px] border border-red-100 flex items-start gap-5 animate-pulse">
                   <Moon className="w-8 h-8 text-red-500 shrink-0" />
@@ -410,7 +408,6 @@ export function HomeActions({
                   </div>
                 </div>
 
-                {/* COTIZACIÓN REAL: Diseño ajustado para evitar solapamiento y tamaño elegante */}
                 <div className="bg-slate-900 p-8 rounded-[40px] text-white space-y-6 shadow-2xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
                   <div className="flex items-center justify-between border-b border-white/5 pb-4 relative z-10">
@@ -484,7 +481,7 @@ export function HomeActions({
         <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-white p-0 overflow-hidden flex flex-col z-[650] [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>Inscribir Alquiler</DialogTitle>
-            <DialogDescription>Formulario de registro para flota de lavadoras.</DialogDescription>
+            <DialogDescription>Formulario de registro para flota de lavadoras en la plataforma.</DialogDescription>
           </DialogHeader>
           <div className="h-20 bg-slate-900 flex items-center justify-between px-6 shrink-0"><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center border border-green-500/30"><StoreIcon className="w-6 h-6 text-green-500" /></div><div><h3 className="text-white font-black uppercase italic tracking-tighter text-xl leading-none">Mi Alquiler</h3><p className="text-green-500/60 text-[9px] font-black uppercase tracking-[0.3em] mt-1">Registro de Negocio</p></div></div><button onClick={() => setOpenAddWasherStore(false)} className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-all"><X className="w-6 h-6" /></button></div>
           <div className="flex-1 overflow-y-auto no-scrollbar p-6"><div className="max-w-md mx-auto py-10 space-y-10"><div className="text-center space-y-2"><h2 className="text-4xl font-black italic uppercase tracking-tighter text-slate-900">Inscribir mi Alquiler</h2><p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Configura tu flota y comienza a facturar</p></div><form onSubmit={handleCreateWasherStore} className="space-y-8"><div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Nombre de la Tienda</Label><Input name="name" placeholder="Ej: Lavadoras El Sol" className="h-16 rounded-[24px] bg-slate-50 border-none font-black text-lg" required /></div><div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">WhatsApp Comercial</Label><Input name="phone" defaultValue={profile?.phoneNumber || ''} placeholder="300 000 0000" className="h-16 rounded-[24px] bg-slate-50 border-none font-black text-lg" required /></div><div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400">Dirección Base</Label><Input name="address" placeholder="Ubicación de tu flota" className="h-16 rounded-[24px] bg-slate-50 border-none font-black text-lg" required /></div><Button type="submit" disabled={isSendingRequest} className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-2xl uppercase italic tracking-tighter shadow-2xl gap-4">{isSendingRequest ? <Loader2 className="animate-spin" /> : "GUARDAR Y LANZAR"}</Button></form></div></div>
