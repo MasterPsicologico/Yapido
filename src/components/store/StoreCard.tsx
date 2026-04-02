@@ -23,7 +23,8 @@ import {
   Plus,
   Package,
   Target,
-  Settings
+  Settings,
+  Moon
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +40,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { checkIsBusinessOpen } from '@/components/home/HomeActions';
 
 const STATUS_MAP = {
   verified: { label: "Vitrina Verificada", icon: ShieldCheck, color: "text-primary", bg: "bg-primary/5", border: "border-primary/10" },
@@ -74,6 +76,8 @@ export function StoreCard({ store }: { store: any }) {
   const isOwner = user?.uid === store.ownerId;
   const isWasherRental = store.mainCategoryId === 'category-washer' || store.type === 'washer_rental' || store.name?.toLowerCase().includes('lavadora');
 
+  const isOpen = checkIsBusinessOpen(store.openTime, store.closeTime);
+
   const currentStatusKey = (store.verificationStatus as StatusKey) || 'verified';
   const statusInfo = STATUS_MAP[currentStatusKey] || STATUS_MAP.verified;
   const StatusIcon = statusInfo.icon;
@@ -95,6 +99,18 @@ export function StoreCard({ store }: { store: any }) {
     updateDocumentNonBlocking(doc(firestore, 'stores', store.id), { activeBadgeIds: newBadges });
   };
 
+  const handleClosedClick = (e: React.MouseEvent) => {
+    if (!isOpen && !isOwner && !isAdmin) {
+      e.preventDefault();
+      e.stopPropagation();
+      toast({ 
+        title: "Negocio Cerrado", 
+        description: `Esta vitrina abre a las ${store.openTime || '08:00'}.`,
+        variant: "destructive"
+      });
+    }
+  };
+
   const QUADRANTS = [
     { id: 'product', label: 'ESTADO', color: 'bg-emerald-50/60', border: 'border-emerald-100', icon: Package, textColor: 'text-emerald-600', accent: 'bg-emerald-500' },
     { id: 'community', label: 'VALOR', color: 'bg-purple-50/60', border: 'border-purple-100', icon: Heart, textColor: 'text-purple-600', accent: 'bg-purple-500' },
@@ -103,9 +119,9 @@ export function StoreCard({ store }: { store: any }) {
   return (
     <Card className={cn(
       "group flex flex-col h-full border-none rounded-[48px] shadow-[0_15px_50px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.12)] transition-all duration-700 bg-white overflow-hidden relative",
-      isWasherRental && "ring-4 ring-primary/5"
+      isWasherRental && "ring-4 ring-primary/5",
+      !isOpen && !isOwner && !isAdmin && "grayscale opacity-80"
     )}>
-      {/* OVERLAY DE ADMINISTRACIÓN PARA DUEÑOS DE LAVADORAS */}
       {isWasherRental && isOwner && (
         <Link 
           href={`/admin/washer/${store.id}`}
@@ -120,7 +136,10 @@ export function StoreCard({ store }: { store: any }) {
       )}
 
       <div className="block relative aspect-[16/11] w-full overflow-hidden bg-slate-50">
-        <Link href={isWasherRental && !isOwner ? "#" : `/stores/${store.id}`} onClick={(e) => { if(isWasherRental && !isOwner) e.preventDefault(); }}>
+        <Link 
+          href={isWasherRental && !isOwner ? "#" : `/stores/${store.id}`} 
+          onClick={handleClosedClick}
+        >
           <Image
             src={store.imageUrl || 'https://picsum.photos/seed/store/800/600'}
             alt={store.name}
@@ -130,9 +149,12 @@ export function StoreCard({ store }: { store: any }) {
         </Link>
         
         <div className="absolute top-6 left-6 flex flex-col gap-2 z-20">
-          <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-xl">
-            <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-            <span className="text-[11px] font-black text-slate-900">4.9</span>
+          <div className={cn(
+            "flex items-center gap-1.5 backdrop-blur-md px-3 py-1.5 rounded-full border shadow-xl",
+            isOpen ? "bg-green-500/90 text-white border-green-400" : "bg-slate-800/90 text-slate-300 border-slate-600"
+          )}>
+            {isOpen ? <Zap className="w-3.5 h-3.5 fill-white animate-pulse" /> : <Moon className="w-3.5 h-3.5" />}
+            <span className="text-[9px] font-black uppercase tracking-widest">{isOpen ? "VITRINA ACTIVA" : "CERRADO"}</span>
           </div>
         </div>
 
@@ -155,8 +177,9 @@ export function StoreCard({ store }: { store: any }) {
             </div>
             {isWasherRental && (
               <div className="flex flex-col items-end gap-1">
-                <Badge className="bg-secondary text-white border-none font-black text-[10px] px-4 py-2 uppercase tracking-tighter shadow-lg">ALQUILER ACTIVO</Badge>
-                {!isOwner && <span className="text-[7px] font-black text-white/40 uppercase tracking-widest leading-none">VISTA PROTEGIDA</span>}
+                <Badge className={cn("border-none text-white font-black text-[10px] px-4 py-2 uppercase tracking-tighter shadow-lg", isOpen ? "bg-secondary" : "bg-slate-600")}>
+                  {isOpen ? "ALQUILER ACTIVO" : "FUERA DE HORARIO"}
+                </Badge>
               </div>
             )}
           </div>
@@ -211,11 +234,7 @@ export function StoreCard({ store }: { store: any }) {
               </div>
               <span className={cn("text-[11px] font-black uppercase tracking-[0.12em] italic", statusInfo.color)}>{statusInfo.label}</span>
             </div>
-            {isWasherRental && !isOwner ? (
-              <div className="text-[8px] font-black text-slate-300 uppercase tracking-widest">SÓLO DUEÑOS</div>
-            ) : (
-              <ChevronRight className="w-4 h-4 text-slate-300" />
-            )}
+            <ChevronRight className="w-4 h-4 text-slate-300" />
           </div>
         </div>
       </CardContent>
