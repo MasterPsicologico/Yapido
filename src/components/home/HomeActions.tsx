@@ -83,9 +83,10 @@ export function HomeActions({
   const bannerConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_banner'), [firestore]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
 
+  // LOGICA MAESTRA: Multiplicación Real
   const minHours = Number(pricingConfig?.minHours || 5);
-  const hourlyRateBase = Number(pricingConfig?.basePrice || 3000);
-  const hourlyRateExtra = Number(pricingConfig?.additionalHourPrice || 3000);
+  const valHoraBase = Number(pricingConfig?.basePrice || 3000);
+  const valHoraExtra = Number(pricingConfig?.additionalHourPrice || 3000);
 
   const openTime = pricingConfig?.openTime || "08:00";
   const closeTime = pricingConfig?.closeTime || "20:00";
@@ -126,15 +127,19 @@ export function HomeActions({
   const totalPrice = useMemo(() => {
     const hours = Number(requestHours);
     const min = Number(minHours);
-    const baseRate = Number(hourlyRateBase);
-    const extraRate = Number(hourlyRateExtra);
+    const baseRate = Number(valHoraBase);
+    const extraRate = Number(valHoraExtra);
 
+    // Si las horas pedidas son menores o iguales al mínimo, se cobra el valor base por cada hora
     if (hours <= min) {
       return hours * baseRate;
     } else {
-      return (min * baseRate) + ((hours - min) * extraRate);
+      // Si son más, se cobra el bloque base completo + el excedente a precio de hora extra
+      const baseBlock = min * baseRate;
+      const extraHours = hours - min;
+      return baseBlock + (extraHours * extraRate);
     }
-  }, [requestHours, minHours, hourlyRateBase, hourlyRateExtra]);
+  }, [requestHours, minHours, valHoraBase, valHoraExtra]);
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -255,14 +260,21 @@ export function HomeActions({
             ) : (
               <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover bg-top" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
+            {/* GRADIENTE DE VIBRANCIA PARA COLORES MÁS VIVOS */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
           </div>
 
-          <div className="relative z-10 flex flex-col items-center gap-8 mt-24 animate-in fade-in zoom-in duration-700">
-            <div className="group/cta">
+          {/* BOTÓN DE ACCIÓN REUBICADO CON ONDA PULSANTE PSICOLÓGICA */}
+          <div className="relative z-10 flex flex-col items-center gap-8 mt-64 animate-in fade-in zoom-in duration-700">
+            <div className="relative group/cta">
+              {/* ONDA PULSANTE PROFESIONAL */}
+              {isBusinessOpen && (
+                <div className="absolute inset-0 rounded-full bg-red-500/40 [animation-duration:2000ms] animate-ping scale-125" />
+              )}
+              
               <div className={cn(
-                "backdrop-blur-md text-white px-5 py-2.5 rounded-full font-black text-xs uppercase italic tracking-tighter shadow-2xl border border-white/10 flex items-center gap-2 transition-all hover:scale-105 active:scale-95",
-                isBusinessOpen ? "bg-red-600/80 hover:bg-red-600" : "bg-slate-800/80 grayscale"
+                "relative z-10 backdrop-blur-md text-white px-6 py-3 rounded-full font-black text-xs uppercase italic tracking-tighter shadow-2xl border border-white/20 flex items-center gap-2.5 transition-all hover:scale-105 active:scale-95",
+                isBusinessOpen ? "bg-red-600/90 hover:bg-red-600" : "bg-slate-800/80 grayscale"
               )}>
                 {isBusinessOpen ? (
                   <><CheckCircle2 className="w-4 h-4 text-white" /> SOLICITAR AHORA</>
@@ -333,10 +345,10 @@ export function HomeActions({
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Min. Horas</Label><Input name="minHours" type="number" defaultValue={minHours} className="bg-white/5 border-none h-12 font-bold" /></div>
-                    <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Precio Base ($)</Label><Input name="basePrice" type="number" defaultValue={hourlyRateBase} className="bg-white/5 border-none h-12 font-bold" /></div>
+                    <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">VALOR HORA BASE</Label><Input name="basePrice" type="number" defaultValue={valHoraBase} className="bg-white/5 border-none h-12 font-bold" /></div>
                   </div>
                   
-                  <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Hora Adicional ($)</Label><Input name="additionalHourPrice" type="number" defaultValue={hourlyRateExtra} className="bg-white/5 border-none h-12 font-bold" /></div>
+                  <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">VALOR HORA EXTRA</Label><Input name="additionalHourPrice" type="number" defaultValue={valHoraExtra} className="bg-white/5 border-none h-12 font-bold" /></div>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Apertura</Label><Input name="openTime" type="time" defaultValue={openTime} className="bg-white/5 border-none h-12 font-bold" /></div>
@@ -478,5 +490,3 @@ export function HomeActions({
     </div>
   );
 }
-
-    
