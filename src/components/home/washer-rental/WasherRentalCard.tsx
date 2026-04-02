@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Zap, Moon, Camera, Store as StoreIcon, LayoutGrid, ChevronDown } from 'lucide-react';
+import { Zap, Moon, Camera, Store as StoreIcon, LayoutGrid, ChevronDown, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -60,13 +60,13 @@ export function WasherRentalCard({
         </div>
       </div>
 
-      {/* Botón Circular de Directorio */}
+      {/* Botón Circular de Directorio - REDISEÑADO: Más pequeño, más a la derecha y efecto Neón */}
       <Link 
         href="/categories/category-washer"
         onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-10 right-10 z-[40] w-16 h-16 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white shadow-2xl hover:bg-primary hover:border-primary transition-all duration-500 group/dir"
+        className="absolute bottom-6 right-6 z-[40] w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] hover:bg-primary hover:border-primary hover:shadow-[0_0_30px_rgba(59,130,246,0.8)] transition-all duration-500 group/dir active:scale-90"
       >
-        <LayoutGrid className="w-8 h-8 group-hover/dir:scale-110 transition-transform" />
+        <LayoutGrid className="w-6 h-6 group-hover/dir:scale-110 transition-transform" />
         <span className="absolute -top-10 right-0 bg-black/60 text-white text-[8px] font-black uppercase px-2 py-1 rounded opacity-0 group-hover/dir:opacity-100 transition-opacity whitespace-nowrap tracking-widest">Ver Catálogo</span>
       </Link>
 
@@ -77,7 +77,7 @@ export function WasherRentalCard({
           <button 
             onClick={(e) => { e.stopPropagation(); (e.currentTarget.previousSibling as HTMLInputElement).click(); }} 
             disabled={isUploadingBanner} 
-            className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl"
+            className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl"
           >
             {isUploadingBanner ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Camera className="w-4 h-4" />}
           </button>
@@ -87,20 +87,12 @@ export function WasherRentalCard({
       {/* Botón de Creación de Vitrina */}
       <button 
         onClick={(e) => { e.stopPropagation(); onOpenStoreCreation(); }} 
-        className="absolute top-4 right-4 z-30 w-9 h-9 rounded-xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-green-400 transition-all shadow-2xl"
+        className="absolute top-4 right-4 z-30 w-9 h-9 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-green-400 transition-all shadow-2xl"
       >
         <StoreIcon className="w-4 h-4" />
       </button>
 
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-30 animate-bounce"><ChevronDown className="w-5 h-5 text-white" /></div>
     </div>
-  );
-}
-
-function Loader2({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={cn("animate-spin", className)}>
-      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-    </svg>
   );
 }
