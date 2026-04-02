@@ -44,38 +44,36 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
 
   const isWithDriver = mission.status === 'delivered_to_driver' || mission.status === 'delivered';
   
-  // Lógica de Tiempos Restaurada con fallbacks
+  // Función auxiliar para parsear Timestamps de Firestore
+  const parseTimestamp = (ts: any) => {
+    if (!ts) return null;
+    if (typeof ts.toDate === 'function') return ts.toDate();
+    if (ts.seconds) return new Date(ts.seconds * 1000);
+    return new Date(ts);
+  };
+
   const pickupTime = useMemo(() => {
-    const ts = mission.acceptedAt || mission.createdAt;
-    if (!ts) return '--:--';
-    try {
-      return format(ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000), 'HH:mm');
-    } catch (e) {
-      return '--:--';
-    }
+    const date = parseTimestamp(mission.acceptedAt) || parseTimestamp(mission.createdAt);
+    if (!date) return '--:--';
+    return format(date, 'HH:mm');
   }, [mission.acceptedAt, mission.createdAt]);
 
   const etaTime = useMemo(() => {
-    const ts = mission.acceptedAt || mission.createdAt;
-    if (!ts) return '--:--';
-    try {
-      const date = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000);
-      return format(new Date(date.getTime() + 30 * 60000), 'HH:mm');
-    } catch (e) {
-      return '--:--';
-    }
+    const date = parseTimestamp(mission.acceptedAt) || parseTimestamp(mission.createdAt);
+    if (!date) return '--:--';
+    // Estimación básica: +30 minutos
+    return format(new Date(date.getTime() + 30 * 60000), 'HH:mm');
   }, [mission.acceptedAt, mission.createdAt]);
 
   return (
     <div className="flex flex-col h-[calc(100dvh-64px)] animate-in slide-in-from-bottom duration-500 overflow-hidden relative z-[40]">
-      {/* HEADER DE MISIÓN - Mejorada visibilidad de Liberación */}
+      {/* HEADER DE MISIÓN */}
       <div className="h-16 bg-slate-900 flex items-center justify-between px-4 text-white shrink-0 shadow-xl z-20">
         <Button 
           variant="ghost" 
           size="icon" 
           onClick={() => setIsReleaseDialogOpen(true)} 
           className="h-10 w-10 text-white/60 hover:text-red-500 hover:bg-white/5 rounded-full transition-all"
-          title="Liberar Pedido"
         >
           <RotateCcw className="w-5 h-5" />
         </Button>
@@ -101,7 +99,7 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             </div>
           </section>
 
-          {/* CRONOGRAMA DE OPERACIÓN - Restaurado */}
+          {/* CRONOGRAMA DE OPERACIÓN */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 flex flex-col items-center text-center gap-1 shadow-inner">
               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Hora Inicio</span>
@@ -114,11 +112,11 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
           </div>
 
           {!isWithDriver ? (
-            <Button onClick={() => onUpdateStatus('delivered_to_driver')} className="w-full h-24 rounded-[32px] bg-primary text-white font-black text-2xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all animate-in zoom-in">
+            <Button onClick={() => onUpdateStatus('delivered_to_driver')} className="w-full h-24 rounded-[32px] bg-primary text-white font-black text-2xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all">
               <CheckCircle2 className="w-8 h-8" /> RECOGÍ EL PEDIDO
             </Button>
           ) : (
-            <Button onClick={() => onUpdateStatus('delivered')} className="w-full h-24 rounded-[32px] bg-green-500 text-white font-black text-2xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all animate-in zoom-in">
+            <Button onClick={() => onUpdateStatus('delivered')} className="w-full h-24 rounded-[32px] bg-green-500 text-white font-black text-2xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all">
               <Navigation className="w-8 h-8" /> ENTREGAR AL CLIENTE
             </Button>
           )}
@@ -161,6 +159,7 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
         </div>
       </div>
 
+      {/* DIÁLOGOS */}
       <Dialog open={isMissionChatOpen} onOpenChange={setIsMissionChatOpen}>
         <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[300] [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">

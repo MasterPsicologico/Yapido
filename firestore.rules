@@ -78,7 +78,7 @@ service cloud.firestore {
 
     match /appConfig/{configId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /coupons/{couponId} {
