@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -37,7 +36,7 @@ export default function DeliveryDashboardPage() {
   const [isReleasing, setIsReleasing] = useState(false);
   const [releaseLogs, setReleaseLogs] = useState<string[]>([]);
   const [isUploadingWelcome, setIsUploadingWelcome] = useState(false);
-  const [isUploadingDashboard, setIsUploadingDashboard] = useState(false);
+  const [isUploadingDashboard, setIsUploadingDashboard] = useState<'active' | 'inactive' | null>(null);
   const [adminForceWelcome, setAdminForceWelcome] = useState(false);
 
   // FETCH: Configuración de portada del Delivery (BIENVENIDA)
@@ -189,23 +188,26 @@ export default function DeliveryDashboardPage() {
     }
   };
 
-  // HANDLER: Actualizar fondo del Dashboard
-  const handleDashboardImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // HANDLER: Actualizar fondo del Dashboard (Dual)
+  const handleDashboardImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'active' | 'inactive') => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setIsUploadingDashboard(true);
+    setIsUploadingDashboard(target);
     try {
       const compressed = await compressImage(file, 1920, 1080, 0.85);
+      const updateKey = target === 'active' ? 'bgActive' : 'bgInactive';
+      
       await setDocumentNonBlocking(dashboardConfigRef, {
-        backgroundImage: compressed,
+        [updateKey]: compressed,
         updatedAt: serverTimestamp(),
         updatedBy: user?.uid
       }, { merge: true });
-      toast({ title: "Fondo del Dashboard actualizado" });
+      
+      toast({ title: `Fondo de ${target === 'active' ? 'Turno' : 'Descanso'} actualizado` });
     } catch (error) {
       toast({ title: "Error al actualizar", variant: "destructive" });
     } finally {
-      setIsUploadingDashboard(false);
+      setIsUploadingDashboard(null);
     }
   };
 
