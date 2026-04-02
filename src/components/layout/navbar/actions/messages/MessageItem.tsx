@@ -1,9 +1,7 @@
-
 "use client";
 
 import Link from 'next/link';
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { User as UserIcon, Clock } from 'lucide-react';
+import { User as UserIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -22,7 +20,10 @@ export function MessageItem({ chatId, name, isUnread, timestamp, onClick }: Mess
   const dateStr = format(dateObj, "eee", { locale: es }).toUpperCase();
 
   return (
-    <DropdownMenuItem asChild className="rounded-2xl p-3 cursor-pointer focus:bg-slate-50 border border-transparent focus:border-slate-100 transition-all hover:scale-[1.02] relative group" onClick={onClick}>
+    <div 
+      className="rounded-2xl p-3 cursor-pointer hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all hover:scale-[1.02] relative group outline-none" 
+      onClick={onClick}
+    >
       <Link href={`/admin/orders#${chatId}`} className="flex items-center gap-4">
         {/* Avatar Container */}
         <div className={cn(
@@ -42,7 +43,6 @@ export function MessageItem({ chatId, name, isUnread, timestamp, onClick }: Mess
               {isUnread ? "¡Mensaje Nuevo!" : "Historial de Chat"}
             </p>
             
-            {/* CYBER BADGE: Fecha y Hora */}
             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100/50 border border-slate-200/50 group-hover:bg-white group-hover:shadow-sm transition-all">
               <span className="text-[8px] font-black text-slate-400 tracking-tighter">{dateStr}</span>
               <div className="w-[1px] h-2 bg-slate-300" />
@@ -63,6 +63,6 @@ export function MessageItem({ chatId, name, isUnread, timestamp, onClick }: Mess
           <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-secondary rounded-full border-2 border-white shadow-sm" />
         )}
       </Link>
-    </DropdownMenuItem>
+    </div>
   );
 }

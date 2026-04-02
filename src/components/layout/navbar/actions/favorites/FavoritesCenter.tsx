@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Heart, Store as StoreIcon, Package } from 'lucide-react';

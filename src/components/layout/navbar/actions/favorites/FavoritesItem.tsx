@@ -1,10 +1,8 @@
-
 "use client";
 
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronRight } from 'lucide-react';
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 interface FavoritesItemProps {
   id: string;
@@ -17,7 +15,7 @@ interface FavoritesItemProps {
 
 export function FavoritesItem({ name, subLabel, imageUrl, href, price }: FavoritesItemProps) {
   return (
-    <DropdownMenuItem asChild className="rounded-2xl p-2 cursor-pointer focus:bg-slate-50 border border-transparent transition-all">
+    <div className="rounded-2xl p-2 cursor-pointer hover:bg-slate-50 border border-transparent transition-all outline-none">
       <Link href={href} className="flex items-center gap-3">
         <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-sm shrink-0">
           <Image src={imageUrl} alt={name} fill className="object-cover" />
@@ -30,6 +28,6 @@ export function FavoritesItem({ name, subLabel, imageUrl, href, price }: Favorit
         </div>
         <ChevronRight className="w-4 h-4 text-slate-200" />
       </Link>
-    </DropdownMenuItem>
+    </div>
   );
 }
