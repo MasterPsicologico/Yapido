@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Star, Camera, ImageIcon, Plus } from 'lucide-react';
+import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
@@ -174,18 +174,11 @@ export default function DeliveryDashboardPage() {
         updatedAt: serverTimestamp(),
         updatedBy: user?.uid
       }, { merge: true });
-      toast({ title: "Portada actualizada permanentemente" });
+      toast({ title: "Fondo de Dashboard actualizado" });
     } catch (error) {
       toast({ title: "Error al actualizar", variant: "destructive" });
     } finally {
       setIsUploading(false);
-    }
-  };
-
-  const handleTriggerUpload = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isAdmin && fileInputRef.current) {
-      fileInputRef.current.click();
     }
   };
 
@@ -222,22 +215,14 @@ export default function DeliveryDashboardPage() {
         <Navbar />
         <main className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
           
-          {/* BANNER DE BIENVENIDA CON CARGA INSTANTÁNEA PARA ADMIN */}
           <div 
-            onClick={handleTriggerUpload}
+            onClick={() => isAdmin && fileInputRef.current?.click()}
             className={cn(
               "relative w-full aspect-[16/7] mb-2 overflow-hidden shadow-xl transition-all duration-500 group/welcome",
               isAdmin && "cursor-pointer active:scale-[0.99] bg-slate-100"
             )}
           >
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="image/*" 
-              onChange={handleImageUpload} 
-            />
-            
+            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
             <div className="absolute inset-0 z-0">
               {welcomeConfig?.backgroundImage ? (
                 <Image src={welcomeConfig.backgroundImage} alt="Portada Personalizada" fill className="object-cover" priority />
@@ -246,21 +231,10 @@ export default function DeliveryDashboardPage() {
               )}
               <div className="absolute inset-0 bg-black/10" />
             </div>
-
             {isAdmin && (
               <div className="relative z-10 h-full flex items-center justify-center">
-                <div 
-                  className={cn(
-                    "w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500",
-                    "bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl",
-                    isUploading ? "animate-pulse" : "group-hover/welcome:scale-110 group-hover/welcome:bg-white/20"
-                  )}
-                >
-                  {isUploading ? (
-                    <Loader2 className="w-10 h-10 animate-spin text-green-500" />
-                  ) : (
-                    <Camera className="w-10 h-10 text-green-500" />
-                  )}
+                <div className="w-20 h-20 rounded-full flex items-center justify-center bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl group-hover/welcome:scale-110 transition-all">
+                  {isUploading ? <Loader2 className="w-10 h-10 animate-spin text-green-500" /> : <Camera className="w-10 h-10 text-green-500" />}
                 </div>
               </div>
             )}
@@ -289,23 +263,11 @@ export default function DeliveryDashboardPage() {
                     </div>
                   </div>
                 </div>
-
                 <div className="pt-4">
-                  <Button 
-                    onClick={() => router.push('/delivery/register')}
-                    className={cn(
-                      "w-full h-20 rounded-[32px] bg-primary text-white font-black text-sm uppercase tracking-[0.2em] gap-3",
-                      "relative transition-all duration-75 ease-out",
-                      "border-b-[10px] border-blue-800",
-                      "shadow-[0_15px_35px_-5px_rgba(59,130,246,0.5)]",
-                      "hover:border-b-[6px] hover:translate-y-[4px] hover:shadow-[0_10px_25px_-5px_rgba(59,130,246,0.4)]",
-                      "active:border-b-0 active:translate-y-[10px] active:shadow-inner"
-                    )}
-                  >
+                  <Button onClick={() => router.push('/delivery/register')} className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-sm uppercase tracking-[0.2em] gap-3 border-b-[10px] border-blue-800 shadow-xl active:translate-y-2 active:border-b-0 transition-all">
                     QUIERO SER REPARTIDOR <ArrowRight className="w-4 h-4" />
                   </Button>
                 </div>
-                <p className="text-[8px] text-center text-slate-300 font-black uppercase tracking-[0.4em]">SISTEMA PROTEGIDO • VITRINIANDO AI KERNEL</p>
               </CardContent>
             </Card>
           </div>
@@ -317,54 +279,28 @@ export default function DeliveryDashboardPage() {
   return (
     <div className="flex flex-col h-[100dvh] bg-[#f8fafc] overflow-hidden">
       <Navbar />
-      
-      <AgentProgressOverlay 
-        isOpen={isReleasing} 
-        logs={releaseLogs} 
-        onComplete={() => { setIsReleasing(false); router.replace('/delivery/release-success'); }} 
-      />
+      <AgentProgressOverlay isOpen={isReleasing} logs={releaseLogs} onComplete={() => { setIsReleasing(false); router.replace('/delivery/release-success'); }} />
 
       {activeMission ? (
-        <ActiveMissionView 
-          mission={activeMission} 
-          customerProfile={customerProfile} 
-          onUpdateStatus={handleUpdateMissionStatus}
-          onRelease={handleReleaseOrder} 
-          onOpenMaps={(addr) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank')} 
-        />
+        <ActiveMissionView mission={activeMission} customerProfile={customerProfile} onUpdateStatus={handleUpdateMissionStatus} onRelease={handleReleaseOrder} onOpenMaps={(addr) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank')} />
       ) : (
         <div className="flex-1 overflow-y-auto no-scrollbar">
           <DashboardHeader 
             profile={profile} level={level} stats={stats} 
             isOnline={isOnline} onToggleOnline={() => setIsOnline(!isOnline)} 
+            isAdmin={isAdmin} welcomeConfig={welcomeConfig} onImageUpload={handleImageUpload} isUploading={isUploading}
           />
-
           <main className="container mx-auto px-4 py-8 max-w-2xl">
             <WeeklyChallenge orders={history} />
-            
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mt-10 space-y-8">
               <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3">
                 <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white">RUTAS LIBRES</TabsTrigger>
                 <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white">ACTIVAS ({rawMy?.filter(o => o.deliveryDriverId === user?.uid).length || 0})</TabsTrigger>
                 <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white">INGRESOS</TabsTrigger>
               </TabsList>
-
-              <TabsContent value="available">
-                <RoutesTab 
-                  isOnline={isOnline} 
-                  orders={rawAvailable || []} 
-                  onAccept={handleAcceptOrder} 
-                  onGoOnline={() => setIsOnline(true)} 
-                />
-              </TabsContent>
-
-              <TabsContent value="my-deliveries">
-                <div className="text-center py-20 text-slate-300 font-black uppercase italic tracking-widest">Sin entregas activas</div>
-              </TabsContent>
-
-              <TabsContent value="earnings">
-                <EarningsTab balance={profile?.balance || 0} />
-              </TabsContent>
+              <TabsContent value="available"><RoutesTab isOnline={isOnline} orders={rawAvailable || []} onAccept={handleAcceptOrder} onGoOnline={() => setIsOnline(true)} /></TabsContent>
+              <TabsContent value="my-deliveries"><div className="text-center py-20 text-slate-300 font-black uppercase italic tracking-widest">Sin entregas activas</div></TabsContent>
+              <TabsContent value="earnings"><EarningsTab balance={profile?.balance || 0} /></TabsContent>
             </Tabs>
           </main>
         </div>

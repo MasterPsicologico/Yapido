@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Zap, Moon, Camera, Store as StoreIcon, LayoutGrid, ChevronDown, Loader2 } from 'lucide-react';
+import { Zap, Moon, Camera, Store as StoreIcon, LayoutGrid, ChevronDown, Loader2, Settings } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -40,7 +40,7 @@ export function WasherRentalCard({
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
       </div>
 
-      {/* Activador Central */}
+      {/* Activador Central - Reubicado quirúrgicamente más arriba */}
       <div className="relative z-10 flex flex-col items-center gap-8 mt-16 animate-in fade-in zoom-in duration-700">
         <div className="relative group/cta">
           {isAnyStoreOpen && (
@@ -60,7 +60,7 @@ export function WasherRentalCard({
         </div>
       </div>
 
-      {/* Botón de Gestión / Registro de Tienda (Top Right) - RESTAURADO */}
+      {/* Botón de Gestión / Registro de Tienda (Top Right) - Restaurado */}
       <button 
         onClick={(e) => { 
           e.stopPropagation(); 

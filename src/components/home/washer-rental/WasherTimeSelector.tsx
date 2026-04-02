@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Minus, Plus, Clock, Sparkles, Wallet } from 'lucide-react';
+import { Minus, Plus, Clock, Wallet } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -46,14 +46,15 @@ export function WasherTimeSelector({
           </button>
 
           <div className="text-center flex flex-col items-center">
-            <div className="flex items-center justify-center py-2">
+            {/* Fix de visibilidad total: Aumento de leading y padding vertical */}
+            <div className="flex items-center justify-center py-4">
               <span className={cn(
-                "text-6xl font-black italic tracking-tighter transition-all duration-500 text-transparent bg-clip-text leading-[1.1] block",
+                "text-6xl font-black italic tracking-tighter transition-all duration-500 text-transparent bg-clip-text leading-[1.2] block",
                 flashEffect === 'red' ? "bg-red-600" : flashEffect === 'green' ? "bg-green-600" : "bg-gradient-to-b from-[#fef08a] via-[#eab308] to-[#a16207]"
               )}>
                 {requestHours}
               </span>
-              <span className="text-[10px] font-black text-slate-400 uppercase italic ml-1 self-end mb-3">HRS</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase italic ml-1 self-end mb-4">HRS</span>
             </div>
 
             <div className={cn(
