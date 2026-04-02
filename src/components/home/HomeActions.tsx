@@ -86,6 +86,12 @@ export function HomeActions({
   const firestore = useFirestore();
   const router = useRouter();
   
+  // Refs para validación forzada y enfoque
+  const nameRef = useRef<HTMLInputElement>(null);
+  const addressRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const paymentRef = useRef<HTMLDivElement>(null);
+
   const [openWasher, setOpenWasher] = useState(false);
   const [openAddWasherStore, setOpenAddWasherStore] = useState(false);
   const [showAdminPricing, setShowAdminPricing] = useState(false);
@@ -99,8 +105,13 @@ export function HomeActions({
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
+  // Estado de errores para resaltado visual
+  const [fieldErrors, setFieldErrors] = useState({
+    name: false,
+    address: false,
+    phone: false,
+    payment: false
+  });
 
   const pricingRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_pricing'), [firestore]);
   const { data: pricingConfig } = useDoc(pricingRef);
@@ -124,17 +135,13 @@ export function HomeActions({
   const valHoraBase = Number(pricingConfig?.basePrice || 3000);
 
   useEffect(() => {
-    audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2568-preview.mp3');
-    audioRef.current.volume = 0.3;
-  }, []);
-
-  useEffect(() => {
     if (openWasher && profile) {
       setTempName(profile.displayName || "");
       setTempAddress(profile.address || "");
       setTempPhone(profile.phoneNumber || "");
       setRequestHours(minHours);
       setPaymentMethod('cash');
+      setFieldErrors({ name: false, address: false, phone: false, payment: false });
     }
   }, [openWasher, profile, minHours]);
 
@@ -162,6 +169,89 @@ export function HomeActions({
     }
     triggerFlash('green');
     setRequestHours(newHours);
+  };
+
+  const validateForm = () => {
+    const errors = {
+      name: !tempName.trim(),
+      address: !tempAddress.trim(),
+      phone: !tempPhone.trim(),
+      payment: !paymentMethod
+    };
+
+    setFieldErrors(errors);
+
+    if (errors.name) {
+      nameRef.current?.focus();
+      toast({ title: "Nombre requerido", description: "Por favor dinos quién solicita el servicio.", variant: "destructive" });
+      return false;
+    }
+    if (errors.address) {
+      addressRef.current?.focus();
+      toast({ title: "Dirección requerida", description: "Dinos dónde entregamos la lavadora.", variant: "destructive" });
+      return false;
+    }
+    if (errors.phone) {
+      phoneRef.current?.focus();
+      toast({ title: "WhatsApp requerido", description: "Necesitamos contactarte para coordinar.", variant: "destructive" });
+      return false;
+    }
+    if (errors.payment) {
+      paymentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      toast({ title: "Método de pago", description: "Selecciona cómo deseas pagar el servicio.", variant: "destructive" });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleWasherRequest = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user || !firestore) return;
+    
+    if (!validateForm()) return;
+
+    if (!isAnyStoreOpen) {
+      toast({ title: "Tiendas Cerradas", description: "Vuelve en horario de operación.", variant: "destructive" });
+      return;
+    }
+
+    setIsSendingRequest(true);
+    try {
+      // Sincronizar perfil automáticamente
+      const userRef = doc(firestore, 'users', user.uid);
+      updateDocumentNonBlocking(userRef, { 
+        displayName: tempName, 
+        address: tempAddress, 
+        phoneNumber: tempPhone, 
+        updatedAt: serverTimestamp() 
+      });
+
+      const requestData = {
+        customerId: user.uid,
+        customerName: tempName,
+        customerPhone: tempPhone,
+        customerAddress: tempAddress,
+        type: 'WASHER_RENTAL_REQUEST',
+        status: 'pending',
+        requestHours,
+        totalPrice,
+        paymentMethod,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        participants: [user.uid, 'ADMIN_WASHER_POOL'],
+        isLogisticsPublic: true,
+        productName: `Alquiler de Lavadora (${requestHours}h)`,
+      };
+
+      await addDocumentNonBlocking(collection(firestore, 'orders'), requestData);
+      toast({ title: "¡Solicitud Enviada!", className: "bg-green-600 text-white border-none" });
+      setOpenWasher(false);
+    } catch (e) {
+      toast({ title: "Error al procesar", variant: "destructive" });
+    } finally {
+      setIsSendingRequest(false);
+    }
   };
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,68 +285,6 @@ export function HomeActions({
       setShowAdminPricing(false);
     } catch (e) {
       toast({ title: "Error al guardar configuración", variant: "destructive" });
-    }
-  };
-
-  const handleWasherRequest = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!user || !firestore) return;
-    
-    // VALIDACIÓN ESPECÍFICA CON MENSAJE DETALLADO
-    const missingFields = [];
-    if (!tempName.trim()) missingFields.push("Tu Nombre");
-    if (!tempAddress.trim()) missingFields.push("Dirección");
-    if (!tempPhone.trim()) missingFields.push("WhatsApp");
-    if (!paymentMethod) missingFields.push("Método de Pago");
-
-    if (missingFields.length > 0) {
-      toast({ 
-        title: "Solicitud Incompleta", 
-        description: `Por favor completa: ${missingFields.join(", ")}.`, 
-        variant: "destructive" 
-      });
-      return;
-    }
-
-    if (!isAnyStoreOpen) {
-      toast({ title: "Tiendas Cerradas", description: "Vuelve en horario de operación.", variant: "destructive" });
-      return;
-    }
-
-    setIsSendingRequest(true);
-    try {
-      const userRef = doc(firestore, 'users', user.uid);
-      updateDocumentNonBlocking(userRef, { 
-        displayName: tempName, 
-        address: tempAddress, 
-        phoneNumber: tempPhone, 
-        updatedAt: serverTimestamp() 
-      });
-
-      const requestData = {
-        customerId: user.uid,
-        customerName: tempName,
-        customerPhone: tempPhone,
-        customerAddress: tempAddress,
-        type: 'WASHER_RENTAL_REQUEST',
-        status: 'pending',
-        requestHours,
-        totalPrice,
-        paymentMethod,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        participants: [user.uid, 'ADMIN_WASHER_POOL'],
-        isLogisticsPublic: true,
-        productName: `Alquiler de Lavadora (${requestHours}h)`,
-      };
-
-      await addDocumentNonBlocking(collection(firestore, 'orders'), requestData);
-      toast({ title: "¡Solicitud Enviada!", className: "bg-green-600 text-white border-none" });
-      setOpenWasher(false);
-    } catch (e) {
-      toast({ title: "Error al procesar", variant: "destructive" });
-    } finally {
-      setIsSendingRequest(false);
     }
   };
 
@@ -331,8 +359,8 @@ export function HomeActions({
 
           {isAdmin && (
             <div className="absolute top-4 left-4 z-30">
-              <input type="file" ref={bannerInputRef} className="hidden" accept="image/*" onChange={handleBannerUpload} />
-              <button onClick={(e) => { e.stopPropagation(); bannerInputRef.current?.click(); }} disabled={isUploadingBanner} className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl">
+              <input type="file" className="hidden" accept="image/*" onChange={handleBannerUpload} />
+              <button onClick={(e) => { e.stopPropagation(); (e.currentTarget.previousSibling as HTMLInputElement).click(); }} disabled={isUploadingBanner} className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl">
                 {isUploadingBanner ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
               </button>
             </div>
@@ -386,7 +414,19 @@ export function HomeActions({
                   <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">NOMBRE COMPLETO</Label>
                   <div className="relative group">
                     <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors"><UserIcon className="w-4 h-4" /></div>
-                    <Input value={tempName} onChange={(e) => setTempName(e.target.value)} className="h-12 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-slate-950 transition-all" required />
+                    <Input 
+                      ref={nameRef}
+                      value={tempName} 
+                      onChange={(e) => {
+                        setTempName(e.target.value);
+                        if (e.target.value.trim()) setFieldErrors(prev => ({ ...prev, name: false }));
+                      }} 
+                      className={cn(
+                        "h-12 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-slate-950 transition-all",
+                        fieldErrors.name && "ring-2 ring-red-500 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]"
+                      )} 
+                      placeholder="Escribe tu nombre..."
+                    />
                   </div>
                 </div>
 
@@ -394,7 +434,19 @@ export function HomeActions({
                   <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">DIRECCIÓN DE ENTREGA</Label>
                   <div className="relative group">
                     <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors"><MapPin className="w-4 h-4" /></div>
-                    <Input value={tempAddress} onChange={(e) => setTempAddress(e.target.value)} className="h-12 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-slate-950 transition-all" required />
+                    <Input 
+                      ref={addressRef}
+                      value={tempAddress} 
+                      onChange={(e) => {
+                        setTempAddress(e.target.value);
+                        if (e.target.value.trim()) setFieldErrors(prev => ({ ...prev, address: false }));
+                      }} 
+                      className={cn(
+                        "h-12 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-slate-950 transition-all",
+                        fieldErrors.address && "ring-2 ring-red-500 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]"
+                      )} 
+                      placeholder="Calle, Barrio, Casa..."
+                    />
                   </div>
                 </div>
 
@@ -402,7 +454,19 @@ export function HomeActions({
                   <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">WHATSAPP</Label>
                   <div className="relative group">
                     <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-focus-within:text-green-500 transition-colors"><Zap className="w-4 h-4" /></div>
-                    <Input value={tempPhone} onChange={(e) => setTempPhone(e.target.value)} className="h-12 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-slate-950 transition-all" required />
+                    <Input 
+                      ref={phoneRef}
+                      value={tempPhone} 
+                      onChange={(e) => {
+                        setTempPhone(e.target.value);
+                        if (e.target.value.trim()) setFieldErrors(prev => ({ ...prev, phone: false }));
+                      }} 
+                      className={cn(
+                        "h-12 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-slate-950 transition-all",
+                        fieldErrors.phone && "ring-2 ring-red-500 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]"
+                      )} 
+                      placeholder="300 000 0000"
+                    />
                   </div>
                 </div>
               </div>
@@ -434,11 +498,17 @@ export function HomeActions({
                 </div>
               </div>
 
-              <div className="space-y-4 pt-4">
+              <div ref={paymentRef} className="space-y-4 pt-4">
                 <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">MÉTODO DE PAGO</Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className={cn(
+                  "grid grid-cols-2 gap-3 p-1 rounded-[36px] transition-all",
+                  fieldErrors.payment && "ring-2 ring-red-500 bg-red-50 animate-pulse"
+                )}>
                   <button 
-                    onClick={() => setPaymentMethod('cash')}
+                    onClick={() => {
+                      setPaymentMethod('cash');
+                      setFieldErrors(prev => ({ ...prev, payment: false }));
+                    }}
                     className={cn(
                       "flex flex-col items-center gap-3 p-5 rounded-[32px] border-2 transition-all duration-300",
                       paymentMethod === 'cash' ? "border-slate-950 bg-slate-950 text-white shadow-xl scale-[1.02]" : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
@@ -449,7 +519,10 @@ export function HomeActions({
                   </button>
 
                   <button 
-                    onClick={() => setPaymentMethod('digital')}
+                    onClick={() => {
+                      setPaymentMethod('digital');
+                      setFieldErrors(prev => ({ ...prev, payment: false }));
+                    }}
                     className={cn(
                       "flex flex-col items-center gap-3 p-5 rounded-[32px] border-2 transition-all duration-300",
                       paymentMethod === 'digital' ? "border-primary bg-primary/10 text-primary shadow-xl scale-[1.02]" : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
