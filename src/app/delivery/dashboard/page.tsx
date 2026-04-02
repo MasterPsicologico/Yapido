@@ -192,7 +192,7 @@ export default function DeliveryDashboardPage() {
             <div className="w-24 h-24 bg-primary rounded-[36px] flex items-center justify-center text-white mx-auto shadow-2xl shadow-primary/20">
               <Truck className="w-12 h-12" />
             </div>
-            <h1 className="text-5xl font-black italic tracking-tighter uppercase text-slate-900">Bienvenido a Delivery</h1>
+            <h1 className="text-5xl font-black italic uppercase tracking-tighter text-slate-900">Bienvenido a Delivery</h1>
             <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em]">Centro de Operaciones de Flota</p>
           </div>
           
@@ -222,9 +222,9 @@ export default function DeliveryDashboardPage() {
               <div className="pt-4">
                 <Button 
                   onClick={() => router.push('/delivery/register')}
-                  className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-xl uppercase tracking-widest gap-4 shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all active:scale-95"
+                  className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-xs sm:text-sm uppercase tracking-[0.2em] gap-3 shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all active:scale-95"
                 >
-                  QUIERO SER REPARTIDOR <ArrowRight className="w-6 h-6" />
+                  QUIERO SER REPARTIDOR <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
               <p className="text-[8px] text-center text-slate-300 font-black uppercase tracking-[0.4em]">SISTEMA PROTEGIDO • VITRINIANDO AI KERNEL</p>
