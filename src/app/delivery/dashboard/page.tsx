@@ -5,8 +5,9 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
@@ -23,7 +24,7 @@ import { AgentProgressOverlay } from '@/components/agents/AgentProgressOverlay';
 
 export default function DeliveryDashboardPage() {
   const { user } = useUser();
-  const { profile, level, isLoading: loadingProfile } = useProfile();
+  const { profile, level, isAdmin, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
   const router = useRouter();
   
@@ -39,13 +40,12 @@ export default function DeliveryDashboardPage() {
     }
   }, [profile, loadingProfile, router]);
 
-  const isConfirmedRepartidor = profile?.role === 'repartidor' || profile?.role === 'admin';
+  const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
 
-  // CONSULTAS FIRESTORE OPTIMIZADAS PARA CUMPLIR CON REGLAS DE SEGURIDAD
+  // CONSULTAS FIRESTORE OPTIMIZADAS
   const availableOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
     
-    // Si el repartidor tiene una tienda vinculada, vemos las de esa tienda que sean públicas para logística
     if (profile?.linkedStoreId) {
       return query(
         collection(firestore, 'orders'), 
@@ -56,7 +56,6 @@ export default function DeliveryDashboardPage() {
       );
     }
 
-    // Si no, vemos las públicas generales
     return query(
       collection(firestore, 'orders'), 
       where('isLogisticsPublic', '==', true), 
@@ -87,7 +86,6 @@ export default function DeliveryDashboardPage() {
   const { data: rawMy } = useCollection(myDeliveriesQuery);
   const { data: history } = useCollection(historyQuery);
 
-  // ESTADOS DERIVADOS
   const stats = useMemo(() => ({
     rating: profile?.avgRating || 5.0,
     deliveredCount: history?.length || 0
@@ -104,7 +102,6 @@ export default function DeliveryDashboardPage() {
   );
   const { data: customerProfile } = useDoc(customerRef);
 
-  // ACCIONES MAESTRAS
   const handleAcceptOrder = (orderId: string) => {
     if (!firestore || !user) return;
     const orderRef = doc(firestore, 'orders', orderId);
@@ -123,39 +120,29 @@ export default function DeliveryDashboardPage() {
   const handleUpdateMissionStatus = (newStatus: string) => {
     if (!activeMission || !firestore) return;
     const orderRef = doc(firestore, 'orders', activeMission.id);
-    const updateData: any = { 
-      status: newStatus, 
-      updatedAt: serverTimestamp() 
-    };
-    
+    const updateData: any = { status: newStatus, updatedAt: serverTimestamp() };
     if (newStatus === 'delivered_to_driver') updateData.pickedUpAt = serverTimestamp();
     if (newStatus === 'delivered') updateData.deliveredAt = serverTimestamp();
-
     updateDocumentNonBlocking(orderRef, updateData);
-    toast({ title: "Estado Actualizado", description: `Pedido movido a ${newStatus.toUpperCase()}` });
+    toast({ title: "Estado Actualizado" });
   };
 
   const handleReleaseOrder = async (reason: string) => {
     if (!activeMission || !user || !firestore || !reason) return;
-
     const orderRef = doc(firestore, 'orders', activeMission.id);
     const incidentRef = collection(firestore, 'incidents');
-    
     addDocumentNonBlocking(incidentRef, {
       orderId: activeMission.id, driverId: user.uid, driverName: profile?.displayName || 'Repartidor',
       reason, hasProducts: activeMission.status === 'delivered_to_driver', orderValue: activeMission.totalPrice || 0,
       storeId: activeMission.storeId, storeName: activeMission.storeName, createdAt: serverTimestamp(),
       type: 'ORDER_RELEASE', agentOwner: 'soporte'
     });
-
     updateDocumentNonBlocking(orderRef, {
       status: 'ready_for_pickup', deliveryDriverId: null, deliveryDriverName: null,
       isLogisticsPublic: true, updatedAt: serverTimestamp(), participants: arrayRemove(user.uid)
     });
-
     setIsReleasing(true);
     setReleaseLogs(["Protocolo de liberación activado...", "Sincronizando Ciudadela de Agentes..."]);
-
     try {
       const result = await releaseOrder({
         orderId: activeMission.id, driverId: user.uid, reason,
@@ -169,13 +156,84 @@ export default function DeliveryDashboardPage() {
   };
 
   if (loadingProfile) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
-  if (!isConfirmedRepartidor) return (
-    <div className="flex flex-col min-h-screen items-center justify-center p-8 text-center gap-6">
-      <h2 className="text-2xl font-black italic uppercase text-slate-400">Acceso Restringido</h2>
-      <p className="text-slate-400 max-w-xs">Debes ser un repartidor verificado para acceder al dashboard.</p>
-      <Button onClick={() => router.push('/profile')}>Configurar Perfil</Button>
-    </div>
-  );
+
+  // PANTALLAS DE FLUJO DE REGISTRO SI NO ES REPARTIDOR CONFIRMADO
+  if (!isConfirmedRepartidor) {
+    if (profile?.deliveryRequested) {
+      return (
+        <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+          <Navbar />
+          <main className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-8 animate-in zoom-in duration-500">
+            <div className="relative">
+              <div className="absolute inset-0 bg-orange-500/20 rounded-[40px] animate-ping [animation-duration:3000ms]" />
+              <div className="relative w-28 h-28 bg-white rounded-[40px] shadow-2xl flex items-center justify-center text-orange-500 border border-orange-100">
+                <Clock className="w-14 h-14" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <h2 className="text-4xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Solicitud en Proceso</h2>
+              <p className="text-slate-500 max-w-sm mx-auto font-medium text-sm leading-relaxed uppercase tracking-tight">
+                Tu registro ha sido enviado. El administrador principal debe verificar tus datos para activarte en la red global de repartos.
+              </p>
+            </div>
+            <Button variant="outline" className="rounded-full h-12 px-8 font-black uppercase text-[10px] tracking-widest border-slate-200" onClick={() => router.push('/')}>
+              VOLVER AL MARKETPLACE
+            </Button>
+          </main>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col min-h-screen bg-[#f8fafc]">
+        <Navbar />
+        <main className="flex-1 container mx-auto px-4 py-12 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="text-center mb-12 space-y-4">
+            <div className="w-24 h-24 bg-primary rounded-[36px] flex items-center justify-center text-white mx-auto shadow-2xl shadow-primary/20">
+              <Truck className="w-12 h-12" />
+            </div>
+            <h1 className="text-5xl font-black italic tracking-tighter uppercase text-slate-900">Bienvenido a Delivery</h1>
+            <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em]">Centro de Operaciones de Flota</p>
+          </div>
+          
+          <Card className="border-none shadow-2xl rounded-[48px] bg-white overflow-hidden ring-1 ring-black/[0.03]">
+            <CardContent className="p-12 space-y-10">
+              <div className="space-y-8">
+                <div className="flex items-start gap-6">
+                  <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 shrink-0 shadow-inner">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-black text-lg uppercase italic tracking-tighter text-slate-900">Gana por cada entrega</h4>
+                    <p className="text-xs text-slate-400 font-medium leading-relaxed">Recibe el 70% del valor de cada envío de forma inmediata y directa a tu saldo.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-6">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0 shadow-inner">
+                    <Zap className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-black text-lg uppercase italic tracking-tighter text-slate-900">Autonomía Logística</h4>
+                    <p className="text-xs text-slate-400 font-medium leading-relaxed">Tú controlas tu tiempo. Conéctate cuando quieras y acepta las rutas que mejor te convengan.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <Button 
+                  onClick={() => router.push('/delivery/register')}
+                  className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-xl uppercase tracking-widest gap-4 shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all active:scale-95"
+                >
+                  QUIERO SER REPARTIDOR <ArrowRight className="w-6 h-6" />
+                </Button>
+              </div>
+              <p className="text-[8px] text-center text-slate-300 font-black uppercase tracking-[0.4em]">SISTEMA PROTEGIDO • VITRINIANDO AI KERNEL</p>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[100dvh] bg-[#f8fafc] overflow-hidden">
