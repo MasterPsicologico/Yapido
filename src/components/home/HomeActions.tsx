@@ -64,12 +64,10 @@ export function HomeActions({
   const firestore = useFirestore();
   const router = useRouter();
   
-  // ESTADOS DE DIÁLOGOS
   const [openWasher, setOpenWasher] = useState(false);
   const [openAddWasherStore, setOpenAddWasherStore] = useState(false);
   const [showAdminPricing, setShowAdminPricing] = useState(false);
 
-  // ESTADOS DE FORMULARIO LAVADORA
   const [requestHours, setRequestHours] = useState(5);
   const [tempAddress, setTempAddress] = useState("");
   const [tempPhone, setTempPhone] = useState("");
@@ -79,19 +77,16 @@ export function HomeActions({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
-  // CARGAR CONFIGURACIÓN DE PRECIOS, HORARIOS Y PORTADA
   const pricingRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_pricing'), [firestore]);
   const { data: pricingConfig } = useDoc(pricingRef);
 
   const bannerConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_banner'), [firestore]);
   const { data: bannerConfig } = useDoc(bannerConfigRef);
 
-  // VALORES DE NEGOCIO (FINANCIEROS) - MATEMÁTICA BLINDADA
   const minHours = Number(pricingConfig?.minHours || 5);
-  const basePrice = Number(pricingConfig?.basePrice || 15000);
-  const additionalHourPrice = Number(pricingConfig?.additionalHourPrice || 3000);
+  const hourlyRateBase = Number(pricingConfig?.basePrice || 3000);
+  const hourlyRateExtra = Number(pricingConfig?.additionalHourPrice || 3000);
 
-  // LÓGICA DE HORARIOS
   const openTime = pricingConfig?.openTime || "08:00";
   const closeTime = pricingConfig?.closeTime || "20:00";
 
@@ -128,12 +123,18 @@ export function HomeActions({
     }
   };
 
-  // LÓGICA MATEMÁTICA EXACTA: Mínimo de horas = Precio Base
   const totalPrice = useMemo(() => {
-    const current = Number(requestHours);
-    if (current <= minHours) return basePrice;
-    return basePrice + ((current - minHours) * additionalHourPrice);
-  }, [requestHours, minHours, basePrice, additionalHourPrice]);
+    const hours = Number(requestHours);
+    const min = Number(minHours);
+    const baseRate = Number(hourlyRateBase);
+    const extraRate = Number(hourlyRateExtra);
+
+    if (hours <= min) {
+      return hours * baseRate;
+    } else {
+      return (min * baseRate) + ((hours - min) * extraRate);
+    }
+  }, [requestHours, minHours, hourlyRateBase, hourlyRateExtra]);
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -176,16 +177,11 @@ export function HomeActions({
     if (!user || !firestore) return;
     
     if (!isBusinessOpen) {
-      toast({ 
-        title: "Fuera de Horario", 
-        description: "El servicio está cerrado en este momento.",
-        variant: "destructive"
-      });
+      toast({ title: "Fuera de Horario", variant: "destructive" });
       return;
     }
 
     setIsSendingRequest(true);
-    
     try {
       const userRef = doc(firestore, 'users', user.uid);
       const profileUpdates: any = {};
@@ -213,11 +209,7 @@ export function HomeActions({
       };
 
       await addDocumentNonBlocking(collection(firestore, 'orders'), requestData);
-      toast({ 
-        title: "¡Solicitud Enviada!", 
-        description: "Estamos procesando tu alquiler.",
-        className: "bg-green-600 text-white border-none"
-      });
+      toast({ title: "¡Solicitud Enviada!", className: "bg-green-600 text-white border-none" });
       setOpenWasher(false);
     } catch (e) {
       toast({ title: "Error al procesar", variant: "destructive" });
@@ -239,11 +231,7 @@ export function HomeActions({
         imageUrl: `https://picsum.photos/seed/${storeRef.id}/800/600`, driverCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
         privateDrivers: []
       });
-      
-      if (profile?.role === 'cliente') {
-        updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { role: 'dueño', updatedAt: serverTimestamp() });
-      }
-      
+      if (profile?.role === 'cliente') updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { role: 'dueño', updatedAt: serverTimestamp() });
       toast({ title: "¡Vitrina de Lavadoras Creada!" });
       setOpenAddWasherStore(false);
       router.push(`/admin/washer/${storeRef.id}`);
@@ -267,27 +255,27 @@ export function HomeActions({
             ) : (
               <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover bg-top" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
           </div>
 
           <div className="relative z-10 flex flex-col items-center gap-8 mt-24 animate-in fade-in zoom-in duration-700">
             <div className="group/cta">
               <div className={cn(
-                "backdrop-blur-md text-white px-6 py-3.5 rounded-full font-black text-base uppercase italic tracking-tighter shadow-2xl border border-white/10 flex items-center gap-3 transition-all hover:scale-105 active:scale-95",
+                "backdrop-blur-md text-white px-5 py-2.5 rounded-full font-black text-xs uppercase italic tracking-tighter shadow-2xl border border-white/10 flex items-center gap-2 transition-all hover:scale-105 active:scale-95",
                 isBusinessOpen ? "bg-red-600/80 hover:bg-red-600" : "bg-slate-800/80 grayscale"
               )}>
                 {isBusinessOpen ? (
-                  <><CheckCircle2 className="w-5 h-5 text-white" /> SOLICITAR AHORA</>
+                  <><CheckCircle2 className="w-4 h-4 text-white" /> SOLICITAR AHORA</>
                 ) : (
-                  <><Moon className="w-5 h-5 text-slate-400" /> NEGOCIO CERRADO</>
+                  <><Moon className="w-4 h-4 text-slate-400" /> NEGOCIO CERRADO</>
                 )}
               </div>
               
               <div className="flex flex-col items-center gap-2 mt-4 opacity-60">
-                <span className="text-white text-[8px] font-black uppercase tracking-[0.4em]">
-                  {isBusinessOpen ? "Toca para iniciar solicitud" : `Abrimos a las ${openTime}`}
+                <span className="text-white text-[7px] font-black uppercase tracking-[0.4em]">
+                  {isBusinessOpen ? "Toca para iniciar" : `Abre a las ${openTime}`}
                 </span>
-                <div className="h-0.5 w-10 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-0.5 w-8 bg-white/20 rounded-full overflow-hidden">
                   <div className={cn("h-full [animation-duration:2000ms] animate-progress-loading", isBusinessOpen ? "bg-red-500" : "bg-slate-500")} />
                 </div>
               </div>
@@ -297,18 +285,18 @@ export function HomeActions({
           {isAdmin && (
             <div className="absolute top-4 left-4 z-30">
               <input type="file" ref={bannerInputRef} className="hidden" accept="image/*" onChange={handleBannerUpload} />
-              <button onClick={(e) => { e.stopPropagation(); bannerInputRef.current?.click(); }} disabled={isUploadingBanner} className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl">
-                {isUploadingBanner ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+              <button onClick={(e) => { e.stopPropagation(); bannerInputRef.current?.click(); }} disabled={isUploadingBanner} className="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl">
+                {isUploadingBanner ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
               </button>
             </div>
           )}
 
-          <button onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }} className="absolute top-4 right-4 z-30 w-10 h-10 rounded-xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-green-400 transition-all shadow-2xl">
-            <StoreIcon className="w-5 h-5" />
+          <button onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }} className="absolute top-4 right-4 z-30 w-9 h-9 rounded-xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-green-400 transition-all shadow-2xl">
+            <StoreIcon className="w-4 h-4" />
           </button>
 
-          <button onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }} className="absolute bottom-4 right-4 z-30 w-12 h-12 rounded-full bg-slate-950/40 backdrop-blur-2xl border border-white/10 flex items-center justify-center text-white/80 hover:bg-slate-950/60 transition-all shadow-2xl">
-            <div className="relative"><div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.6)]" /><Waves className="w-6 h-6 text-white/90" /></div>
+          <button onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }} className="absolute bottom-4 right-4 z-30 w-11 h-11 rounded-full bg-slate-950/40 backdrop-blur-2xl border border-white/10 flex items-center justify-center text-white/80 hover:bg-slate-950/60 transition-all shadow-2xl">
+            <div className="relative"><div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" /><Waves className="w-5 h-5 text-white/90" /></div>
           </button>
 
           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-30 animate-bounce"><ChevronDown className="w-5 h-5 text-white" /></div>
@@ -337,7 +325,7 @@ export function HomeActions({
             <div className="max-w-md mx-auto py-12 px-6 space-y-10">
               
               {showAdminPricing && isAdmin && (
-                <form onSubmit={handleUpdatePricing} className="bg-slate-900 p-8 rounded-[32px] text-white space-y-6 animate-in slide-in-from-top-4 duration-300">
+                <form onSubmit={handleUpdatePricing} className="bg-slate-900 p-8 rounded-[32px] text-white space-y-6 animate-in slide-in-from-top-4 duration-300 shadow-2xl">
                   <div className="flex items-center gap-3 border-b border-white/10 pb-4">
                     <Settings2 className="w-5 h-5 text-primary" />
                     <h4 className="text-sm font-black uppercase tracking-widest italic">Ajustes Maestro</h4>
@@ -345,10 +333,10 @@ export function HomeActions({
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Min. Horas</Label><Input name="minHours" type="number" defaultValue={minHours} className="bg-white/5 border-none h-12 font-bold" /></div>
-                    <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Precio Base ($)</Label><Input name="basePrice" type="number" defaultValue={basePrice} className="bg-white/5 border-none h-12 font-bold" /></div>
+                    <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Precio Base ($)</Label><Input name="basePrice" type="number" defaultValue={hourlyRateBase} className="bg-white/5 border-none h-12 font-bold" /></div>
                   </div>
                   
-                  <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Hora Adicional ($)</Label><Input name="additionalHourPrice" type="number" defaultValue={additionalHourPrice} className="bg-white/5 border-none h-12 font-bold" /></div>
+                  <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Hora Adicional ($)</Label><Input name="additionalHourPrice" type="number" defaultValue={hourlyRateExtra} className="bg-white/5 border-none h-12 font-bold" /></div>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Apertura</Label><Input name="openTime" type="time" defaultValue={openTime} className="bg-white/5 border-none h-12 font-bold" /></div>
@@ -364,14 +352,14 @@ export function HomeActions({
                   <Moon className="w-8 h-8 text-red-500 shrink-0" />
                   <div>
                     <p className="text-red-900 text-sm font-black uppercase italic tracking-tighter">Negocio Cerrado</p>
-                    <p className="text-red-600 text-xs font-bold leading-snug mt-1">Actualmente no estamos laborando. Nuestro horario es de {openTime} a {closeTime}.</p>
+                    <p className="text-red-600 text-xs font-bold leading-snug mt-1">Nuestro horario es de {openTime} a {closeTime}.</p>
                   </div>
                 </div>
               )}
 
               <div className="bg-blue-50/50 p-8 rounded-[40px] border border-blue-100 flex items-start gap-5">
                 <Sun className="w-8 h-8 text-primary shrink-0" />
-                <p className="text-slate-600 text-sm font-bold italic leading-snug">"Por favor confirma tus datos para procesar el alquiler de inmediato."</p>
+                <p className="text-slate-600 text-sm font-bold italic leading-snug">"Confirma tus datos para procesar el alquiler de inmediato."</p>
               </div>
 
               <form onSubmit={handleWasherRequest} className="space-y-10">
@@ -417,7 +405,7 @@ export function HomeActions({
                       <span className="text-xs font-black uppercase italic">Pagas al recibir</span>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-4 relative z-10">
+                  <div className="flex flex-col gap-2 relative z-10">
                     <div className="space-y-1">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total a pagar</p>
                       <h4 className="text-3xl font-black italic tracking-tighter leading-none text-white">
@@ -443,7 +431,7 @@ export function HomeActions({
                   ) : isBusinessOpen ? (
                     <>LANZAR SOLICITUD <CheckCircle2 className="w-8 h-8" /></>
                   ) : (
-                    "FUERA DE SERVICIO"
+                    "NEGOCIO CERRADO"
                   )}
                 </Button>
                 
@@ -490,3 +478,5 @@ export function HomeActions({
     </div>
   );
 }
+
+    
