@@ -23,11 +23,11 @@ export function WasherTimeSelector({
 }: WasherTimeSelectorProps) {
   return (
     <div className="space-y-6 pt-6 border-t border-slate-100">
-      {/* HEADER DINÁMICO: PREGUNTA EN ROJO */}
+      {/* HEADER DINÁMICO: PREGUNTA PRIORITARIA EN ROJO */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4">
         <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-red-600 animate-pulse" />
-          <Label className="text-sm font-black uppercase text-red-600 tracking-tight leading-none">
+          <Clock className="w-6 h-6 text-red-600 animate-pulse" />
+          <Label className="text-lg font-black uppercase text-red-600 tracking-tight leading-none italic">
             ¿Cuántas horas la necesitarás?
           </Label>
         </div>
@@ -46,7 +46,7 @@ export function WasherTimeSelector({
         <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/5 rounded-full blur-3xl -mr-16 -mt-16" />
         
         <div className="flex items-center gap-8 w-full justify-between relative z-10 px-2">
-          {/* BOTÓN DISMINUIR */}
+          {/* BOTÓN DISMINUIR: RELIEVE METÁLICO */}
           <button 
             type="button" 
             onClick={() => onAdjustHours(-1)} 
@@ -55,11 +55,11 @@ export function WasherTimeSelector({
             <Minus className="w-7 h-7 group-active:scale-75 transition-transform" />
           </button>
 
-          {/* DISPLAY CENTRAL: NÚMERO Y PRECIO */}
-          <div className="text-center flex flex-col items-center gap-1">
-            <div className="flex items-baseline gap-2">
+          {/* DISPLAY CENTRAL: NÚMERO MAGNIFICADO Y PRECIO VIVO */}
+          <div className="text-center flex flex-col items-center gap-2">
+            <div className="flex items-baseline gap-2 py-2">
               <span className={cn(
-                "text-5xl font-black italic tracking-tighter transition-all duration-500 text-transparent bg-clip-text drop-shadow-sm",
+                "text-7xl font-black italic tracking-tighter transition-all duration-500 text-transparent bg-clip-text drop-shadow-sm leading-none",
                 flashEffect === 'red' 
                   ? "bg-red-600 scale-110" 
                   : flashEffect === 'green' 
@@ -68,23 +68,23 @@ export function WasherTimeSelector({
               )}>
                 {requestHours}
               </span>
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">HRS</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">HRS</span>
             </div>
 
-            {/* PRECIO DINÁMICO RESTAURADO */}
+            {/* CÁPSULA DE PRECIO DINÁMICO RESTAURADA */}
             <div className={cn(
-              "flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 shadow-lg animate-in slide-in-from-top-2 duration-300",
+              "flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-slate-900 shadow-xl animate-in slide-in-from-top-2 duration-300 transition-colors",
               flashEffect === 'green' && "bg-green-600",
               flashEffect === 'red' && "bg-red-600"
             )}>
-              <Wallet className="w-2.5 h-2.5 text-yellow-400" />
-              <span className="text-[10px] font-black text-white italic tracking-tighter">
+              <Wallet className="w-3 h-3 text-yellow-400" />
+              <span className="text-[11px] font-black text-white italic tracking-tighter">
                 {formattedPrice}
               </span>
             </div>
           </div>
 
-          {/* BOTÓN AUMENTAR */}
+          {/* BOTÓN AUMENTAR: RELIEVE ORO */}
           <button 
             type="button" 
             onClick={() => onAdjustHours(1)} 
