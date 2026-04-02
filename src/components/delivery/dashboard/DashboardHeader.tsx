@@ -118,16 +118,19 @@ export function DashboardHeader({
           onClick={() => setIsInfoOpen(true)}
           className="cursor-pointer group/info flex flex-col items-center gap-6 animate-in fade-in slide-in-from-top-4 duration-700"
         >
-          <div className="space-y-2">
-            <h1 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] group-hover/info:scale-105 transition-transform">
-              {profile?.displayName || 'Repartidor'}
-            </h1>
-            <div className="flex justify-center">
-              <Badge className={cn("h-5 border-none font-black italic text-[9px] px-3 shadow-xl", level.bg, level.color)}>
-                {level.name}
-              </Badge>
+          {/* NOMBRE Y NIVEL: SOLO VISIBLES CUANDO ESTÁ ONLINE */}
+          {isOnline && (
+            <div className="space-y-2">
+              <h1 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] group-hover/info:scale-105 transition-transform">
+                {profile?.displayName || 'Repartidor'}
+              </h1>
+              <div className="flex justify-center">
+                <Badge className={cn("h-5 border-none font-black italic text-[9px] px-3 shadow-xl", level.bg, level.color)}>
+                  {level.name}
+                </Badge>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="relative">
             <div className={cn(
