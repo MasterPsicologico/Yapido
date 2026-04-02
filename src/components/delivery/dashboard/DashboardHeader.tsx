@@ -72,7 +72,7 @@ export function DashboardHeader({
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent" />
       </div>
 
-      {/* CONTROLES ADMINISTRATIVOS DE FONDO DUAL */}
+      {/* CONTROLES ADMINISTRATIVOS DE FONDO DUAL (SÓLO PARA ADMIN) */}
       {isAdmin && (
         <div className="absolute top-4 right-4 z-30 flex flex-col gap-3">
           <div className="flex items-center gap-2">
@@ -121,34 +121,35 @@ export function DashboardHeader({
         </div>
       )}
 
-      {/* CONTENIDO DEL PERFIL */}
-      <div className="relative z-10 px-6 py-10">
-        <div className="flex flex-col items-center text-center gap-8 max-w-4xl mx-auto">
-          <div className="flex flex-col items-center gap-4">
-            <div className="relative">
-              <div className={cn(
-                "absolute inset-0 rounded-full animate-pulse blur-2xl transition-colors duration-1000",
-                isOnline ? "bg-primary/30" : "bg-white/10"
-              )} />
-              <Avatar className="w-20 h-20 border-[6px] border-white/10 shadow-2xl relative z-10">
-                <AvatarImage src={profile?.photoURL} className="object-cover" />
-                <AvatarFallback className="bg-primary text-white font-black text-xl">R</AvatarFallback>
-              </Avatar>
+      {/* AVATAR DESPLAZADO A LA INFERIOR DERECHA (+25% TAMAÑO = 100px) */}
+      <div className="absolute bottom-6 right-6 z-20 animate-in fade-in slide-in-from-right duration-700">
+        <div className="relative">
+          <div className={cn(
+            "absolute inset-0 rounded-full animate-pulse blur-xl transition-colors duration-1000",
+            isOnline ? "bg-primary/30" : "bg-white/10"
+          )} />
+          <Avatar className="w-[100px] h-[100px] border-[6px] border-white/10 shadow-2xl relative z-10">
+            <AvatarImage src={profile?.photoURL} className="object-cover" />
+            <AvatarFallback className="bg-primary text-white font-black text-2xl">R</AvatarFallback>
+          </Avatar>
+        </div>
+      </div>
+
+      {/* CONTENIDO DEL PERFIL (NOMBRE REUBICADO MÁS ARRIBA) */}
+      <div className="relative z-10 px-6 pb-12 pt-4">
+        <div className="flex flex-col items-center text-center gap-6 max-w-4xl mx-auto">
+          <div className="space-y-3">
+            <div className="flex flex-col items-center gap-2">
+              <h1 className="text-lg sm:text-3xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-lg">
+                {profile?.displayName || 'Repartidor'}
+              </h1>
+              <Badge className={cn("h-6 border-none font-black italic text-[10px] px-4", level.bg, level.color)}>
+                {level.name}
+              </Badge>
             </div>
-            
-            <div className="space-y-2">
-              <div className="flex flex-col items-center gap-2">
-                <h1 className="text-lg sm:text-3xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-lg">
-                  {profile?.displayName || 'Repartidor'}
-                </h1>
-                <Badge className={cn("h-6 border-none font-black italic text-[10px] px-4", level.bg, level.color)}>
-                  {level.name}
-                </Badge>
-              </div>
-              <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.3em] flex items-center justify-center gap-2">
-                <ShieldCheck className="w-3 h-3 text-primary" /> Verificado • {stats.rating} <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
-              </p>
-            </div>
+            <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.3em] flex items-center justify-center gap-2">
+              <ShieldCheck className="w-3 h-3 text-primary" /> Verificado • {stats.rating} <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
+            </p>
           </div>
           
           <div className="w-full max-w-xs animate-in fade-in slide-in-from-bottom-4 duration-1000">
