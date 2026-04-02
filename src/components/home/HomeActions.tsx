@@ -59,7 +59,6 @@ interface HomeActionsProps {
   onStoreSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
-// UTILIDAD PARA VERIFICAR HORARIO (SOPORTE NOCTURNO Y VALIDACIÓN DE DATOS)
 export const checkIsBusinessOpen = (openTime?: string, closeTime?: string) => {
   if (!openTime || !closeTime) return false;
   const now = new Date();
@@ -139,13 +138,6 @@ export function HomeActions({
     }
   }, [openWasher, profile, minHours]);
 
-  const playClickSound = () => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {});
-    }
-  };
-
   const totalPrice = useMemo(() => requestHours * valHoraBase, [requestHours, valHoraBase]);
 
   const formattedPrice = new Intl.NumberFormat('es-CO', { 
@@ -156,6 +148,9 @@ export function HomeActions({
 
   const triggerFlash = (color: 'red' | 'green') => {
     setFlashEffect(color);
+    if (color === 'red' && typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(100);
+    }
     setTimeout(() => setFlashEffect('none'), 600);
   };
 
@@ -207,11 +202,17 @@ export function HomeActions({
     e.preventDefault();
     if (!user || !firestore) return;
     
-    // VALIDACIÓN OBLIGATORIA RIGUROSA
-    if (!tempName.trim() || !tempAddress.trim() || !tempPhone.trim() || !paymentMethod) {
+    // VALIDACIÓN ESPECÍFICA CON MENSAJE DETALLADO
+    const missingFields = [];
+    if (!tempName.trim()) missingFields.push("Tu Nombre");
+    if (!tempAddress.trim()) missingFields.push("Dirección");
+    if (!tempPhone.trim()) missingFields.push("WhatsApp");
+    if (!paymentMethod) missingFields.push("Método de Pago");
+
+    if (missingFields.length > 0) {
       toast({ 
         title: "Solicitud Incompleta", 
-        description: "Todos los campos son obligatorios. Por favor, completa tu información.", 
+        description: `Por favor completa: ${missingFields.join(", ")}.`, 
         variant: "destructive" 
       });
       return;
@@ -297,7 +298,7 @@ export function HomeActions({
     <div className="flex flex-col w-full">
       <div className="relative w-full group">
         <div 
-          onClick={() => { playClickSound(); setOpenWasher(true); }}
+          onClick={() => setOpenWasher(true)}
           className="relative w-full min-h-[calc(100dvh-64px)] overflow-hidden cursor-pointer flex flex-col items-center justify-start pt-32 px-6 text-center bg-[#0a0a0a] active:scale-[0.99] transition-all duration-500"
         >
           <div className="absolute inset-0 z-0">
@@ -325,15 +326,6 @@ export function HomeActions({
                   <><Moon className="w-4 h-4 text-slate-400" /> TIENDAS CERRADAS</>
                 )}
               </div>
-              
-              <div className="flex flex-col items-center gap-2 mt-4 opacity-60">
-                <span className="text-white text-[7px] font-black uppercase tracking-[0.4em]">
-                  {isAnyStoreOpen ? "Toca para iniciar" : "Vuelve en horario comercial"}
-                </span>
-                <div className="h-0.5 w-8 bg-white/20 rounded-full overflow-hidden">
-                  <div className={cn("h-full [animation-duration:2000ms] animate-progress-loading", isAnyStoreOpen ? "bg-red-500" : "bg-slate-500")} />
-                </div>
-              </div>
             </div>
           </div>
 
@@ -348,10 +340,6 @@ export function HomeActions({
 
           <button onClick={(e) => { e.stopPropagation(); setOpenAddWasherStore(true); }} className="absolute top-4 right-4 z-30 w-9 h-9 rounded-xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-green-400 transition-all shadow-2xl">
             <StoreIcon className="w-4 h-4" />
-          </button>
-
-          <button onClick={(e) => { e.stopPropagation(); router.push('/categories/category-washer'); }} className="absolute bottom-4 right-4 z-30 w-11 h-11 rounded-full bg-slate-950/40 backdrop-blur-2xl border border-white/10 flex items-center justify-center text-white/80 hover:bg-slate-950/60 transition-all shadow-2xl">
-            <div className="relative"><div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" /><Waves className="w-5 h-5 text-white/90" /></div>
           </button>
 
           <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-30 animate-bounce"><ChevronDown className="w-5 h-5 text-white" /></div>
@@ -389,17 +377,16 @@ export function HomeActions({
                     <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Min. Horas</Label><Input name="minHours" type="number" defaultValue={minHours} className="bg-white/5 border-none h-12 font-bold" /></div>
                     <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">VALOR HORA BASE</Label><Input name="basePrice" type="number" defaultValue={valHoraBase} className="bg-white/5 border-none h-12 font-bold" /></div>
                   </div>
-                  <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">VALOR HORA EXTRA</Label><Input name="additionalHourPrice" type="number" defaultValue={valHoraBase} className="bg-white/5 border-none h-12 font-bold" /></div>
                   <Button type="submit" className="w-full h-14 bg-primary text-white font-black uppercase text-xs tracking-widest shadow-xl">ACTUALIZAR SISTEMA</Button>
                 </form>
               )}
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="space-y-1">
                   <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">NOMBRE COMPLETO</Label>
                   <div className="relative group">
                     <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors"><UserIcon className="w-4 h-4" /></div>
-                    <Input value={tempName} onChange={(e) => setTempName(e.target.value)} className="h-14 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all" required />
+                    <Input value={tempName} onChange={(e) => setTempName(e.target.value)} className="h-12 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-slate-950 transition-all" required />
                   </div>
                 </div>
 
@@ -407,7 +394,7 @@ export function HomeActions({
                   <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">DIRECCIÓN DE ENTREGA</Label>
                   <div className="relative group">
                     <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors"><MapPin className="w-4 h-4" /></div>
-                    <Input value={tempAddress} onChange={(e) => setTempAddress(e.target.value)} className="h-14 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all" required />
+                    <Input value={tempAddress} onChange={(e) => setTempAddress(e.target.value)} className="h-12 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-slate-950 transition-all" required />
                   </div>
                 </div>
 
@@ -415,7 +402,7 @@ export function HomeActions({
                   <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">WHATSAPP</Label>
                   <div className="relative group">
                     <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-focus-within:text-green-500 transition-colors"><Zap className="w-4 h-4" /></div>
-                    <Input value={tempPhone} onChange={(e) => setTempPhone(e.target.value)} className="h-14 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all" required />
+                    <Input value={tempPhone} onChange={(e) => setTempPhone(e.target.value)} className="h-12 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-slate-950 transition-all" required />
                   </div>
                 </div>
               </div>
@@ -438,7 +425,7 @@ export function HomeActions({
                         <span className={cn("text-6xl font-black italic tracking-tighter transition-colors", flashEffect === 'red' ? "text-red-600" : flashEffect === 'green' ? "text-green-600" : "text-slate-950")}>{requestHours}</span>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Horas</span>
                       </div>
-                      <div className="mt-1 text-xl font-black text-primary italic tracking-tighter animate-in fade-in duration-300">
+                      <div className="mt-1 text-2xl font-black text-primary italic tracking-tighter animate-in fade-in duration-300">
                         {formattedPrice}
                       </div>
                     </div>
@@ -454,7 +441,7 @@ export function HomeActions({
                     onClick={() => setPaymentMethod('cash')}
                     className={cn(
                       "flex flex-col items-center gap-3 p-5 rounded-[32px] border-2 transition-all duration-300",
-                      paymentMethod === 'cash' ? "border-slate-900 bg-slate-900 text-white shadow-xl scale-[1.02]" : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
+                      paymentMethod === 'cash' ? "border-slate-950 bg-slate-950 text-white shadow-xl scale-[1.02]" : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
                     )}
                   >
                     <Wallet className={cn("w-6 h-6", paymentMethod === 'cash' ? "text-primary" : "text-slate-300")} />
@@ -487,14 +474,14 @@ export function HomeActions({
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
                 
                 <div className="space-y-4 relative z-10">
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 text-center">
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Estimado</p>
                     <h4 className="text-5xl font-black italic tracking-tighter leading-none text-white transition-all duration-300">
                       {formattedPrice}
                     </h4>
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-center gap-4">
                     <div className="flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
                       <Wallet className="w-3.5 h-3.5 text-primary" />
                       <span className="text-[9px] font-black uppercase italic">
@@ -539,12 +526,6 @@ export function HomeActions({
                     "NEGOCIO CERRADO"
                   )}
                 </Button>
-                {!isAnyStoreOpen && (
-                  <div className="flex items-center justify-center gap-2 text-red-500 animate-pulse">
-                    <Moon className="w-4 h-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Sin vitrinas disponibles</span>
-                  </div>
-                )}
               </form>
               
               <p className="text-[8px] text-center text-slate-300 font-black uppercase tracking-[0.4em] pt-4">SISTEMA PROTEGIDO • VITRINIANDO AI KERNEL</p>
