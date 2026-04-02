@@ -46,9 +46,9 @@ export function CategoryCard({ category, onEdit }: CategoryCardProps) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
         </div>
 
-        {/* Contenido */}
+        {/* Contenido - Limpio de títulos según Mandamiento #1 */}
         <CardContent className="absolute inset-0 z-10 flex flex-col justify-end p-3 sm:p-6 text-white">
-          <div className="space-y-1 sm:space-y-2">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <div className="h-1 w-4 sm:w-6 bg-secondary rounded-full" />
@@ -61,14 +61,6 @@ export function CategoryCard({ category, onEdit }: CategoryCardProps) {
                     </div>
                 )}
             </div>
-            
-            <h3 className="text-xl sm:text-4xl font-black leading-[0.9] tracking-tighter uppercase italic break-words line-clamp-2">
-              {category.name}
-            </h3>
-            
-            <p className="hidden sm:block text-white/70 text-xs font-medium line-clamp-2 pr-4 break-words">
-              {category.description}
-            </p>
 
             <div className="flex items-center gap-2 pt-1">
               <div className="h-6 w-6 sm:h-10 sm:w-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center group-hover:bg-primary transition-colors">

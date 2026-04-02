@@ -187,32 +187,34 @@ export function StoreCard({ store }: { store: any }) {
 
         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/30 to-transparent z-10 pointer-events-none" />
 
-        <div className="absolute bottom-8 left-8 right-8 z-20 text-white space-y-4 pointer-events-none">
-          <h3 className="text-4xl sm:text-5xl font-black text-white italic leading-[0.8] tracking-tighter uppercase drop-shadow-2xl break-words">
-            {store.name}
-          </h3>
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5 opacity-90 max-w-[70%]">
-              <MapPin className="w-4 h-4 text-primary" />
-              <span className="text-[12px] font-black uppercase tracking-[0.1em] truncate">{store.address || 'Aguachica'}</span>
-            </div>
-            {isWasherRental && (
-              <div className="flex flex-col items-end gap-1">
-                <Badge className={cn("border-none text-white font-black text-[10px] px-4 py-2 uppercase tracking-tighter shadow-lg", (isOpen && hasHours) ? "bg-secondary" : "bg-slate-600")}>
-                  {(isOpen && hasHours) ? "ALQUILER ACTIVO" : "FUERA DE HORARIO"}
-                </Badge>
-              </div>
-            )}
+        {/* Info Inferior sobre la imagen (Limpiada de título) */}
+        <div className="absolute bottom-8 left-8 right-8 z-20 text-white flex items-center justify-between gap-4 pointer-events-none">
+          <div className="flex items-center gap-2.5 opacity-90 max-w-[70%]">
+            <MapPin className="w-4 h-4 text-primary" />
+            <span className="text-[12px] font-black uppercase tracking-[0.1em] truncate">{store.address || 'Aguachica'}</span>
           </div>
+          {isWasherRental && (
+            <div className="flex flex-col items-end gap-1">
+              <Badge className={cn("border-none text-white font-black text-[10px] px-4 py-2 uppercase tracking-tighter shadow-lg", (isOpen && hasHours) ? "bg-secondary" : "bg-slate-600")}>
+                {(isOpen && hasHours) ? "ALQUILER ACTIVO" : "FUERA DE HORARIO"}
+              </Badge>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Contenido de la Tarjeta - Título reubicado aquí para no estorbar la imagen */}
       <CardContent className="p-8 flex flex-col flex-1 space-y-6 bg-white">
-        {store.description && (
-          <p className="text-[13px] text-slate-500 leading-[1.5] font-medium italic pl-3 border-l-4 border-primary/10">
-            "{store.description}"
-          </p>
-        )}
+        <div className="space-y-2">
+          <h3 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none group-hover:text-primary transition-colors">
+            {store.name}
+          </h3>
+          {store.description && (
+            <p className="text-[13px] text-slate-500 leading-[1.5] font-medium italic pl-3 border-l-4 border-primary/10">
+              "{store.description}"
+            </p>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-3 relative">
           {QUADRANTS.map((quad) => {
