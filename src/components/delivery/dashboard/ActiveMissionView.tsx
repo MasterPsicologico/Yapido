@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { 
   X, Clock, Store as StoreIcon, MapPinned, MessageCircle, Phone, 
@@ -42,17 +42,41 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
     return () => clearInterval(timer);
   }, []);
 
-  const isWithDriver = mission.status === 'delivered_to_driver' || mission.status === 'shipped';
-  const isAtStore = mission.status === 'at_store' || mission.status === 'ready_for_pickup' || (mission.status === 'shipped' && !isWithDriver);
+  const isWithDriver = mission.status === 'delivered_to_driver' || mission.status === 'delivered';
+  
+  // Lógica de Tiempos Restaurada con fallbacks
+  const pickupTime = useMemo(() => {
+    const ts = mission.acceptedAt || mission.createdAt;
+    if (!ts) return '--:--';
+    try {
+      return format(ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000), 'HH:mm');
+    } catch (e) {
+      return '--:--';
+    }
+  }, [mission.acceptedAt, mission.createdAt]);
 
-  const pickupTime = mission.acceptedAt ? format(mission.acceptedAt.toDate(), 'HH:mm') : '--:--';
-  const etaTime = mission.acceptedAt ? format(new Date(mission.acceptedAt.toDate().getTime() + 30 * 60000), 'HH:mm') : '--:--';
+  const etaTime = useMemo(() => {
+    const ts = mission.acceptedAt || mission.createdAt;
+    if (!ts) return '--:--';
+    try {
+      const date = ts.toDate ? ts.toDate() : new Date(ts.seconds * 1000);
+      return format(new Date(date.getTime() + 30 * 60000), 'HH:mm');
+    } catch (e) {
+      return '--:--';
+    }
+  }, [mission.acceptedAt, mission.createdAt]);
 
   return (
     <div className="flex flex-col h-[calc(100dvh-64px)] animate-in slide-in-from-bottom duration-500 overflow-hidden relative z-[40]">
-      {/* HEADER DE MISIÓN */}
+      {/* HEADER DE MISIÓN - Mejorada visibilidad de Liberación */}
       <div className="h-16 bg-slate-900 flex items-center justify-between px-4 text-white shrink-0 shadow-xl z-20">
-        <Button variant="ghost" size="icon" onClick={() => setIsReleaseDialogOpen(true)} className="h-10 w-10 text-white/40 hover:text-red-400 rounded-full">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setIsReleaseDialogOpen(true)} 
+          className="h-10 w-10 text-white/60 hover:text-red-500 hover:bg-white/5 rounded-full transition-all"
+          title="Liberar Pedido"
+        >
           <RotateCcw className="w-5 h-5" />
         </Button>
         <div className="flex items-center gap-2">
@@ -77,13 +101,13 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             </div>
           </section>
 
-          {/* CRONOGRAMA DE OPERACIÓN */}
+          {/* CRONOGRAMA DE OPERACIÓN - Restaurado */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 flex flex-col items-center text-center gap-1">
+            <div className="bg-slate-50 p-5 rounded-[32px] border border-slate-100 flex flex-col items-center text-center gap-1 shadow-inner">
               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Hora Inicio</span>
               <span className="text-xl font-black text-slate-900 italic tracking-tighter">{pickupTime}</span>
             </div>
-            <div className="bg-primary/5 p-5 rounded-[32px] border border-primary/10 flex flex-col items-center text-center gap-1">
+            <div className="bg-primary/5 p-5 rounded-[32px] border border-primary/10 flex flex-col items-center text-center gap-1 shadow-inner">
               <span className="text-[8px] font-black text-primary uppercase tracking-widest">Hora Entrega (Est.)</span>
               <span className="text-xl font-black text-primary italic tracking-tighter">{etaTime}</span>
             </div>
@@ -153,17 +177,18 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             <button onClick={() => setIsReleaseDialogOpen(false)} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all"><X className="w-6 h-6" /></button>
           </div>
           <DialogHeader className="items-center text-center space-y-4 pt-4">
-            <RotateCcw className="w-14 h-14 text-primary" />
+            <RotateCcw className="w-14 h-14 text-primary animate-spin-slow" />
             <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-white leading-none">Liberar Pedido</DialogTitle>
             <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]">Protocolo de Deserción</DialogDescription>
           </DialogHeader>
           <div className="py-6 space-y-3">
+            <p className="text-xs text-slate-400 text-center px-4 mb-4">Selecciona el motivo de la liberación. El pedido volverá al pool de rutas disponibles.</p>
             {RELEASE_REASONS.map(r => (
-              <button key={r} onClick={() => setSelectedReason(r)} className={cn("w-full p-4 rounded-2xl text-left text-[10px] font-black uppercase tracking-widest border transition-all", selectedReason === r ? "bg-primary text-white border-primary shadow-xl" : "bg-white/5 text-slate-400 border-white/10")}>{r}</button>
+              <button key={r} onClick={() => setSelectedReason(r)} className={cn("w-full p-4 rounded-2xl text-left text-[10px] font-black uppercase tracking-widest border transition-all", selectedReason === r ? "bg-primary text-white border-primary shadow-xl" : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10")}>{r}</button>
             ))}
           </div>
           <DialogFooter className="flex flex-col gap-4">
-            <Button onClick={() => onRelease(selectedReason)} disabled={!selectedReason} className="w-full h-16 rounded-[24px] bg-primary font-black uppercase text-sm tracking-widest">CONFIRMAR LIBERACIÓN</Button>
+            <Button onClick={() => onRelease(selectedReason)} disabled={!selectedReason} className="w-full h-16 rounded-[24px] bg-primary font-black uppercase text-sm tracking-widest shadow-lg active:scale-95 transition-all">CONFIRMAR LIBERACIÓN</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
