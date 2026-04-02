@@ -81,51 +81,49 @@ export function DashboardHeader({
         <div className="absolute top-4 right-4 z-30 flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <input type="file" ref={activeInputRef} className="hidden" accept="image/*" onChange={(e) => onImageUpload?.(e, 'active')} />
-            <Button 
+            <button 
               onClick={() => activeInputRef.current?.click()}
               disabled={!!isUploading}
-              variant="outline"
               className={cn(
-                "rounded-full h-10 px-4 bg-primary/20 backdrop-blur-md border-primary/30 text-white hover:bg-primary/40 shadow-2xl transition-all active:scale-90 flex items-center gap-2",
+                "rounded-full h-10 px-4 bg-primary/20 backdrop-blur-md border border-primary/30 text-white hover:bg-primary/40 shadow-2xl transition-all active:scale-90 flex items-center gap-2 outline-none",
                 isOnline && "ring-2 ring-primary ring-offset-2 ring-offset-slate-900"
               )}
             >
               {isUploading === 'active' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-primary" />}
-              <span className="text-[8px] font-black uppercase tracking-widest">Fondo Activo</span>
-            </Button>
+              <span className="text-[8px] font-black uppercase tracking-widest">FONDO ACTIVO</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
             <input type="file" ref={inactiveInputRef} className="hidden" accept="image/*" onChange={(e) => onImageUpload?.(e, 'inactive')} />
-            <Button 
+            <button 
               onClick={() => inactiveInputRef.current?.click()}
               disabled={!!isUploading}
-              variant="outline"
               className={cn(
-                "rounded-full h-10 px-4 bg-slate-800/40 backdrop-blur-md border-white/10 text-white hover:bg-slate-800/60 shadow-2xl transition-all active:scale-90 flex items-center gap-2",
+                "rounded-full h-10 px-4 bg-slate-800/40 backdrop-blur-md border border-white/10 text-white hover:bg-slate-800/60 shadow-2xl transition-all active:scale-90 flex items-center gap-2 outline-none",
                 !isOnline && "ring-2 ring-white ring-offset-2 ring-offset-slate-900"
               )}
             >
               {isUploading === 'inactive' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Moon className="w-4 h-4 text-slate-400" />}
-              <span className="text-[8px] font-black uppercase tracking-widest">Fondo Descanso</span>
-            </Button>
+              <span className="text-[8px] font-black uppercase tracking-widest">FONDO DESCANSO</span>
+            </button>
           </div>
         </div>
       )}
 
       {/* CONTENIDO CENTRAL: IDENTIDAD INTERACTIVA */}
-      <div className="relative z-10 px-6 flex flex-col items-center text-center gap-8">
+      <div className="relative z-10 px-6 flex flex-col items-center text-center gap-8 pt-12">
         {/* BLOQUE DE NOMBRE Y AVATAR (CLICKABLE) */}
         <div 
           onClick={() => setIsInfoOpen(true)}
-          className="cursor-pointer group/info flex flex-col items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-700"
+          className="cursor-pointer group/info flex flex-col items-center gap-6 animate-in fade-in slide-in-from-top-4 duration-700"
         >
           <div className="space-y-2">
-            <h1 className="text-3xl sm:text-4xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] group-hover/info:scale-105 transition-transform">
+            <h1 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] group-hover/info:scale-105 transition-transform">
               {profile?.displayName || 'Repartidor'}
             </h1>
             <div className="flex justify-center">
-              <Badge className={cn("h-6 border-none font-black italic text-[10px] px-4 shadow-xl", level.bg, level.color)}>
+              <Badge className={cn("h-5 border-none font-black italic text-[9px] px-3 shadow-xl", level.bg, level.color)}>
                 {level.name}
               </Badge>
             </div>
@@ -136,14 +134,14 @@ export function DashboardHeader({
               "absolute inset-0 rounded-full animate-pulse blur-xl transition-colors duration-1000",
               isOnline ? "bg-primary/40" : "bg-white/20"
             )} />
-            <Avatar className="w-[90px] h-[90px] border-[5px] border-white/20 shadow-2xl relative z-10 group-hover/info:border-primary transition-all">
+            <Avatar className="w-[64px] h-[64px] border-[4px] border-white/20 shadow-2xl relative z-10 group-hover/info:border-primary transition-all">
               <AvatarImage src={profile?.photoURL} className="object-cover" />
-              <AvatarFallback className="bg-primary text-white font-black text-2xl uppercase italic">
+              <AvatarFallback className="bg-primary text-white font-black text-xl uppercase italic">
                 {profile?.displayName?.charAt(0) || 'R'}
               </AvatarFallback>
             </Avatar>
-            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-lg z-20">
-              <ShieldCheck className="w-5 h-5 text-green-500" />
+            <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-0.5 shadow-lg z-20">
+              <ShieldCheck className="w-4 h-4 text-green-500" />
             </div>
           </div>
         </div>
@@ -173,14 +171,12 @@ export function DashboardHeader({
           </DialogHeader>
           <div className="h-32 bg-slate-900 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-50" />
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <button 
               onClick={() => setIsInfoOpen(false)}
-              className="absolute top-4 right-4 text-white/40 hover:text-white hover:bg-white/10 rounded-full"
+              className="absolute top-4 right-4 text-white/40 hover:text-white hover:bg-white/10 rounded-full w-10 h-10 flex items-center justify-center transition-all"
             >
               <X className="w-6 h-6" />
-            </Button>
+            </button>
             <div className="absolute -bottom-12 left-8">
               <Avatar className="w-24 h-24 border-[6px] border-white shadow-2xl">
                 <AvatarImage src={profile?.photoURL} className="object-cover" />
