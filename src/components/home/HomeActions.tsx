@@ -22,7 +22,8 @@ import {
   Moon,
   Sun,
   Minus,
-  Info
+  Info,
+  User as UserIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -70,10 +71,12 @@ export function HomeActions({
   const [showAdminPricing, setShowAdminPricing] = useState(false);
 
   const [requestHours, setRequestHours] = useState(5);
+  const [tempName, setTempName] = useState("");
   const [tempAddress, setTempAddress] = useState("");
   const [tempPhone, setTempPhone] = useState("");
   const [isSendingRequest, setIsSendingRequest] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -111,6 +114,7 @@ export function HomeActions({
 
   useEffect(() => {
     if (openWasher && profile) {
+      setTempName(profile.displayName || "");
       setTempAddress(profile.address || "");
       setTempPhone(profile.phoneNumber || "");
       setRequestHours(minHours);
@@ -125,12 +129,16 @@ export function HomeActions({
   };
 
   const totalPrice = useMemo(() => {
+    // LÓGICA DE MULTIPLICACIÓN REAL SOLICITADA
     const hours = Number(requestHours);
     const min = Number(minHours);
     const baseRate = Number(valHoraBase);
     const extraRate = Number(valHoraExtra);
 
-    const baseTotal = min * baseRate;
+    // Los primeros 'minHours' se cobran a 'baseRate' cada una
+    const baseTotal = Math.min(hours, min) * baseRate;
+    
+    // Las horas que excedan 'minHours' se cobran a 'extraRate' cada una
     const extraHours = Math.max(0, hours - min);
     const extraTotal = extraHours * extraRate;
     
@@ -142,6 +150,21 @@ export function HomeActions({
     currency: 'COP', 
     maximumFractionDigits: 0 
   }).format(totalPrice);
+
+  const triggerFlash = (color: 'red' | 'green') => {
+    setFlashEffect(color);
+    setTimeout(() => setFlashEffect('none'), 600);
+  };
+
+  const handleAdjustHours = (delta: number) => {
+    const newHours = requestHours + delta;
+    if (newHours < minHours) {
+      triggerFlash('red');
+      return;
+    }
+    triggerFlash('green');
+    setRequestHours(newHours);
+  };
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -192,6 +215,7 @@ export function HomeActions({
     try {
       const userRef = doc(firestore, 'users', user.uid);
       const profileUpdates: any = {};
+      if (tempName !== profile?.displayName) profileUpdates.displayName = tempName;
       if (tempAddress !== profile?.address) profileUpdates.address = tempAddress;
       if (tempPhone !== profile?.phoneNumber) profileUpdates.phoneNumber = tempPhone;
       
@@ -201,7 +225,7 @@ export function HomeActions({
 
       const requestData = {
         customerId: user.uid,
-        customerName: profile?.displayName || user.displayName || 'Cliente',
+        customerName: tempName,
         customerPhone: tempPhone,
         customerAddress: tempAddress,
         type: 'WASHER_RENTAL_REQUEST',
@@ -332,8 +356,8 @@ export function HomeActions({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto no-scrollbar bg-white rounded-t-[40px] mt-2">
-            <div className="max-w-md mx-auto py-12 px-6 space-y-10">
+          <div className="flex-1 overflow-y-auto no-scrollbar bg-white rounded-t-[40px] mt-2 border-t-4 border-slate-950">
+            <div className="max-w-md mx-auto py-8 px-6 space-y-6">
               
               {showAdminPricing && isAdmin && (
                 <form onSubmit={handleUpdatePricing} className="bg-slate-900 p-8 rounded-[32px] text-white space-y-6 animate-in slide-in-from-top-4 duration-300 shadow-2xl">
@@ -341,146 +365,138 @@ export function HomeActions({
                     <Settings2 className="w-5 h-5 text-primary" />
                     <h4 className="text-sm font-black uppercase tracking-widest italic">Ajustes Maestro</h4>
                   </div>
-                  
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Min. Horas</Label><Input name="minHours" type="number" defaultValue={minHours} className="bg-white/5 border-none h-12 font-bold" /></div>
                     <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">VALOR HORA BASE</Label><Input name="basePrice" type="number" defaultValue={valHoraBase} className="bg-white/5 border-none h-12 font-bold" /></div>
                   </div>
-                  
                   <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">VALOR HORA EXTRA</Label><Input name="additionalHourPrice" type="number" defaultValue={valHoraExtra} className="bg-white/5 border-none h-12 font-bold" /></div>
-                  
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Apertura</Label><Input name="openTime" type="time" defaultValue={openTime} className="bg-white/5 border-none h-12 font-bold" /></div>
                     <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Cierre</Label><Input name="closeTime" type="time" defaultValue={closeTime} className="bg-white/5 border-none h-12 font-bold" /></div>
                   </div>
-
                   <Button type="submit" className="w-full h-14 bg-primary text-white font-black uppercase text-xs tracking-widest shadow-xl">ACTUALIZAR SISTEMA</Button>
                 </form>
               )}
 
-              <div className="space-y-10">
-                <div className="space-y-8">
-                  <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">DIRECCIÓN DE ENTREGA</Label>
-                    <div className="relative group">
-                      <div className="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-primary shadow-sm"><MapPin className="w-5 h-5" /></div>
-                      <Input value={tempAddress} onChange={(e) => setTempAddress(e.target.value)} className="h-20 rounded-[32px] border-none shadow-[0_10px_40px_rgba(0,0,0,0.03)] pl-20 font-black text-slate-800 text-lg bg-slate-50/30 focus:bg-white transition-all" required />
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">WHATSAPP</Label>
-                    <div className="relative group">
-                      <div className="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-500 shadow-sm"><Zap className="w-5 h-5" /></div>
-                      <Input value={tempPhone} onChange={(e) => setTempPhone(e.target.value)} className="h-20 rounded-[32px] border-none shadow-[0_10px_40px_rgba(0,0,0,0.03)] pl-20 font-black text-slate-800 text-lg bg-slate-50/30 focus:bg-white transition-all" required />
-                    </div>
-                  </div>
-
-                  <div className="space-y-6 pt-4 border-t border-slate-50">
-                    <div className="flex items-center justify-between px-2">
-                      <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">TIEMPO DE ALQUILER</Label>
-                      <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black px-3 py-1">MIN. {minHours} HORAS</Badge>
-                    </div>
-                    <div className="flex flex-col items-center gap-4 bg-slate-50 p-6 rounded-[40px] shadow-inner relative overflow-hidden">
-                      <div className="flex items-center gap-8 w-full justify-between px-4">
-                        <Button type="button" onClick={() => setRequestHours(Math.max(minHours, requestHours - 1))} variant="ghost" className="w-16 h-16 rounded-2xl bg-white shadow-md text-slate-400 hover:text-primary transition-all"><Minus className="w-8 h-8" /></Button>
-                        <div className="text-center flex flex-col">
-                          <div className="flex items-baseline gap-2 justify-center">
-                            <span className="text-6xl font-black italic text-slate-950 tracking-tighter">{requestHours}</span>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Horas</span>
-                          </div>
-                          {/* PRECIO REFLEJADO INSTANTÁNEAMENTE BAJO EL SELECTOR */}
-                          <div className="mt-2 text-xl font-black text-primary italic tracking-tighter animate-in fade-in zoom-in duration-300">
-                            {formattedPrice}
-                          </div>
-                        </div>
-                        <Button type="button" onClick={() => setRequestHours(requestHours + 1)} variant="ghost" className="w-16 h-16 rounded-2xl bg-white shadow-md text-slate-400 hover:text-primary transition-all"><Plus className="w-8 h-8" /></Button>
-                      </div>
-                    </div>
+              {/* SECCIÓN DE DATOS PERSONALES COMPACTA */}
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">NOMBRE COMPLETO</Label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors"><UserIcon className="w-4 h-4" /></div>
+                    <Input value={tempName} onChange={(e) => setTempName(e.target.value)} className="h-14 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all" required />
                   </div>
                 </div>
 
-                <div className="bg-slate-900 p-8 rounded-[40px] text-white space-y-8 shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
-                  
-                  <div className="space-y-6 relative z-10">
-                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cotización Estimada</span>
-                        <div className="flex items-center gap-2 text-primary mt-1">
-                          <Wallet className="w-4 h-4" />
-                          <span className="text-xs font-black uppercase italic">Pagas al recibir</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total a pagar</p>
-                      <h4 className="text-5xl font-black italic tracking-tighter leading-none text-white transition-all duration-300">
-                        {formattedPrice}
-                      </h4>
-                    </div>
-
-                    <div className="flex items-center gap-2 px-5 py-2 bg-primary/10 border border-primary/20 rounded-full w-fit">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                      <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] italic">Logística Pro Activa</span>
-                    </div>
-                  </div>
-
-                  {/* CONFIGURACIÓN Y DATOS DE INTERÉS */}
-                  <div className="pt-6 border-t border-white/5 space-y-4 relative z-10">
-                    <div className="flex items-center gap-2 text-white/40">
-                      <Info className="w-3.5 h-3.5" />
-                      <span className="text-[9px] font-black uppercase tracking-widest">Detalles del Servicio</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <p className="text-[8px] font-black text-slate-500 uppercase">Tarifa por Hora</p>
-                        <p className="text-xs font-bold text-slate-200">{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valHoraBase)}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[8px] font-black text-slate-500 uppercase">Transporte</p>
-                        <p className="text-xs font-bold text-green-400">INCLUIDO</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[8px] font-black text-slate-500 uppercase">Respuesta</p>
-                        <p className="text-xs font-bold text-slate-200">&lt; 15 MINUTOS</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[8px] font-black text-slate-500 uppercase">Garantía</p>
-                        <p className="text-xs font-bold text-slate-200">TOTAL PRO</p>
-                      </div>
-                    </div>
+                <div className="space-y-1">
+                  <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">DIRECCIÓN DE ENTREGA</Label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors"><MapPin className="w-4 h-4" /></div>
+                    <Input value={tempAddress} onChange={(e) => setTempAddress(e.target.value)} className="h-14 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all" required />
                   </div>
                 </div>
 
-                <form onSubmit={handleWasherRequest} className="space-y-6">
-                  <Button 
-                    type="submit" 
-                    disabled={isSendingRequest || !isBusinessOpen} 
-                    className={cn(
-                      "w-full h-24 rounded-[40px] text-white font-black text-2xl uppercase italic tracking-tighter shadow-2xl transition-all gap-4",
-                      isBusinessOpen ? "bg-primary active:scale-95 shadow-primary/20" : "bg-slate-300 cursor-not-allowed"
-                    )}
-                  >
-                    {isSendingRequest ? (
-                      <Loader2 className="animate-spin" />
-                    ) : isBusinessOpen ? (
-                      <>LANZAR SOLICITUD <CheckCircle2 className="w-8 h-8" /></>
-                    ) : (
-                      "NEGOCIO CERRADO"
-                    )}
-                  </Button>
-                  {!isBusinessOpen && (
-                    <div className="flex items-center justify-center gap-2 text-red-500 animate-pulse">
-                      <Moon className="w-4 h-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Negocio cerrado hasta las {openTime}</span>
-                    </div>
-                  )}
-                </form>
-                
-                <p className="text-[8px] text-center text-slate-300 font-black uppercase tracking-[0.4em] pt-4">SISTEMA PROTEGIDO • VITRINIANDO AI KERNEL</p>
+                <div className="space-y-1">
+                  <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">WHATSAPP</Label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-focus-within:text-green-500 transition-colors"><Zap className="w-4 h-4" /></div>
+                    <Input value={tempPhone} onChange={(e) => setTempPhone(e.target.value)} className="h-14 rounded-2xl border-none shadow-sm pl-16 font-black text-slate-800 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all" required />
+                  </div>
+                </div>
               </div>
+
+              {/* SELECTOR DE TIEMPO CON ANIMACIONES RED/GREEN */}
+              <div className="space-y-4 pt-4 border-t border-slate-50">
+                <div className="flex items-center justify-between px-2">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">TIEMPO DE ALQUILER</Label>
+                  <Badge className="bg-slate-900 text-white border-none text-[9px] font-black px-3 py-1">MIN. {minHours} HORAS</Badge>
+                </div>
+                
+                <div className={cn(
+                  "flex flex-col items-center gap-2 bg-slate-50 p-6 rounded-[40px] shadow-inner relative overflow-hidden border-2 transition-all duration-300",
+                  flashEffect === 'red' ? "border-red-500 animate-vibrate shadow-[0_0_20px_rgba(239,68,68,0.3)]" : 
+                  flashEffect === 'green' ? "border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]" : "border-transparent"
+                )}>
+                  <div className="flex items-center gap-8 w-full justify-between px-4">
+                    <Button type="button" onClick={() => handleAdjustHours(-1)} variant="ghost" className="w-14 h-14 rounded-2xl bg-white shadow-md text-slate-400 hover:text-red-500 transition-all active:scale-90"><Minus className="w-6 h-6" /></Button>
+                    <div className="text-center flex flex-col">
+                      <div className="flex items-baseline gap-2 justify-center">
+                        <span className={cn("text-6xl font-black italic tracking-tighter transition-colors", flashEffect === 'red' ? "text-red-600" : flashEffect === 'green' ? "text-green-600" : "text-slate-950")}>{requestHours}</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Horas</span>
+                      </div>
+                      <div className="mt-1 text-xl font-black text-primary italic tracking-tighter animate-in fade-in duration-300">
+                        {formattedPrice}
+                      </div>
+                    </div>
+                    <Button type="button" onClick={() => handleAdjustHours(1)} variant="ghost" className="w-14 h-14 rounded-2xl bg-white shadow-md text-slate-400 hover:text-green-500 transition-all active:scale-90"><Plus className="w-6 h-6" /></Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* TARJETA DE COTIZACIÓN PROFESIONAL */}
+              <div className="bg-slate-900 p-8 rounded-[40px] text-white space-y-6 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
+                
+                <div className="space-y-4 relative z-10">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Estimado</p>
+                    <h4 className="text-5xl font-black italic tracking-tighter leading-none text-white transition-all duration-300">
+                      {formattedPrice}
+                    </h4>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
+                      <Wallet className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-[9px] font-black uppercase italic">Pagas al recibir</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-1.5 bg-primary/20 border border-primary/30 rounded-full animate-pulse">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                      <span className="text-[9px] font-black text-primary uppercase italic">Logística Activa</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-white/5 space-y-4 relative z-10">
+                  <div className="flex items-center gap-2 text-white/40">
+                    <Info className="w-3.5 h-3.5" />
+                    <span className="text-[9px] font-black uppercase tracking-widest">Detalles del Servicio</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1"><p className="text-[8px] font-black text-slate-500 uppercase">Valor Hora</p><p className="text-xs font-bold text-slate-200">{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valHoraBase)}</p></div>
+                    <div className="space-y-1"><p className="text-[8px] font-black text-slate-500 uppercase">Transporte</p><p className="text-xs font-bold text-green-400 uppercase">Incluido</p></div>
+                    <div className="space-y-1"><p className="text-[8px] font-black text-slate-500 uppercase">Respuesta</p><p className="text-xs font-bold text-slate-200 uppercase">&lt; 15 Minutos</p></div>
+                    <div className="space-y-1"><p className="text-[8px] font-black text-slate-500 uppercase">Garantía</p><p className="text-xs font-bold text-slate-200 uppercase">Total Pro</p></div>
+                  </div>
+                </div>
+              </div>
+
+              <form onSubmit={handleWasherRequest} className="space-y-6">
+                <Button 
+                  type="submit" 
+                  disabled={isSendingRequest || !isBusinessOpen} 
+                  className={cn(
+                    "w-full h-20 rounded-[32px] text-white font-black text-2xl uppercase italic tracking-tighter shadow-2xl transition-all gap-4",
+                    isBusinessOpen ? "bg-primary active:scale-95 shadow-primary/20" : "bg-slate-300 cursor-not-allowed"
+                  )}
+                >
+                  {isSendingRequest ? (
+                    <Loader2 className="animate-spin" />
+                  ) : isBusinessOpen ? (
+                    <>CONFIRMAR SOLICITUD <CheckCircle2 className="w-8 h-8" /></>
+                  ) : (
+                    "NEGOCIO CERRADO"
+                  )}
+                </Button>
+                {!isBusinessOpen && (
+                  <div className="flex items-center justify-center gap-2 text-red-500 animate-pulse">
+                    <Moon className="w-4 h-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Abre a las {openTime}</span>
+                  </div>
+                )}
+              </form>
+              
+              <p className="text-[8px] text-center text-slate-300 font-black uppercase tracking-[0.4em] pt-4">SISTEMA PROTEGIDO • VITRINIANDO AI KERNEL</p>
             </div>
           </div>
         </DialogContent>
