@@ -2,16 +2,17 @@
 "use client";
 
 import Link from 'next/link';
-import { Home as HomeIcon, UserCircle, Info, ClipboardList, Store, Truck } from 'lucide-react';
+import { Home as HomeIcon, UserCircle, Info, ClipboardList, Store, Truck, ShieldCheck } from 'lucide-react';
 import { SheetClose } from "@/components/ui/sheet";
 
 interface SidebarNavigationProps {
   user: any;
   canAccessManage: boolean;
   isRepartidor: boolean;
+  isAdmin?: boolean;
 }
 
-export function SidebarNavigation({ user, canAccessManage, isRepartidor }: SidebarNavigationProps) {
+export function SidebarNavigation({ user, canAccessManage, isRepartidor, isAdmin }: SidebarNavigationProps) {
   const links = [
     { href: "/", label: "Inicio", icon: HomeIcon, color: "bg-blue-50 text-blue-500" },
     { href: "/profile", label: "Mi Perfil", icon: UserCircle, color: "bg-indigo-50 text-indigo-500" },
@@ -21,6 +22,7 @@ export function SidebarNavigation({ user, canAccessManage, isRepartidor }: Sideb
   const adminLinks = [
     { href: "/admin/orders", label: "Gestionar Pedidos", icon: ClipboardList, color: "bg-orange-50 text-orange-500" },
     ...(canAccessManage ? [{ href: "/admin/manage", label: "Inventario y Tienda", icon: Store, color: "bg-violet-50 text-violet-500" }] : []),
+    ...(isAdmin ? [{ href: "/admin/fleet", label: "Verificación de Flota", icon: ShieldCheck, color: "bg-green-50 text-green-600" }] : []),
   ];
 
   return (
