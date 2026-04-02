@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Waves, X, GitBranch, Sparkles } from 'lucide-react';
+import { Waves, X, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface WasherSolicitationHeaderProps {
@@ -13,7 +13,7 @@ interface WasherSolicitationHeaderProps {
 /**
  * Función Aislada: Cabecera de Solicitud Élite
  * Mandamiento #1: Diseño dinámico, interactivo y con tipografía dorada de alta gama.
- * Aislamiento total en archivo único para evitar alteraciones por error.
+ * REVISIÓN: El icono izquierdo (Waves) es ahora el disparador del administrador.
  */
 export function WasherSolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: WasherSolicitationHeaderProps) {
   return (
@@ -25,14 +25,28 @@ export function WasherSolicitationHeader({ isAdmin, onOpenAdminSettings, onClose
       {/* CAPA 2: EFECTO SHIMMER (Ráfaga de Luz) */}
       <div className="absolute -inset-[100%] bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 animate-shimmer pointer-events-none opacity-30" />
 
-      {/* SECCIÓN IZQUIERDA: ICONO DE IDENTIDAD */}
+      {/* SECCIÓN IZQUIERDA: NUEVO MANDO DE ADMINISTRADOR (ONDAS) */}
       <div className="relative z-10 shrink-0">
-        <div className="w-12 h-12 rounded-[20px] bg-gradient-to-br from-yellow-400/20 to-yellow-700/20 flex items-center justify-center border border-yellow-500/30 shadow-[0_0_25px_rgba(234,179,8,0.15)] group hover:scale-110 transition-transform duration-500">
-          <Waves className="w-6 h-6 text-yellow-500 animate-pulse" />
-        </div>
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isAdmin) onOpenAdminSettings();
+          }}
+          className={cn(
+            "w-14 h-14 rounded-[22px] flex items-center justify-center border transition-all duration-500 shadow-[0_0_30px_rgba(234,179,8,0.1)] group",
+            isAdmin 
+              ? "bg-gradient-to-br from-yellow-400 to-yellow-700 border-yellow-500/50 text-white hover:scale-110 active:scale-95 shadow-yellow-500/20" 
+              : "bg-white/5 border-white/10 text-white/20 cursor-default"
+          )}
+        >
+          <Waves className={cn("w-7 h-7", isAdmin ? "text-white animate-pulse" : "text-white/20")} />
+          {isAdmin && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-[#050505] animate-bounce" />
+          )}
+        </button>
       </div>
 
-      {/* SECCIÓN CENTRAL: TIPOGRAFÍA DORADA MAESTRA (Ocupa todo el espacio) */}
+      {/* SECCIÓN CENTRAL: TIPOGRAFÍA DORADA MAESTRA */}
       <div className="flex-1 px-4 text-center relative z-10 flex flex-col justify-center items-center">
         <h3 className={cn(
           "font-black italic uppercase tracking-tighter leading-[0.85] text-lg sm:text-2xl",
@@ -52,26 +66,13 @@ export function WasherSolicitationHeader({ isAdmin, onOpenAdminSettings, onClose
         </div>
       </div>
       
-      {/* SECCIÓN DERECHA: MANDOS DE CONTROL (Estilo Cristal) */}
+      {/* SECCIÓN DERECHA: SOLO BOTÓN DE CIERRE (EVITA DESBORDE) */}
       <div className="flex items-center gap-3 relative z-10">
-        {isAdmin && (
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenAdminSettings();
-            }} 
-            className="w-10 h-10 rounded-full bg-white/5 backdrop-blur-xl flex items-center justify-center text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500 hover:text-black transition-all active:scale-90 shadow-xl"
-            title="Ajustes de Administrador"
-          >
-            <GitBranch className="w-5 h-5" />
-          </button>
-        )}
-        
         <button 
           onClick={onClose} 
-          className="w-10 h-10 rounded-full bg-white/5 backdrop-blur-xl flex items-center justify-center text-white/30 border border-white/10 hover:text-white hover:bg-red-500/20 hover:border-red-500/40 transition-all active:scale-90"
+          className="w-12 h-12 rounded-full bg-white/5 backdrop-blur-xl flex items-center justify-center text-white/30 border border-white/10 hover:text-white hover:bg-red-500/20 hover:border-red-500/40 transition-all active:scale-90"
         >
-          <X className="w-5 h-5" />
+          <X className="w-6 h-6" />
         </button>
       </div>
 
