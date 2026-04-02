@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Waves, Settings, Users, Activity, ShieldCheck, ClipboardList } from 'lucide-react';
+import { Waves, Settings, Users, Activity, ShieldCheck, ClipboardList, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -12,23 +12,37 @@ interface WasherHeaderProps {
   setActiveTab: (tab: 'stats' | 'drivers' | 'orders') => void;
   driverCount?: number;
   orderCount?: number;
+  onOpenSettings: () => void;
 }
 
-export function WasherHeader({ storeName, activeTab, setActiveTab, driverCount = 0, orderCount = 0 }: WasherHeaderProps) {
+export function WasherHeader({ storeName, activeTab, setActiveTab, driverCount = 0, orderCount = 0, onOpenSettings }: WasherHeaderProps) {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-700">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-6">
-          <div className="w-16 h-16 bg-slate-950 rounded-[24px] flex items-center justify-center text-white shadow-2xl relative border border-white/10 shrink-0">
+          <div 
+            onClick={onOpenSettings}
+            className="w-16 h-16 bg-slate-950 rounded-[24px] flex items-center justify-center text-white shadow-2xl relative border border-white/10 shrink-0 cursor-pointer hover:scale-105 transition-transform"
+          >
             <Waves className="w-8 h-8 text-primary animate-pulse" />
             <div className="absolute -top-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center border-4 border-[#f8fafc]">
               <Settings className="w-3 h-3 text-white" />
             </div>
           </div>
           <div className="space-y-1.5">
-            <h1 className="text-3xl font-black tracking-tight leading-none text-slate-900 uppercase">
-              {storeName || 'Cargando...'}
-            </h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-3xl font-black tracking-tight leading-none text-slate-900 uppercase">
+                {storeName || 'Cargando...'}
+              </h1>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onOpenSettings}
+                className="h-8 w-8 rounded-full bg-slate-100 text-slate-400 hover:text-primary transition-colors"
+              >
+                <Settings2 className="w-4 h-4" />
+              </Button>
+            </div>
             <div className="flex flex-wrap items-center gap-3">
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none">Panel de Control de Flota</p>
               <div className="h-1 w-1 rounded-full bg-slate-200" />

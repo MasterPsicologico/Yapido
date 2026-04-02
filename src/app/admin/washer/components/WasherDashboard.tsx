@@ -2,15 +2,22 @@
 "use client";
 
 import { Card } from '@/components/ui/card';
-import { TrendingUp, ShieldCheck, Zap } from 'lucide-react';
+import { TrendingUp, ShieldCheck, Zap, Clock, AlertCircle, ArrowRight } from 'lucide-react';
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { checkIsBusinessOpen } from '@/components/home/HomeActions';
 
 interface WasherDashboardProps {
   stats: any;
+  store?: any;
+  onOpenSettings: () => void;
 }
 
-export function WasherDashboard({ stats }: WasherDashboardProps) {
+export function WasherDashboard({ stats, store, onOpenSettings }: WasherDashboardProps) {
   const currencyFormatter = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+  const hasHours = store?.openTime && store?.closeTime;
+  const isOpen = checkIsBusinessOpen(store?.openTime, store?.closeTime);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -44,6 +51,41 @@ export function WasherDashboard({ stats }: WasherDashboardProps) {
           </div>
         </Card>
       </div>
+
+      {/* CONTROL DE HORARIO MAESTRO */}
+      <Card className="border-none rounded-[48px] bg-white p-10 shadow-xl ring-1 ring-black/[0.03] overflow-hidden relative group">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+          <div className="flex items-center gap-6">
+            <div className={cn(
+              "w-20 h-20 rounded-[32px] flex items-center justify-center shadow-inner transition-all duration-500",
+              !hasHours ? "bg-red-50 text-red-500" : isOpen ? "bg-green-50 text-green-500" : "bg-slate-50 text-slate-400"
+            )}>
+              {!hasHours ? <AlertCircle className="w-10 h-10 animate-pulse" /> : <Clock className="w-10 h-10" />}
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Gestión Horaria</h3>
+              <div className="flex items-center gap-3">
+                <span className={cn(
+                  "text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full",
+                  !hasHours ? "bg-red-500 text-white" : isOpen ? "bg-green-500 text-white" : "bg-slate-800 text-white"
+                )}>
+                  {!hasHours ? "HORARIO NO DEFINIDO" : isOpen ? "VITRINA ABIERTA" : "VITRINA CERRADA"}
+                </span>
+                <div className="h-1 w-1 rounded-full bg-slate-200" />
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {hasHours ? `${store.openTime} — ${store.closeTime}` : "Establece tu jornada laboral"}
+                </p>
+              </div>
+            </div>
+          </div>
+          <Button 
+            onClick={onOpenSettings}
+            className="rounded-full h-16 px-10 bg-slate-900 text-white font-black uppercase text-xs tracking-widest gap-3 shadow-2xl active:scale-95 transition-all"
+          >
+            {hasHours ? "EDITAR HORARIO" : "CONFIGURAR AHORA"} <ArrowRight className="w-5 h-5" />
+          </Button>
+        </div>
+      </Card>
 
       {/* GRÁFICO DE RENDIMIENTO */}
       <Card className="border-none rounded-[48px] shadow-2xl bg-white p-10 ring-1 ring-black/[0.03]">
