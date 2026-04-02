@@ -23,7 +23,10 @@ import {
   Sun,
   Minus,
   Info,
-  User as UserIcon
+  User as UserIcon,
+  CreditCard,
+  Globe,
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -74,6 +77,7 @@ export function HomeActions({
   const [tempName, setTempName] = useState("");
   const [tempAddress, setTempAddress] = useState("");
   const [tempPhone, setTempPhone] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'digital'>('cash');
   const [isSendingRequest, setIsSendingRequest] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
@@ -129,19 +133,13 @@ export function HomeActions({
   };
 
   const totalPrice = useMemo(() => {
-    // LÓGICA DE MULTIPLICACIÓN REAL SOLICITADA
     const hours = Number(requestHours);
     const min = Number(minHours);
     const baseRate = Number(valHoraBase);
     const extraRate = Number(valHoraExtra);
-
-    // Los primeros 'minHours' se cobran a 'baseRate' cada una
     const baseTotal = Math.min(hours, min) * baseRate;
-    
-    // Las horas que excedan 'minHours' se cobran a 'extraRate' cada una
     const extraHours = Math.max(0, hours - min);
     const extraTotal = extraHours * extraRate;
-    
     return baseTotal + extraTotal;
   }, [requestHours, minHours, valHoraBase, valHoraExtra]);
 
@@ -232,6 +230,7 @@ export function HomeActions({
         status: 'pending',
         requestHours,
         totalPrice,
+        paymentMethod,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         participants: [user.uid, 'ADMIN_WASHER_POOL'],
@@ -378,7 +377,6 @@ export function HomeActions({
                 </form>
               )}
 
-              {/* SECCIÓN DE DATOS PERSONALES COMPACTA */}
               <div className="space-y-3">
                 <div className="space-y-1">
                   <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">NOMBRE COMPLETO</Label>
@@ -405,7 +403,6 @@ export function HomeActions({
                 </div>
               </div>
 
-              {/* SELECTOR DE TIEMPO CON ANIMACIONES RED/GREEN */}
               <div className="space-y-4 pt-4 border-t border-slate-50">
                 <div className="flex items-center justify-between px-2">
                   <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">TIEMPO DE ALQUILER</Label>
@@ -418,7 +415,7 @@ export function HomeActions({
                   flashEffect === 'green' ? "border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]" : "border-transparent"
                 )}>
                   <div className="flex items-center gap-8 w-full justify-between px-4">
-                    <Button type="button" onClick={() => handleAdjustHours(-1)} variant="ghost" className="w-14 h-14 rounded-2xl bg-white shadow-md text-slate-400 hover:text-red-500 transition-all active:scale-90"><Minus className="w-6 h-6" /></Button>
+                    <button type="button" onClick={() => handleAdjustHours(-1)} className="w-14 h-14 rounded-2xl bg-white shadow-md text-slate-400 hover:text-red-500 transition-all active:scale-90 flex items-center justify-center"><Minus className="w-6 h-6" /></button>
                     <div className="text-center flex flex-col">
                       <div className="flex items-baseline gap-2 justify-center">
                         <span className={cn("text-6xl font-black italic tracking-tighter transition-colors", flashEffect === 'red' ? "text-red-600" : flashEffect === 'green' ? "text-green-600" : "text-slate-950")}>{requestHours}</span>
@@ -428,12 +425,49 @@ export function HomeActions({
                         {formattedPrice}
                       </div>
                     </div>
-                    <Button type="button" onClick={() => handleAdjustHours(1)} variant="ghost" className="w-14 h-14 rounded-2xl bg-white shadow-md text-slate-400 hover:text-green-500 transition-all active:scale-90"><Plus className="w-6 h-6" /></Button>
+                    <button type="button" onClick={() => handleAdjustHours(1)} className="w-14 h-14 rounded-2xl bg-white shadow-md text-slate-400 hover:text-green-500 transition-all active:scale-90 flex items-center justify-center"><Plus className="w-6 h-6" /></button>
                   </div>
                 </div>
               </div>
 
-              {/* TARJETA DE COTIZACIÓN PROFESIONAL */}
+              {/* SELECTOR DE MÉTODO DE PAGO */}
+              <div className="space-y-4 pt-4">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-[0.2em]">MÉTODO DE PAGO</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button 
+                    onClick={() => setPaymentMethod('cash')}
+                    className={cn(
+                      "flex flex-col items-center gap-3 p-5 rounded-[32px] border-2 transition-all duration-300",
+                      paymentMethod === 'cash' ? "border-slate-900 bg-slate-900 text-white shadow-xl scale-[1.02]" : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
+                    )}
+                  >
+                    <Wallet className={cn("w-6 h-6", paymentMethod === 'cash' ? "text-primary" : "text-slate-300")} />
+                    <span className="text-[9px] font-black uppercase tracking-widest italic">CONTRA ENTREGA</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setPaymentMethod('digital')}
+                    className={cn(
+                      "flex flex-col items-center gap-3 p-5 rounded-[32px] border-2 transition-all duration-300",
+                      paymentMethod === 'digital' ? "border-primary bg-primary/10 text-primary shadow-xl scale-[1.02]" : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
+                    )}
+                  >
+                    <Globe className={cn("w-6 h-6", paymentMethod === 'digital' ? "text-primary" : "text-slate-300")} />
+                    <span className="text-[9px] font-black uppercase tracking-widest italic">PAGO ONLINE</span>
+                  </button>
+                </div>
+
+                {/* BOTÓN DE ACCIÓN PARA PAGO ONLINE */}
+                {paymentMethod === 'digital' && (
+                  <Button 
+                    variant="outline"
+                    className="w-full h-14 rounded-[24px] border-primary/20 bg-primary/5 text-primary font-black uppercase text-[10px] tracking-[0.2em] gap-3 animate-in slide-in-from-top-2"
+                  >
+                    <CreditCard className="w-4 h-4" /> INICIAR TRANSFERENCIA <ArrowRight className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+
               <div className="bg-slate-900 p-8 rounded-[40px] text-white space-y-6 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
                 
@@ -448,11 +482,13 @@ export function HomeActions({
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 px-4 py-1.5 bg-white/5 border border-white/10 rounded-full">
                       <Wallet className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-[9px] font-black uppercase italic">Pagas al recibir</span>
+                      <span className="text-[9px] font-black uppercase italic">
+                        {paymentMethod === 'cash' ? 'Pagas al recibir' : 'Liquidación Digital'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 px-4 py-1.5 bg-primary/20 border border-primary/30 rounded-full animate-pulse">
                       <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      <span className="text-[9px] font-black text-primary uppercase italic">Logística Activa</span>
+                      <span className="text-[9px] font-black text-primary uppercase italic">Logística Pro Activa</span>
                     </div>
                   </div>
                 </div>
