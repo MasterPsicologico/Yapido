@@ -40,7 +40,7 @@ export function WasherRentalCard({
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
       </div>
 
-      {/* Activador Central - POSICIÓN MAESTRA: mt-16 para máxima visibilidad superior */}
+      {/* Activador Central - POSICIÓN MAESTRA */}
       <div className="relative z-10 flex flex-col items-center gap-8 mt-16 animate-in fade-in zoom-in duration-700">
         <div className="relative group/cta">
           {isAnyStoreOpen && (
@@ -69,7 +69,18 @@ export function WasherRentalCard({
         <LayoutGrid className="w-6 h-6 group-hover/dir:scale-110 transition-transform" />
       </Link>
 
-      {/* Controles de Administrador */}
+      {/* Botón de Gestión / Registro de Tienda (Top Right) */}
+      <button 
+        onClick={(e) => { 
+          e.stopPropagation(); 
+          onOpenStoreCreation(); 
+        }}
+        className="absolute top-4 right-4 z-[40] w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/60 hover:text-green-500 transition-all shadow-2xl active:scale-90"
+      >
+        <StoreIcon className="w-5 h-5" />
+      </button>
+
+      {/* Controles de Administrador (Top Left) */}
       {isAdmin && (
         <div className="absolute top-4 left-4 z-30">
           <input type="file" className="hidden" accept="image/*" onChange={onBannerUpload} />

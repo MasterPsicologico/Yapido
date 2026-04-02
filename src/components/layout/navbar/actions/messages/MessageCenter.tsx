@@ -10,6 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
@@ -69,8 +70,6 @@ export function MessageCenter() {
   const activeChats = useMemo(() => {
     if (!rawOrders) return [];
     
-    // LOGICA DE SORPRESA: Ordenamiento por tiempo de llegada (updatedAt o createdAt)
-    // El primer chat será siempre el más reciente
     return rawOrders
       .filter(o => o.status !== 'delivered' && o.status !== 'cancelled')
       .sort((a, b) => {
@@ -100,36 +99,38 @@ export function MessageCenter() {
       <DropdownMenuTrigger asChild>
         <MessageTrigger count={unreadCount} hasUnread={unreadSessionOrders.length > 0} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 p-2 rounded-[28px] shadow-2xl border-none bg-white mt-2" align="center">
-        <DropdownMenuLabel className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-black italic uppercase tracking-tighter text-slate-900">Chats Activos</span>
-            <Badge className="bg-secondary text-white rounded-full text-[10px] font-black border-none">{unreadCount}</Badge>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-slate-50" />
-        <div className="max-h-[350px] overflow-y-auto p-1 space-y-2 no-scrollbar">
-          {activeChats.length > 0 ? activeChats.map((chat) => (
-            <MessageItem 
-              key={chat.id} 
-              chatId={chat.id} 
-              name={chat.name} 
-              timestamp={chat.timestamp}
-              isUnread={unreadSessionOrders.some(([id]) => id === chat.id) || !seenIds.includes(chat.id)} 
-              onClick={() => handleItemClick(chat.id)}
-            />
-          )) : (
-            <div className="py-10 text-center">
-              <MessageSquareText className="w-12 h-12 bg-slate-50 rounded-full p-3 mx-auto mb-3 text-slate-200" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Bandeja vacía</p>
+      <DropdownMenuPortal>
+        <DropdownMenuContent className="w-80 p-2 rounded-[28px] shadow-2xl border-none bg-white mt-2 z-[500]" align="center">
+          <DropdownMenuLabel className="px-4 py-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-black italic uppercase tracking-tighter text-slate-900">Chats Activos</span>
+              <Badge className="bg-secondary text-white rounded-full text-[10px] font-black border-none">{unreadCount}</Badge>
             </div>
-          )}
-        </div>
-        <DropdownMenuSeparator className="bg-slate-50" />
-        <DropdownMenuItem asChild className="rounded-xl justify-center h-10 focus:bg-secondary/5">
-          <Link href="/admin/orders" className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Ir a todos los chats</Link>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator className="bg-slate-50" />
+          <div className="max-h-[350px] overflow-y-auto p-1 space-y-2 no-scrollbar">
+            {activeChats.length > 0 ? activeChats.map((chat) => (
+              <MessageItem 
+                key={chat.id} 
+                chatId={chat.id} 
+                name={chat.name} 
+                timestamp={chat.timestamp}
+                isUnread={unreadSessionOrders.some(([id]) => id === chat.id) || !seenIds.includes(chat.id)} 
+                onClick={() => handleItemClick(chat.id)}
+              />
+            )) : (
+              <div className="py-10 text-center">
+                <MessageSquareText className="w-12 h-12 bg-slate-50 rounded-full p-3 mx-auto mb-3 text-slate-200" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Bandeja vacía</p>
+              </div>
+            )}
+          </div>
+          <DropdownMenuSeparator className="bg-slate-50" />
+          <DropdownMenuItem asChild className="rounded-xl justify-center h-10 focus:bg-secondary/5">
+            <Link href="/admin/orders" className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Ir a todos los chats</Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenuPortal>
     </DropdownMenu>
   );
 }

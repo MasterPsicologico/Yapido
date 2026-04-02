@@ -2,10 +2,18 @@
 "use client";
 
 import Link from 'next/link';
-import { UserCircle, Store, LogOut, LayoutGrid } from 'lucide-react';
+import { UserCircle, LogOut, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger,
+  DropdownMenuPortal
+} from "@/components/ui/dropdown-menu";
 
 interface NavbarUserMenuProps {
   user: any;
@@ -25,35 +33,36 @@ export function NavbarUserMenu({ user, profile, canAccessManage, onLogout }: Nav
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64 p-2 rounded-[28px] shadow-2xl mt-2 border-none" align="end">
-        <DropdownMenuLabel className="font-normal p-4">
-          <p className="text-sm font-black italic text-slate-900">{profile?.displayName || user.displayName}</p>
-          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate mt-0.5">{user.email}</p>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-slate-50" />
-        <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/5">
-          <Link href="/profile" className="flex items-center">
-            <UserCircle className="mr-3 h-4 w-4 text-primary" />
-            <span className="font-bold text-slate-700">Mi Perfil</span>
-          </Link>
-        </DropdownMenuItem>
-        
-        {/* LINK SOLICITADO: Ver mi negocio */}
-        {canAccessManage && (
-          <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/5 bg-primary/5">
-            <Link href="/admin/manage" className="flex items-center">
-              <LayoutGrid className="mr-3 h-4 w-4 text-primary" />
-              <span className="font-black italic uppercase tracking-tighter text-primary text-[11px]">Gestionar Mi Negocio</span>
+      <DropdownMenuPortal>
+        <DropdownMenuContent className="w-64 p-2 rounded-[28px] shadow-2xl mt-2 border-none z-[500]" align="end">
+          <DropdownMenuLabel className="font-normal p-4">
+            <p className="text-sm font-black italic text-slate-900">{profile?.displayName || user.displayName}</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest truncate mt-0.5">{user.email}</p>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator className="bg-slate-50" />
+          <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/5">
+            <Link href="/profile" className="flex items-center">
+              <UserCircle className="mr-3 h-4 w-4 text-primary" />
+              <span className="font-bold text-slate-700">Mi Perfil</span>
             </Link>
           </DropdownMenuItem>
-        )}
+          
+          {canAccessManage && (
+            <DropdownMenuItem asChild className="rounded-xl h-11 cursor-pointer focus:bg-primary/5 bg-primary/5">
+              <Link href="/admin/manage" className="flex items-center">
+                <LayoutGrid className="mr-3 h-4 w-4 text-primary" />
+                <span className="font-black italic uppercase tracking-tighter text-primary text-[11px]">Gestionar Mi Negocio</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
 
-        <DropdownMenuSeparator className="bg-slate-50" />
-        <DropdownMenuItem onClick={onLogout} className="text-red-500 rounded-xl h-11 cursor-pointer hover:bg-red-50 hover:text-red-600">
-          <LogOut className="mr-3 h-4 w-4" />
-          <span className="font-bold">Cerrar Sesión</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
+          <DropdownMenuSeparator className="bg-slate-50" />
+          <DropdownMenuItem onClick={onLogout} className="text-red-500 rounded-xl h-11 cursor-pointer hover:bg-red-50 hover:text-red-600">
+            <LogOut className="mr-3 h-4 w-4" />
+            <span className="font-bold">Cerrar Sesión</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenuPortal>
     </DropdownMenu>
   );
 }
