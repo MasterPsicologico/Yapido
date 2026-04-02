@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Star, Camera, ImageIcon } from 'lucide-react';
+import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Star, Camera, ImageIcon, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
@@ -217,49 +217,39 @@ export default function DeliveryDashboardPage() {
         <Navbar />
         <main className="flex-1 container mx-auto px-4 py-12 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
           
-          {/* CABECERA INTERACTIVA: TARJETA DE PORTADA */}
+          {/* CABECERA INTERACTIVA: TARJETA DE PORTADA LIMPIA CON CRUZ VERDE */}
           <div 
             onClick={() => isAdmin && fileInputRef.current?.click()}
             className={cn(
               "relative w-full aspect-[16/10] mb-12 rounded-[48px] overflow-hidden shadow-2xl transition-all duration-500 group/welcome",
-              isAdmin && "cursor-pointer active:scale-[0.98] hover:shadow-primary/20"
+              isAdmin && "cursor-pointer active:scale-[0.98] hover:shadow-primary/20 bg-slate-100"
             )}
           >
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
             
-            {/* Imagen de Fondo */}
+            {/* Imagen de Fondo Permanente */}
             <div className="absolute inset-0 z-0">
               {welcomeConfig?.backgroundImage ? (
-                <Image src={welcomeConfig.backgroundImage} alt="Bienvenida" fill className="object-cover" priority />
+                <Image src={welcomeConfig.backgroundImage} alt="Portada Personalizada" fill className="object-cover" priority />
               ) : (
-                <div className="absolute inset-0 bg-slate-100" />
+                <div className="absolute inset-0 bg-slate-200" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+              <div className="absolute inset-0 bg-black/5" />
             </div>
 
-            {/* Contenido Flotante */}
-            <div className="relative z-10 h-full flex flex-col items-center justify-center p-8 text-center space-y-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-primary/20 rounded-[36px] animate-ping [animation-duration:3000ms]" />
-                <div className="relative w-20 h-20 bg-white/10 backdrop-blur-xl rounded-[36px] flex items-center justify-center text-white border border-white/20 shadow-2xl">
-                  {isUploading ? <Loader2 className="w-8 h-8 animate-spin" /> : <Truck className="w-10 h-10" />}
-                </div>
+            {/* Cruz Verde Central para Añadir Imágenes */}
+            <div className="relative z-10 h-full flex items-center justify-center">
+              <div className={cn(
+                "w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500",
+                "bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl",
+                isUploading ? "animate-pulse" : "group-hover/welcome:scale-110 group-hover/welcome:bg-white/20"
+              )}>
+                {isUploading ? (
+                  <Loader2 className="w-10 h-10 animate-spin text-green-500" />
+                ) : (
+                  <Plus className="w-12 h-12 text-green-500 stroke-[4px]" />
+                )}
               </div>
-              
-              <div className="space-y-3">
-                <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-white drop-shadow-2xl leading-[0.9]">
-                  Bienvenido a <br /> <span className="text-primary">Delivery</span>
-                </h1>
-                <p className="text-white/60 font-bold text-[10px] uppercase tracking-[0.3em] max-w-[200px] mx-auto">
-                  Centro de Operaciones de Flota
-                </p>
-              </div>
-
-              {isAdmin && !welcomeConfig?.backgroundImage && (
-                <div className="absolute top-6 right-6 opacity-40 group-hover/welcome:opacity-100 transition-opacity">
-                  <Camera className="w-5 h-5 text-white" />
-                </div>
-              )}
             </div>
           </div>
           
