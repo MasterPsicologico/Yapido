@@ -59,9 +59,9 @@ interface HomeActionsProps {
   onStoreSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
-// UTILIDAD PARA VERIFICAR HORARIO (SOPORTE NOCTURNO)
+// UTILIDAD PARA VERIFICAR HORARIO (SOPORTE NOCTURNO Y VALIDACIÓN DE DATOS)
 export const checkIsBusinessOpen = (openTime?: string, closeTime?: string) => {
-  if (!openTime || !closeTime) return true;
+  if (!openTime || !closeTime) return false; // Si falta configuración, está cerrado
   const now = new Date();
   const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
   
@@ -126,7 +126,6 @@ export function HomeActions({
 
   const minHours = Number(pricingConfig?.minHours || 5);
   const valHoraBase = Number(pricingConfig?.basePrice || 3000);
-  const valHoraExtra = Number(pricingConfig?.additionalHourPrice || 3000);
 
   useEffect(() => {
     audioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2568-preview.mp3');
@@ -150,6 +149,7 @@ export function HomeActions({
   };
 
   const totalPrice = useMemo(() => {
+    // MULTIPLICACIÓN REAL SOLICITADA: horas * valor_base
     return requestHours * valHoraBase;
   }, [requestHours, valHoraBase]);
 
@@ -384,7 +384,7 @@ export function HomeActions({
                     <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">Min. Horas</Label><Input name="minHours" type="number" defaultValue={minHours} className="bg-white/5 border-none h-12 font-bold" /></div>
                     <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">VALOR HORA BASE</Label><Input name="basePrice" type="number" defaultValue={valHoraBase} className="bg-white/5 border-none h-12 font-bold" /></div>
                   </div>
-                  <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">VALOR HORA EXTRA</Label><Input name="additionalHourPrice" type="number" defaultValue={valHoraExtra} className="bg-white/5 border-none h-12 font-bold" /></div>
+                  <div className="space-y-1.5"><Label className="text-[9px] uppercase tracking-widest text-slate-400">VALOR HORA EXTRA</Label><Input name="additionalHourPrice" type="number" defaultValue={valHoraBase} className="bg-white/5 border-none h-12 font-bold" /></div>
                   <Button type="submit" className="w-full h-14 bg-primary text-white font-black uppercase text-xs tracking-widest shadow-xl">ACTUALIZAR SISTEMA</Button>
                 </form>
               )}
@@ -555,7 +555,10 @@ export function HomeActions({
             <DialogDescription>Ingresa los datos para registrar tu negocio en la plataforma.</DialogDescription>
           </DialogHeader>
           <form onSubmit={onStoreSubmit} className="space-y-6 pt-6">
-            <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nombre de la tienda</Label><Input name="name" placeholder="Ej: Mi Negocio Local" className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-base" required /></div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nombre de la tienda</Label>
+              <Input name="name" placeholder="Ej: Mi Negocio Local" className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-base" required />
+            </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Categoría</Label>
               <select name="mainCategoryId" className="w-full h-14 rounded-2xl bg-slate-50 border-none px-5 font-bold text-base text-slate-900 appearance-none cursor-pointer" required>
@@ -563,7 +566,22 @@ export function HomeActions({
                 {mainCategories?.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
               </select>
             </div>
-            <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Dirección</Label><Input name="address" placeholder="Ubicación física" className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-base" required /></div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Dirección Física</Label>
+              <Input name="address" placeholder="Ubicación física" className="h-14 rounded-2xl bg-slate-50 border-none font-bold text-base" required />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Apertura</Label>
+                <Input name="openTime" type="time" defaultValue="08:00" className="h-14 rounded-2xl bg-slate-50 border-none font-bold" required />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Cierre</Label>
+                <Input name="closeTime" type="time" defaultValue="20:00" className="h-14 rounded-2xl bg-slate-50 border-none font-bold" required />
+              </div>
+            </div>
+
             <Button type="submit" disabled={isRegistering} className="w-full h-16 rounded-[24px] bg-slate-900 text-white font-black uppercase tracking-widest gap-3 shadow-xl">
               {isRegistering ? <Loader2 className="animate-spin" /> : "Guardar y crear tienda"}
             </Button>

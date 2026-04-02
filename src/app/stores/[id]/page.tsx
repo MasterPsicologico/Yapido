@@ -15,7 +15,10 @@ import {
   Loader2, 
   Store as StoreIcon,
   Eye,
-  EyeOff
+  EyeOff,
+  Clock,
+  MapPin,
+  Phone
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -152,10 +155,22 @@ export default function StorePage() {
     e.preventDefault();
     if (!canEdit || !storeRef) return;
     const formData = new FormData(e.currentTarget);
-    const data = { name: formData.get('name'), description: formData.get('description'), address: formData.get('address'), phoneNumber: formData.get('phoneNumber'), updatedAt: serverTimestamp() };
+    const data = { 
+      name: formData.get('name'), 
+      description: formData.get('description'), 
+      address: formData.get('address'), 
+      phoneNumber: formData.get('phoneNumber'),
+      openTime: formData.get('openTime'),
+      closeTime: formData.get('closeTime'),
+      updatedAt: serverTimestamp() 
+    };
     setIsUpdatingInfo(true);
-    try { updateDocumentNonBlocking(storeRef, data); toast({ title: "Info Actualizada" }); setInfoDialogOpen(false); }
-    catch (e) { toast({ title: "Error", variant: "destructive" }); }
+    try { 
+      updateDocumentNonBlocking(storeRef, data); 
+      toast({ title: "Info Actualizada" }); 
+      setInfoDialogOpen(false); 
+    }
+    catch (e) { toast({ title: "Error al guardar cambios", variant: "destructive" }); }
     finally { setIsUpdatingInfo(false); }
   };
 
@@ -337,7 +352,6 @@ export default function StorePage() {
         </div>
       </main>
 
-      {/* DIÁLOGO BLINDADO PARA CHAT INTERNO EN VITRINA */}
       <Dialog open={!!internalChatOrder} onOpenChange={v => !v && setInternalChatOrder(null)}>
         <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col">
           <DialogHeader className="sr-only">
@@ -353,17 +367,84 @@ export default function StorePage() {
       </Dialog>
 
       <Dialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle className="text-2xl font-black italic">Info de Vitrina</DialogTitle></DialogHeader>
-          <form onSubmit={handleUpdateInfo} className="space-y-4 pt-4">
-            <div className="space-y-2"><Label>Nombre</Label><Input name="name" defaultValue={store?.name} required /></div>
-            <div className="space-y-2"><Label>Descripción</Label><Textarea name="description" defaultValue={store?.description} required /></div>
-            <div className="space-y-2"><Label>Teléfono</Label><Input name="phoneNumber" defaultValue={store?.phoneNumber} /></div>
-            <div className="space-y-2"><Label>Dirección</Label><Input name="address" defaultValue={store?.address} /></div>
-            <Button type="submit" className="w-full h-12 font-bold" disabled={isUpdatingInfo}>{isUpdatingInfo ? <Loader2 className="animate-spin" /> : "Guardar"}</Button>
+        <DialogContent className="max-h-[90vh] overflow-y-auto no-scrollbar rounded-[40px] p-8">
+          <DialogHeader className="items-center text-center">
+            <div className="w-16 h-16 bg-slate-900 rounded-[24px] flex items-center justify-center text-primary shadow-xl mb-4">
+              <Settings2 className="w-8 h-8" />
+            </div>
+            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Ajustes de Vitrina</DialogTitle>
+            <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2">Configuración Pública y Horaria</DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleUpdateInfo} className="space-y-6 pt-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nombre Comercial</Label>
+              <div className="relative">
+                <StoreIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                <Input name="name" defaultValue={store?.name} className="h-14 rounded-2xl bg-slate-50 border-none font-bold pl-12" required />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Descripción Corta</Label>
+              <Textarea name="description" defaultValue={store?.description} className="rounded-2xl bg-slate-50 border-none font-medium min-h-[100px]" required />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">WhatsApp de Contacto</Label>
+              <div className="relative">
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                <Input name="phoneNumber" defaultValue={store?.phoneNumber} className="h-14 rounded-2xl bg-slate-50 border-none font-bold pl-12" required />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Dirección Base</Label>
+              <div className="relative">
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                <Input name="address" defaultValue={store?.address} className="h-14 rounded-2xl bg-slate-50 border-none font-bold pl-12" required />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Hora Apertura</Label>
+                <div className="relative">
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                  <Input name="openTime" type="time" defaultValue={store?.openTime || '08:00'} className="h-14 rounded-2xl bg-slate-50 border-none font-bold pl-12" required />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Hora Cierre</Label>
+                <div className="relative">
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                  <Input name="closeTime" type="time" defaultValue={store?.closeTime || '20:00'} className="h-14 rounded-2xl bg-slate-50 border-none font-bold pl-12" required />
+                </div>
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full h-16 rounded-[24px] bg-primary text-white font-black uppercase tracking-widest gap-3 shadow-xl active:scale-95 transition-all" disabled={isUpdatingInfo}>
+              {isUpdatingInfo ? <Loader2 className="animate-spin" /> : "GUARDAR CAMBIOS"}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function Settings2({ className }: { className?: string }) {
+  return (
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2.5" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={className}
+    >
+      <path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>
+    </svg>
   );
 }

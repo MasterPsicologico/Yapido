@@ -147,14 +147,26 @@ function AuthenticatedHome() {
     const mainCategoryId = fd.get('mainCategoryId') as string;
     const name = fd.get('name') as string;
     const address = fd.get('address') as string;
+    const openTime = fd.get('openTime') as string;
+    const closeTime = fd.get('closeTime') as string;
     
     setIsRegistering(true);
     try {
       const ref = doc(collection(firestore, 'stores'));
-      setDocumentNonBlocking(ref, { id: ref.id, ownerId: user.uid, mainCategoryId, name, address, status: 'active', createdAt: serverTimestamp(), imageUrl: `https://picsum.photos/seed/${ref.id}/800/600` }, { merge: true });
+      setDocumentNonBlocking(ref, { 
+        id: ref.id, 
+        ownerId: user.uid, 
+        mainCategoryId, 
+        name, 
+        address, 
+        openTime,
+        closeTime,
+        status: 'active', 
+        createdAt: serverTimestamp(), 
+        imageUrl: `https://picsum.photos/seed/${ref.id}/800/600` 
+      }, { merge: true });
       
       const userRef = doc(firestore, 'users', user.uid);
-      // CORRECCIÓN: No degradar el rol de administrador si ya lo tiene
       if (profile?.role === 'cliente') {
         updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
       }

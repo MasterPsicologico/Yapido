@@ -19,7 +19,8 @@ import {
   ChevronRight,
   ArrowLeft,
   Plus,
-  ShieldCheck
+  ShieldCheck,
+  AlertCircle
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -104,6 +105,7 @@ export default function ManagePage() {
           {stores && stores.length > 0 ? stores.map((store) => {
             const isWasher = store.type === 'washer_rental' || store.mainCategoryId === 'category-washer';
             const adminPath = isWasher ? `/admin/washer/${store.id}` : `/stores/${store.id}`;
+            const hasHours = !!(store.openTime && store.closeTime);
 
             return (
               <Card key={store.id} className="group border-none rounded-[48px] shadow-sm bg-white overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 ring-1 ring-black/[0.03]">
@@ -135,22 +137,42 @@ export default function ManagePage() {
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
                           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Estado</p>
-                          <span className="text-xs font-black text-green-500 uppercase italic">OPERATIVO</span>
+                          {hasHours ? (
+                            <span className="text-xs font-black text-green-500 uppercase italic">OPERATIVO</span>
+                          ) : (
+                            <div className="flex items-center gap-1.5 text-red-500 animate-pulse">
+                              <AlertCircle className="w-3 h-3" />
+                              <span className="text-[10px] font-black uppercase tracking-tight">PENDIENTE HORA</span>
+                            </div>
+                          )}
                         </div>
                         <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Ventas</p>
-                          <span className="text-xs font-black text-slate-900">VER DETALLES</span>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Horario</p>
+                          <span className="text-xs font-black text-slate-900 uppercase">
+                            {hasHours ? `${store.openTime} - ${store.closeTime}` : 'SIN DEFINIR'}
+                          </span>
                         </div>
                         <div className="hidden sm:block bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Actualizado</p>
-                          <span className="text-xs font-black text-slate-900">HOY</span>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Visibilidad</p>
+                          <span className={cn("text-[9px] font-black uppercase italic", hasHours ? "text-primary" : "text-red-400")}>
+                            {hasHours ? "PÚBLICO ACTIVO" : "OCULTO AL PÚBLICO"}
+                          </span>
                         </div>
                       </div>
+
+                      {!hasHours && (
+                        <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                          <p className="text-[10px] font-bold text-red-600 uppercase tracking-tight leading-relaxed">
+                            Acción requerida: Tu negocio no aparecerá en el mapa ni permitirá pedidos hasta que configures el horario de apertura.
+                          </p>
+                        </div>
+                      )}
 
                       <div className="pt-2">
                         <Button asChild className="w-full h-16 rounded-[24px] bg-slate-900 text-white font-black uppercase text-sm tracking-widest gap-3 shadow-xl hover:bg-primary transition-all">
                           <Link href={adminPath}>
-                            {isWasher ? "GESTIONAR FLOTA DE LAVADORAS" : "ADMINISTRAR PRODUCTOS Y VITRINA"} 
+                            {isWasher ? "GESTIONAR FLOTA" : "ADMINISTRAR VITRINA"} 
                             <ChevronRight className="w-5 h-5" />
                           </Link>
                         </Button>
