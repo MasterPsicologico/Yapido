@@ -193,35 +193,35 @@ export default function DeliveryDashboardPage() {
         <Navbar />
         <main className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
           
-          {/* SECCIÓN DE PORTADA PARA CARGAR IMAGEN */}
+          {/* SECCIÓN DE PORTADA OPTIMIZADA PARA VISIBILIDAD TOTAL */}
           <div 
             onClick={() => isAdmin && fileInputRef.current?.click()}
             className={cn(
-              "relative w-full aspect-[16/7] mb-2 overflow-hidden shadow-xl transition-all duration-500 group/welcome",
+              "relative w-full aspect-[16/10] mb-2 overflow-hidden shadow-xl transition-all duration-500 group/welcome",
               isAdmin && "cursor-pointer active:scale-[0.99] bg-slate-100"
             )}
           >
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
             <div className="absolute inset-0 z-0">
               {welcomeConfig?.backgroundImage ? (
-                <Image src={welcomeConfig.backgroundImage} alt="Portada Personalizada" fill className="object-cover" priority />
+                <Image src={welcomeConfig.backgroundImage} alt="Portada Personalizada" fill className="object-cover object-top" priority />
               ) : (
                 <div className="absolute inset-0 bg-slate-200" />
               )}
-              <div className="absolute inset-0 bg-black/10" />
+              <div className="absolute inset-0 bg-black/5" />
             </div>
             {isAdmin && (
               <div className="relative z-10 h-full flex items-center justify-center">
-                <div className="w-20 h-20 rounded-full flex items-center justify-center bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl group-hover/welcome:scale-110 transition-all">
-                  {isUploading ? <Loader2 className="w-10 h-10 animate-spin text-green-500" /> : <Camera className="w-10 h-10 text-green-500" />}
+                <div className="w-16 h-16 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/30 shadow-2xl group-hover/welcome:scale-110 transition-all">
+                  {isUploading ? <Loader2 className="w-8 h-8 animate-spin text-green-500" /> : <Camera className="w-8 h-8 text-green-500" />}
                 </div>
               </div>
             )}
           </div>
           
-          <div className="container mx-auto px-4 max-w-2xl -mt-16 relative z-20">
+          <div className="container mx-auto px-4 max-w-2xl -mt-6 relative z-20">
             <Card className="border-none shadow-2xl rounded-[48px] bg-white overflow-hidden ring-1 ring-black/[0.03]">
-              <CardContent className="p-12 space-y-10">
+              <CardContent className="p-10 space-y-10">
                 <div className="space-y-8">
                   <div className="flex items-start gap-6">
                     <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 shrink-0 shadow-inner">
