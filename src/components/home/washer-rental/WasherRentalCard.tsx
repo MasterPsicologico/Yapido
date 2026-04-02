@@ -60,13 +60,13 @@ export function WasherRentalCard({
         </div>
       </div>
 
-      {/* Botón Circular de Directorio - REDISEÑADO: Más pequeño, más a la derecha y efecto Neón */}
+      {/* Botón Circular de Directorio - REDISEÑADO: Aún más pequeño y al extremo */}
       <Link 
         href="/categories/category-washer"
         onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-6 right-6 z-[40] w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] hover:bg-primary hover:border-primary hover:shadow-[0_0_30px_rgba(59,130,246,0.8)] transition-all duration-500 group/dir active:scale-90"
+        className="absolute bottom-4 right-4 z-[40] w-9 h-9 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] hover:bg-primary hover:border-primary hover:shadow-[0_0_30px_rgba(59,130,246,0.8)] transition-all duration-500 group/dir active:scale-90"
       >
-        <LayoutGrid className="w-6 h-6 group-hover/dir:scale-110 transition-transform" />
+        <LayoutLayoutGrid className="w-5 h-5 group-hover/dir:scale-110 transition-transform" />
         <span className="absolute -top-10 right-0 bg-black/60 text-white text-[8px] font-black uppercase px-2 py-1 rounded opacity-0 group-hover/dir:opacity-100 transition-opacity whitespace-nowrap tracking-widest">Ver Catálogo</span>
       </Link>
 
