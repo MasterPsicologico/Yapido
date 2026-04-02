@@ -15,88 +15,88 @@ interface WasherTimeSelectorProps {
 }
 
 /**
- * Función Aislada: Selector de Tiempo de Alta Precisión
- * Mandamiento #1: Aislamiento total y visualización íntegra sin recortes.
+ * Función Aislada: Selector de Tiempo Compacto de Alta Precisión
+ * Mandamiento #1: Aislamiento total y visualización optimizada al 50%.
  */
 export function WasherTimeSelector({
   requestHours, onAdjustHours, minHours, formattedPrice, flashEffect
 }: WasherTimeSelectorProps) {
   return (
-    <div className="space-y-8 pt-8 border-t border-slate-100">
-      {/* HEADER DINÁMICO: PREGUNTA PRIORITARIA EN ROJO Y GRANDE */}
-      <div className="flex flex-col items-center gap-3 text-center px-4">
+    <div className="space-y-6 pt-6 border-t border-slate-100">
+      {/* HEADER DINÁMICO: PREGUNTA PRIORITARIA COMPACTADA */}
+      <div className="flex flex-col items-center gap-2 text-center px-4">
         <div className="flex items-center gap-2">
-          <Clock className="w-7 h-7 text-red-600 animate-pulse" />
-          <Label className="text-2xl sm:text-3xl font-black uppercase text-red-600 tracking-tighter leading-none italic drop-shadow-sm">
+          <Clock className="w-5 h-5 text-red-600 animate-pulse" />
+          <Label className="text-xl sm:text-2xl font-black uppercase text-red-600 tracking-tighter leading-none italic drop-shadow-sm">
             ¿Cuántas horas la necesitarás?
           </Label>
         </div>
-        <Badge className="bg-slate-950 text-yellow-500 border border-yellow-500/30 text-[10px] font-black px-5 py-2 rounded-full italic tracking-[0.2em] shadow-xl w-fit">
+        <Badge className="bg-slate-950 text-yellow-500 border border-yellow-500/30 text-[8px] font-black px-4 py-1.5 rounded-full italic tracking-[0.2em] shadow-lg w-fit">
           MÍNIMO {minHours} HORAS
         </Badge>
       </div>
       
-      {/* CONTENEDOR MAESTRO DE AJUSTE */}
+      {/* CONTENEDOR MAESTRO DE AJUSTE REDUCIDO AL 50% */}
       <div className={cn(
-        "relative flex flex-col items-center justify-center p-10 rounded-[56px] shadow-2xl border-4 transition-all duration-500 overflow-hidden",
-        "bg-gradient-to-br from-white via-yellow-50/20 to-white",
-        flashEffect === 'red' ? "border-red-500 animate-vibrate shadow-red-100" : flashEffect === 'green' ? "border-green-500 shadow-green-100" : "border-slate-50"
+        "relative flex flex-col items-center justify-center p-6 rounded-[40px] shadow-xl border-2 transition-all duration-500 overflow-hidden",
+        "bg-gradient-to-br from-white via-yellow-50/10 to-white",
+        flashEffect === 'red' ? "border-red-500 animate-vibrate shadow-red-50" : flashEffect === 'green' ? "border-green-500 shadow-green-50" : "border-slate-50"
       )}>
         {/* Efecto de fondo dinámico (Aura Oro) */}
-        <div className="absolute top-0 right-0 w-40 h-40 bg-yellow-400/5 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="absolute top-0 right-0 w-24 h-24 bg-yellow-400/5 rounded-full blur-2xl -mr-12 -mt-12" />
         
-        <div className="flex items-center gap-6 sm:gap-12 w-full justify-between relative z-10 px-2">
-          {/* BOTÓN DISMINUIR: RELIEVE METÁLICO */}
+        <div className="flex items-center gap-4 sm:gap-8 w-full justify-between relative z-10 px-1">
+          {/* BOTÓN DISMINUIR: COMPACTO */}
           <button 
             type="button" 
             onClick={() => onAdjustHours(-1)} 
-            className="w-16 h-16 rounded-[24px] bg-white shadow-xl text-slate-400 hover:text-red-500 hover:scale-110 transition-all active:translate-y-1 flex items-center justify-center border border-slate-100 group shrink-0"
+            className="w-12 h-12 rounded-[18px] bg-white shadow-lg text-slate-400 hover:text-red-500 hover:scale-105 transition-all active:translate-y-0.5 flex items-center justify-center border border-slate-100 group shrink-0"
           >
-            <Minus className="w-8 h-8 group-active:scale-75 transition-transform" />
+            <Minus className="w-6 h-6 group-active:scale-75 transition-transform" />
           </button>
 
-          {/* DISPLAY CENTRAL: NÚMERO MAGNIFICADO SIN RECORTES */}
+          {/* DISPLAY CENTRAL: NÚMERO REDUCIDO SIN RECORTES */}
           <div className="text-center flex flex-col items-center">
-            <div className="flex items-center justify-center py-4 min-h-[140px]">
+            <div className="flex items-center justify-center py-2 min-h-[100px]">
               <span className={cn(
-                "text-[6.5rem] sm:text-[8rem] font-black italic tracking-tighter transition-all duration-500 text-transparent bg-clip-text drop-shadow-sm leading-[1.2] py-6 px-2 block",
+                "text-6xl sm:text-7xl font-black italic tracking-tighter transition-all duration-500 text-transparent bg-clip-text drop-shadow-sm leading-[1.1] py-4 px-1 block",
                 flashEffect === 'red' 
-                  ? "bg-red-600 scale-110" 
+                  ? "bg-red-600 scale-105" 
                   : flashEffect === 'green' 
-                    ? "bg-green-600 scale-110" 
+                    ? "bg-green-600 scale-105" 
                     : "bg-gradient-to-b from-[#fef08a] via-[#eab308] to-[#a16207]"
               )}>
                 {requestHours}
               </span>
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest italic ml-1 self-end mb-14">HRS</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic ml-0.5 self-end mb-8">HRS</span>
             </div>
 
-            {/* CÁPSULA DE PRECIO DINÁMICO: UBICACIÓN ESTRATÉGICA */}
+            {/* CÁPSULA DE PRECIO DINÁMICO: COMPACTA */}
             <div className={cn(
-              "flex items-center gap-2 px-6 py-2.5 rounded-full bg-slate-900 shadow-[0_10px_30px_rgba(0,0,0,0.2)] animate-in slide-in-from-top-4 duration-500 transition-colors",
+              "flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-slate-900 shadow-md animate-in slide-in-from-top-2 duration-500 transition-colors",
               flashEffect === 'green' && "bg-green-600",
               flashEffect === 'red' && "bg-red-600"
             )}>
-              <Wallet className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-black text-white italic tracking-tighter">
+              <Wallet className="w-3.5 h-3.5 text-yellow-400" />
+              <span className="text-xs font-black text-white italic tracking-tighter">
                 {formattedPrice}
               </span>
             </div>
           </div>
 
-          {/* BOTÓN AUMENTAR: RELIEVE ORO */}
+          {/* BOTÓN AUMENTAR: COMPACTO */}
           <button 
             type="button" 
             onClick={() => onAdjustHours(1)} 
-            className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-xl text-slate-900 hover:scale-110 transition-all active:translate-y-1 flex items-center justify-center border-b-4 border-yellow-700 group shrink-0"
+            className="w-12 h-12 rounded-[18px] bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-lg text-slate-900 hover:scale-105 transition-all active:translate-y-0.5 flex items-center justify-center border-b-2 border-yellow-700 group shrink-0"
           >
-            <Plus className="w-8 h-8 group-active:scale-125 transition-transform" />
+            <Plus className="w-6 h-6 group-active:scale-110 transition-transform" />
           </button>
         </div>
 
         {/* Decoración de Chispas */}
-        <div className="absolute bottom-4 opacity-30 pointer-events-none">
-          <Sparkles className="w-5 h-5 text-yellow-500 animate-pulse" />
+        <div className="absolute bottom-2 opacity-20 pointer-events-none">
+          <Sparkles className="w-4 h-4 text-yellow-500 animate-pulse" />
         </div>
       </div>
     </div>
