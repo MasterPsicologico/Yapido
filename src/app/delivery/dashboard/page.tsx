@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, orderBy } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, orderBy, limit } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -40,18 +40,15 @@ export default function DeliveryDashboardPage() {
   const [isUploadingDashboard, setIsUploadingDashboard] = useState<'active' | 'inactive' | null>(null);
   const [adminForceWelcome, setAdminForceWelcome] = useState(false);
 
-  // REDIRECCIÓN QUIRÚRGICA: Si es repartidor aprobado pero no ha visto su bienvenida
   useEffect(() => {
     if (!loadingProfile && profile?.role === 'repartidor' && profile?.hasSeenApproval === false && !isAdmin) {
       router.replace('/delivery/approved');
     }
   }, [profile, loadingProfile, router, isAdmin]);
 
-  // FETCH: Configuración de portada del Delivery (BIENVENIDA)
   const welcomeConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_welcome'), [firestore]);
   const { data: welcomeConfig } = useDoc(welcomeConfigRef);
 
-  // FETCH: Configuración de fondo del Dashboard (OPERATIVO)
   const dashboardConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_dashboard'), [firestore]);
   const { data: dashboardConfig } = useDoc(dashboardConfigRef);
 
@@ -64,26 +61,28 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
 
+  // QUERY OPTIMIZADA: Eliminamos orderBy para evitar errores de índice y asegurar visibilidad inmediata
   const availableOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
     
-    // CASO 1: Repartidor vinculado a tienda (Prioridad total)
+    const ordersRef = collection(firestore, 'orders');
+    
+    // CASO 1: Repartidor vinculado a tienda
     if (profile?.linkedStoreId) {
       return query(
-        collection(firestore, 'orders'), 
+        ordersRef, 
         where('storeId', '==', profile.linkedStoreId),
         where('isLogisticsPublic', '==', true),
-        where('status', 'in', ['pending', 'preparing', 'ready_for_pickup']),
-        orderBy('createdAt', 'desc')
+        where('status', 'in', ['pending', 'preparing', 'ready_for_pickup'])
       );
     }
 
     // CASO 2: Repartidor Freelance (Pool público)
     return query(
-      collection(firestore, 'orders'), 
+      ordersRef, 
       where('isLogisticsPublic', '==', true), 
-      where('status', 'in', ['pending', 'preparing', 'ready_for_pickup']), // ¡Añadido pending!
-      orderBy('createdAt', 'desc')
+      where('status', 'in', ['pending', 'preparing', 'ready_for_pickup']),
+      limit(20)
     );
   }, [firestore, isConfirmedRepartidor, isOnline, profile?.linkedStoreId]);
 
@@ -101,13 +100,24 @@ export default function DeliveryDashboardPage() {
     return query(
       collection(firestore, 'orders'), 
       where('participants', 'array-contains', user.uid), 
-      where('status', '==', 'delivered')
+      where('status', '==', 'delivered'),
+      limit(50)
     );
   }, [firestore, user?.uid, isConfirmedRepartidor]);
 
   const { data: rawAvailable } = useCollection(availableOrdersQuery);
   const { data: rawMy } = useCollection(myDeliveriesQuery);
   const { data: history } = useCollection(historyQuery);
+
+  // Fallback visual para asegurar que si hay datos, se ordenen localmente
+  const availableOrders = useMemo(() => {
+    if (!rawAvailable) return [];
+    return [...rawAvailable].sort((a, b) => {
+      const timeA = a.createdAt?.toMillis?.() || 0;
+      const timeB = b.createdAt?.toMillis?.() || 0;
+      return timeB - timeA;
+    });
+  }, [rawAvailable]);
 
   const stats = useMemo(() => ({
     rating: profile?.avgRating || 5.0,
@@ -178,7 +188,6 @@ export default function DeliveryDashboardPage() {
     }
   };
 
-  // HANDLER: Actualizar portada de Bienvenida
   const handleWelcomeImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -198,7 +207,6 @@ export default function DeliveryDashboardPage() {
     }
   };
 
-  // HANDLER: Actualizar fondo del Dashboard (Dual)
   const handleDashboardImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'active' | 'inactive') => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -230,7 +238,6 @@ export default function DeliveryDashboardPage() {
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
         <Navbar />
         <main className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-          
           <div 
             onClick={() => isAdmin && fileInputRef.current?.click()}
             className={cn(
@@ -255,7 +262,6 @@ export default function DeliveryDashboardPage() {
               </div>
             )}
           </div>
-          
           <div className="container mx-auto px-4 max-w-2xl -mt-6 relative z-20">
             <Card className="border-none shadow-2xl rounded-[48px] bg-white overflow-hidden ring-1 ring-black/[0.03]">
               <CardContent className="p-10 space-y-10">
@@ -327,19 +333,17 @@ export default function DeliveryDashboardPage() {
               </Button>
             )}
 
-            {/* RUTAS LIBRES: POSICIÓN DE HONOR (PRIMERO) */}
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mb-12 space-y-8">
               <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3">
                 <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white">RUTAS LIBRES</TabsTrigger>
                 <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white">ACTIVAS ({rawMy?.filter(o => o.deliveryDriverId === user?.uid).length || 0})</TabsTrigger>
                 <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white">INGRESOS</TabsTrigger>
               </TabsList>
-              <TabsContent value="available"><RoutesTab isOnline={isOnline} orders={rawAvailable || []} onAccept={handleAcceptOrder} onGoOnline={() => setIsOnline(true)} /></TabsContent>
+              <TabsContent value="available"><RoutesTab isOnline={isOnline} orders={availableOrders} onAccept={handleAcceptOrder} onGoOnline={() => setIsOnline(true)} /></TabsContent>
               <TabsContent value="my-deliveries"><div className="text-center py-20 text-slate-300 font-black uppercase italic tracking-widest">Sin entregas activas</div></TabsContent>
               <TabsContent value="earnings"><EarningsTab balance={profile?.balance || 0} /></TabsContent>
             </Tabs>
 
-            {/* RETO DE LA SEMANA: POSICIÓN SECUNDARIA (DEBAJO) */}
             <WeeklyChallenge orders={history} />
           </main>
         </div>

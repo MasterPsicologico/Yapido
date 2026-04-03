@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, ArrowLeft, Loader2, Minus, Plus, CheckCircle2, AlertCircle, UserCircle } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
+import Link from 'next/navigation';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -57,8 +57,8 @@ export default function ProductPage() {
         }
       }
       
-      // Construcción quirúrgica del array de participantes para evitar errores de permisos
       const ownerId = storeData?.ownerId || product.storeOwnerId;
+      // IMPORTANTE: Incluir al cliente y al dueño en participantes para acceso inicial
       const participants = [user.uid, ownerId].filter((id): id is string => typeof id === 'string' && id.length > 0);
 
       const orderData = {
@@ -85,14 +85,14 @@ export default function ProductPage() {
         status: 'pending',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        isLogisticsPublic: false,
+        isLogisticsPublic: true, // ¡ACTIVACIÓN QUIRÚRGICA! Ahora todos los pedidos son visibles para la flota
         participants: participants
       };
 
       await addDoc(collection(firestore, 'orders'), orderData);
       
       setOrderConfirmed(true);
-      toast({ title: "¡Pedido Enviado!" });
+      toast({ title: "¡Pedido Enviado!", description: "La flota ha sido notificada." });
     } catch (e: any) {
       toast({ title: "Error al solicitar", description: e.message || "Inténtalo de nuevo.", variant: "destructive" });
     } finally {
@@ -108,9 +108,9 @@ export default function ProductPage() {
     <div className="flex flex-col min-h-screen bg-[#f3f4f6]">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
-        <Link href={`/stores/${product?.storeId}`} className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 mb-6">
-          <ArrowLeft className="w-4 h-4" /> Volver a Vitrina
-        </Link>
+        <button onClick={() => router.back()} className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 mb-6">
+          <ArrowLeft className="w-4 h-4" /> Volver
+        </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 bg-white rounded-[40px] overflow-hidden shadow-xl border border-white">
           <div className="relative aspect-square">
@@ -127,8 +127,8 @@ export default function ProductPage() {
               <div className="bg-green-50 p-8 rounded-3xl text-center space-y-4 animate-in zoom-in">
                 <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
                 <h3 className="text-2xl font-black text-green-900">¡Pedido Solicitado!</h3>
-                <p className="text-green-700 font-medium">El vendedor te contactará por WhatsApp en los próximos minutos.</p>
-                <Button asChild className="rounded-full w-full h-12 shadow-lg"><Link href="/admin/orders">Ver mis Pedidos</Link></Button>
+                <p className="text-green-700 font-medium">Un repartidor aceptará tu ruta en breve.</p>
+                <Button asChild className="rounded-full w-full h-12 shadow-lg"><a href="/admin/orders">Ver mis Pedidos</a></Button>
               </div>
             ) : (
               <div className="mt-auto space-y-6">
@@ -139,7 +139,7 @@ export default function ProductPage() {
                       Completa tu perfil con un número de contacto para poder comprar.
                     </p>
                     <Button variant="link" asChild className="text-primary font-black text-xs uppercase p-0 h-auto">
-                      <Link href="/profile">Completar Perfil</Link>
+                      <a href="/profile">Completar Perfil</a>
                     </Button>
                   </div>
                 )}
