@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -38,6 +39,13 @@ export default function DeliveryDashboardPage() {
   const [isUploadingWelcome, setIsUploadingWelcome] = useState(false);
   const [isUploadingDashboard, setIsUploadingDashboard] = useState<'active' | 'inactive' | null>(null);
   const [adminForceWelcome, setAdminForceWelcome] = useState(false);
+
+  // REDIRECCIÓN QUIRÚRGICA: Si es repartidor aprobado pero no ha visto su bienvenida
+  useEffect(() => {
+    if (!loadingProfile && profile?.role === 'repartidor' && profile?.hasSeenApproval === false && !isAdmin) {
+      router.replace('/delivery/approved');
+    }
+  }, [profile, loadingProfile, router, isAdmin]);
 
   // FETCH: Configuración de portada del Delivery (BIENVENIDA)
   const welcomeConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_welcome'), [firestore]);

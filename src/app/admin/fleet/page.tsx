@@ -56,7 +56,8 @@ export default function FleetAdminPage() {
       balance: 0,
       completedJobs: 0,
       avgRating: 5.0,
-      approvedAt: serverTimestamp()
+      approvedAt: serverTimestamp(),
+      hasSeenApproval: false // Flag para activar la página de bienvenida
     });
     toast({ title: "Repartidor Aprobado", className: "bg-green-600 text-white" });
   };
