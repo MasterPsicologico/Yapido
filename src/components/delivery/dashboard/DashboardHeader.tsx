@@ -118,7 +118,7 @@ export function DashboardHeader({
           onClick={() => setIsInfoOpen(true)}
           className="cursor-pointer group/info flex flex-col items-center gap-6 animate-in fade-in slide-in-from-top-4 duration-700"
         >
-          {/* NOMBRE Y NIVEL: SOLO VISIBLES CUANDO ESTÁ ONLINE */}
+          {/* NOMBRE Y NIVEL: VISIBILIDAD CONDICIONAL */}
           {isOnline && (
             <div className="space-y-2">
               <h1 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] group-hover/info:scale-105 transition-transform">
@@ -176,13 +176,13 @@ export function DashboardHeader({
           <div className="h-32 bg-slate-900 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-50" />
             
-            {/* BOTÓN DE CIERRE (X) - IMPLEMENTACIÓN MAESTRA */}
+            {/* BOTÓN DE CIERRE (X) - REUBICADO QUIRÚRGICAMENTE MÁS ABAJO */}
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 setIsInfoOpen(false);
               }}
-              className="absolute top-4 right-4 z-[700] text-white/60 hover:text-white hover:bg-white/10 rounded-full w-10 h-10 flex items-center justify-center transition-all active:scale-90"
+              className="absolute top-8 right-6 z-[700] text-white/60 hover:text-white hover:bg-white/10 rounded-full w-10 h-10 flex items-center justify-center transition-all active:scale-90"
             >
               <X className="w-6 h-6" />
             </button>
@@ -254,7 +254,7 @@ export function DashboardHeader({
                 CHAT DE SOPORTE ÉLITE
               </Button>
               <div className="flex items-center justify-center gap-2 mt-6 text-slate-300">
-                <Sparkles className="w-3 h-3" />
+                <Sparkles className="w-3 h-3 text-primary" />
                 <span className="text-[8px] font-black uppercase tracking-[0.4em]">Vitriniando AI Central</span>
               </div>
             </div>
