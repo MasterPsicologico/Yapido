@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -61,15 +60,11 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
 
-  /**
-   * REINGENIERÍA DE CONSULTA LOGÍSTICA:
-   * Para evitar errores de permisos, la consulta DEBE alinearse con las reglas de seguridad.
-   * Si el repartidor está vinculado, buscamos por tienda. Si es freelance, por flag público.
-   */
+  // CONSULTA LOGÍSTICA MEJORADA: Segmentación por tipo de repartidor
   const allActiveOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
     
-    // ESCENARIO A: Repartidor Vinculado a una Vitrina específica (Ve sus pedidos privados y públicos)
+    // Si el repartidor está vinculado a una tienda, buscamos los de su tienda
     if (profile?.linkedStoreId) {
       return query(
         collection(firestore, 'orders'),
@@ -78,7 +73,7 @@ export default function DeliveryDashboardPage() {
       );
     }
     
-    // ESCENARIO B: Repartidor Freelance / Admin (Ve todo lo marcado como logística pública)
+    // Si es público, buscamos todo lo marcado como logística pública
     return query(
       collection(firestore, 'orders'),
       where('isLogisticsPublic', '==', true),
@@ -86,23 +81,15 @@ export default function DeliveryDashboardPage() {
     );
   }, [firestore, isConfirmedRepartidor, isOnline, profile?.linkedStoreId]);
 
-  const { data: rawAllOrders } = useCollection(allActiveOrdersQuery);
+  const { data: rawAllOrders, isLoading: loadingRoutes } = useCollection(allActiveOrdersQuery);
 
-  /**
-   * FILTRADO DINÁMICO EN MEMORIA:
-   * Una vez que los datos llegan (validados por seguridad), filtramos los estados y ordenamos.
-   */
   const availableOrders = useMemo(() => {
     if (!rawAllOrders) return [];
     
     return rawAllOrders.filter(order => {
-      // 1. Solo mostrar órdenes en estados operativos de búsqueda
       const isSearchable = ['pending', 'preparing', 'ready_for_pickup'].includes(order.status);
       if (!isSearchable) return false;
-
-      // 2. Si ya tiene un repartidor asignado y no soy yo, la ocultamos
       if (order.deliveryDriverId && order.deliveryDriverId !== user?.uid) return false;
-
       return true;
     }).sort((a, b) => {
       const timeA = a.createdAt?.toMillis?.() || 0;
@@ -353,7 +340,13 @@ export default function DeliveryDashboardPage() {
                 <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white">ACTIVAS ({rawMy?.filter(o => o.deliveryDriverId === user?.uid).length || 0})</TabsTrigger>
                 <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white">INGRESOS</TabsTrigger>
               </TabsList>
-              <TabsContent value="available"><RoutesTab isOnline={isOnline} orders={availableOrders} onAccept={handleAcceptOrder} onGoOnline={() => setIsOnline(true)} /></TabsContent>
+              <TabsContent value="available">
+                {loadingRoutes ? (
+                  <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>
+                ) : (
+                  <RoutesTab isOnline={isOnline} orders={availableOrders} onAccept={handleAcceptOrder} onGoOnline={() => setIsOnline(true)} />
+                )}
+              </TabsContent>
               <TabsContent value="my-deliveries"><div className="text-center py-20 text-slate-300 font-black uppercase italic tracking-widest">Sin entregas activas</div></TabsContent>
               <TabsContent value="earnings"><EarningsTab balance={profile?.balance || 0} /></TabsContent>
             </Tabs>
