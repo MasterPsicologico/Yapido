@@ -61,35 +61,55 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
 
-  // CONSULTA MAESTRA SIMPLIFICADA: Filtramos solo por estado para evitar errores de índices complejos en Firestore
+  /**
+   * REINGENIERÍA DE CONSULTA LOGÍSTICA:
+   * Para evitar errores de permisos, la consulta DEBE alinearse con las reglas de seguridad.
+   * Si el repartidor está vinculado, buscamos por tienda. Si es freelance, por flag público.
+   */
   const allActiveOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
+    
+    // ESCENARIO A: Repartidor Vinculado a una Vitrina específica (Ve sus pedidos privados y públicos)
+    if (profile?.linkedStoreId) {
+      return query(
+        collection(firestore, 'orders'),
+        where('storeId', '==', profile.linkedStoreId),
+        limit(50)
+      );
+    }
+    
+    // ESCENARIO B: Repartidor Freelance / Admin (Ve todo lo marcado como logística pública)
     return query(
       collection(firestore, 'orders'),
-      where('status', 'in', ['pending', 'preparing', 'ready_for_pickup']),
+      where('isLogisticsPublic', '==', true),
       limit(50)
     );
-  }, [firestore, isConfirmedRepartidor, isOnline]);
+  }, [firestore, isConfirmedRepartidor, isOnline, profile?.linkedStoreId]);
 
   const { data: rawAllOrders } = useCollection(allActiveOrdersQuery);
 
-  // FILTRADO LOCAL ÉLITE: Procesamos la lógica de visibilidad en el cliente para máxima velocidad
+  /**
+   * FILTRADO DINÁMICO EN MEMORIA:
+   * Una vez que los datos llegan (validados por seguridad), filtramos los estados y ordenamos.
+   */
   const availableOrders = useMemo(() => {
     if (!rawAllOrders) return [];
     
     return rawAllOrders.filter(order => {
-      // Si el repartidor está vinculado a una tienda, solo ve lo de esa tienda
-      if (profile?.linkedStoreId) {
-        return order.storeId === profile.linkedStoreId;
-      }
-      // Si es freelance, ve todo lo marcado como público
-      return order.isLogisticsPublic === true;
+      // 1. Solo mostrar órdenes en estados operativos de búsqueda
+      const isSearchable = ['pending', 'preparing', 'ready_for_pickup'].includes(order.status);
+      if (!isSearchable) return false;
+
+      // 2. Si ya tiene un repartidor asignado y no soy yo, la ocultamos
+      if (order.deliveryDriverId && order.deliveryDriverId !== user?.uid) return false;
+
+      return true;
     }).sort((a, b) => {
       const timeA = a.createdAt?.toMillis?.() || 0;
       const timeB = b.createdAt?.toMillis?.() || 0;
       return timeB - timeA;
     });
-  }, [rawAllOrders, profile?.linkedStoreId]);
+  }, [rawAllOrders, user?.uid]);
 
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;

@@ -49,11 +49,12 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      // Regla de Oro: Repartidores pueden ver órdenes disponibles para entrega
+      // Regla Logística: Control total de visibilidad para la flota y participantes
       allow read: if isSignedIn() && (
         isAdmin() ||
         request.auth.uid in resource.data.get('participants', []) ||
-        resource.data.get('isLogisticsPublic', false) == true ||
+        (isRepartidor() && resource.data.get('isLogisticsPublic', false) == true) ||
+        (isRepartidor() && resource.data.get('storeId', '') == getUserData().get('linkedStoreId', '')) ||
         (isRepartidor() && resource.data.status in ['pending', 'preparing', 'ready_for_pickup']) ||
         request.auth.uid == resource.data.get('storeOwnerId', '') ||
         request.auth.uid == resource.data.get('customerId', '')
@@ -66,7 +67,7 @@ service cloud.firestore {
         request.auth.uid in resource.data.get('participants', []) ||
         resource.data.get('isLogisticsPublic', false) == true ||
         request.auth.uid == resource.data.get('storeOwnerId', '') ||
-        (isRepartidor() && resource.data.status in ['pending', 'preparing', 'ready_for_pickup'])
+        (isRepartidor() && resource.data.status in ['pending', 'preparing', 'ready_for_pickup', 'at_store', 'shipped', 'delivered_to_driver'])
       );
       
       allow delete: if isSignedIn() && (
