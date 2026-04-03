@@ -248,7 +248,7 @@ export default function DeliveryDashboardPage() {
             </div>
             {isAdmin && (
               <div className="relative z-10 h-full flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/30 shadow-2xl group-hover/welcome:scale-110 transition-all">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/30 shadow-2xl group/welcome:scale-110 transition-all">
                   {isUploadingWelcome ? <Loader2 className="w-8 h-8 animate-spin text-green-500" /> : <Camera className="w-8 h-8 text-green-500" />}
                 </div>
               </div>
@@ -320,13 +320,14 @@ export default function DeliveryDashboardPage() {
               <Button 
                 onClick={() => setAdminForceWelcome(true)}
                 variant="outline" 
-                className="w-full mb-6 h-12 rounded-2xl border-dashed border-2 border-primary/30 text-primary font-black uppercase text-[10px] tracking-widest gap-2 hover:bg-primary/5"
+                className="w-full mb-10 h-12 rounded-2xl border-dashed border-2 border-primary/30 text-primary font-black uppercase text-[10px] tracking-widest gap-2 hover:bg-primary/5"
               >
                 <Edit3 className="w-4 h-4" /> EDITAR PORTADA DE BIENVENIDA
               </Button>
             )}
-            <WeeklyChallenge orders={history} />
-            <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mt-10 space-y-8">
+
+            {/* RUTAS LIBRES: POSICIÓN DE HONOR (PRIMERO) */}
+            <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mb-12 space-y-8">
               <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3">
                 <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white">RUTAS LIBRES</TabsTrigger>
                 <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white">ACTIVAS ({rawMy?.filter(o => o.deliveryDriverId === user?.uid).length || 0})</TabsTrigger>
@@ -336,6 +337,9 @@ export default function DeliveryDashboardPage() {
               <TabsContent value="my-deliveries"><div className="text-center py-20 text-slate-300 font-black uppercase italic tracking-widest">Sin entregas activas</div></TabsContent>
               <TabsContent value="earnings"><EarningsTab balance={profile?.balance || 0} /></TabsContent>
             </Tabs>
+
+            {/* RETO DE LA SEMANA: POSICIÓN SECUNDARIA (DEBAJO) */}
+            <WeeklyChallenge orders={history} />
           </main>
         </div>
       )}
