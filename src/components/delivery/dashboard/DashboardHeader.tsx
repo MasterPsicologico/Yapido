@@ -176,17 +176,6 @@ export function DashboardHeader({
           <div className="h-32 bg-slate-900 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-50" />
             
-            {/* BOTÓN DE CIERRE (X) - REUBICADO QUIRÚRGICAMENTE MÁS ABAJO */}
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsInfoOpen(false);
-              }}
-              className="absolute top-8 right-6 z-[700] text-white/60 hover:text-white hover:bg-white/10 rounded-full w-10 h-10 flex items-center justify-center transition-all active:scale-90"
-            >
-              <X className="w-6 h-6" />
-            </button>
-
             <div className="absolute -bottom-12 left-8">
               <Avatar className="w-24 h-24 border-[6px] border-white shadow-2xl">
                 <AvatarImage src={profile?.photoURL} className="object-cover" />
@@ -195,7 +184,15 @@ export function DashboardHeader({
             </div>
           </div>
 
-          <div className="pt-16 px-8 pb-10 space-y-8">
+          <div className="pt-16 px-8 pb-10 space-y-8 relative">
+            {/* BOTÓN DE CIERRE ROJO EN EL CONTENEDOR BLANCO */}
+            <button 
+              onClick={() => setIsInfoOpen(false)}
+              className="absolute top-2 right-4 z-[700] text-red-600 hover:bg-red-50 rounded-full w-12 h-12 flex items-center justify-center transition-all active:scale-90"
+            >
+              <X className="w-10 h-10 stroke-[3]" />
+            </button>
+
             <div className="space-y-1">
               <h3 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">
                 {profile?.displayName}
