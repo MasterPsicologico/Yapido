@@ -67,6 +67,7 @@ export default function DeliveryDashboardPage() {
   const availableOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
     
+    // CASO 1: Repartidor vinculado a tienda (Prioridad total)
     if (profile?.linkedStoreId) {
       return query(
         collection(firestore, 'orders'), 
@@ -77,10 +78,11 @@ export default function DeliveryDashboardPage() {
       );
     }
 
+    // CASO 2: Repartidor Freelance (Pool público)
     return query(
       collection(firestore, 'orders'), 
       where('isLogisticsPublic', '==', true), 
-      where('status', 'in', ['preparing', 'ready_for_pickup']),
+      where('status', 'in', ['pending', 'preparing', 'ready_for_pickup']), // ¡Añadido pending!
       orderBy('createdAt', 'desc')
     );
   }, [firestore, isConfirmedRepartidor, isOnline, profile?.linkedStoreId]);
@@ -229,7 +231,6 @@ export default function DeliveryDashboardPage() {
         <Navbar />
         <main className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
           
-          {/* SECCIÓN DE PORTADA OPTIMIZADA PARA VISIBILIDAD TOTAL */}
           <div 
             onClick={() => isAdmin && fileInputRef.current?.click()}
             className={cn(

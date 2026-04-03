@@ -11,7 +11,7 @@ import { ToastAction } from '@/components/ui/toast';
 
 export function ChatNotificationListener() {
   const { user } = useUser();
-  const { isLoading: profileLoading } = useProfile();
+  const { profile, isRepartidor, isLoading: profileLoading } = useProfile();
   const firestore = useFirestore();
   const router = useRouter();
   
@@ -40,6 +40,7 @@ export function ChatNotificationListener() {
     const unsubscribers: (() => void)[] = [];
     const messageUnsubs = new Map<string, () => void>();
 
+    // LISTENER 1: Órdenes donde soy participante (Chat y Ventas)
     const ordersQuery = query(
       collection(firestore, 'orders'),
       where('participants', 'array-contains', user.uid)
@@ -67,9 +68,7 @@ export function ChatNotificationListener() {
 
           notifiedIds.current.add(orderId);
 
-          // GUARDIA DE SEGURIDAD: Solo escuchar mensajes si el usuario es participante real
           const isRealParticipant = (orderData.participants || []).includes(user.uid);
-
           if (isRealParticipant && !messageUnsubs.has(orderId)) {
             const messagesRef = collection(firestore, 'orders', orderId, 'messages');
             const unsubMsg = onSnapshot(messagesRef, (msgSnap) => {
@@ -77,10 +76,8 @@ export function ChatNotificationListener() {
                 if (msgChange.type === 'added') {
                   const msg = msgChange.doc.data();
                   const msgId = msgChange.doc.id;
-
                   if (msg.senderId === user.uid) return;
                   if (notifiedIds.current.has(msgId)) return;
-
                   const msgTime = msg.createdAt?.toMillis?.() || Date.now();
                   if (Date.now() - msgTime < 60000) {
                     notifiedIds.current.add(msgId);
@@ -94,65 +91,75 @@ export function ChatNotificationListener() {
                   notifiedIds.current.add(msgId);
                 }
               });
-            }, async (error) => {
-              // SILENCIADOR DE ERRORES: En background no emitimos el error visual FirestorePermissionError
-              // Solo registramos el aviso para evitar interrumpir la UX con overlays técnicos
-              if (error.code === 'permission-denied') {
-                console.warn(`[Vitriniando] Sincronizando permisos de chat para pedido: ${orderId}`);
-              }
+            }, (error) => {
+              if (error.code === 'permission-denied') console.warn(`[Vitriniando] Chat sync: ${orderId}`);
             });
             messageUnsubs.set(orderId, unsubMsg);
             unsubscribers.push(unsubMsg);
           }
         }
-
         if (change.type === 'removed') {
           const unsub = messageUnsubs.get(orderId);
           if (unsub) unsub();
           messageUnsubs.delete(orderId);
         }
       });
-    }, async (error) => {
-      if (error.code === 'permission-denied') {
-        console.warn("[Vitriniando] Sincronizando lista de órdenes...");
-      }
     });
 
-    unsubscribers.push(unsubOrders);
+    // LISTENER 2: Órdenes públicas para Repartidores (Alarma de Rutas)
+    if (isRepartidor) {
+      const publicOrdersQuery = query(
+        collection(firestore, 'orders'),
+        where('isLogisticsPublic', '==', true),
+        where('status', '==', 'pending')
+      );
 
-    return () => {
-      unsubscribers.forEach(unsub => unsub());
-      messageUnsubs.forEach(unsub => unsub());
-    };
-  }, [user?.uid, firestore, profileLoading]);
+      const unsubPublic = onSnapshot(publicOrdersQuery, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const orderData = change.doc.data();
+            const orderId = change.doc.id;
+            const now = Date.now();
+            const createdAt = orderData.createdAt?.toMillis?.() || now;
+            
+            if (now - createdAt < 60000 && !notifiedIds.current.has(orderId)) {
+              notifiedIds.current.add(orderId);
+              triggerAlarm(orderId, orderData.productName || 'Ruta Libre', '¡NUEVA RUTA DISPONIBLE!');
+            }
+          }
+        });
+      });
+      unsubscribers.push(unsubPublic);
+    }
+
+    unsubscribers.push(unsubOrders);
+    return () => unsubscribers.forEach(unsub => unsub());
+  }, [user?.uid, firestore, profileLoading, isRepartidor]);
 
   const triggerAlarm = (orderId: string, title: string, toastTitle: string) => {
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
     }
-
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       navigator.vibrate([500, 200, 500]);
     }
-
     toast({
       title: `🚨 ${toastTitle}`,
-      description: `Tienes actividad en "${title}".`,
+      description: `Actividad en "${title}".`,
       action: (
         <ToastAction 
           altText="Atender" 
           onClick={() => {
             window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId } }));
-            router.push(`/admin/orders#${orderId}`);
+            router.push(isRepartidor ? `/delivery/dashboard` : `/admin/orders#${orderId}`);
           }}
           className="bg-primary text-white hover:bg-primary/90 font-black rounded-full h-10 px-6 border-none"
         >
-          ATENDER
+          VER
         </ToastAction>
       ),
     });
-
     lastAlarmTime.current = Date.now();
   };
 

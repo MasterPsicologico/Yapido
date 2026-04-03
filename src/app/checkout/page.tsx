@@ -179,7 +179,7 @@ export default function CheckoutPage() {
         status: 'pending',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        isLogisticsPublic: false,
+        isLogisticsPublic: true, // ¡CAMBIO CLAVE! Hacerlo público inmediatamente
         participants: participants,
         // METADATOS INYECTADOS POR IA
         agentMetadata: (orchestratorResult as any).data
