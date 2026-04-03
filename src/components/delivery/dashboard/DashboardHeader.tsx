@@ -176,13 +176,13 @@ export function DashboardHeader({
           <div className="h-32 bg-slate-900 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-50" />
             
-            {/* BOTÓN DE CIERRE (X) - IMPLEMENTACIÓN QUIRÚRGICA */}
+            {/* BOTÓN DE CIERRE (X) - IMPLEMENTACIÓN MAESTRA */}
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 setIsInfoOpen(false);
               }}
-              className="absolute top-4 right-4 z-[700] text-white/40 hover:text-white hover:bg-white/10 rounded-full w-10 h-10 flex items-center justify-center transition-all active:scale-90"
+              className="absolute top-4 right-4 z-[700] text-white/60 hover:text-white hover:bg-white/10 rounded-full w-10 h-10 flex items-center justify-center transition-all active:scale-90"
             >
               <X className="w-6 h-6" />
             </button>
