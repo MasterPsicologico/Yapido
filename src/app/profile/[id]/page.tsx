@@ -24,7 +24,8 @@ import {
   MapPin,
   ArrowLeft,
   Waves,
-  ChevronRight
+  ChevronRight,
+  X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -112,7 +113,7 @@ export default function PublicProfilePage() {
           </CardHeader>
 
           <CardContent className="p-8 space-y-10">
-            {/* VINCULACIÓN A EMPRESA PRIVADA (ALQUILER DE LAVADORAS) */}
+            {/* VINCULACIÓN A EMPRESA PRIVADA: IDENTIDAD DE FLOTA */}
             {isRepartidor && linkedStore && (
               <Link href={`/stores/${linkedStore.id}`}>
                 <Card className="border-none rounded-[36px] bg-slate-900 text-white p-8 shadow-2xl overflow-hidden relative group hover:scale-[1.02] transition-all">

@@ -60,11 +60,11 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
 
-  // CONSULTA LOGÍSTICA BINARIA: Sincronizada con Reglas de Seguridad
+  // CONSULTA LOGÍSTICA DE ALTA PRECISIÓN: Sincronizada con el ADN del repartidor
   const allActiveOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
     
-    // CASO A: Repartidor de Tienda Privada (Lavadoras)
+    // CASO A: Repartidor de Tienda Privada (Enfocar radar en su tienda)
     if (profile?.linkedStoreId) {
       return query(
         collection(firestore, 'orders'),
@@ -73,7 +73,7 @@ export default function DeliveryDashboardPage() {
       );
     }
     
-    // CASO B: Repartidor Público / Freelance
+    // CASO B: Repartidor Público (Enfocar radar en rutas abiertas)
     return query(
       collection(firestore, 'orders'),
       where('isLogisticsPublic', '==', true),
@@ -336,6 +336,7 @@ export default function DeliveryDashboardPage() {
               </Button>
             )}
 
+            {/* RUTAS LIBRES: POSICIONAMIENTO PRIORITARIO */}
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mb-12 space-y-8">
               <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3">
                 <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white">RUTAS LIBRES</TabsTrigger>
