@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { ToastAction } from '@/components/ui/toast';
@@ -106,12 +106,12 @@ export function ChatNotificationListener() {
       });
     });
 
-    // LISTENER 2: Órdenes públicas para Repartidores (Alarma de Rutas)
+    // LISTENER 2: Órdenes públicas para Repartidores (Consulta simplificada para evitar errores de índices)
     if (isRepartidor) {
       const publicOrdersQuery = query(
         collection(firestore, 'orders'),
-        where('isLogisticsPublic', '==', true),
-        where('status', '==', 'pending')
+        where('status', '==', 'pending'),
+        limit(10)
       );
 
       const unsubPublic = onSnapshot(publicOrdersQuery, (snapshot) => {
@@ -122,7 +122,10 @@ export function ChatNotificationListener() {
             const now = Date.now();
             const createdAt = orderData.createdAt?.toMillis?.() || now;
             
-            if (now - createdAt < 60000 && !notifiedIds.current.has(orderId)) {
+            // Verificamos el flag público localmente si la consulta es general
+            const isPublic = orderData.isLogisticsPublic === true;
+
+            if (now - createdAt < 60000 && !notifiedIds.current.has(orderId) && isPublic) {
               notifiedIds.current.add(orderId);
               triggerAlarm(orderId, orderData.productName || 'Ruta Libre', '¡NUEVA RUTA DISPONIBLE!');
             }

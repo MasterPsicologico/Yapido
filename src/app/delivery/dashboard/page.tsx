@@ -61,30 +61,35 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
 
-  // QUERY OPTIMIZADA: Eliminamos orderBy para evitar errores de índice y asegurar visibilidad inmediata
-  const availableOrdersQuery = useMemoFirebase(() => {
+  // CONSULTA MAESTRA SIMPLIFICADA: Filtramos solo por estado para evitar errores de índices complejos en Firestore
+  const allActiveOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
-    
-    const ordersRef = collection(firestore, 'orders');
-    
-    // CASO 1: Repartidor vinculado a tienda
-    if (profile?.linkedStoreId) {
-      return query(
-        ordersRef, 
-        where('storeId', '==', profile.linkedStoreId),
-        where('isLogisticsPublic', '==', true),
-        where('status', 'in', ['pending', 'preparing', 'ready_for_pickup'])
-      );
-    }
-
-    // CASO 2: Repartidor Freelance (Pool público)
     return query(
-      ordersRef, 
-      where('isLogisticsPublic', '==', true), 
+      collection(firestore, 'orders'),
       where('status', 'in', ['pending', 'preparing', 'ready_for_pickup']),
-      limit(20)
+      limit(50)
     );
-  }, [firestore, isConfirmedRepartidor, isOnline, profile?.linkedStoreId]);
+  }, [firestore, isConfirmedRepartidor, isOnline]);
+
+  const { data: rawAllOrders } = useCollection(allActiveOrdersQuery);
+
+  // FILTRADO LOCAL ÉLITE: Procesamos la lógica de visibilidad en el cliente para máxima velocidad
+  const availableOrders = useMemo(() => {
+    if (!rawAllOrders) return [];
+    
+    return rawAllOrders.filter(order => {
+      // Si el repartidor está vinculado a una tienda, solo ve lo de esa tienda
+      if (profile?.linkedStoreId) {
+        return order.storeId === profile.linkedStoreId;
+      }
+      // Si es freelance, ve todo lo marcado como público
+      return order.isLogisticsPublic === true;
+    }).sort((a, b) => {
+      const timeA = a.createdAt?.toMillis?.() || 0;
+      const timeB = b.createdAt?.toMillis?.() || 0;
+      return timeB - timeA;
+    });
+  }, [rawAllOrders, profile?.linkedStoreId]);
 
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
@@ -105,19 +110,8 @@ export default function DeliveryDashboardPage() {
     );
   }, [firestore, user?.uid, isConfirmedRepartidor]);
 
-  const { data: rawAvailable } = useCollection(availableOrdersQuery);
   const { data: rawMy } = useCollection(myDeliveriesQuery);
   const { data: history } = useCollection(historyQuery);
-
-  // Fallback visual para asegurar que si hay datos, se ordenen localmente
-  const availableOrders = useMemo(() => {
-    if (!rawAvailable) return [];
-    return [...rawAvailable].sort((a, b) => {
-      const timeA = a.createdAt?.toMillis?.() || 0;
-      const timeB = b.createdAt?.toMillis?.() || 0;
-      return timeB - timeA;
-    });
-  }, [rawAvailable]);
 
   const stats = useMemo(() => ({
     rating: profile?.avgRating || 5.0,
