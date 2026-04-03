@@ -60,11 +60,11 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
 
-  // CONSULTA LOGÍSTICA MEJORADA: Segmentación por tipo de repartidor
+  // CONSULTA LOGÍSTICA BINARIA: Sincronizada con Reglas de Seguridad
   const allActiveOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
     
-    // Si el repartidor está vinculado a una tienda, buscamos los de su tienda
+    // CASO A: Repartidor de Tienda Privada (Lavadoras)
     if (profile?.linkedStoreId) {
       return query(
         collection(firestore, 'orders'),
@@ -73,7 +73,7 @@ export default function DeliveryDashboardPage() {
       );
     }
     
-    // Si es público, buscamos todo lo marcado como logística pública
+    // CASO B: Repartidor Público / Freelance
     return query(
       collection(firestore, 'orders'),
       where('isLogisticsPublic', '==', true),
@@ -87,13 +87,15 @@ export default function DeliveryDashboardPage() {
     if (!rawAllOrders) return [];
     
     return rawAllOrders.filter(order => {
+      // Filtrar estados operativos
       const isSearchable = ['pending', 'preparing', 'ready_for_pickup'].includes(order.status);
       if (!isSearchable) return false;
+      // No mostrar si ya tiene otro repartidor asignado (a menos que sea yo)
       if (order.deliveryDriverId && order.deliveryDriverId !== user?.uid) return false;
       return true;
     }).sort((a, b) => {
-      const timeA = a.createdAt?.toMillis?.() || 0;
-      const timeB = b.createdAt?.toMillis?.() || 0;
+      const timeA = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
+      const timeB = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
       return timeB - timeA;
     });
   }, [rawAllOrders, user?.uid]);

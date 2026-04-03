@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -58,7 +57,6 @@ export default function ProductPage() {
       }
       
       const ownerId = storeData?.ownerId || product.storeOwnerId;
-      // IMPORTANTE: Incluir al cliente y al dueño en participantes para acceso inicial
       const participants = [user.uid, ownerId].filter((id): id is string => typeof id === 'string' && id.length > 0);
 
       const orderData = {
@@ -85,7 +83,7 @@ export default function ProductPage() {
         status: 'pending',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        isLogisticsPublic: true, // ¡ACTIVACIÓN QUIRÚRGICA! Ahora todos los pedidos son visibles para la flota
+        isLogisticsPublic: true, // ¡ACTIVACIÓN LOGÍSTICA INMEDIATA!
         participants: participants
       };
 

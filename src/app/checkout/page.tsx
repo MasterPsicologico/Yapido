@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -179,9 +178,8 @@ export default function CheckoutPage() {
         status: 'pending',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        isLogisticsPublic: true, // ¡CAMBIO CLAVE! Hacerlo público inmediatamente
+        isLogisticsPublic: true, // ¡ACTIVACIÓN LOGÍSTICA INMEDIATA!
         participants: participants,
-        // METADATOS INYECTADOS POR IA
         agentMetadata: (orchestratorResult as any).data
       };
 

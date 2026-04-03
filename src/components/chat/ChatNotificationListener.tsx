@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -92,7 +91,7 @@ export function ChatNotificationListener() {
                 }
               });
             }, (error) => {
-              if (error.code === 'permission-denied') console.warn(`[Vitriniando] Chat sync: ${orderId}`);
+              // Silenciar errores de permisos en chats cerrados
             });
             messageUnsubs.set(orderId, unsubMsg);
             unsubscribers.push(unsubMsg);
@@ -104,17 +103,31 @@ export function ChatNotificationListener() {
           messageUnsubs.delete(orderId);
         }
       });
+    }, (error) => {
+      // Listener de órdenes principales bloqueado
     });
 
-    // LISTENER 2: Órdenes públicas para Repartidores (Consulta simplificada para evitar errores de índices)
+    // LISTENER 2: Radar de Rutas (Sincronizado con Permisos)
     if (isRepartidor) {
-      const publicOrdersQuery = query(
-        collection(firestore, 'orders'),
-        where('status', '==', 'pending'),
-        limit(10)
-      );
+      // Crear consulta basada en el perfil para evitar Permission Denied
+      let routesQuery;
+      if (profile?.linkedStoreId) {
+        routesQuery = query(
+          collection(firestore, 'orders'),
+          where('storeId', '==', profile.linkedStoreId),
+          where('status', '==', 'pending'),
+          limit(5)
+        );
+      } else {
+        routesQuery = query(
+          collection(firestore, 'orders'),
+          where('isLogisticsPublic', '==', true),
+          where('status', '==', 'pending'),
+          limit(5)
+        );
+      }
 
-      const unsubPublic = onSnapshot(publicOrdersQuery, (snapshot) => {
+      const unsubPublic = onSnapshot(routesQuery, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === 'added') {
             const orderData = change.doc.data();
@@ -122,22 +135,21 @@ export function ChatNotificationListener() {
             const now = Date.now();
             const createdAt = orderData.createdAt?.toMillis?.() || now;
             
-            // Verificamos el flag público localmente si la consulta es general
-            const isPublic = orderData.isLogisticsPublic === true;
-
-            if (now - createdAt < 60000 && !notifiedIds.current.has(orderId) && isPublic) {
+            if (now - createdAt < 60000 && !notifiedIds.current.has(orderId)) {
               notifiedIds.current.add(orderId);
               triggerAlarm(orderId, orderData.productName || 'Ruta Libre', '¡NUEVA RUTA DISPONIBLE!');
             }
           }
         });
+      }, (error) => {
+        // Silenciar errores de radar si el perfil aún carga
       });
       unsubscribers.push(unsubPublic);
     }
 
     unsubscribers.push(unsubOrders);
     return () => unsubscribers.forEach(unsub => unsub());
-  }, [user?.uid, firestore, profileLoading, isRepartidor]);
+  }, [user?.uid, firestore, profileLoading, isRepartidor, profile?.linkedStoreId]);
 
   const triggerAlarm = (orderId: string, title: string, toastTitle: string) => {
     if (audioRef.current) {

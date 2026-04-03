@@ -40,7 +40,7 @@ export default function PublicProfilePage() {
   const userRef = useMemoFirebase(() => (!firestore || !id) ? null : doc(firestore, 'users', id), [firestore, id]);
   const { data: userProfile, isLoading } = useDoc(userRef);
 
-  // FETCH: Tienda vinculada si existe
+  // FETCH: Tienda vinculada si existe (Ej: Empresa de Alquiler de Lavadoras)
   const linkedStoreRef = useMemoFirebase(() => 
     (!firestore || !userProfile?.linkedStoreId) ? null : doc(firestore, 'stores', userProfile.linkedStoreId), 
     [firestore, userProfile?.linkedStoreId]
@@ -123,7 +123,7 @@ export default function PublicProfilePage() {
                         <Waves className="w-7 h-7 text-primary group-hover:text-white animate-pulse" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1">FLOTA PRIVADA</p>
+                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1">REPARTIDOR DE</p>
                         <h4 className="text-2xl font-black italic uppercase tracking-tighter leading-none">{linkedStore.name}</h4>
                         <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mt-2">Servicio de Alquiler de Lavadoras</p>
                       </div>
