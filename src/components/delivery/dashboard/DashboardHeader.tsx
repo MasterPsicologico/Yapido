@@ -137,7 +137,7 @@ export function DashboardHeader({
               "absolute inset-0 rounded-full animate-pulse blur-xl transition-colors duration-1000",
               isOnline ? "bg-primary/40" : "bg-white/20"
             )} />
-            <Avatar className="w-[64px] h-[64px] border-[4px] border-white/20 shadow-2xl relative z-10 group-hover/info:border-primary transition-all">
+            <Avatar className="w-[64px] h-[64px] border-[4px] border-white shadow-2xl relative z-10 group-hover/info:border-primary transition-all">
               <AvatarImage src={profile?.photoURL} className="object-cover" />
               <AvatarFallback className="bg-primary text-white font-black text-xl uppercase italic">
                 {profile?.displayName?.charAt(0) || 'R'}
@@ -167,19 +167,26 @@ export function DashboardHeader({
 
       {/* VENTANA DE INFORMACIÓN DETALLADA (MODAL ÉLITE) */}
       <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
-        <DialogContent className="rounded-[40px] border-none shadow-2xl p-0 bg-white overflow-hidden sm:max-w-[450px] z-[600] animate-in zoom-in duration-300">
+        <DialogContent className="rounded-[40px] border-none shadow-2xl p-0 bg-white overflow-hidden sm:max-w-[450px] z-[600] animate-in zoom-in duration-300 [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>Perfil del Repartidor</DialogTitle>
             <DialogDescription>Información detallada y de contacto del repartidor.</DialogDescription>
           </DialogHeader>
+          
           <div className="h-32 bg-slate-900 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-50" />
+            
+            {/* BOTÓN DE CIERRE (X) - IMPLEMENTACIÓN QUIRÚRGICA */}
             <button 
-              onClick={() => setIsInfoOpen(false)}
-              className="absolute top-4 right-4 text-white/40 hover:text-white hover:bg-white/10 rounded-full w-10 h-10 flex items-center justify-center transition-all"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsInfoOpen(false);
+              }}
+              className="absolute top-4 right-4 z-[700] text-white/40 hover:text-white hover:bg-white/10 rounded-full w-10 h-10 flex items-center justify-center transition-all active:scale-90"
             >
               <X className="w-6 h-6" />
             </button>
+
             <div className="absolute -bottom-12 left-8">
               <Avatar className="w-24 h-24 border-[6px] border-white shadow-2xl">
                 <AvatarImage src={profile?.photoURL} className="object-cover" />
