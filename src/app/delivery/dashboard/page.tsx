@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, orderBy, limit, or } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -34,7 +34,6 @@ export default function DeliveryDashboardPage() {
   const { profile, level, isAdmin, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [activeTab, setActiveTab] = useState("available");
   const [isOnline, setIsOnline] = useState(true);
@@ -65,12 +64,23 @@ export default function DeliveryDashboardPage() {
   const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
   const isPendingApproval = profile?.deliveryRequested === true && profile?.role !== 'repartidor';
 
+  // CONSULTA MAESTRA DE VISIÓN TOTAL: Ve lo público Y lo de su propia tienda
   const allActiveOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
+    
+    const publicConstraint = where('isLogisticsPublic', '==', true);
+    
     if (profile?.linkedStoreId) {
-      return query(collection(firestore, 'orders'), where('storeId', '==', profile.linkedStoreId), limit(50));
+      const storeConstraint = where('storeId', '==', profile.linkedStoreId);
+      // Usamos OR para que el repartidor vea las solicitudes generales y las asignadas a su patrón
+      return query(
+        collection(firestore, 'orders'), 
+        or(publicConstraint, storeConstraint),
+        limit(50)
+      );
     }
-    return query(collection(firestore, 'orders'), where('isLogisticsPublic', '==', true), limit(50));
+    
+    return query(collection(firestore, 'orders'), publicConstraint, limit(50));
   }, [firestore, isConfirmedRepartidor, isOnline, profile?.linkedStoreId]);
 
   const { data: rawAllOrders, isLoading: loadingRoutes } = useCollection(allActiveOrdersQuery);
@@ -78,8 +88,10 @@ export default function DeliveryDashboardPage() {
   const availableOrders = useMemo(() => {
     if (!rawAllOrders) return [];
     return rawAllOrders.filter(order => {
+      // Un repartidor ve pedidos pendientes o que el dueño ya preparó (ready_for_pickup)
       const isSearchable = ['pending', 'preparing', 'ready_for_pickup'].includes(order.status);
       if (!isSearchable) return false;
+      // Si ya tiene un conductor y no soy yo, ocultar
       if (order.deliveryDriverId && order.deliveryDriverId !== user?.uid) return false;
       return true;
     }).sort((a, b) => {
@@ -91,7 +103,7 @@ export default function DeliveryDashboardPage() {
 
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
-    return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid), where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver']));
+    return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid), where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver', 'delivered']));
   }, [firestore, user?.uid, isConfirmedRepartidor]);
 
   const historyQuery = useMemoFirebase(() => {
@@ -107,6 +119,7 @@ export default function DeliveryDashboardPage() {
     deliveredCount: history?.length || 0
   }), [profile, history]);
 
+  // Misión activa: estamos en ruta o entregando
   const activeMission = useMemo(() => 
     rawMy?.find(o => o.deliveryDriverId === user?.uid && ['shipped', 'at_store', 'delivered_to_driver'].includes(o.status)),
     [rawMy, user?.uid]
@@ -133,10 +146,10 @@ export default function DeliveryDashboardPage() {
     setActiveTab("my-deliveries");
   };
 
-  const handleUpdateMissionStatus = (newStatus: string) => {
+  const handleUpdateMissionStatus = (newStatus: string, metadata: any = {}) => {
     if (!activeMission || !firestore) return;
     const orderRef = doc(firestore, 'orders', activeMission.id);
-    const updateData: any = { status: newStatus, updatedAt: serverTimestamp() };
+    const updateData: any = { ...metadata, status: newStatus, updatedAt: serverTimestamp() };
     if (newStatus === 'delivered_to_driver') updateData.pickedUpAt = serverTimestamp();
     if (newStatus === 'delivered') updateData.deliveredAt = serverTimestamp();
     updateDocumentNonBlocking(orderRef, updateData);
@@ -265,16 +278,6 @@ export default function DeliveryDashboardPage() {
             isUploading={isUploadingDashboard}
           />
           <main className="container mx-auto px-4 py-8 max-w-2xl">
-            {isAdmin && (
-              <Button 
-                onClick={() => setAdminForceWelcome(true)}
-                variant="outline" 
-                className="w-full mb-10 h-12 rounded-2xl border-dashed border-2 border-primary/30 text-primary font-black uppercase text-[10px] tracking-widest gap-2 hover:bg-primary/5"
-              >
-                <Edit3 className="w-4 h-4" /> EDITAR PORTADA DE BIENVENIDA
-              </Button>
-            )}
-
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mb-12 space-y-8">
               <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3">
                 <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white">RUTAS LIBRES</TabsTrigger>

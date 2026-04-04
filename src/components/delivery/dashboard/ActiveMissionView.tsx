@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { format, addHours, differenceInMinutes, differenceInSeconds } from 'date-fns';
 import { 
   X, Clock, Store as StoreIcon, MapPinned, MessageCircle, Phone, 
   Wallet, ShieldCheck, AlertTriangle, RotateCcw, CheckCircle2, Navigation,
-  Settings2, ArrowUpCircle, Timer, Camera
+  Settings2, ArrowUpCircle, Timer, Camera, Loader2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,11 +15,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { OrderChat } from '@/components/chat/OrderChat';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { compressImage } from '@/lib/image-compression';
 
 interface ActiveMissionViewProps {
   mission: any;
   customerProfile: any;
-  onUpdateStatus: (status: string) => void;
+  onUpdateStatus: (status: string, metadata?: any) => void;
   onRelease: (reason: string) => void;
   onOpenMaps: (address: string) => void;
 }
@@ -37,7 +38,13 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMissionChatOpen, setIsMissionChatOpen] = useState(false);
   const [isReleaseDialogOpen, setIsReleaseDialogOpen] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [selectedReason, setSelectedReason] = useState<any>(null);
+  const [evidencePhoto, setEvidencePhoto] = useState<string | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -54,7 +61,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
     return new Date(ts);
   };
 
-  // CÁLCULO DE TIEMPO DE USO RESTANTE
   const useProgress = useMemo(() => {
     if (!isInUse || !mission.deliveredAt) return null;
     const deliveredAt = parseTimestamp(mission.deliveredAt);
@@ -77,6 +83,46 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
       percentage: Math.min(100, (1 - (remainingSeconds / totalSeconds)) * 100)
     };
   }, [isInUse, mission.deliveredAt, mission.requestHours, currentTime]);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      setIsCameraOpen(true);
+    } catch (e) {
+      console.error("Error acceso camara", e);
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+    setIsCameraOpen(false);
+  };
+
+  const capturePhoto = async () => {
+    if (!videoRef.current) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(videoRef.current, 0, 0);
+    
+    setIsCompressing(true);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+    setEvidencePhoto(dataUrl);
+    setIsCompressing(false);
+    stopCamera();
+  };
+
+  const handleFinalDelivery = () => {
+    if (!evidencePhoto) {
+      startCamera();
+      return;
+    }
+    onUpdateStatus('delivered', { deliveryEvidence: evidencePhoto });
+  };
 
   return (
     <div className="flex flex-col h-[calc(100dvh-64px)] animate-in slide-in-from-bottom duration-500 overflow-hidden relative z-[40]">
@@ -104,7 +150,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
       <main className="flex-1 overflow-y-auto no-scrollbar">
         <div className="px-6 py-10 pb-20 space-y-8 max-w-2xl mx-auto">
           
-          {/* MODO EN USO: Cronómetro de Recogida */}
           {isInUse && useProgress && (
             <section className="animate-in zoom-in duration-500">
               <Card className="border-none rounded-[48px] bg-slate-900 text-white p-8 shadow-2xl relative overflow-hidden">
@@ -139,15 +184,22 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             </div>
           </section>
 
-          {/* ACCIONES DE ESTADO */}
           {!isWithDriver ? (
             <Button onClick={() => onUpdateStatus('delivered_to_driver')} className="w-full h-24 rounded-[32px] bg-primary text-white font-black text-2xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all">
               <CheckCircle2 className="w-8 h-8" /> RECOGÍ EL PEDIDO
             </Button>
           ) : !isInUse ? (
-            <Button onClick={() => onUpdateStatus('delivered')} className="w-full h-24 rounded-[32px] bg-green-500 text-white font-black text-2xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all">
-              <Navigation className="w-8 h-8" /> ENTREGAR AL CLIENTE
-            </Button>
+            <div className="space-y-4">
+              {evidencePhoto ? (
+                <div className="relative aspect-video rounded-[32px] overflow-hidden border-4 border-white shadow-2xl group">
+                  <Image src={evidencePhoto} alt="Evidencia" fill className="object-cover" />
+                  <button onClick={() => setEvidencePhoto(null)} className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full shadow-lg"><X className="w-4 h-4" /></button>
+                </div>
+              ) : null}
+              <Button onClick={handleFinalDelivery} className="w-full h-24 rounded-[32px] bg-green-500 text-white font-black text-2xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all">
+                {evidencePhoto ? <><CheckCircle2 className="w-8 h-8" /> FINALIZAR ENTREGA</> : <><Navigation className="w-8 h-8" /> LLEGUÉ AL DESTINO</>}
+              </Button>
+            </div>
           ) : (
             <Button className="w-full h-20 rounded-[32px] bg-slate-900 text-white font-black text-lg uppercase italic gap-4 shadow-xl border-2 border-white/5 opacity-50 cursor-not-allowed">
               <Timer className="w-6 h-6" /> AGUARDANDO RECOGIDA
@@ -158,7 +210,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             <MapPinned className="w-5 h-5 text-primary" /> {isInUse ? "VER UBICACIÓN ACTUAL" : "VER EN EL MAPA"}
           </Button>
 
-          {/* DETALLES LOGÍSTICOS PRO */}
           <div className="bg-slate-950 text-white p-6 rounded-[40px] shadow-2xl space-y-6">
             <div className="flex items-center gap-3 border-b border-white/5 pb-4">
               <Settings2 className="w-5 h-5 text-primary" />
@@ -199,6 +250,24 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
           </div>
         </div>
       </main>
+
+      {/* OVERLAY DE CAMARA */}
+      {isCameraOpen && (
+        <div className="fixed inset-0 z-[500] bg-black flex flex-col p-6 animate-in fade-in">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="text-white font-black uppercase text-xs tracking-widest italic">Capturar Evidencia de Instalación</h4>
+            <Button variant="ghost" size="icon" onClick={stopCamera} className="text-white"><X className="w-6 h-6" /></Button>
+          </div>
+          <div className="flex-1 relative rounded-[32px] overflow-hidden bg-slate-900 border-2 border-white/10 shadow-2xl">
+            <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+          </div>
+          <div className="py-10 flex justify-center">
+            <Button onClick={capturePhoto} className="w-24 h-24 rounded-full bg-white text-black border-8 border-slate-300 active:scale-90 shadow-2xl flex items-center justify-center">
+              {isCompressing ? <Loader2 className="w-10 h-10 animate-spin" /> : <Camera className="w-10 h-10" />}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="shrink-0 p-6 bg-white/80 backdrop-blur-xl border-t border-slate-100">
         <div className="flex flex-col items-center gap-2">

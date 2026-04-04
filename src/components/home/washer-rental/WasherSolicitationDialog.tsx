@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -5,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
+import { useUser } from '@/firebase';
 
 // Importación de Funciones Atómicas Subdivididas
 import { WasherSolicitationHeader } from './WasherSolicitationHeader';
@@ -40,6 +42,7 @@ export function WasherSolicitationDialog({
   onSubmitRequest
 }: WasherSolicitationDialogProps) {
   const router = useRouter();
+  const { user } = useUser();
   
   // Estados de Formulario
   const [tempName, setTempName] = useState("");
@@ -55,7 +58,7 @@ export function WasherSolicitationDialog({
   const [hasStairs, setHasStairs] = useState(false);
   const [stairCount, setStairCount] = useState(1);
 
-  // Estados de Proceso y Navegación (MONITOR DE REDIRECCIÓN)
+  // Estados de Proceso y Navegación
   const [orderStatus, setOrderStatus] = useState<OrderSubmissionStatus>('idle');
   const [submittedOrderId, setSubmittedOrderId] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
@@ -73,13 +76,12 @@ export function WasherSolicitationDialog({
     }
   }, [profile, isOpen, pricingConfig, orderStatus]);
 
-  // LÓGICA DE REDIRECCIÓN AUTOMÁTICA (ACTIVADA POR submittedOrderId)
+  // LÓGICA DE REDIRECCIÓN AUTOMÁTICA
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (orderStatus === 'success' && submittedOrderId && redirectCountdown > 0) {
       timer = setTimeout(() => setRedirectCountdown(prev => prev - 1), 1000);
     } else if (orderStatus === 'success' && submittedOrderId && redirectCountdown === 0) {
-      // NAVEGACIÓN FORZADA A LA SALA DE ESPERA
       router.push(`/washer/waiting-room/${submittedOrderId}`);
     }
     return () => clearTimeout(timer);
