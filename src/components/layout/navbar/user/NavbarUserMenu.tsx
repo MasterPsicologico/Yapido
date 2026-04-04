@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { UserCircle, LogOut, LayoutGrid } from 'lucide-react';
+import { UserCircle, LogOut, LayoutGrid, Waves } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
@@ -42,9 +42,9 @@ export function NavbarUserMenu({ user, profile, canAccessManage, onLogout }: Nav
           </Link>
           
           {canAccessManage && (
-            <Link href="/admin/manage" className="flex items-center h-11 px-3 rounded-xl bg-primary/5 hover:bg-primary/10 transition-colors">
-              <LayoutGrid className="mr-3 h-4 w-4 text-primary" />
-              <span className="font-black italic uppercase tracking-tighter text-primary text-[11px]">Gestionar Mi Negocio</span>
+            <Link href="/admin/manage" className="flex items-center h-11 px-3 rounded-xl bg-slate-900 text-white hover:bg-black transition-all shadow-lg group">
+              <Waves className="mr-3 h-4 w-4 text-primary group-hover:animate-pulse" />
+              <span className="font-black italic uppercase tracking-tighter text-[11px]">Consola de Mando</span>
             </Link>
           )}
         </div>

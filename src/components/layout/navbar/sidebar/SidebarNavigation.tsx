@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Home as HomeIcon, UserCircle, Info, ClipboardList, Store, Truck, ShieldCheck } from 'lucide-react';
+import { Home as HomeIcon, UserCircle, Info, ClipboardList, Store, Truck, ShieldCheck, Waves } from 'lucide-react';
 import { SheetClose } from "@/components/ui/sheet";
 
 interface SidebarNavigationProps {
@@ -21,7 +21,7 @@ export function SidebarNavigation({ user, canAccessManage, isRepartidor, isAdmin
 
   const adminLinks = [
     { href: "/admin/orders", label: "Gestionar Pedidos", icon: ClipboardList, color: "bg-orange-50 text-orange-500" },
-    ...(canAccessManage ? [{ href: "/admin/manage", label: "Inventario y Tienda", icon: Store, color: "bg-violet-50 text-violet-500" }] : []),
+    ...(canAccessManage ? [{ href: "/admin/manage", label: "Consola de Mando", icon: Waves, color: "bg-primary/10 text-primary animate-pulse" }] : []),
     ...(isAdmin ? [{ href: "/admin/fleet", label: "Verificación de Flota", icon: ShieldCheck, color: "bg-green-50 text-green-600" }] : []),
   ];
 

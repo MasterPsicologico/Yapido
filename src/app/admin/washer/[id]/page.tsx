@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Settings2, Clock, MapPin, Phone, Store as StoreIcon } from 'lucide-react';
+import { Loader2, ArrowLeft, Settings2, Clock, MapPin, Phone, Store as StoreIcon, LayoutGrid, Zap, ShieldCheck } from 'lucide-react';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { useFirestore, useCollection, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, orderBy, doc, serverTimestamp } from 'firebase/firestore';
@@ -67,7 +67,7 @@ export default function WasherAdminPage() {
     const earningsMap: Record<string, number> = {};
     let totalGross = 0;
 
-    orders.filter(o => o.status === 'delivered' || o.status === 'in_use').forEach(o => {
+    orders.filter(o => o.status === 'delivered' || o.status === 'delivered_to_driver').forEach(o => {
       const dateKey = o.createdAt ? format(o.createdAt.toDate(), 'yyyy-MM-dd') : 'unknown';
       const amount = o.totalPrice || 0;
       earningsMap[dateKey] = (earningsMap[dateKey] || 0) + amount;
@@ -117,6 +117,25 @@ export default function WasherAdminPage() {
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-10 max-w-5xl space-y-12 pb-32">
+        <div className="flex flex-col gap-8 mb-4">
+          <Button variant="ghost" onClick={() => router.push('/admin/manage')} className="w-fit gap-2 text-slate-400 font-bold hover:text-primary p-0 h-auto hover:bg-transparent">
+            <ArrowLeft className="w-4 h-4" /> <span className="text-[10px] font-black uppercase tracking-widest">Panel Central</span>
+          </Button>
+          
+          <div className="flex items-center gap-6">
+            <div className="w-20 h-20 bg-slate-900 rounded-[32px] flex items-center justify-center text-white shadow-2xl relative border border-white/5">
+              <Zap className="w-10 h-10 text-primary animate-pulse" />
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-[#f8fafc] flex items-center justify-center">
+                <ShieldCheck className="w-4 h-4 text-white" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900">Consola de Mando</h1>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-1">ADMINISTRADOR: {store?.name?.toUpperCase()}</p>
+            </div>
+          </div>
+        </div>
+
         <WasherHeader 
           storeName={store?.name} 
           activeTab={activeTab} 
@@ -126,16 +145,14 @@ export default function WasherAdminPage() {
           onOpenSettings={() => setIsSettingsOpen(true)}
         />
 
-        {/* RADAR PRIORITARIO: Solo aparece en Dashboard o si hay pedidos vivos */}
-        {activeTab === 'stats' && (
-          <div className="animate-in fade-in zoom-in duration-700">
-            <WasherLiveRadar 
-              storeId={id} 
-              storeName={store?.name || 'Tienda'} 
-              ownerId={store?.ownerId || ''} 
-            />
-          </div>
-        )}
+        {/* RADAR PRIORITARIO: EL DUEÑO ADMINISTRA LAS TARJETAS DESDE AQUÍ */}
+        <section className="animate-in fade-in zoom-in duration-700">
+          <WasherLiveRadar 
+            storeId={id} 
+            storeName={store?.name || 'Tienda'} 
+            ownerId={store?.ownerId || ''} 
+          />
+        </section>
 
         {activeTab === 'stats' && (
           <WasherDashboard 

@@ -20,7 +20,8 @@ import {
   ArrowLeft,
   Plus,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  Zap
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -90,11 +91,11 @@ export default function ManagePage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900">Mis Negocios</h1>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-1">Consola de Dueño • {globalStats.totalBusinesses} ACTIVOS</p>
+                <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900">Consola Central</h1>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-1">Dueño de Negocio • {globalStats.totalBusinesses} ACTIVOS</p>
               </div>
             </div>
-            <Button asChild className="rounded-full h-14 px-8 font-black text-xs uppercase tracking-widest gap-2 bg-slate-900 shadow-xl shadow-slate-200">
+            <Button asChild className="rounded-full h-14 px-8 font-black text-xs uppercase tracking-widest gap-2 bg-slate-900 shadow-xl shadow-slate-200 hover:bg-primary transition-all">
               <Link href="/"><Plus className="w-4 h-4" /> Registrar Nueva Vitrina</Link>
             </Button>
           </div>
@@ -117,7 +118,7 @@ export default function ManagePage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       <div className="absolute bottom-4 left-4">
                         <Badge className={cn("text-white border-none font-black text-[8px] uppercase px-3 italic", isWasher ? "bg-primary" : "bg-secondary")}>
-                          {isWasher ? "ALQUILER ACTIVO" : "TIENDA ACTIVA"}
+                          {isWasher ? "COMANDO DE ALQUILER" : "GESTIÓN DE TIENDA"}
                         </Badge>
                       </div>
                     </div>
@@ -130,7 +131,7 @@ export default function ManagePage() {
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><MapPin className="w-3 h-3" /> {store.address || 'Ubicación registrada'}</p>
                         </div>
                         <div className="w-14 h-14 rounded-[20px] bg-slate-50 flex items-center justify-center shadow-inner group-hover:bg-primary/10 transition-all">
-                          {isWasher ? <Waves className="w-7 h-7 text-primary" /> : <StoreIcon className="w-7 h-7 text-secondary" />}
+                          {isWasher ? <Waves className="w-7 h-7 text-primary animate-pulse" /> : <StoreIcon className="w-7 h-7 text-secondary" />}
                         </div>
                       </div>
 
@@ -155,24 +156,25 @@ export default function ManagePage() {
                         <div className="hidden sm:block bg-slate-50 p-4 rounded-3xl border border-slate-100">
                           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Visibilidad</p>
                           <span className={cn("text-[9px] font-black uppercase italic", hasHours ? "text-primary" : "text-red-400")}>
-                            {hasHours ? "PÚBLICO ACTIVO" : "OCULTO AL PÚBLICO"}
+                            {hasHours ? "RADAR ACTIVO" : "OCULTO"}
                           </span>
                         </div>
                       </div>
 
-                      {!hasHours && (
-                        <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex items-start gap-3">
-                          <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                          <p className="text-[10px] font-bold text-red-600 uppercase tracking-tight leading-relaxed">
-                            Acción requerida: Tu negocio no aparecerá en el mapa ni permitirá pedidos hasta que configures el horario de apertura.
-                          </p>
-                        </div>
-                      )}
-
                       <div className="pt-2">
-                        <Button asChild className="w-full h-16 rounded-[24px] bg-slate-900 text-white font-black uppercase text-sm tracking-widest gap-3 shadow-xl hover:bg-primary transition-all">
+                        <Button asChild className="w-full h-16 rounded-[24px] bg-slate-900 text-white font-black uppercase text-sm tracking-widest gap-3 shadow-xl hover:bg-primary transition-all group/btn">
                           <Link href={adminPath}>
-                            {isWasher ? "GESTIONAR FLOTA" : "ADMINISTRAR VITRINA"} 
+                            {isWasher ? (
+                              <>
+                                <Zap className="w-5 h-5 text-primary group-hover/btn:animate-bounce" />
+                                ENTRAR AL COMANDO DE FLOTA
+                              </>
+                            ) : (
+                              <>
+                                <Settings className="w-5 h-5" />
+                                ADMINISTRAR VITRINA
+                              </>
+                            )}
                             <ChevronRight className="w-5 h-5" />
                           </Link>
                         </Button>
