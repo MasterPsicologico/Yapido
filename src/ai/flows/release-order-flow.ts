@@ -1,7 +1,8 @@
+
 'use server';
 /**
  * @fileOverview Orquestador de Liberación de Pedidos.
- * Ejecuta agentes en paralelo para máxima velocidad de respuesta.
+ * Gestiona alarmas para el patrón si el motivo es crítico.
  */
 
 import { ai } from '@/ai/genkit';
@@ -40,20 +41,26 @@ const releaseOrderFlow = ai.defineFlow(
     const logs: string[] = ["Protocolo de liberación activado"];
     let debtApplied = 0;
 
+    // DETERMINAR SI ES UNA ALARMA CRÍTICA (Basado en palabras clave)
+    const isAlarm = ["pinchado", "gasolina", "accidente"].some(k => input.reason.toLowerCase().includes(k));
+
     try {
-      // EJECUCIÓN EN PARALELO PARA VELOCIDAD MÁXIMA (GENKIT 1.x)
-      logs.push("Sincronizando agentes especializados en paralelo...");
+      logs.push("Sincronizando agentes especializados...");
       
       const agentPromises = [
-        // 1. Soporte
+        // 1. Soporte: Registro de incidente con flag de Alerta si es necesario
         soporteAgent({
           orderId: input.orderId,
-          issueDescription: `Liberación: ${input.reason}. Carga: ${input.hasProducts}`,
-          reporterRole: 'sistema',
-          context: { driverId: input.driverId, orderData: { value: input.orderValue } }
-        }).then(() => "Agente Soporte: Incidente registrado."),
+          issueDescription: `LIBERACIÓN URGENTE: ${input.reason}. Con Carga: ${input.hasProducts}`,
+          reporterRole: 'repartidor',
+          context: { 
+            driverId: input.driverId, 
+            orderData: { value: input.orderValue },
+            isCriticalAlarm: isAlarm 
+          }
+        }).then(() => isAlarm ? "Agente Soporte: ALARMA ENVIADA AL PATRÓN." : "Agente Soporte: Incidente registrado."),
 
-        // 2. Pagos (Si hay productos)
+        // 2. Pagos (Si hay productos o es por falla técnica)
         input.hasProducts ? pagosAgent({
           orderId: input.orderId,
           customerId: "SYSTEM",
@@ -62,27 +69,27 @@ const releaseOrderFlow = ai.defineFlow(
           paymentMethod: 'digital',
           currentState: 'PAYMENT_PENDING',
           context: { 
-            reason: `LIBERACION_CON_PRODUCTOS`,
+            reason: `LIBERACION_CON_CARGA_${input.reason.toUpperCase().replace(/\s/g, '_')}`,
             isCancelled: true 
           }
         }).then(() => {
           debtApplied = input.orderValue;
-          return "Agente Pagos: Penalización aplicada.";
-        }) : Promise.resolve("Agente Pagos: Sin deuda pendiente."),
+          return "Agente Pagos: Saldo de repartidor afectado por productos.";
+        }) : Promise.resolve("Agente Pagos: Sin cargos adicionales."),
 
-        // 3. Asignador
+        // 3. Asignador: Devolver al pool inmediatamente
         asignadorAgent({
           orderId: input.orderId,
           storeLocation: { lat: 0, lng: 0 },
           customerLocation: { lat: 0, lng: 0 },
           orderValue: input.orderValue,
           currentState: 'REASSIGNING'
-        }).then(() => "Agente Asignador: Pedido devuelto al pool."),
+        }).then(() => "Agente Asignador: Ruta devuelta al pool público."),
 
-        // 4. Notificaciones
+        // 4. Notificaciones: Alerta Maestra
         notificacionesAgent({
           orderId: input.orderId,
-          event: "DRIVER_UNASSIGNED",
+          event: isAlarm ? "DRIVER_EMERGENCY" : "DRIVER_UNASSIGNED",
           status: "searching",
           recipients: [{
             userId: input.storeId,
@@ -90,9 +97,9 @@ const releaseOrderFlow = ai.defineFlow(
             name: input.storeName,
             contactInfo: {}
           }],
-          priority: "high",
-          context: { reason: input.reason }
-        }).then(() => "Agente Notificaciones: Tienda alertada.")
+          priority: isAlarm ? "urgent" : "high",
+          context: { reason: input.reason, eta: "INMEDIATO" }
+        }).then(() => "Agente Notificaciones: Patrón notificado con prioridad crítica.")
       ];
 
       const results = await Promise.all(agentPromises);
@@ -101,7 +108,7 @@ const releaseOrderFlow = ai.defineFlow(
       return {
         success: true,
         debtApplied,
-        message: "Liberación completada exitosamente.",
+        message: isAlarm ? "Alarma enviada. Tu patrón ha sido notificado." : "Liberación completada.",
         agentLogs: logs
       };
 
@@ -109,7 +116,7 @@ const releaseOrderFlow = ai.defineFlow(
       console.error("Error en Flow de Liberación:", e);
       return {
         success: false,
-        message: "Error en la orquestación",
+        message: "Error en la orquestación de seguridad",
         agentLogs: [...logs, `ERROR: ${e.message}`]
       };
     }

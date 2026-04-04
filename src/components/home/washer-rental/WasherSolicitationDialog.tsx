@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
-// Importación de Funciones Atómicas Subdivididas (Mandamiento #1)
+// Importación de Funciones Atómicas Subdivididas
 import { WasherSolicitationHeader } from './WasherSolicitationHeader';
 import { WasherNameInput } from './WasherNameInput';
 import { WasherAddressInput } from './WasherAddressInput';
@@ -12,6 +12,8 @@ import { WasherPhoneInput } from './WasherPhoneInput';
 import { WasherTimeSelector } from './WasherTimeSelector';
 import { WasherPaymentSelector } from './WasherPaymentSelector';
 import { WasherSolicitationFooter } from './WasherSolicitationFooter';
+import { WasherServiceDetails } from './WasherServiceDetails';
+import { WasherRouteSelector } from './WasherRouteSelector';
 
 interface WasherSolicitationDialogProps {
   isOpen: boolean;
@@ -24,10 +26,6 @@ interface WasherSolicitationDialogProps {
   onSubmitRequest: (data: any) => Promise<void>;
 }
 
-/**
- * Función Maestra: Orquestador del Diálogo de Solicitud
- * Controla el flujo de datos y la sincronización con el perfil de usuario.
- */
 export function WasherSolicitationDialog({
   isOpen,
   onOpenChange,
@@ -44,10 +42,18 @@ export function WasherSolicitationDialog({
   const [tempPhone, setTempPhone] = useState("");
   const [requestHours, setRequestHours] = useState(Number(pricingConfig?.minHours || 5));
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'digital'>('cash');
+  
+  // Nuevos Campos Pro
+  const [washerType, setWasherType] = useState<'automatica' | 'semiautomatica'>('automatica');
+  const [floor, setFloor] = useState("1");
+  const [hasElevator, setHasElevator] = useState(false);
+  const [needsInstallation, setNeedsInstallation] = useState(true);
+  const [routeType, setRouteType] = useState<'round_trip' | 'delivery' | 'pickup'>('round_trip');
+  const [isHeavyLoad, setIsHeavyLoad] = useState(false);
+
   const [isSending, setIsSending] = useState(false);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
 
-  // Lógica de Sincronización Automática (Auto-llenado desde el perfil)
   useEffect(() => {
     if (profile && isOpen) {
       setTempName(profile.displayName || "");
@@ -56,7 +62,6 @@ export function WasherSolicitationDialog({
     }
   }, [profile, isOpen]);
 
-  // Lógica Financiera
   const minHours = Number(pricingConfig?.minHours || 5);
   const valHoraBase = Number(pricingConfig?.basePrice || 3000);
   const totalPrice = requestHours * valHoraBase;
@@ -85,7 +90,13 @@ export function WasherSolicitationDialog({
       customerPhone: tempPhone,
       requestHours,
       totalPrice,
-      paymentMethod
+      paymentMethod,
+      washerType,
+      floor,
+      hasElevator,
+      needsInstallation,
+      routeType,
+      isHeavyLoad
     });
     setIsSending(false);
   };
@@ -98,7 +109,6 @@ export function WasherSolicitationDialog({
           <DialogDescription>Formulario modular sincronizado con el perfil.</DialogDescription>
         </DialogHeader>
         
-        {/* Header Independiente */}
         <WasherSolicitationHeader 
           isAdmin={isAdmin} 
           onOpenAdminSettings={onOpenAdminSettings} 
@@ -106,16 +116,24 @@ export function WasherSolicitationDialog({
         />
 
         <div className="flex-1 overflow-y-auto no-scrollbar bg-white rounded-t-[40px] mt-2 border-t-4 border-slate-950">
-          <div className="max-w-md mx-auto py-8 px-6 space-y-6">
+          <div className="max-w-md mx-auto py-8 px-6 space-y-10">
             
-            {/* Subdivisión de Funciones de Datos (Mandamiento #1) */}
-            <div className="space-y-4">
+            <div className="space-y-6">
               <WasherNameInput value={tempName} onChange={setTempName} />
               <WasherAddressInput value={tempAddress} onChange={setTempAddress} />
               <WasherPhoneInput value={tempPhone} onChange={setTempPhone} />
             </div>
 
-            {/* Selector de Tiempo Independiente */}
+            <WasherServiceDetails 
+              washerType={washerType} setWasherType={setWasherType}
+              floor={floor} setFloor={setFloor}
+              hasElevator={hasElevator} setHasElevator={setHasElevator}
+              needsInstallation={needsInstallation} setNeedsInstallation={setNeedsInstallation}
+              isHeavyLoad={isHeavyLoad} setIsHeavyLoad={setIsHeavyLoad}
+            />
+
+            <WasherRouteSelector routeType={routeType} setRouteType={setRouteType} />
+
             <WasherTimeSelector 
               requestHours={requestHours}
               onAdjustHours={handleAdjustHours}
@@ -124,13 +142,11 @@ export function WasherSolicitationDialog({
               flashEffect={flashEffect}
             />
 
-            {/* Selector de Pago Independiente */}
             <WasherPaymentSelector 
               paymentMethod={paymentMethod}
               onPaymentMethodChange={setPaymentMethod}
             />
 
-            {/* Footer y Comando de Envío Independiente */}
             <WasherSolicitationFooter 
               formattedPrice={formattedPrice}
               paymentMethod={paymentMethod}
