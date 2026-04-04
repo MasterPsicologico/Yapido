@@ -210,11 +210,11 @@ export default function DeliveryDashboardPage() {
               <div className="space-y-8">
                 <div className="flex items-start gap-6">
                   <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 shrink-0 shadow-inner"><CheckCircle2 className="w-6 h-6" /></div>
-                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Gana por cada entrega</h4><p className="text-xs text-slate-400 font-medium">Recibe el 70% del valor de cada envío de forma inmediata.</p></div>
+                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Genera Ganancias</h4><p className="text-xs text-slate-400 font-medium">Aumenta tus ingresos completando misiones locales con total libertad y respaldo tecnológico.</p></div>
                 </div>
                 <div className="flex items-start gap-6">
                   <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0 shadow-inner"><Zap className="w-6 h-6" /></div>
-                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Autonomía Logística</h4><p className="text-xs text-slate-400 font-medium">Tú controlas tu tiempo. Conéctate cuando quieras.</p></div>
+                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Control Absoluto</h4><p className="text-xs text-slate-400 font-medium">Tú decides tu horario y tu zona. Sin jefes ni ataduras, solo tú y tu ruta.</p></div>
                 </div>
               </div>
 
@@ -292,7 +292,7 @@ export default function DeliveryDashboardPage() {
               <TabsContent value="earnings"><EarningsTab balance={profile?.balance || 0} /></TabsContent>
             </Tabs>
 
-            <WeeklyChallenge orders={history} />
+            <WeeklyChallenge history={history} />
           </main>
         </div>
       )}
