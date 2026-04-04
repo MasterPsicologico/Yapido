@@ -49,7 +49,7 @@ export function WasherSolicitationDialog({
   const [hasElevator, setHasElevator] = useState(false);
   const [needsInstallation, setNeedsInstallation] = useState(true);
   const [routeType, setRouteType] = useState<'round_trip' | 'delivery' | 'pickup'>('round_trip');
-  const [isHeavyLoad, setIsHeavyLoad] = useState(false);
+  const [hasStairs, setHasStairs] = useState(false);
 
   const [isSending, setIsSending] = useState(false);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
@@ -96,7 +96,7 @@ export function WasherSolicitationDialog({
       hasElevator,
       needsInstallation,
       routeType,
-      isHeavyLoad
+      hasStairs
     });
     setIsSending(false);
   };
@@ -125,11 +125,12 @@ export function WasherSolicitationDialog({
             </div>
 
             <WasherServiceDetails 
+              isAdmin={isAdmin}
               washerType={washerType} setWasherType={setWasherType}
               floor={floor} setFloor={setFloor}
               hasElevator={hasElevator} setHasElevator={setHasElevator}
               needsInstallation={needsInstallation} setNeedsInstallation={setNeedsInstallation}
-              isHeavyLoad={isHeavyLoad} setIsHeavyLoad={setIsHeavyLoad}
+              hasStairs={hasStairs} setHasStairs={setHasStairs}
             />
 
             <WasherRouteSelector routeType={routeType} setRouteType={setRouteType} />

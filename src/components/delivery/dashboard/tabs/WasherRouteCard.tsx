@@ -14,7 +14,8 @@ import {
   ShieldCheck, 
   AlertTriangle,
   Star,
-  Info
+  Info,
+  CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -118,10 +119,11 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
               </div>
             </div>
 
-            {order.isHeavyLoad && (
-              <div className="bg-red-50 border border-red-100 p-4 rounded-3xl flex items-center gap-3 animate-pulse">
-                <AlertTriangle className="w-5 h-5 text-red-500" />
-                <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">Carga Pesada Detectada</span>
+            {/* ALERTA DE ESCALERAS */}
+            {order.hasStairs && (
+              <div className="bg-amber-50 border border-amber-100 p-4 rounded-3xl flex items-center gap-3 animate-pulse">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Requiere subir escalas</span>
               </div>
             )}
           </div>
@@ -145,11 +147,5 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-function CheckCircle2(props: any) {
-  return (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
   );
 }

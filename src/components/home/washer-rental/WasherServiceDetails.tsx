@@ -1,12 +1,19 @@
 
 "use client";
 
-import { LayoutGrid, ArrowUpCircle, CheckCircle2, AlertTriangle, Settings2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { LayoutGrid, ArrowUpCircle, CheckCircle2, AlertTriangle, Settings2, Camera, Loader2, ImageIcon } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { doc, serverTimestamp } from 'firebase/firestore';
+import { compressImage } from '@/lib/image-compression';
+import { toast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 interface WasherServiceDetailsProps {
+  isAdmin: boolean;
   washerType: 'automatica' | 'semiautomatica';
   setWasherType: (v: 'automatica' | 'semiautomatica') => void;
   floor: string;
@@ -15,13 +22,38 @@ interface WasherServiceDetailsProps {
   setHasElevator: (v: boolean) => void;
   needsInstallation: boolean;
   setNeedsInstallation: (v: boolean) => void;
-  isHeavyLoad: boolean;
-  setIsHeavyLoad: (v: boolean) => void;
+  hasStairs: boolean;
+  setHasStairs: (v: boolean) => void;
 }
 
 export function WasherServiceDetails({
-  washerType, setWasherType, floor, setFloor, hasElevator, setHasElevator, needsInstallation, setNeedsInstallation, isHeavyLoad, setIsHeavyLoad
+  isAdmin, washerType, setWasherType, floor, setFloor, hasElevator, setHasElevator, needsInstallation, setNeedsInstallation, hasStairs, setHasStairs
 }: WasherServiceDetailsProps) {
+  const firestore = useFirestore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingType, setUploadingType] = useState<'automatica' | 'semiautomatica' | null>(null);
+
+  const previewsRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_previews'), [firestore]);
+  const { data: previews } = useDoc(previewsRef);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'automatica' | 'semiautomatica') => {
+    const file = e.target.files?.[0];
+    if (!file || !isAdmin) return;
+    setUploadingType(type);
+    try {
+      const compressed = await compressImage(file, 400, 600, 0.7);
+      await setDocumentNonBlocking(previewsRef, {
+        [type]: compressed,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      toast({ title: "Imagen de referencia actualizada" });
+    } catch (error) {
+      toast({ title: "Error al cargar imagen", variant: "destructive" });
+    } finally {
+      setUploadingType(null);
+    }
+  };
+
   return (
     <div className="space-y-8 bg-slate-50 p-6 rounded-[32px] border border-slate-100 shadow-inner">
       <div className="flex items-center gap-3">
@@ -32,23 +64,71 @@ export function WasherServiceDetails({
       </div>
 
       <div className="grid gap-6">
-        {/* Tipo de Lavadora */}
-        <div className="space-y-3">
+        {/* Tipo de Lavadora y Miniaturas */}
+        <div className="space-y-4">
           <Label className="text-[9px] font-black uppercase text-slate-400 ml-2">Equipo Solicitado</Label>
-          <div className="grid grid-cols-2 gap-2">
-            {['automatica', 'semiautomatica'].map((type) => (
+          <div className="grid grid-cols-2 gap-3">
+            {/* BOTÓN AUTOMÁTICA */}
+            <div className="space-y-3">
               <button
-                key={type}
-                onClick={() => setWasherType(type as any)}
+                onClick={() => setWasherType('automatica')}
                 className={cn(
-                  "h-12 rounded-2xl font-black text-[10px] uppercase tracking-widest border transition-all",
-                  washerType === type ? "bg-slate-900 text-white border-slate-900 shadow-lg" : "bg-white text-slate-400 border-slate-200"
+                  "w-full h-12 rounded-2xl font-black text-[10px] uppercase tracking-widest border transition-all",
+                  washerType === 'automatica' ? "bg-slate-900 text-white border-slate-900 shadow-lg" : "bg-white text-slate-400 border-slate-200"
                 )}
               >
-                {type}
+                automatica
               </button>
-            ))}
+              
+              {/* MINIATURA VERTICAL DIMINUTA */}
+              <div className="relative aspect-[2/3] w-16 mx-auto rounded-xl overflow-hidden bg-white border border-slate-200 shadow-sm group/thumb">
+                {previews?.automatica ? (
+                  <Image src={previews.automatica} alt="Auto" fill className="object-cover" />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-slate-200"><ImageIcon className="w-4 h-4" /></div>
+                )}
+                {isAdmin && (
+                  <button 
+                    onClick={() => { setUploadingType('automatica'); fileInputRef.current?.click(); }}
+                    className="absolute inset-0 bg-primary/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center text-white"
+                  >
+                    {uploadingType === 'automatica' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* BOTÓN SEMIAUTOMÁTICA */}
+            <div className="space-y-3">
+              <button
+                onClick={() => setWasherType('semiautomatica')}
+                className={cn(
+                  "w-full h-12 rounded-2xl font-black text-[10px] uppercase tracking-widest border transition-all",
+                  washerType === 'semiautomatica' ? "bg-slate-900 text-white border-slate-900 shadow-lg" : "bg-white text-slate-400 border-slate-200"
+                )}
+              >
+                semiautomatica
+              </button>
+
+              {/* MINIATURA VERTICAL DIMINUTA */}
+              <div className="relative aspect-[2/3] w-16 mx-auto rounded-xl overflow-hidden bg-white border border-slate-200 shadow-sm group/thumb">
+                {previews?.semiautomatica ? (
+                  <Image src={previews.semiautomatica} alt="Semi" fill className="object-cover" />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-slate-200"><ImageIcon className="w-4 h-4" /></div>
+                )}
+                {isAdmin && (
+                  <button 
+                    onClick={() => { setUploadingType('semiautomatica'); fileInputRef.current?.click(); }}
+                    className="absolute inset-0 bg-primary/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center text-white"
+                  >
+                    {uploadingType === 'semiautomatica' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
+          <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => uploadingType && handleImageUpload(e, uploadingType)} />
         </div>
 
         {/* Piso y Ascensor */}
@@ -87,18 +167,19 @@ export function WasherServiceDetails({
             <div className={cn("w-2 h-2 rounded-full", needsInstallation ? "bg-green-500 animate-pulse" : "bg-slate-200")} />
           </button>
 
+          {/* NUEVO ITEM: ESCALERAS / ESCALAS */}
           <button 
-            onClick={() => setIsHeavyLoad(!isHeavyLoad)}
+            onClick={() => setHasStairs(!hasStairs)}
             className={cn(
               "flex items-center justify-between p-4 rounded-2xl border transition-all",
-              isHeavyLoad ? "bg-red-50 border-red-200 text-red-700 shadow-sm animate-vibrate" : "bg-white border-slate-100 text-slate-400"
+              hasStairs ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm" : "bg-white border-slate-100 text-slate-400"
             )}
           >
             <div className="flex items-center gap-3">
-              <AlertTriangle className={cn("w-5 h-5", isHeavyLoad ? "text-red-500" : "text-slate-200")} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Carga muy pesada</span>
+              <AlertTriangle className={cn("w-5 h-5", hasStairs ? "text-amber-500" : "text-slate-200")} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Hay Escalas / Escaleras</span>
             </div>
-            <div className={cn("w-2 h-2 rounded-full", isHeavyLoad ? "bg-red-500 animate-pulse" : "bg-slate-200")} />
+            <div className={cn("w-2 h-2 rounded-full", hasStairs ? "bg-amber-500 animate-pulse" : "bg-slate-200")} />
           </button>
         </div>
       </div>
