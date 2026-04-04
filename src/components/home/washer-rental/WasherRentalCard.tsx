@@ -1,7 +1,8 @@
 
 "use client";
 
-import { Zap, Moon, Camera, Store as StoreIcon, LayoutGrid, ChevronDown, Loader2, Settings } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Zap, Moon, Camera, Store as StoreIcon, LayoutGrid, ChevronDown, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,8 @@ interface WasherRentalCardProps {
   onBannerUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
+const CACHE_KEY = 'vitriniando_washer_banner_cache';
+
 export function WasherRentalCard({
   isAdmin,
   bannerConfig,
@@ -25,22 +28,48 @@ export function WasherRentalCard({
   onOpenStoreCreation,
   onBannerUpload
 }: WasherRentalCardProps) {
+  const [localBanner, setLocalBanner] = useState<string | null>(null);
+
+  // SISTEMA DE CACHÉ INSTANTÁNEO
+  useEffect(() => {
+    // 1. Cargar inmediatamente desde el celular
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      setLocalBanner(cached);
+    }
+  }, []);
+
+  useEffect(() => {
+    // 2. Sincronizar con la nube si hay cambios
+    if (bannerConfig?.backgroundImage && bannerConfig.backgroundImage !== localBanner) {
+      setLocalBanner(bannerConfig.backgroundImage);
+      localStorage.setItem(CACHE_KEY, bannerConfig.backgroundImage);
+    }
+  }, [bannerConfig?.backgroundImage, localBanner]);
+
   return (
     <div 
       onClick={onOpenSolicitation}
-      className="relative w-full min-h-[calc(100dvh-64px)] overflow-hidden cursor-pointer flex flex-col items-center justify-start pt-32 px-6 text-center bg-[#0a0a0a] active:scale-[0.99] transition-all duration-500"
+      className="relative w-full min-h-[calc(100dvh-64px)] overflow-hidden cursor-pointer flex flex-col items-center justify-start pt-32 px-6 text-center bg-[#050505] active:scale-[0.99] transition-all duration-500"
     >
-      {/* Fondo de Identidad */}
+      {/* Fondo de Identidad con Carga Local Prioritaria */}
       <div className="absolute inset-0 z-0">
-        {bannerConfig?.backgroundImage ? (
-          <Image src={bannerConfig.backgroundImage} alt="Portada" fill className="object-cover object-top" priority />
+        {localBanner ? (
+          <Image 
+            src={localBanner} 
+            alt="Portada" 
+            fill 
+            className="object-cover object-top animate-in fade-in duration-700" 
+            priority 
+          />
         ) : (
-          <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/wash/1920/1080')] bg-cover bg-top" />
+          /* Gradiente de Transición Elegante (Mandamiento #1) */
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-black" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
       </div>
 
-      {/* Activador Central - Reubicado quirúrgicamente más arriba */}
+      {/* Activador Central */}
       <div className="relative z-10 flex flex-col items-center gap-8 mt-16 animate-in fade-in zoom-in duration-700">
         <div className="relative group/cta">
           {isAnyStoreOpen && (
@@ -60,7 +89,7 @@ export function WasherRentalCard({
         </div>
       </div>
 
-      {/* Botón de Gestión / Registro de Tienda (Top Right) - Restaurado */}
+      {/* Botón de Gestión / Registro de Tienda (Top Right) */}
       <button 
         onClick={(e) => { 
           e.stopPropagation(); 

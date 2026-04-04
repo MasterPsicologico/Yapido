@@ -8,7 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { compressImage } from '@/lib/image-compression';
 
-// Importación de Sub-Módulos Atómicos (Mandamiento #1)
+// Importación de Sub-Módulos Atómicos
 import { WasherRentalCard } from './washer-rental/WasherRentalCard';
 import { WasherSolicitationDialog } from './washer-rental/WasherSolicitationDialog';
 import { WasherAdminPricingDialog } from './washer-rental/WasherAdminPricingDialog';
@@ -32,6 +32,8 @@ interface HomeActionsProps {
   onStoreSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
+const WASHER_BANNER_CACHE_KEY = 'vitriniando_washer_banner_cache';
+
 export const checkIsBusinessOpen = (openTime?: string, closeTime?: string) => {
   if (!openTime || !closeTime) return false;
   const now = new Date();
@@ -52,14 +54,12 @@ export function HomeActions({
   const firestore = useFirestore();
   const router = useRouter();
 
-  // Estados de Control de Diálogos
   const [openWasher, setOpenWasher] = useState(false);
   const [openAddWasherStore, setOpenAddWasherStore] = useState(false);
   const [showAdminPricing, setShowAdminPricing] = useState(false);
   const [isSendingRequest, setIsSendingRequest] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
-  // Configuración y Datos de Firestore
   const pricingRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_pricing'), [firestore]);
   const { data: pricingConfig } = useDoc(pricingRef);
 
@@ -75,7 +75,6 @@ export function HomeActions({
 
   const isAnyStoreOpen = washerStores?.some(s => checkIsBusinessOpen(s.openTime, s.closeTime)) || false;
 
-  // Lógica de Negocio: Solicitud de Alquiler
   const handleWasherRequest = async (data: any) => {
     if (!user || !firestore) return;
     try {
@@ -96,7 +95,6 @@ export function HomeActions({
     }
   };
 
-  // Lógica de Negocio: Actualización de Precios (Admin)
   const handleUpdatePricing = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isAdmin) return;
@@ -112,7 +110,6 @@ export function HomeActions({
     }
   };
 
-  // Lógica de Negocio: Creación de Tienda de Lavadoras
   const handleCreateWasherStore = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user || !firestore) return;
@@ -138,13 +135,15 @@ export function HomeActions({
     }
   };
 
-  // Lógica de Negocio: Banner
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !isAdmin) return;
     setIsUploadingBanner(true);
     try {
       const compressed = await compressImage(file, 1920, 1080, 0.8);
+      // Actualizar localmente inmediatamente para feedback instantáneo
+      localStorage.setItem(WASHER_BANNER_CACHE_KEY, compressed);
+      
       setDocumentNonBlocking(bannerConfigRef, { backgroundImage: compressed, updatedAt: serverTimestamp() }, { merge: true });
       toast({ title: "Portada actualizada" });
     } catch (error) {
@@ -156,7 +155,6 @@ export function HomeActions({
 
   return (
     <div className="flex flex-col w-full">
-      {/* 1. Función Tarjeta: Independiente */}
       <WasherRentalCard 
         isAdmin={isAdmin}
         bannerConfig={bannerConfig}
@@ -167,7 +165,6 @@ export function HomeActions({
         onBannerUpload={handleBannerUpload}
       />
 
-      {/* 2. Función Diálogo de Solicitud: Independiente */}
       <WasherSolicitationDialog 
         isOpen={openWasher}
         onOpenChange={setOpenWasher}
@@ -179,7 +176,6 @@ export function HomeActions({
         onSubmitRequest={handleWasherRequest}
       />
 
-      {/* 3. Función Ajustes Administrativos: Independiente */}
       <WasherAdminPricingDialog 
         isOpen={showAdminPricing}
         onOpenChange={setShowAdminPricing}
@@ -187,7 +183,6 @@ export function HomeActions({
         onUpdatePricing={handleUpdatePricing}
       />
 
-      {/* 4. Función Creación de Vitrina: Independiente */}
       <WasherStoreCreationDialog 
         isOpen={openAddWasherStore}
         onOpenChange={setOpenAddWasherStore}
