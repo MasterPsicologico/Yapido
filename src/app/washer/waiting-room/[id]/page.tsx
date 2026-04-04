@@ -10,7 +10,7 @@ import {
   Loader2, Radar, Store as StoreIcon, MessageCircle, Phone, 
   CheckCircle2, XCircle, Clock, Wallet, ShieldCheck, Sparkles
 } from 'lucide-react';
-import { useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, useUser } from '@/firebase';
 import { doc, collection, query, orderBy, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -20,17 +20,18 @@ export default function WasherWaitingRoom() {
   const id = params?.id as string;
   const router = useRouter();
   const firestore = useFirestore();
+  const { user } = useUser();
   
   const [timeRemaining, setTimeRemaining] = useState(300); // 5 minutos
 
-  // Listeners de la Orden y Ofertas (CON REGLAS DE SEGURIDAD CORREGIDAS)
-  const orderRef = useMemoFirebase(() => (!firestore || !id) ? null : doc(firestore, 'orders', id), [firestore, id]);
+  // Listeners de la Orden y Ofertas (BLINDADOS CON EL USUARIO PARA EVITAR ERROR DE PERMISOS)
+  const orderRef = useMemoFirebase(() => (!firestore || !id || !user) ? null : doc(firestore, 'orders', id), [firestore, id, user]);
   const { data: order, isLoading: loadingOrder } = useDoc(orderRef);
 
   const offersQuery = useMemoFirebase(() => {
-    if (!firestore || !id) return null;
+    if (!firestore || !id || !user) return null;
     return query(collection(firestore, 'orders', id, 'offers'), orderBy('createdAt', 'desc'));
-  }, [firestore, id]);
+  }, [firestore, id, user]);
   const { data: offers } = useCollection(offersQuery);
 
   // Redirección si la orden ya fue asignada
@@ -96,7 +97,7 @@ export default function WasherWaitingRoom() {
           
           <div className="space-y-2">
             <h1 className="text-4xl font-black italic uppercase tracking-tighter text-slate-900">Sala de Espera</h1>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Buscando tu lavadora éltie</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Buscando tu lavadora élite</p>
           </div>
 
           <div className="flex justify-center">

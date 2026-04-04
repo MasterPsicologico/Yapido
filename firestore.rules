@@ -48,13 +48,13 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      allow read: if isSignedIn() && (
+      // PERMITIR LECTURA SI EL USUARIO ES PARTE DEL PEDIDO O SI EL PEDIDO ES PÚBLICO LOGÍSTICAMENTE
+      allow read: if (isSignedIn() && (
         isAdmin() ||
         request.auth.uid in resource.data.get('participants', []) ||
-        resource.data.get('isLogisticsPublic', false) == true ||
         request.auth.uid == resource.data.get('storeOwnerId', '') ||
         request.auth.uid == resource.data.get('customerId', '')
-      );
+      )) || (resource.data.get('isLogisticsPublic', false) == true);
 
       allow create: if isSignedIn();
       
@@ -79,7 +79,6 @@ service cloud.firestore {
         );
       }
 
-      // REGLAS PARA CONTRAOFERTAS (SOLUCIONA EL ERROR DE PERMISOS)
       match /offers/{offerId} {
         allow read: if isSignedIn() && (
           isAdmin() ||
