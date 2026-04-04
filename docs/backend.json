@@ -13,6 +13,7 @@
           "type": "string", 
           "enum": ["admin", "moderador", "dueño", "repartidor", "cliente"]
         },
+        "linkedStoreId": { "type": "string", "description": "ID de la tienda a la que está vinculado el repartidor." },
         "balance": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -45,7 +46,9 @@
       "properties": {
         "id": { "type": "string" },
         "storeId": { "type": "string" },
+        "storeName": { "type": "string" },
         "driverId": { "type": "string" },
+        "driverName": { "type": "string" },
         "price": { "type": "number" },
         "comment": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
@@ -79,7 +82,7 @@
         "definition": {
           "entityName": "Offer",
           "schema": { "$ref": "#/backend/entities/Offer" },
-          "description": "Contraofertas."
+          "description": "Contraofertas enviadas por los repartidores o tiendas."
         }
       }
     ]

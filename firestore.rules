@@ -48,12 +48,15 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      // PERMITIR LECTURA SI EL USUARIO ES PARTE DEL PEDIDO O SI EL PEDIDO ES PÚBLICO LOGÍSTICAMENTE
+      // REGLA DE LECTURA MAESTRA: 
+      // Permite leer si: es admin, es participante, es el dueño de la tienda, es el cliente,
+      // la orden es pública logísticamente, o es el repartidor vinculado a la tienda de la orden.
       allow read: if (isSignedIn() && (
         isAdmin() ||
         request.auth.uid in resource.data.get('participants', []) ||
         request.auth.uid == resource.data.get('storeOwnerId', '') ||
-        request.auth.uid == resource.data.get('customerId', '')
+        request.auth.uid == resource.data.get('customerId', '') ||
+        (getUserData().role == 'repartidor' && resource.data.get('storeId', '') == getUserData().get('linkedStoreId', 'NONE'))
       )) || (resource.data.get('isLogisticsPublic', false) == true);
 
       allow create: if isSignedIn();
@@ -80,11 +83,13 @@ service cloud.firestore {
       }
 
       match /offers/{offerId} {
+        // Solo el cliente y el dueño de la tienda pueden ver las ofertas de una orden específica
         allow read: if isSignedIn() && (
           isAdmin() ||
           request.auth.uid == get(/databases/$(database)/documents/orders/$(orderId)).data.customerId ||
           request.auth.uid == get(/databases/$(database)/documents/orders/$(orderId)).data.storeOwnerId
         );
+        // Cualquier usuario registrado puede proponer una contraoferta
         allow create: if isSignedIn();
       }
     }

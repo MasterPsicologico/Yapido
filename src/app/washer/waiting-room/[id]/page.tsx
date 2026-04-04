@@ -77,7 +77,14 @@ export default function WasherWaitingRoom() {
     router.push('/admin/orders');
   };
 
-  if (loadingOrder) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
+  if (loadingOrder) return (
+    <div className="fixed inset-0 flex items-center justify-center bg-white">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Sincronizando Radar...</p>
+      </div>
+    </div>
+  );
 
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
