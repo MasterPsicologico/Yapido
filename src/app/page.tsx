@@ -20,10 +20,10 @@ export default function Home() {
   const auth = useAuth();
   const router = useRouter();
 
-  // EFECTO DE AUDIO PREMIUM DE INTRODUCCIÓN
+  // EFECTO DE AUDIO PREMIUM DE INTRODUCCIÓN (CAMPANILLAS ÉLITE)
   useEffect(() => {
     if (isUserLoading) {
-      const introSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2436/2436-preview.mp3');
+      const introSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
       introSound.volume = 0.4;
       introSound.play().catch(() => {
         // Silenciamos si el navegador bloquea el autoplay sin interacción
