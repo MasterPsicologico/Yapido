@@ -20,6 +20,17 @@ export default function Home() {
   const auth = useAuth();
   const router = useRouter();
 
+  // EFECTO DE AUDIO PREMIUM DE INTRODUCCIÓN
+  useEffect(() => {
+    if (isUserLoading) {
+      const introSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2436/2436-preview.mp3');
+      introSound.volume = 0.4;
+      introSound.play().catch(() => {
+        // Silenciamos si el navegador bloquea el autoplay sin interacción
+      });
+    }
+  }, [isUserLoading]);
+
   useEffect(() => {
     if (!isUserLoading && user) {
       const savedMode = localStorage.getItem('vitriniando_preferred_mode');
@@ -30,17 +41,22 @@ export default function Home() {
   }, [user, isUserLoading, router]);
 
   if (isUserLoading) return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050505]">
-      <div className="flex flex-col items-center gap-10 animate-in fade-in zoom-in duration-1000">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050505] overflow-hidden">
+      {/* BARRIDO DORADO ATMOSFÉRICO (Reflejo de pantalla completa) */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
+        <div className="absolute -inset-[100%] bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent skew-x-[-35deg] animate-[shimmer_5s_infinite_ease-in-out]" />
+      </div>
+
+      <div className="flex flex-col items-center gap-10 animate-in fade-in zoom-in duration-1000 relative z-10">
         <div className="relative group">
-          {/* Aura Dorada de Energía */}
-          <div className="absolute inset-0 rounded-[2.5rem] bg-yellow-500/20 animate-ping [animation-duration:3000ms] blur-2xl" />
-          <div className="absolute -inset-4 rounded-[3rem] bg-gradient-to-br from-yellow-400/10 via-transparent to-yellow-600/10 animate-pulse" />
+          {/* Aura Dorada de Energía Pulsante (Iluminación del Contenedor) */}
+          <div className="absolute inset-0 rounded-[2.5rem] bg-yellow-500/20 animate-pulse [animation-duration:2000ms] blur-3xl" />
+          <div className="absolute -inset-10 rounded-[3rem] bg-gradient-to-br from-yellow-400/10 via-transparent to-yellow-600/10 blur-2xl animate-pulse delay-500" />
           
-          {/* Contenedor de Icono en Oro Real */}
-          <div className="relative w-28 h-28 bg-gradient-to-br from-[#fef08a] via-[#eab308] to-[#a16207] rounded-[2.5rem] flex items-center justify-center shadow-[0_0_60px_rgba(234,179,8,0.3)] border-2 border-yellow-200/50 overflow-hidden">
-            {/* Rayo de luz dinámico (Shimmer) */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent animate-shimmer opacity-60" />
+          {/* Contenedor de Icono en Oro Maestro */}
+          <div className="relative w-28 h-28 bg-gradient-to-br from-[#fef08a] via-[#eab308] to-[#a16207] rounded-[2.5rem] flex items-center justify-center shadow-[0_0_80px_rgba(234,179,8,0.4)] border-2 border-yellow-200/50 overflow-hidden">
+            {/* Rayo de luz interno dinámico */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/50 to-transparent animate-shimmer opacity-70" />
             
             <ShoppingBag className="w-14 h-14 text-slate-950 drop-shadow-2xl relative z-10 transition-transform group-hover:scale-110" />
             
@@ -52,17 +68,16 @@ export default function Home() {
 
         <div className="flex flex-col items-center gap-6 text-center">
           <div className="space-y-3">
-            {/* Título en Gradiente Dorado */}
-            <h2 className="text-4xl sm:text-5xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-[#fef08a] via-[#eab308] to-[#a16207] uppercase leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
+            {/* Título en Gradiente Dorado con Reflejo */}
+            <h2 className="text-4xl sm:text-5xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-[#fef08a] via-[#eab308] to-[#a16207] uppercase leading-none drop-shadow-[0_4px_20px_rgba(234,179,8,0.4)]">
               Vitriniando
             </h2>
             
             <div className="flex flex-col items-center gap-3">
-              <p className="text-yellow-500/90 text-[11px] sm:text-xs font-black uppercase tracking-[0.3em] italic max-w-[250px] leading-relaxed">
+              <p className="text-yellow-500/90 text-[11px] sm:text-xs font-black uppercase tracking-[0.3em] italic max-w-[250px] leading-relaxed drop-shadow-md">
                 Lo que necesitas a un clic de distancia
               </p>
               
-              {/* Indicador de Sincronización Minimalista */}
               <div className="flex items-center gap-1.5">
                 {[1, 2, 3].map(i => (
                   <div 
@@ -75,9 +90,9 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Barra de Progreso en Oro Líquido */}
+          {/* Barra de Progreso en Metal Líquido */}
           <div className="h-1.5 w-48 bg-white/5 rounded-full overflow-hidden relative border border-white/5 shadow-inner">
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-800 via-yellow-400 to-yellow-800 animate-progress-loading shadow-[0_0_20px_rgba(234,179,8,0.6)]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-800 via-yellow-400 to-yellow-800 animate-progress-loading shadow-[0_0_25px_rgba(234,179,8,0.7)]" />
           </div>
         </div>
       </div>
@@ -112,7 +127,6 @@ function AuthenticatedHome() {
   const [isCompressing, setIsCompressing] = useState(false);
   const [base64Image, setBase64Image] = useState<string | null>(null);
 
-  // FETCH: Candado de Enfoque (Solo Lavadoras)
   const lockRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_lock'), [firestore]);
   const { data: lockData } = useDoc(lockRef);
   const isWasherOnlyMode = lockData?.active === true;
@@ -203,7 +217,6 @@ function AuthenticatedHome() {
           </section>
         )}
 
-        {/* LÓGICA DE VISIBILIDAD CONDICIONAL (Candado Activado) */}
         <div className={isWasherOnlyMode ? "hidden md:block" : "block"}>
           <HomeCategorySection 
             isAdmin={isAdmin} 
