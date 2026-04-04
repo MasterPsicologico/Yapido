@@ -4,6 +4,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
+import { toast } from '@/hooks/use-toast';
 
 // Importación de Funciones Atómicas Subdivididas
 import { WasherSolicitationHeader } from './WasherSolicitationHeader';
@@ -14,9 +16,6 @@ import { WasherTimeSelector } from './WasherTimeSelector';
 import { WasherPaymentSelector } from './WasherPaymentSelector';
 import { WasherSolicitationFooter } from './WasherSolicitationFooter';
 import { WasherServiceDetails } from './WasherServiceDetails';
-import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { doc, collection, serverTimestamp } from 'firebase/firestore';
-import { toast } from '@/hooks/use-toast';
 
 interface WasherSolicitationDialogProps {
   isOpen: boolean;
@@ -26,7 +25,7 @@ interface WasherSolicitationDialogProps {
   pricingConfig: any;
   isAnyStoreOpen: boolean;
   onOpenAdminSettings: () => void;
-  onSubmitRequest: (data: any) => Promise<void>;
+  onSubmitRequest: (data: any) => Promise<string | undefined>;
 }
 
 export type OrderSubmissionStatus = 'idle' | 'sending' | 'success' | 'timeout';
@@ -41,7 +40,9 @@ export function WasherSolicitationDialog({
   onOpenAdminSettings,
   onSubmitRequest
 }: WasherSolicitationDialogProps) {
-  // Estados de Sincronización Independientes
+  const router = useRouter();
+  
+  // Estados de Formulario
   const [tempName, setTempName] = useState("");
   const [tempAddress, setTempAddress] = useState("");
   const [tempPhone, setTempPhone] = useState("");
@@ -55,39 +56,44 @@ export function WasherSolicitationDialog({
   const [hasStairs, setHasStairs] = useState(false);
   const [stairCount, setStairCount] = useState(1);
 
-  // Estados de Proceso
+  // Estados de Proceso y Navegación
   const [orderStatus, setOrderStatus] = useState<OrderSubmissionStatus>('idle');
+  const [submittedOrderId, setSubmittedOrderId] = useState<string | null>(null);
+  const [redirectCountdown, setRedirectCountdown] = useState(5);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
 
+  // Inicialización de Perfil
   useEffect(() => {
-    if (profile && isOpen) {
+    if (profile && isOpen && orderStatus === 'idle') {
       setTempName(profile.displayName || "");
       setTempAddress(profile.address || "");
       setTempPhone(profile.phoneNumber || "");
     }
-    if (pricingConfig?.minHours && isOpen) {
+    if (pricingConfig?.minHours && isOpen && orderStatus === 'idle') {
       setRequestHours(Number(pricingConfig.minHours));
-    }
-    
-    // Resetear estado al cerrar el diálogo si no está en proceso crítico
-    if (!isOpen) {
-      setTimeout(() => {
-        if (orderStatus !== 'success' && orderStatus !== 'timeout') {
-          setOrderStatus('idle');
-        }
-      }, 500);
     }
   }, [profile, isOpen, pricingConfig, orderStatus]);
 
-  // LÓGICA DE CÁLCULO MAESTRO DINÁMICO
+  // LÓGICA DE REDIRECCIÓN AUTOMÁTICA (MONITOR REACTIVO)
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (orderStatus === 'success' && submittedOrderId && redirectCountdown > 0) {
+      timer = setTimeout(() => setRedirectCountdown(prev => prev - 1), 1000);
+    } else if (orderStatus === 'success' && submittedOrderId && redirectCountdown === 0) {
+      // NAVEGACIÓN FORZADA AL LLEGAR A CERO
+      router.push(`/washer/waiting-room/${submittedOrderId}`);
+    }
+    return () => clearTimeout(timer);
+  }, [orderStatus, submittedOrderId, redirectCountdown, router]);
+
+  // CÁLCULO ECONÓMICO MAESTRO
   const totalPrice = useMemo(() => {
     const config = pricingConfig || {};
     const rate = washerType === 'automatica' ? Number(config.rateAuto || 3500) : Number(config.rateSemi || 3000);
     const stairsExtra = hasStairs ? (Number(stairCount || 0) * Number(config.stairsFee || 5000)) : 0;
     const floorNum = Number(floor) || 1;
     const floorExtra = (floorNum > 1 && !hasElevator) ? (floorNum - 1) * Number(config.floorFee || 2000) : 0;
-    const calculatedTotal = (Number(requestHours) * rate) + stairsExtra + floorExtra;
-    return isNaN(calculatedTotal) ? 0 : calculatedTotal;
+    return (Number(requestHours) * rate) + stairsExtra + floorExtra;
   }, [requestHours, washerType, floor, hasElevator, hasStairs, stairCount, pricingConfig]);
 
   const formattedPrice = new Intl.NumberFormat('es-CO', { 
@@ -95,7 +101,7 @@ export function WasherSolicitationDialog({
   }).format(totalPrice);
 
   const handleAdjustHours = (delta: number) => {
-    if (orderStatus !== 'idle') return; // Bloquear si ya se envió
+    if (orderStatus !== 'idle') return;
     const minHours = Number(pricingConfig?.minHours || 5);
     const newHours = requestHours + delta;
     if (newHours < minHours) {
@@ -110,13 +116,13 @@ export function WasherSolicitationDialog({
 
   const handleFormSubmit = async () => {
     if (!tempAddress || !tempPhone || !tempName) {
-      toast({ title: "Datos incompletos", description: "Por favor llena todos los campos.", variant: "destructive" });
+      toast({ title: "Datos incompletos", variant: "destructive" });
       return;
     }
 
     setOrderStatus('sending');
     try {
-      await onSubmitRequest({
+      const orderId = await onSubmitRequest({
         customerName: tempName,
         customerAddress: tempAddress,
         customerPhone: tempPhone,
@@ -130,21 +136,20 @@ export function WasherSolicitationDialog({
         stairCount
       });
       
-      setOrderStatus('success');
-      
-      // INICIO DEL CONTADOR DE 15 MINUTOS (900,000 ms)
-      setTimeout(() => {
-        setOrderStatus(current => current === 'success' ? 'timeout' : current);
-      }, 15 * 60 * 1000);
-
+      if (orderId) {
+        setSubmittedOrderId(orderId);
+        setOrderStatus('success');
+      } else {
+        throw new Error("No order ID returned");
+      }
     } catch (e) {
       setOrderStatus('idle');
-      toast({ title: "Error al enviar", description: "Inténtalo de nuevo.", variant: "destructive" });
+      toast({ title: "Fallo en la sincronización", variant: "destructive" });
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(v) => { if (orderStatus === 'idle') onOpenChange(v); }}>
       <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-[#0a0a0a] p-0 overflow-hidden flex flex-col z-[600] animate-in slide-in-from-bottom duration-500 [&>button:last-child]:hidden">
         <DialogHeader className="sr-only">
           <DialogTitle>Nueva Solicitud Alquiler</DialogTitle>
@@ -199,6 +204,7 @@ export function WasherSolicitationDialog({
               formattedPrice={formattedPrice}
               paymentMethod={paymentMethod}
               isAnyStoreOpen={isAnyStoreOpen}
+              redirectCountdown={redirectCountdown}
               onSubmit={handleFormSubmit}
             />
             

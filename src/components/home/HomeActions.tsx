@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp, doc, query, where } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, query, where, addDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { compressImage } from '@/lib/image-compression';
@@ -32,8 +32,6 @@ interface HomeActionsProps {
   onStoreSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
-const WASHER_BANNER_CACHE_KEY = 'vitriniando_washer_banner_cache';
-
 export const checkIsBusinessOpen = (openTime?: string, closeTime?: string) => {
   if (!openTime || !closeTime) return false;
   const now = new Date();
@@ -47,7 +45,7 @@ export const checkIsBusinessOpen = (openTime?: string, closeTime?: string) => {
 };
 
 export function HomeActions({
-  isAdmin, profile, openStore, setOpenStore, mainCategories, onStoreSubmit
+  isAdmin, profile, openStore, setOpenStore
 }: HomeActionsProps) {
   
   const { user } = useUser();
@@ -60,7 +58,7 @@ export function HomeActions({
   const [isSendingRequest, setIsSendingRequest] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
-  // FETCH: Candado de Enfoque
+  // FETCH: Configuraciones Globales
   const lockRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_lock'), [firestore]);
   const { data: lockData } = useDoc(lockRef);
 
@@ -88,25 +86,22 @@ export function HomeActions({
         updatedAt: serverTimestamp(),
         updatedBy: user?.uid
       }, { merge: true });
-      
-      toast({ 
-        title: nextState ? "Modo Enfoque Activado" : "Marketplace Restaurado",
-        description: nextState ? "Solo se muestra Alquiler de Lavadoras en móvil." : "Todo el contenido es visible ahora.",
-        className: nextState ? "bg-slate-900 text-white" : "bg-green-600 text-white"
-      });
+      toast({ title: nextState ? "Modo Enfoque Activado" : "Marketplace Restaurado" });
     } catch (e) {
       toast({ title: "Error al cambiar estado", variant: "destructive" });
     }
   };
 
-  const handleWasherRequest = async (data: any) => {
+  const handleWasherRequest = async (data: any): Promise<string | undefined> => {
     if (!user || !firestore) return;
     try {
+      // Actualizamos perfil del cliente
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { 
         displayName: data.customerName, address: data.customerAddress, phoneNumber: data.customerPhone, updatedAt: serverTimestamp() 
       });
 
-      await addDocumentNonBlocking(collection(firestore, 'orders'), {
+      // Creamos la orden principal
+      const docRef = await addDoc(collection(firestore, 'orders'), {
         customerId: user.uid, 
         customerName: data.customerName, 
         customerPhone: data.customerPhone, 
@@ -119,19 +114,20 @@ export function HomeActions({
         washerType: data.washerType,
         floor: data.floor,
         hasElevator: data.hasElevator,
-        needsInstallation: data.needsInstallation,
-        routeType: data.routeType,
         hasStairs: data.hasStairs,
+        stairCount: data.stairCount,
         createdAt: serverTimestamp(), 
         updatedAt: serverTimestamp(),
         participants: [user.uid, 'ADMIN_WASHER_POOL'], 
         isLogisticsPublic: true, 
         productName: `Alquiler ${data.washerType === 'automatica' ? 'Auto' : 'Semi'} (${data.requestHours}h)`,
       });
+
       toast({ title: "¡Solicitud Enviada!", className: "bg-green-600 text-white border-none" });
-      setOpenWasher(false);
+      return docRef.id;
     } catch (e) {
       toast({ title: "Error al procesar", variant: "destructive" });
+      return undefined;
     }
   };
 
@@ -146,8 +142,6 @@ export function HomeActions({
         rateSemi: Number(fd.get('rateSemi')),
         floorFee: Number(fd.get('floorFee')),
         stairsFee: Number(fd.get('stairsFee')),
-        installFee: Number(fd.get('installFee')),
-        roundTripFee: Number(fd.get('roundTripFee')),
         updatedAt: serverTimestamp()
       }, { merge: true });
       toast({ title: "Economía Sincronizada" });
@@ -188,7 +182,6 @@ export function HomeActions({
     setIsUploadingBanner(true);
     try {
       const compressed = await compressImage(file, 1920, 1080, 0.8);
-      localStorage.setItem(WASHER_BANNER_CACHE_KEY, compressed);
       setDocumentNonBlocking(bannerConfigRef, { backgroundImage: compressed, updatedAt: serverTimestamp() }, { merge: true });
       toast({ title: "Portada actualizada" });
     } catch (error) {
