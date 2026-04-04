@@ -14,6 +14,9 @@ import { WasherPaymentSelector } from './WasherPaymentSelector';
 import { WasherSolicitationFooter } from './WasherSolicitationFooter';
 import { WasherServiceDetails } from './WasherServiceDetails';
 import { WasherRouteSelector } from './WasherRouteSelector';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { toast } from '@/hooks/use-toast';
 
 interface WasherSolicitationDialogProps {
   isOpen: boolean;
@@ -66,8 +69,8 @@ export function WasherSolicitationDialog({
     }
   }, [profile, isOpen, pricingConfig]);
 
-  // LÓGICA DE CÁLCULO MAESTRO DINÁMICO
-  const { totalPrice } = useMemo(() => {
+  // LÓGICA DE CÁLCULO MAESTRO DINÁMICO - CORREGIDA (FIX NaN)
+  const totalPrice = useMemo(() => {
     const config = pricingConfig || {};
     
     // 1. Determinar Tarifa Horaria según Tipo
@@ -79,7 +82,7 @@ export function WasherSolicitationDialog({
     const installExtra = needsInstallation ? Number(config.installFee || 10000) : 0;
     
     // 3. CÁLCULO DINÁMICO DE ESCALERAS (Precio por tramo)
-    const stairsExtra = hasStairs ? (stairCount * Number(config.stairsFee || 5000)) : 0;
+    const stairsExtra = hasStairs ? (Number(stairCount || 0) * Number(config.stairsFee || 5000)) : 0;
     
     const routeExtra = routeType === 'round_trip' ? Number(config.roundTripFee || 5000) : 0;
 
@@ -89,9 +92,9 @@ export function WasherSolicitationDialog({
       ? (floorNum - 1) * Number(config.floorFee || 2000) 
       : 0;
 
-    const total = (requestHours * rate) + installExtra + stairsExtra + routeExtra + floorExtra;
+    const calculatedTotal = (Number(requestHours) * rate) + installExtra + stairsExtra + routeExtra + floorExtra;
 
-    return { total };
+    return isNaN(calculatedTotal) ? 0 : calculatedTotal;
   }, [requestHours, washerType, floor, hasElevator, needsInstallation, routeType, hasStairs, stairCount, pricingConfig]);
 
   const formattedPrice = new Intl.NumberFormat('es-CO', { 
