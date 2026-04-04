@@ -21,6 +21,7 @@ import { WasherHeader } from '../components/WasherHeader';
 import { WasherDashboard } from '../components/WasherDashboard';
 import { WasherDrivers } from '../components/WasherDrivers';
 import { WasherOrders } from '../components/WasherOrders';
+import { WasherLiveRadar } from '../components/WasherLiveRadar';
 
 export default function WasherAdminPage() {
   const params = useParams();
@@ -66,7 +67,7 @@ export default function WasherAdminPage() {
     const earningsMap: Record<string, number> = {};
     let totalGross = 0;
 
-    orders.filter(o => o.status === 'delivered').forEach(o => {
+    orders.filter(o => o.status === 'delivered' || o.status === 'in_use').forEach(o => {
       const dateKey = o.createdAt ? format(o.createdAt.toDate(), 'yyyy-MM-dd') : 'unknown';
       const amount = o.totalPrice || 0;
       earningsMap[dateKey] = (earningsMap[dateKey] || 0) + amount;
@@ -115,7 +116,7 @@ export default function WasherAdminPage() {
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
       
-      <main className="flex-1 container mx-auto px-4 py-10 max-w-5xl space-y-10">
+      <main className="flex-1 container mx-auto px-4 py-10 max-w-5xl space-y-12 pb-32">
         <WasherHeader 
           storeName={store?.name} 
           activeTab={activeTab} 
@@ -124,6 +125,17 @@ export default function WasherAdminPage() {
           orderCount={stats.totalCount}
           onOpenSettings={() => setIsSettingsOpen(true)}
         />
+
+        {/* RADAR PRIORITARIO: Solo aparece en Dashboard o si hay pedidos vivos */}
+        {activeTab === 'stats' && (
+          <div className="animate-in fade-in zoom-in duration-700">
+            <WasherLiveRadar 
+              storeId={id} 
+              storeName={store?.name || 'Tienda'} 
+              ownerId={store?.ownerId || ''} 
+            />
+          </div>
+        )}
 
         {activeTab === 'stats' && (
           <WasherDashboard 
@@ -136,7 +148,6 @@ export default function WasherAdminPage() {
         {activeTab === 'orders' && <WasherOrders orders={orders} router={router} />}
       </main>
 
-      {/* DIÁLOGO DE CONFIGURACIÓN MAESTRA */}
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
         <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[500px] overflow-y-auto max-h-[90vh]">
           <DialogHeader className="items-center text-center space-y-4">
