@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 // Importación de Funciones Atómicas Subdivididas
@@ -40,10 +40,10 @@ export function WasherSolicitationDialog({
   const [tempName, setTempName] = useState("");
   const [tempAddress, setTempAddress] = useState("");
   const [tempPhone, setTempPhone] = useState("");
-  const [requestHours, setRequestHours] = useState(Number(pricingConfig?.minHours || 5));
+  const [requestHours, setRequestHours] = useState(5);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'digital'>('cash');
   
-  // Nuevos Campos Pro
+  // Detalles Técnicos
   const [washerType, setWasherType] = useState<'automatica' | 'semiautomatica'>('automatica');
   const [floor, setFloor] = useState("1");
   const [hasElevator, setHasElevator] = useState(false);
@@ -60,17 +60,46 @@ export function WasherSolicitationDialog({
       setTempAddress(profile.address || "");
       setTempPhone(profile.phoneNumber || "");
     }
-  }, [profile, isOpen]);
+    if (pricingConfig?.minHours && isOpen) {
+      setRequestHours(Number(pricingConfig.minHours));
+    }
+  }, [profile, isOpen, pricingConfig]);
 
-  const minHours = Number(pricingConfig?.minHours || 5);
-  const valHoraBase = Number(pricingConfig?.basePrice || 3000);
-  const totalPrice = requestHours * valHoraBase;
+  // LÓGICA DE CÁLCULO MAESTRO DINÁMICO
+  const { totalPrice, valHoraActual } = useMemo(() => {
+    const config = pricingConfig || {};
+    const minH = Number(config.minHours || 5);
+    
+    // 1. Determinar Tarifa Horaria según Tipo
+    const rate = washerType === 'automatica' 
+      ? Number(config.rateAuto || 3500) 
+      : Number(config.rateSemi || 3000);
+
+    // 2. Calcular Extras Fijos
+    const installExtra = needsInstallation ? Number(config.installFee || 10000) : 0;
+    const stairsExtra = hasStairs ? Number(config.stairsFee || 5000) : 0;
+    const routeExtra = routeType === 'round_trip' ? Number(config.roundTripFee || 5000) : 0;
+
+    // 3. Calcular Extra por Piso (Solo si es > 1 y no hay ascensor)
+    const floorNum = Number(floor) || 1;
+    const floorExtra = (floorNum > 1 && !hasElevator) 
+      ? (floorNum - 1) * Number(config.floorFee || 2000) 
+      : 0;
+
+    const total = (requestHours * rate) + installExtra + stairsExtra + routeExtra + floorExtra;
+
+    return { 
+      totalPrice: total,
+      valHoraActual: rate
+    };
+  }, [requestHours, washerType, floor, hasElevator, needsInstallation, routeType, hasStairs, pricingConfig]);
 
   const formattedPrice = new Intl.NumberFormat('es-CO', { 
     style: 'currency', currency: 'COP', maximumFractionDigits: 0 
   }).format(totalPrice);
 
   const handleAdjustHours = (delta: number) => {
+    const minHours = Number(pricingConfig?.minHours || 5);
     const newHours = requestHours + delta;
     if (newHours < minHours) {
       setFlashEffect('red');
@@ -138,7 +167,7 @@ export function WasherSolicitationDialog({
             <WasherTimeSelector 
               requestHours={requestHours}
               onAdjustHours={handleAdjustHours}
-              minHours={minHours}
+              minHours={Number(pricingConfig?.minHours || 5)}
               formattedPrice={formattedPrice}
               flashEffect={flashEffect}
             />

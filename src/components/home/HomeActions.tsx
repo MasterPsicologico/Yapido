@@ -107,10 +107,26 @@ export function HomeActions({
       });
 
       await addDocumentNonBlocking(collection(firestore, 'orders'), {
-        customerId: user.uid, customerName: data.customerName, customerPhone: data.customerPhone, customerAddress: data.customerAddress,
-        type: 'WASHER_RENTAL_REQUEST', status: 'pending', requestHours: data.requestHours, totalPrice: data.totalPrice,
-        paymentMethod: data.paymentMethod, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
-        participants: [user.uid, 'ADMIN_WASHER_POOL'], isLogisticsPublic: true, productName: `Alquiler de Lavadora (${data.requestHours}h)`,
+        customerId: user.uid, 
+        customerName: data.customerName, 
+        customerPhone: data.customerPhone, 
+        customerAddress: data.customerAddress,
+        type: 'WASHER_RENTAL_REQUEST', 
+        status: 'pending', 
+        requestHours: data.requestHours, 
+        totalPrice: data.totalPrice,
+        paymentMethod: data.paymentMethod,
+        washerType: data.washerType,
+        floor: data.floor,
+        hasElevator: data.hasElevator,
+        needsInstallation: data.needsInstallation,
+        routeType: data.routeType,
+        hasStairs: data.hasStairs,
+        createdAt: serverTimestamp(), 
+        updatedAt: serverTimestamp(),
+        participants: [user.uid, 'ADMIN_WASHER_POOL'], 
+        isLogisticsPublic: true, 
+        productName: `Alquiler ${data.washerType === 'automatica' ? 'Auto' : 'Semi'} (${data.requestHours}h)`,
       });
       toast({ title: "¡Solicitud Enviada!", className: "bg-green-600 text-white border-none" });
       setOpenWasher(false);
@@ -124,10 +140,17 @@ export function HomeActions({
     if (!isAdmin) return;
     const fd = new FormData(e.currentTarget);
     try {
-      setDocumentNonBlocking(pricingRef, {
-        minHours: Number(fd.get('minHours')), basePrice: Number(fd.get('basePrice')), updatedAt: serverTimestamp()
+      await setDocumentNonBlocking(pricingRef, {
+        minHours: Number(fd.get('minHours')), 
+        rateAuto: Number(fd.get('rateAuto')),
+        rateSemi: Number(fd.get('rateSemi')),
+        floorFee: Number(fd.get('floorFee')),
+        stairsFee: Number(fd.get('stairsFee')),
+        installFee: Number(fd.get('installFee')),
+        roundTripFee: Number(fd.get('roundTripFee')),
+        updatedAt: serverTimestamp()
       }, { merge: true });
-      toast({ title: "Configuración actualizada" });
+      toast({ title: "Economía Sincronizada" });
       setShowAdminPricing(false);
     } catch (e) {
       toast({ title: "Error", variant: "destructive" });
