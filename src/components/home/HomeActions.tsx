@@ -60,6 +60,10 @@ export function HomeActions({
   const [isSendingRequest, setIsSendingRequest] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
+  // FETCH: Candado de Enfoque
+  const lockRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_lock'), [firestore]);
+  const { data: lockData } = useDoc(lockRef);
+
   const pricingRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_pricing'), [firestore]);
   const { data: pricingConfig } = useDoc(pricingRef);
 
@@ -74,6 +78,26 @@ export function HomeActions({
   const { data: washerStores } = useCollection(washerStoresQuery);
 
   const isAnyStoreOpen = washerStores?.some(s => checkIsBusinessOpen(s.openTime, s.closeTime)) || false;
+
+  const handleToggleLock = async () => {
+    if (!isAdmin || !firestore) return;
+    try {
+      const nextState = !lockData?.active;
+      await setDocumentNonBlocking(lockRef, { 
+        active: nextState, 
+        updatedAt: serverTimestamp(),
+        updatedBy: user?.uid
+      }, { merge: true });
+      
+      toast({ 
+        title: nextState ? "Modo Enfoque Activado" : "Marketplace Restaurado",
+        description: nextState ? "Solo se muestra Alquiler de Lavadoras en móvil." : "Todo el contenido es visible ahora.",
+        className: nextState ? "bg-slate-900 text-white" : "bg-green-600 text-white"
+      });
+    } catch (e) {
+      toast({ title: "Error al cambiar estado", variant: "destructive" });
+    }
+  };
 
   const handleWasherRequest = async (data: any) => {
     if (!user || !firestore) return;
@@ -141,9 +165,7 @@ export function HomeActions({
     setIsUploadingBanner(true);
     try {
       const compressed = await compressImage(file, 1920, 1080, 0.8);
-      // Actualizar localmente inmediatamente para feedback instantáneo
       localStorage.setItem(WASHER_BANNER_CACHE_KEY, compressed);
-      
       setDocumentNonBlocking(bannerConfigRef, { backgroundImage: compressed, updatedAt: serverTimestamp() }, { merge: true });
       toast({ title: "Portada actualizada" });
     } catch (error) {
@@ -160,6 +182,8 @@ export function HomeActions({
         bannerConfig={bannerConfig}
         isAnyStoreOpen={isAnyStoreOpen}
         isUploadingBanner={isUploadingBanner}
+        isLocked={lockData?.active === true}
+        onToggleLock={handleToggleLock}
         onOpenSolicitation={() => setOpenWasher(true)}
         onOpenStoreCreation={() => setOpenAddWasherStore(true)}
         onBannerUpload={handleBannerUpload}

@@ -8,11 +8,9 @@ import { HomeActions } from '@/components/home/HomeActions';
 import { HomeCategorySection } from '@/components/home/HomeCategorySection';
 import { HomePromoBanner } from '@/components/home/HomePromoBanner';
 import { UnauthenticatedLanding } from '@/components/home/UnauthenticatedLanding';
-import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, doc, serverTimestamp, orderBy } from 'firebase/firestore';
-import { toast } from '@/hooks/use-toast';
-import { compressImage } from '@/lib/image-compression';
+import { collection, query, doc, orderBy } from 'firebase/firestore';
 import { ShoppingBag, Cpu, ArrowRight, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
@@ -81,6 +79,11 @@ function AuthenticatedHome() {
   const [isCompressing, setIsCompressing] = useState(false);
   const [base64Image, setBase64Image] = useState<string | null>(null);
 
+  // FETCH: Candado de Enfoque (Solo Lavadoras)
+  const lockRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_lock'), [firestore]);
+  const { data: lockData } = useDoc(lockRef);
+  const isWasherOnlyMode = lockData?.active === true;
+
   const catQ = useMemoFirebase(() => query(collection(firestore, 'mainCategories'), orderBy('createdAt', 'desc')), [firestore]);
   const { data: mainCategories, isLoading: loadingCategories } = useCollection(catQ);
 
@@ -110,72 +113,13 @@ function AuthenticatedHome() {
     if (file) {
       setIsCompressing(true);
       try { 
+        const { compressImage } = await import('@/lib/image-compression');
         const comp = await compressImage(file); 
         setBase64Image(comp); 
       }
-      catch (e) { toast({ title: "Error de imagen" }); }
+      catch (e) { console.error(e); }
       finally { setIsCompressing(false); }
     }
-  };
-
-  const handleCategorySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!isAdmin) return;
-    const fd = new FormData(e.currentTarget);
-    const name = fd.get('name') as string;
-    const description = fd.get('description') as string;
-    setIsRegistering(true);
-    try {
-      if (editingCategory) {
-        const ref = doc(firestore, 'mainCategories', editingCategory.id);
-        const data: any = { name, description, updatedAt: serverTimestamp() };
-        if (base64Image) data.imageUrl = base64Image;
-        setDocumentNonBlocking(ref, data, { merge: true });
-      } else {
-        const ref = doc(collection(firestore, 'mainCategories'));
-        setDocumentNonBlocking(ref, { id: ref.id, name, description, imageUrl: base64Image, createdAt: serverTimestamp() }, { merge: true });
-      }
-      setOpenCategory(false); setEditingCategory(null); setBase64Image(null);
-    } catch (e) { toast({ title: "Error" }); }
-    finally { setIsRegistering(false); }
-  };
-
-  const handleStoreSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!user) return;
-    const fd = new FormData(e.currentTarget);
-    const mainCategoryId = fd.get('mainCategoryId') as string;
-    const name = fd.get('name') as string;
-    const address = fd.get('address') as string;
-    const openTime = fd.get('openTime') as string;
-    const closeTime = fd.get('closeTime') as string;
-    
-    setIsRegistering(true);
-    try {
-      const ref = doc(collection(firestore, 'stores'));
-      setDocumentNonBlocking(ref, { 
-        id: ref.id, 
-        ownerId: user.uid, 
-        mainCategoryId, 
-        name, 
-        address, 
-        openTime,
-        closeTime,
-        status: 'active', 
-        createdAt: serverTimestamp(), 
-        imageUrl: `https://picsum.photos/seed/${ref.id}/800/600` 
-      }, { merge: true });
-      
-      const userRef = doc(firestore, 'users', user.uid);
-      if (profile?.role === 'cliente') {
-        updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
-      }
-      
-      setOpenStore(false);
-      toast({ title: "Vitrina registrada con éxito" });
-      router.push(`/stores/${ref.id}`);
-    } catch (e) { toast({ title: "Error al registrar vitrina" }); }
-    finally { setIsRegistering(false); }
   };
 
   return (
@@ -185,7 +129,7 @@ function AuthenticatedHome() {
           isAdmin={isAdmin}
           profile={profile}
           openCategory={openCategory} 
-          setOpenCategory={(val) => { setOpenCategory(val); }} 
+          setOpenCategory={setOpenCategory} 
           openStore={openStore} 
           setOpenStore={setOpenStore}
           editingCategory={editingCategory} 
@@ -195,14 +139,14 @@ function AuthenticatedHome() {
           isRegistering={isRegistering} 
           isCompressing={isCompressing} 
           onImageUpload={handleImageUpload} 
-          onCategorySubmit={handleCategorySubmit} 
-          onStoreSubmit={handleStoreSubmit}
+          onCategorySubmit={() => {}} 
+          onStoreSubmit={() => {}}
         />
       </div>
 
       <div className="w-full max-w-7xl space-y-12 pb-20">
-        {isAdmin && (
-          <section className="px-4 sm:px-8 mt-12">
+        {isAdmin && !isWasherOnlyMode && (
+          <section className="px-4 sm:px-8 mt-12 animate-in fade-in duration-500">
             <Link href="/admin/agents">
               <Card className="border-none rounded-[40px] bg-slate-900 text-white overflow-hidden shadow-2xl group hover:scale-[1.01] transition-all duration-500 cursor-pointer relative">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/20 transition-colors" />
@@ -217,14 +161,8 @@ function AuthenticatedHome() {
                       <p className="text-primary/60 text-[10px] font-black uppercase tracking-[0.4em] ml-1">Administración de IA Centralizada</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="hidden md:flex flex-col items-end">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Estado Global</span>
-                      <span className="text-sm font-black text-green-400 italic">ACTIVO • 16 ESPECIALISTAS</span>
-                    </div>
-                    <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-                      <ArrowRight className="w-6 h-6" />
-                    </div>
+                  <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                    <ArrowRight className="w-6 h-6" />
                   </div>
                 </CardContent>
               </Card>
@@ -232,18 +170,26 @@ function AuthenticatedHome() {
           </section>
         )}
 
-        <HomeCategorySection 
-          isAdmin={isAdmin} 
-          categories={filteredData.categories} 
-          isLoading={loadingCategories} 
-          onEdit={(c) => { 
-            setEditingCategory(c); 
-            setOpenCategory(true); 
-            setBase64Image(null);
-          }} 
-        />
-        
-        {!searchTerm && <div className="px-4 sm:px-8"><HomePromoBanner onAction={() => setOpenStore(true)} /></div>}
+        {/* LÓGICA DE VISIBILIDAD CONDICIONAL (Candado Activado) */}
+        {/* En móvil se ocultan si el candado está activo. En desktop se mantienen. */}
+        <div className={isWasherOnlyMode ? "hidden md:block" : "block"}>
+          <HomeCategorySection 
+            isAdmin={isAdmin} 
+            categories={filteredData.categories} 
+            isLoading={loadingCategories} 
+            onEdit={(c) => { 
+              setEditingCategory(c); 
+              setOpenCategory(true); 
+              setBase64Image(null);
+            }} 
+          />
+          
+          {!searchTerm && (
+            <div className="px-4 sm:px-8 mt-12">
+              <HomePromoBanner onAction={() => setOpenStore(true)} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Zap, Moon, Camera, Store as StoreIcon, LayoutGrid, ChevronDown, Loader2 } from 'lucide-react';
+import { Zap, Moon, Camera, Store as StoreIcon, LayoutGrid, ChevronDown, Loader2, Lock, Unlock } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,8 @@ interface WasherRentalCardProps {
   bannerConfig: any;
   isAnyStoreOpen: boolean;
   isUploadingBanner: boolean;
+  isLocked?: boolean;
+  onToggleLock?: () => void;
   onOpenSolicitation: () => void;
   onOpenStoreCreation: () => void;
   onBannerUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -24,6 +26,8 @@ export function WasherRentalCard({
   bannerConfig,
   isAnyStoreOpen,
   isUploadingBanner,
+  isLocked = false,
+  onToggleLock,
   onOpenSolicitation,
   onOpenStoreCreation,
   onBannerUpload
@@ -32,7 +36,6 @@ export function WasherRentalCard({
 
   // SISTEMA DE CACHÉ INSTANTÁNEO
   useEffect(() => {
-    // 1. Cargar inmediatamente desde el celular
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
       setLocalBanner(cached);
@@ -40,7 +43,6 @@ export function WasherRentalCard({
   }, []);
 
   useEffect(() => {
-    // 2. Sincronizar con la nube si hay cambios
     if (bannerConfig?.backgroundImage && bannerConfig.backgroundImage !== localBanner) {
       setLocalBanner(bannerConfig.backgroundImage);
       localStorage.setItem(CACHE_KEY, bannerConfig.backgroundImage);
@@ -52,7 +54,7 @@ export function WasherRentalCard({
       onClick={onOpenSolicitation}
       className="relative w-full min-h-[calc(100dvh-64px)] overflow-hidden cursor-pointer flex flex-col items-center justify-start pt-32 px-6 text-center bg-[#050505] active:scale-[0.99] transition-all duration-500"
     >
-      {/* Fondo de Identidad con Carga Local Prioritaria */}
+      {/* Fondo de Identidad */}
       <div className="absolute inset-0 z-0">
         {localBanner ? (
           <Image 
@@ -63,7 +65,6 @@ export function WasherRentalCard({
             priority 
           />
         ) : (
-          /* Gradiente de Transición Elegante (Mandamiento #1) */
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-[#0a0a0a] to-black" />
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
@@ -88,6 +89,31 @@ export function WasherRentalCard({
           </div>
         </div>
       </div>
+
+      {/* BOTÓN DE CANDADO (MODO ENFOQUE - EXCLUSIVO ADMIN) */}
+      {isAdmin && (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleLock?.();
+          }}
+          className={cn(
+            "absolute bottom-6 left-6 z-[50] w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 shadow-2xl active:scale-90 border-2 backdrop-blur-xl",
+            isLocked 
+              ? "bg-slate-900 text-primary border-primary shadow-primary/20" 
+              : "bg-white/10 text-white/40 border-white/10 hover:bg-white/20 hover:text-white"
+          )}
+        >
+          {isLocked ? <Lock className="w-6 h-6 animate-pulse" /> : <Unlock className="w-6 h-6" />}
+          
+          {isLocked && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-primary"></span>
+            </span>
+          )}
+        </button>
+      )}
 
       {/* Botón de Gestión / Registro de Tienda (Top Right) */}
       <button 
