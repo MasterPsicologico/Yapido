@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { cn } from '@/lib/utils';
 
 // Importación de Funciones Atómicas Subdivididas
 import { WasherSolicitationHeader } from './WasherSolicitationHeader';
