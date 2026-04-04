@@ -1,12 +1,12 @@
-
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HeaderBackground } from './header/HeaderBackground';
 import { HeaderAdminControls } from './header/HeaderAdminControls';
 import { HeaderUserInfo } from './header/HeaderUserInfo';
 import { HeaderMainAction } from './header/HeaderMainAction';
 import { HeaderProfileModal } from './header/HeaderProfileModal';
+import { cn } from '@/lib/utils';
 
 interface DashboardHeaderProps {
   profile: any;
@@ -21,24 +21,65 @@ interface DashboardHeaderProps {
 }
 
 /**
- * DashboardHeader - Orquestador Maestro Subatómico
- * Este componente ahora solo coordina los micro-módulos independientes.
+ * DashboardHeader - Orquestador Maestro con Dinámica Háptica y Visual
  */
 export function DashboardHeader({ 
   profile, level, isOnline, onToggleOnline,
   isAdmin, dashboardConfig, onImageUpload, isUploading 
 }: DashboardHeaderProps) {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [animStatus, setAnimStatus] = useState<'on' | 'off' | null>(null);
+  const isFirstRender = useRef(true);
+
+  // EFECTO DE VIBRACIÓN Y ANIMACIÓN AL CAMBIAR TURNO
+  useEffect(() => {
+    // Evitar que se dispare al cargar la página
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    if (isOnline) {
+      // SECUENCIA DE ENCENDIDO (VERDE)
+      setAnimStatus('on');
+      if (typeof window !== 'undefined' && navigator.vibrate) {
+        // Vibración triple (3 veces)
+        navigator.vibrate([100, 50, 100, 50, 100]);
+      }
+    } else {
+      // SECUENCIA DE APAGADO (ROJO)
+      setAnimStatus('off');
+      if (typeof window !== 'undefined' && navigator.vibrate) {
+        // Vibración larga única
+        navigator.vibrate(400);
+      }
+    }
+
+    // Reset de animación visual después de 2 segundos
+    const timer = setTimeout(() => setAnimStatus(null), 2000);
+    return () => clearTimeout(timer);
+  }, [isOnline]);
 
   return (
-    <div className="relative overflow-hidden border-b min-h-[380px] flex flex-col justify-center">
-      {/* 1. SISTEMA DE FONDO DUAL (INTELIGENCIA INDEPENDIENTE) */}
+    <div className={cn(
+      "relative overflow-hidden border-b min-h-[380px] flex flex-col justify-center transition-all duration-500",
+      animStatus === 'on' && "animate-shake-strong",
+      animStatus === 'off' && "animate-shake-strong"
+    )}>
+      {/* CAPA DE ILUMINACIÓN DE BORDES (GLOW) */}
+      <div className={cn(
+        "absolute inset-0 z-20 pointer-events-none transition-all duration-500",
+        animStatus === 'on' && "animate-glow-green-strong",
+        animStatus === 'off' && "animate-glow-red-strong"
+      )} />
+
+      {/* 1. SISTEMA DE FONDO DUAL */}
       <HeaderBackground 
         isOnline={isOnline} 
         dashboardConfig={dashboardConfig} 
       />
 
-      {/* 2. MANDO DE ADMINISTRADOR (CONTROLES DE IMAGEN) */}
+      {/* 2. MANDO DE ADMINISTRADOR */}
       <HeaderAdminControls 
         isAdmin={isAdmin}
         isUploading={isUploading}
@@ -46,7 +87,7 @@ export function DashboardHeader({
         isOnline={isOnline}
       />
 
-      {/* 3. CONTENIDO CENTRAL (IDENTIDAD DEL REPARTIDOR) */}
+      {/* 3. CONTENIDO CENTRAL (IDENTIDAD) */}
       <div className="relative z-10 px-6 flex flex-col items-center text-center gap-8 pt-12">
         <HeaderUserInfo 
           isOnline={isOnline}
@@ -55,14 +96,14 @@ export function DashboardHeader({
           onOpenInfo={() => setIsInfoOpen(true)}
         />
         
-        {/* 4. BOTÓN DE ACCIÓN MAESTRO (TURNO) */}
+        {/* 4. BOTÓN DE ACCIÓN MAESTRO */}
         <HeaderMainAction 
           isOnline={isOnline}
           onToggleOnline={onToggleOnline}
         />
       </div>
 
-      {/* 5. MODAL DE PERFIL DETALLADO */}
+      {/* 5. MODAL DE PERFIL */}
       <HeaderProfileModal 
         isOpen={isInfoOpen}
         onOpenChange={setIsInfoOpen}
