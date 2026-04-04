@@ -30,21 +30,54 @@ export default function Home() {
   }, [user, isUserLoading, router]);
 
   if (isUserLoading) return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0a0a]">
-      <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700">
-        <div className="relative">
-          <div className="absolute inset-0 rounded-[2.5rem] bg-primary/20 animate-ping [animation-duration:2000ms]" />
-          <div className="relative w-24 h-24 bg-primary rounded-[2.5rem] flex items-center justify-center text-white shadow-[0_20px_50px_rgba(59,130,246,0.3)] border border-white/10">
-            <ShoppingBag className="w-12 h-12" />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050505]">
+      <div className="flex flex-col items-center gap-10 animate-in fade-in zoom-in duration-1000">
+        <div className="relative group">
+          {/* Aura Dorada de Energía */}
+          <div className="absolute inset-0 rounded-[2.5rem] bg-yellow-500/20 animate-ping [animation-duration:3000ms] blur-2xl" />
+          <div className="absolute -inset-4 rounded-[3rem] bg-gradient-to-br from-yellow-400/10 via-transparent to-yellow-600/10 animate-pulse" />
+          
+          {/* Contenedor de Icono en Oro Real */}
+          <div className="relative w-28 h-28 bg-gradient-to-br from-[#fef08a] via-[#eab308] to-[#a16207] rounded-[2.5rem] flex items-center justify-center shadow-[0_0_60px_rgba(234,179,8,0.3)] border-2 border-yellow-200/50 overflow-hidden">
+            {/* Rayo de luz dinámico (Shimmer) */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent animate-shimmer opacity-60" />
+            
+            <ShoppingBag className="w-14 h-14 text-slate-950 drop-shadow-2xl relative z-10 transition-transform group-hover:scale-110" />
+            
+            {/* Destellos Premium */}
+            <Sparkles className="absolute top-4 right-4 w-6 h-6 text-white animate-pulse" />
+            <Sparkles className="absolute bottom-4 left-4 w-4 h-4 text-white/60 animate-pulse delay-300" />
           </div>
         </div>
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div className="space-y-1">
-            <h2 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">Vitriniando</h2>
-            <p className="text-primary/60 text-[10px] font-black uppercase tracking-[0.4em] translate-x-1">Cargando Experiencia</p>
+
+        <div className="flex flex-col items-center gap-6 text-center">
+          <div className="space-y-3">
+            {/* Título en Gradiente Dorado */}
+            <h2 className="text-4xl sm:text-5xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-[#fef08a] via-[#eab308] to-[#a16207] uppercase leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
+              Vitriniando
+            </h2>
+            
+            <div className="flex flex-col items-center gap-3">
+              <p className="text-yellow-500/90 text-[11px] sm:text-xs font-black uppercase tracking-[0.3em] italic max-w-[250px] leading-relaxed">
+                Lo que necesitas a un clic de distancia
+              </p>
+              
+              {/* Indicador de Sincronización Minimalista */}
+              <div className="flex items-center gap-1.5">
+                {[1, 2, 3].map(i => (
+                  <div 
+                    key={i} 
+                    className="w-1.5 h-1.5 rounded-full bg-yellow-500/40 animate-pulse" 
+                    style={{ animationDelay: `${i * 200}ms` }} 
+                  />
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="h-1 w-32 bg-white/5 rounded-full overflow-hidden relative">
-            <div className="absolute inset-0 bg-primary animate-progress-loading" />
+
+          {/* Barra de Progreso en Oro Líquido */}
+          <div className="h-1.5 w-48 bg-white/5 rounded-full overflow-hidden relative border border-white/5 shadow-inner">
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-800 via-yellow-400 to-yellow-800 animate-progress-loading shadow-[0_0_20px_rgba(234,179,8,0.6)]" />
           </div>
         </div>
       </div>
@@ -171,7 +204,6 @@ function AuthenticatedHome() {
         )}
 
         {/* LÓGICA DE VISIBILIDAD CONDICIONAL (Candado Activado) */}
-        {/* En móvil se ocultan si el candado está activo. En desktop se mantienen. */}
         <div className={isWasherOnlyMode ? "hidden md:block" : "block"}>
           <HomeCategorySection 
             isAdmin={isAdmin} 
