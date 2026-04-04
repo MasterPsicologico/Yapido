@@ -18,7 +18,7 @@ import { RegisterSubmit } from '@/components/delivery/register/submit';
 
 export default function DeliveryRegisterPage() {
   const { user } = useUser();
-  const { profile } = useProfile();
+  const { profile, isAdmin } = useProfile();
   const firestore = useFirestore();
   const router = useRouter();
   
@@ -43,10 +43,11 @@ export default function DeliveryRegisterPage() {
 
   useEffect(() => {
     if (profile) setFullName(profile.displayName || "");
-    if (profile?.role === 'repartidor' || profile?.deliveryRequested) {
+    // Solo redirigir si ya son repartidores reales, permitir acceso a admins para pruebas
+    if (profile?.role === 'repartidor' && !isAdmin) {
       router.push('/delivery/dashboard');
     }
-  }, [profile, router]);
+  }, [profile, router, isAdmin]);
 
   const handleLockedClick = () => {
     if (!acceptedTerms) {
@@ -107,7 +108,8 @@ export default function DeliveryRegisterPage() {
     }
   };
 
-  if (profile?.role === 'repartidor' || profile?.deliveryRequested) return null;
+  // Permitir que admins vean la página incluso si ya son repartidores (para pruebas)
+  if (profile?.role === 'repartidor' && !isAdmin) return null;
 
   const isFormReady = acceptedTerms && docFront && docBack && selfie && idNumber && vehicleType;
 

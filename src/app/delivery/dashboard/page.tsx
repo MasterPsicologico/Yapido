@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Camera, LayoutGrid, Edit3 } from 'lucide-react';
+import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Camera, LayoutGrid, Edit3, Hourglass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
@@ -14,6 +14,7 @@ import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import Link from 'next/link';
 import { compressImage } from '@/lib/image-compression';
 
 // Componentes Fragmentados
@@ -39,7 +40,6 @@ export default function DeliveryDashboardPage() {
   const [isOnline, setIsOnline] = useState(true);
   const [isReleasing, setIsReleasing] = useState(false);
   const [releaseLogs, setReleaseLogs] = useState<string[]>([]);
-  const [isUploadingWelcome, setIsUploadingWelcome] = useState(false);
   const [isUploadingDashboard, setIsUploadingDashboard] = useState<'active' | 'inactive' | null>(null);
   const [adminForceWelcome, setAdminForceWelcome] = useState(false);
 
@@ -63,6 +63,7 @@ export default function DeliveryDashboardPage() {
   }, [profile, loadingProfile, router]);
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
+  const isPendingApproval = profile?.deliveryRequested === true && profile?.role !== 'repartidor';
 
   const allActiveOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
@@ -172,7 +173,6 @@ export default function DeliveryDashboardPage() {
       const updateKey = target === 'active' ? 'bgActive' : 'bgInactive';
       const cacheKey = target === 'active' ? CACHE_ACTIVE : CACHE_INACTIVE;
       
-      // ACTUALIZACIÓN INSTANTÁNEA EN LOCAL
       localStorage.setItem(cacheKey, compressed);
       
       await setDocumentNonBlocking(dashboardConfigRef, {
@@ -191,7 +191,7 @@ export default function DeliveryDashboardPage() {
 
   if (loadingProfile) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
 
-  const showWelcome = !isConfirmedRepartidor || (isAdmin && adminForceWelcome);
+  const showWelcome = (!isConfirmedRepartidor && !isPendingApproval) || (isAdmin && adminForceWelcome) || isPendingApproval;
 
   if (showWelcome) {
     return (
@@ -217,9 +217,28 @@ export default function DeliveryDashboardPage() {
                   <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Autonomía Logística</h4><p className="text-xs text-slate-400 font-medium">Tú controlas tu tiempo. Conéctate cuando quieras.</p></div>
                 </div>
               </div>
-              <Button onClick={() => router.push(isAdmin ? '#' : '/delivery/register')} className="w-full h-20 rounded-[32px] bg-primary text-white font-black uppercase tracking-widest gap-3 border-b-[10px] border-blue-800 shadow-xl active:translate-y-2 active:border-b-0 transition-all">
-                {isAdmin ? "PANEL DE CONTROL ACTIVO" : "QUIERO SER REPARTIDOR"} <ArrowRight className="w-4 h-4" />
-              </Button>
+
+              {isPendingApproval ? (
+                <div className="space-y-6">
+                  <div className="bg-orange-50 border border-orange-100 p-6 rounded-[32px] flex items-center gap-4 animate-pulse">
+                    <Hourglass className="w-8 h-8 text-orange-500" />
+                    <div>
+                      <p className="text-xs font-black uppercase text-orange-600 tracking-widest">Estado: Pendiente</p>
+                      <p className="text-[10px] font-bold text-orange-400 uppercase">Tu solicitud está en revisión</p>
+                    </div>
+                  </div>
+                  <Button disabled className="w-full h-20 rounded-[32px] bg-slate-200 text-slate-400 font-black uppercase tracking-widest gap-3 border-none shadow-none cursor-not-allowed">
+                    SOLICITUD EN PROCESO
+                  </Button>
+                </div>
+              ) : (
+                <Button asChild className="w-full h-20 rounded-[32px] bg-primary text-white font-black uppercase tracking-widest gap-3 border-b-[10px] border-blue-800 shadow-xl active:translate-y-2 active:border-b-0 transition-all">
+                  <Link href={isAdmin && !adminForceWelcome ? '#' : '/delivery/register'}>
+                    {isAdmin && !adminForceWelcome ? "PANEL DE CONTROL ACTIVO" : "QUIERO SER REPARTIDOR"} <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </Button>
+              )}
+
               {isAdmin && <Button onClick={() => setAdminForceWelcome(false)} variant="ghost" className="w-full h-12 font-black uppercase text-[10px] tracking-widest text-slate-400">VOLVER AL MONITOR</Button>}
             </Card>
           </div>
