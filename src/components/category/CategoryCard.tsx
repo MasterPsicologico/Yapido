@@ -1,10 +1,11 @@
 
 "use client";
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Sparkles, Store as StoreIcon, Edit3 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { CardContent } from '@/components/ui/card';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,27 @@ interface CategoryCardProps {
 export function CategoryCard({ category, onEdit }: CategoryCardProps) {
   const firestore = useFirestore();
   const { user } = useUser();
+  const [localImage, setLocalImage] = useState<string | null>(null);
   
+  const CACHE_KEY = `vitriniando_cat_img_${category.id}`;
+
+  // SISTEMA DE CARGA INSTANTÁNEA
+  useEffect(() => {
+    // 1. Cargar desde memoria local inmediatamente
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      setLocalImage(cached);
+    }
+  }, [CACHE_KEY]);
+
+  useEffect(() => {
+    // 2. Sincronizar con la imagen real de Firestore
+    if (category.imageUrl && category.imageUrl !== localImage) {
+      setLocalImage(category.imageUrl);
+      localStorage.setItem(CACHE_KEY, category.imageUrl);
+    }
+  }, [category.imageUrl, localImage, CACHE_KEY]);
+
   const storesQuery = useMemoFirebase(() => {
     if (!firestore || !category.id) return null;
     return query(collection(firestore, 'stores'), where('mainCategoryId', '==', category.id));
@@ -32,21 +53,28 @@ export function CategoryCard({ category, onEdit }: CategoryCardProps) {
 
   const { data: stores } = useCollection(storesQuery);
 
+  const displayImage = localImage || category.imageUrl;
+
   return (
-    <div className="group relative h-40 sm:h-72 w-full overflow-hidden shadow-md transition-all duration-500 hover:shadow-xl">
+    <div className="group relative h-40 sm:h-72 w-full overflow-hidden shadow-md transition-all duration-500 hover:shadow-xl bg-slate-900">
       <Link href={`/categories/${category.id}`}>
-        {/* Imagen de Fondo */}
+        {/* Imagen de Fondo con Transición Suave */}
         <div className="absolute inset-0 z-0">
-          <Image 
-            src={category.imageUrl} 
-            alt={category.name} 
-            fill 
-            className="object-cover transition-transform duration-700 group-hover:scale-110" 
-          />
+          {displayImage ? (
+            <Image 
+              src={displayImage} 
+              alt={category.name} 
+              fill 
+              className="object-cover transition-transform duration-700 group-hover:scale-110 animate-in fade-in duration-500" 
+              priority
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-950" />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
         </div>
 
-        {/* Contenido - Limpio de títulos según Mandamiento #1 */}
+        {/* Contenido Limpio */}
         <CardContent className="absolute inset-0 z-10 flex flex-col justify-end p-3 sm:p-6 text-white">
           <div className="space-y-4">
             <div className="flex items-center justify-between">

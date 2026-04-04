@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,9 @@ interface DashboardHeaderProps {
   isUploading?: 'active' | 'inactive' | null;
 }
 
+const CACHE_ACTIVE = 'vitriniando_delivery_bg_active';
+const CACHE_INACTIVE = 'vitriniando_delivery_bg_inactive';
+
 export function DashboardHeader({ 
   profile, level, stats, isOnline, onToggleOnline,
   isAdmin, dashboardConfig, onImageUpload, isUploading 
@@ -48,17 +51,40 @@ export function DashboardHeader({
   const activeInputRef = useRef<HTMLInputElement>(null);
   const inactiveInputRef = useRef<HTMLInputElement>(null);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  
+  const [localActive, setLocalActive] = useState<string | null>(null);
+  const [localInactive, setLocalInactive] = useState<string | null>(null);
+
+  // CARGA INSTANTÁNEA DESDE EL CELULAR
+  useEffect(() => {
+    setLocalActive(localStorage.getItem(CACHE_ACTIVE));
+    setLocalInactive(localStorage.getItem(CACHE_INACTIVE));
+  }, []);
+
+  useEffect(() => {
+    if (dashboardConfig?.bgActive && dashboardConfig.bgActive !== localActive) {
+      setLocalActive(dashboardConfig.bgActive);
+      localStorage.setItem(CACHE_ACTIVE, dashboardConfig.bgActive);
+    }
+    if (dashboardConfig?.bgInactive && dashboardConfig.bgInactive !== localInactive) {
+      setLocalInactive(dashboardConfig.bgInactive);
+      localStorage.setItem(CACHE_INACTIVE, dashboardConfig.bgInactive);
+    }
+  }, [dashboardConfig, localActive, localInactive]);
+
+  const bgActive = localActive || dashboardConfig?.bgActive;
+  const bgInactive = localInactive || dashboardConfig?.bgInactive;
 
   return (
     <div className="relative overflow-hidden border-b group/header min-h-[380px] flex flex-col justify-center">
-      {/* CAPA DE FONDO DUAL CON NITIDEZ TOTAL */}
+      {/* CAPA DE FONDO DUAL CON CARGA INSTANTÁNEA */}
       <div className="absolute inset-0 z-0">
         <div className={cn(
           "absolute inset-0 transition-opacity duration-1000 ease-in-out",
           isOnline ? "opacity-0" : "opacity-100"
         )}>
-          {dashboardConfig?.bgInactive ? (
-            <Image src={dashboardConfig.bgInactive} alt="Descanso" fill className="object-cover object-top" priority />
+          {bgInactive ? (
+            <Image src={bgInactive} alt="Descanso" fill className="object-cover object-top animate-in fade-in duration-500" priority />
           ) : (
             <div className="absolute inset-0 bg-slate-900" />
           )}
@@ -68,8 +94,8 @@ export function DashboardHeader({
           "absolute inset-0 transition-opacity duration-1000 ease-in-out",
           isOnline ? "opacity-100" : "opacity-0"
         )}>
-          {dashboardConfig?.bgActive ? (
-            <Image src={dashboardConfig.bgActive} alt="Activo" fill className="object-cover object-top" priority />
+          {bgActive ? (
+            <Image src={bgActive} alt="Activo" fill className="object-cover object-top animate-in fade-in duration-500" priority />
           ) : (
             <div className="absolute inset-0 bg-primary" />
           )}
@@ -111,14 +137,12 @@ export function DashboardHeader({
         </div>
       )}
 
-      {/* CONTENIDO CENTRAL: IDENTIDAD INTERACTIVA */}
+      {/* CONTENIDO CENTRAL */}
       <div className="relative z-10 px-6 flex flex-col items-center text-center gap-8 pt-12">
-        {/* BLOQUE DE NOMBRE Y AVATAR (CLICKABLE) */}
         <div 
           onClick={() => setIsInfoOpen(true)}
           className="cursor-pointer group/info flex flex-col items-center gap-6 animate-in fade-in slide-in-from-top-4 duration-700"
         >
-          {/* NOMBRE Y NIVEL: VISIBILIDAD CONDICIONAL */}
           {isOnline && (
             <div className="space-y-2">
               <h1 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] group-hover/info:scale-105 transition-transform">
@@ -149,7 +173,6 @@ export function DashboardHeader({
           </div>
         </div>
         
-        {/* BOTÓN DE ESTADO */}
         <div className="w-full max-w-xs animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
           <Button 
             onClick={onToggleOnline} 
@@ -165,7 +188,7 @@ export function DashboardHeader({
         </div>
       </div>
 
-      {/* VENTANA DE INFORMACIÓN DETALLADA (MODAL ÉLITE) */}
+      {/* MODAL DE PERFIL */}
       <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
         <DialogContent className="rounded-[40px] border-none shadow-2xl p-0 bg-white overflow-hidden sm:max-w-[450px] z-[600] animate-in zoom-in duration-300 [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
@@ -175,7 +198,6 @@ export function DashboardHeader({
           
           <div className="h-32 bg-slate-900 relative">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent opacity-50" />
-            
             <div className="absolute -bottom-12 left-8">
               <Avatar className="w-24 h-24 border-[6px] border-white shadow-2xl">
                 <AvatarImage src={profile?.photoURL} className="object-cover" />
@@ -185,7 +207,6 @@ export function DashboardHeader({
           </div>
 
           <div className="pt-16 px-8 pb-10 space-y-8 relative">
-            {/* BOTÓN DE CIERRE ROJO EN EL CONTENEDOR BLANCO */}
             <button 
               onClick={() => setIsInfoOpen(false)}
               className="absolute top-2 right-4 z-[700] text-red-600 hover:bg-red-50 rounded-full w-12 h-12 flex items-center justify-center transition-all active:scale-90"
@@ -244,9 +265,7 @@ export function DashboardHeader({
             </div>
 
             <div className="pt-4 border-t border-dashed">
-              <Button 
-                className="w-full h-16 rounded-[24px] bg-slate-900 hover:bg-slate-800 text-white font-black uppercase text-sm tracking-widest gap-3 shadow-xl shadow-slate-200 group"
-              >
+              <Button className="w-full h-16 rounded-[24px] bg-slate-900 hover:bg-slate-800 text-white font-black uppercase text-sm tracking-widest gap-3 shadow-xl shadow-slate-200 group">
                 <MessageCircle className="w-6 h-6 text-primary group-hover:scale-110 transition-transform" />
                 CHAT DE SOPORTE ÉLITE
               </Button>

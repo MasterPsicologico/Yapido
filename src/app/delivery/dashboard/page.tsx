@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -23,6 +24,9 @@ import { RoutesTab } from '@/components/delivery/dashboard/tabs/RoutesTab';
 import { EarningsTab } from '@/components/delivery/dashboard/tabs/EarningsTab';
 import { releaseOrder } from '@/ai/flows/release-order-flow';
 import { AgentProgressOverlay } from '@/components/agents/AgentProgressOverlay';
+
+const CACHE_ACTIVE = 'vitriniando_delivery_bg_active';
+const CACHE_INACTIVE = 'vitriniando_delivery_bg_inactive';
 
 export default function DeliveryDashboardPage() {
   const { user } = useUser();
@@ -60,37 +64,21 @@ export default function DeliveryDashboardPage() {
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
 
-  // CONSULTA LOGÍSTICA DE ALTA PRECISIÓN: Sincronizada con el ADN del repartidor
   const allActiveOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
-    
-    // CASO A: Repartidor de Tienda Privada (Enfocar radar en su tienda)
     if (profile?.linkedStoreId) {
-      return query(
-        collection(firestore, 'orders'),
-        where('storeId', '==', profile.linkedStoreId),
-        limit(50)
-      );
+      return query(collection(firestore, 'orders'), where('storeId', '==', profile.linkedStoreId), limit(50));
     }
-    
-    // CASO B: Repartidor Público (Enfocar radar en rutas abiertas)
-    return query(
-      collection(firestore, 'orders'),
-      where('isLogisticsPublic', '==', true),
-      limit(50)
-    );
+    return query(collection(firestore, 'orders'), where('isLogisticsPublic', '==', true), limit(50));
   }, [firestore, isConfirmedRepartidor, isOnline, profile?.linkedStoreId]);
 
   const { data: rawAllOrders, isLoading: loadingRoutes } = useCollection(allActiveOrdersQuery);
 
   const availableOrders = useMemo(() => {
     if (!rawAllOrders) return [];
-    
     return rawAllOrders.filter(order => {
-      // Filtrar estados operativos
       const isSearchable = ['pending', 'preparing', 'ready_for_pickup'].includes(order.status);
       if (!isSearchable) return false;
-      // No mostrar si ya tiene otro repartidor asignado (a menos que sea yo)
       if (order.deliveryDriverId && order.deliveryDriverId !== user?.uid) return false;
       return true;
     }).sort((a, b) => {
@@ -102,21 +90,12 @@ export default function DeliveryDashboardPage() {
 
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
-    return query(
-      collection(firestore, 'orders'), 
-      where('participants', 'array-contains', user.uid), 
-      where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver'])
-    );
+    return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid), where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver']));
   }, [firestore, user?.uid, isConfirmedRepartidor]);
 
   const historyQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
-    return query(
-      collection(firestore, 'orders'), 
-      where('participants', 'array-contains', user.uid), 
-      where('status', '==', 'delivered'),
-      limit(50)
-    );
+    return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid), where('status', '==', 'delivered'), limit(50));
   }, [firestore, user?.uid, isConfirmedRepartidor]);
 
   const { data: rawMy } = useCollection(myDeliveriesQuery);
@@ -149,7 +128,7 @@ export default function DeliveryDashboardPage() {
       updatedAt: serverTimestamp(),
       participants: arrayUnion(user.uid)
     });
-    toast({ title: "Ruta Aceptada", description: "Iniciando misión logística." });
+    toast({ title: "Ruta Aceptada" });
     setActiveTab("my-deliveries");
   };
 
@@ -159,26 +138,19 @@ export default function DeliveryDashboardPage() {
     const updateData: any = { status: newStatus, updatedAt: serverTimestamp() };
     if (newStatus === 'delivered_to_driver') updateData.pickedUpAt = serverTimestamp();
     if (newStatus === 'delivered') updateData.deliveredAt = serverTimestamp();
-    updateDocumentNonBlocking(orderRef, { ...updateData });
+    updateDocumentNonBlocking(orderRef, updateData);
     toast({ title: "Estado Actualizado" });
   };
 
   const handleReleaseOrder = async (reason: string) => {
     if (!activeMission || !user || !firestore || !reason) return;
     const orderRef = doc(firestore, 'orders', activeMission.id);
-    const incidentRef = collection(firestore, 'incidents');
-    addDocumentNonBlocking(incidentRef, {
-      orderId: activeMission.id, driverId: user.uid, driverName: profile?.displayName || 'Repartidor',
-      reason, hasProducts: activeMission.status === 'delivered_to_driver', orderValue: activeMission.totalPrice || 0,
-      storeId: activeMission.storeId, storeName: activeMission.storeName, createdAt: serverTimestamp(),
-      type: 'ORDER_RELEASE', agentOwner: 'soporte'
-    });
     updateDocumentNonBlocking(orderRef, {
       status: 'ready_for_pickup', deliveryDriverId: null, deliveryDriverName: null,
       isLogisticsPublic: true, updatedAt: serverTimestamp(), participants: arrayRemove(user.uid)
     });
     setIsReleasing(true);
-    setReleaseLogs(["Protocolo de liberación activado...", "Sincronizando Ciudadela de Agentes..."]);
+    setReleaseLogs(["Protocolo de liberación activado..."]);
     try {
       const result = await releaseOrder({
         orderId: activeMission.id, driverId: user.uid, reason,
@@ -187,26 +159,7 @@ export default function DeliveryDashboardPage() {
       });
       setReleaseLogs(prev => [...prev, ...result.agentLogs]);
     } catch (e) {
-      setReleaseLogs(prev => [...prev, "Finalizando procesos internos..."]);
-    }
-  };
-
-  const handleWelcomeImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsUploadingWelcome(true);
-    try {
-      const compressed = await compressImage(file, 1920, 1080, 0.85);
-      await setDocumentNonBlocking(welcomeConfigRef, {
-        backgroundImage: compressed,
-        updatedAt: serverTimestamp(),
-        updatedBy: user?.uid
-      }, { merge: true });
-      toast({ title: "Fondo de Bienvenida actualizado" });
-    } catch (error) {
-      toast({ title: "Error al actualizar", variant: "destructive" });
-    } finally {
-      setIsUploadingWelcome(false);
+      setReleaseLogs(prev => [...prev, "Finalizando procesos..."]);
     }
   };
 
@@ -217,6 +170,10 @@ export default function DeliveryDashboardPage() {
     try {
       const compressed = await compressImage(file, 1920, 1080, 0.85);
       const updateKey = target === 'active' ? 'bgActive' : 'bgInactive';
+      const cacheKey = target === 'active' ? CACHE_ACTIVE : CACHE_INACTIVE;
+      
+      // ACTUALIZACIÓN INSTANTÁNEA EN LOCAL
+      localStorage.setItem(cacheKey, compressed);
       
       await setDocumentNonBlocking(dashboardConfigRef, {
         [updateKey]: compressed,
@@ -241,66 +198,29 @@ export default function DeliveryDashboardPage() {
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
         <Navbar />
         <main className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-          <div 
-            onClick={() => isAdmin && fileInputRef.current?.click()}
-            className={cn(
-              "relative w-full aspect-[16/10] mb-2 overflow-hidden shadow-xl transition-all duration-500 group/welcome",
-              isAdmin && "cursor-pointer active:scale-[0.99] bg-slate-100"
-            )}
-          >
-            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleWelcomeImageUpload} />
-            <div className="absolute inset-0 z-0">
-              {welcomeConfig?.backgroundImage ? (
-                <Image src={welcomeConfig.backgroundImage} alt="Portada Personalizada" fill className="object-cover object-top" priority />
-              ) : (
-                <div className="absolute inset-0 bg-slate-200" />
-              )}
-              <div className="absolute inset-0 bg-black/5" />
-            </div>
-            {isAdmin && (
-              <div className="relative z-10 h-full flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/30 shadow-2xl group/welcome:scale-110 transition-all">
-                  {isUploadingWelcome ? <Loader2 className="w-8 h-8 animate-spin text-green-500" /> : <Camera className="w-8 h-8 text-green-500" />}
-                </div>
-              </div>
+          <div className="relative w-full aspect-[16/10] mb-2 overflow-hidden shadow-xl">
+            {welcomeConfig?.backgroundImage ? (
+              <Image src={welcomeConfig.backgroundImage} alt="Portada" fill className="object-cover object-top" priority />
+            ) : (
+              <div className="absolute inset-0 bg-slate-900" />
             )}
           </div>
           <div className="container mx-auto px-4 max-w-2xl -mt-6 relative z-20">
-            <Card className="border-none shadow-2xl rounded-[48px] bg-white overflow-hidden ring-1 ring-black/[0.03]">
-              <CardContent className="p-10 space-y-10">
-                <div className="space-y-8">
-                  <div className="flex items-start gap-6">
-                    <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 shrink-0 shadow-inner">
-                      <CheckCircle2 className="w-6 h-6" />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="font-black text-lg uppercase italic tracking-tighter text-slate-900">Gana por cada entrega</h4>
-                      <p className="text-xs text-slate-400 font-medium leading-relaxed">Recibe el 70% del valor de cada envío de forma inmediata y directa a tu saldo.</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-6">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0 shadow-inner">
-                      <Zap className="w-6 h-6" />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="font-black text-lg uppercase italic tracking-tighter text-slate-900">Autonomía Logística</h4>
-                      <p className="text-xs text-slate-400 font-medium leading-relaxed">Tú controlas tu tiempo. Conéctate cuando quieras y acepta las rutas que mejor te convengan.</p>
-                    </div>
-                  </div>
+            <Card className="border-none shadow-2xl rounded-[48px] bg-white overflow-hidden p-10 space-y-10">
+              <div className="space-y-8">
+                <div className="flex items-start gap-6">
+                  <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 shrink-0 shadow-inner"><CheckCircle2 className="w-6 h-6" /></div>
+                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Gana por cada entrega</h4><p className="text-xs text-slate-400 font-medium">Recibe el 70% del valor de cada envío de forma inmediata.</p></div>
                 </div>
-                <div className="pt-4">
-                  {!isAdmin && (
-                    <Button onClick={() => router.push('/delivery/register')} className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-sm uppercase tracking-[0.2em] gap-3 border-b-[10px] border-blue-800 shadow-xl active:translate-y-2 active:border-b-0 transition-all">
-                      QUIERO SER REPARTIDOR <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {isAdmin && (
-                    <Button onClick={() => setAdminForceWelcome(false)} className="w-full h-16 rounded-[24px] bg-slate-900 text-white font-black uppercase text-xs tracking-widest gap-2">
-                      <LayoutGrid className="w-4 h-4" /> VOLVER AL PANEL OPERATIVO
-                    </Button>
-                  )}
+                <div className="flex items-start gap-6">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0 shadow-inner"><Zap className="w-6 h-6" /></div>
+                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Autonomía Logística</h4><p className="text-xs text-slate-400 font-medium">Tú controlas tu tiempo. Conéctate cuando quieras.</p></div>
                 </div>
-              </CardContent>
+              </div>
+              <Button onClick={() => router.push(isAdmin ? '#' : '/delivery/register')} className="w-full h-20 rounded-[32px] bg-primary text-white font-black uppercase tracking-widest gap-3 border-b-[10px] border-blue-800 shadow-xl active:translate-y-2 active:border-b-0 transition-all">
+                {isAdmin ? "PANEL DE CONTROL ACTIVO" : "QUIERO SER REPARTIDOR"} <ArrowRight className="w-4 h-4" />
+              </Button>
+              {isAdmin && <Button onClick={() => setAdminForceWelcome(false)} variant="ghost" className="w-full h-12 font-black uppercase text-[10px] tracking-widest text-slate-400">VOLVER AL MONITOR</Button>}
             </Card>
           </div>
         </main>
@@ -336,11 +256,10 @@ export default function DeliveryDashboardPage() {
               </Button>
             )}
 
-            {/* RUTAS LIBRES: POSICIONAMIENTO PRIORITARIO */}
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mb-12 space-y-8">
               <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3">
                 <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white">RUTAS LIBRES</TabsTrigger>
-                <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white">ACTIVAS ({rawMy?.filter(o => o.deliveryDriverId === user?.uid).length || 0})</TabsTrigger>
+                <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white">ACTIVAS ({rawMy?.length || 0})</TabsTrigger>
                 <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white">INGRESOS</TabsTrigger>
               </TabsList>
               <TabsContent value="available">
