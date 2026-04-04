@@ -50,6 +50,7 @@ export function WasherSolicitationDialog({
   const [needsInstallation, setNeedsInstallation] = useState(true);
   const [routeType, setRouteType] = useState<'round_trip' | 'delivery' | 'pickup'>('round_trip');
   const [hasStairs, setHasStairs] = useState(false);
+  const [stairCount, setStairCount] = useState(1);
 
   const [isSending, setIsSending] = useState(false);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
@@ -66,9 +67,8 @@ export function WasherSolicitationDialog({
   }, [profile, isOpen, pricingConfig]);
 
   // LÓGICA DE CÁLCULO MAESTRO DINÁMICO
-  const { totalPrice, valHoraActual } = useMemo(() => {
+  const { totalPrice } = useMemo(() => {
     const config = pricingConfig || {};
-    const minH = Number(config.minHours || 5);
     
     // 1. Determinar Tarifa Horaria según Tipo
     const rate = washerType === 'automatica' 
@@ -77,10 +77,13 @@ export function WasherSolicitationDialog({
 
     // 2. Calcular Extras Fijos
     const installExtra = needsInstallation ? Number(config.installFee || 10000) : 0;
-    const stairsExtra = hasStairs ? Number(config.stairsFee || 5000) : 0;
+    
+    // 3. CÁLCULO DINÁMICO DE ESCALERAS (Precio por tramo)
+    const stairsExtra = hasStairs ? (stairCount * Number(config.stairsFee || 5000)) : 0;
+    
     const routeExtra = routeType === 'round_trip' ? Number(config.roundTripFee || 5000) : 0;
 
-    // 3. Calcular Extra por Piso (Solo si es > 1 y no hay ascensor)
+    // 4. Calcular Extra por Piso (Solo si es > 1 y no hay ascensor)
     const floorNum = Number(floor) || 1;
     const floorExtra = (floorNum > 1 && !hasElevator) 
       ? (floorNum - 1) * Number(config.floorFee || 2000) 
@@ -88,11 +91,8 @@ export function WasherSolicitationDialog({
 
     const total = (requestHours * rate) + installExtra + stairsExtra + routeExtra + floorExtra;
 
-    return { 
-      totalPrice: total,
-      valHoraActual: rate
-    };
-  }, [requestHours, washerType, floor, hasElevator, needsInstallation, routeType, hasStairs, pricingConfig]);
+    return { total };
+  }, [requestHours, washerType, floor, hasElevator, needsInstallation, routeType, hasStairs, stairCount, pricingConfig]);
 
   const formattedPrice = new Intl.NumberFormat('es-CO', { 
     style: 'currency', currency: 'COP', maximumFractionDigits: 0 
@@ -125,7 +125,8 @@ export function WasherSolicitationDialog({
       hasElevator,
       needsInstallation,
       routeType,
-      hasStairs
+      hasStairs,
+      stairCount
     });
     setIsSending(false);
   };
@@ -160,6 +161,7 @@ export function WasherSolicitationDialog({
               hasElevator={hasElevator} setHasElevator={setHasElevator}
               needsInstallation={needsInstallation} setNeedsInstallation={setNeedsInstallation}
               hasStairs={hasStairs} setHasStairs={setHasStairs}
+              stairCount={stairCount} setStairCount={setStairCount}
             />
 
             <WasherRouteSelector routeType={routeType} setRouteType={setRouteType} />

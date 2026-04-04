@@ -100,12 +100,15 @@ export function WasherAdminPricingDialog({
                   <Input name="floorFee" type="number" defaultValue={pricingConfig?.floorFee || 2000} className="w-24 h-10 rounded-xl bg-white border-none font-black text-right" />
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-amber-500 shadow-sm"><AlertTriangle className="w-4 h-4" /></div>
-                    <span className="text-[10px] font-black uppercase">Factor Escaleras</span>
+                <div className="flex flex-col gap-2 p-4 rounded-2xl bg-slate-50 border border-amber-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-amber-500 shadow-sm"><AlertTriangle className="w-4 h-4" /></div>
+                      <span className="text-[10px] font-black uppercase">Escalas (Por Tramo)</span>
+                    </div>
+                    <Input name="stairsFee" type="number" defaultValue={pricingConfig?.stairsFee || 5000} className="w-24 h-10 rounded-xl bg-white border-none font-black text-right" />
                   </div>
-                  <Input name="stairsFee" type="number" defaultValue={pricingConfig?.stairsFee || 5000} className="w-24 h-10 rounded-xl bg-white border-none font-black text-right" />
+                  <p className="text-[8px] font-bold text-slate-400 uppercase italic ml-11">Este valor se multiplicará por el número de escalas</p>
                 </div>
 
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50">
