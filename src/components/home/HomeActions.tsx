@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { collection, serverTimestamp, doc, query, where, addDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -100,7 +99,7 @@ export function HomeActions({
         displayName: data.customerName, address: data.customerAddress, phoneNumber: data.customerPhone, updatedAt: serverTimestamp() 
       });
 
-      // Creamos la orden principal
+      // Creamos la orden principal (RETORNAMOS EL ID PARA REDIRECCIÓN)
       const docRef = await addDoc(collection(firestore, 'orders'), {
         customerId: user.uid, 
         customerName: data.customerName, 

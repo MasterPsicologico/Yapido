@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -56,7 +55,7 @@ export function WasherSolicitationDialog({
   const [hasStairs, setHasStairs] = useState(false);
   const [stairCount, setStairCount] = useState(1);
 
-  // Estados de Proceso y Navegación
+  // Estados de Proceso y Navegación (MONITOR DE REDIRECCIÓN)
   const [orderStatus, setOrderStatus] = useState<OrderSubmissionStatus>('idle');
   const [submittedOrderId, setSubmittedOrderId] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
@@ -74,13 +73,13 @@ export function WasherSolicitationDialog({
     }
   }, [profile, isOpen, pricingConfig, orderStatus]);
 
-  // LÓGICA DE REDIRECCIÓN AUTOMÁTICA (MONITOR REACTIVO)
+  // LÓGICA DE REDIRECCIÓN AUTOMÁTICA (ACTIVADA POR submittedOrderId)
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (orderStatus === 'success' && submittedOrderId && redirectCountdown > 0) {
       timer = setTimeout(() => setRedirectCountdown(prev => prev - 1), 1000);
     } else if (orderStatus === 'success' && submittedOrderId && redirectCountdown === 0) {
-      // NAVEGACIÓN FORZADA AL LLEGAR A CERO
+      // NAVEGACIÓN FORZADA A LA SALA DE ESPERA
       router.push(`/washer/waiting-room/${submittedOrderId}`);
     }
     return () => clearTimeout(timer);
@@ -140,11 +139,11 @@ export function WasherSolicitationDialog({
         setSubmittedOrderId(orderId);
         setOrderStatus('success');
       } else {
-        throw new Error("No order ID returned");
+        throw new Error("Fallo al generar ID");
       }
     } catch (e) {
       setOrderStatus('idle');
-      toast({ title: "Fallo en la sincronización", variant: "destructive" });
+      toast({ title: "Error de red", variant: "destructive" });
     }
   };
 
@@ -153,7 +152,7 @@ export function WasherSolicitationDialog({
       <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-[#0a0a0a] p-0 overflow-hidden flex flex-col z-[600] animate-in slide-in-from-bottom duration-500 [&>button:last-child]:hidden">
         <DialogHeader className="sr-only">
           <DialogTitle>Nueva Solicitud Alquiler</DialogTitle>
-          <DialogDescription>Formulario modular sincronizado con el perfil.</DialogDescription>
+          <DialogDescription>Formulario de solicitud sincronizado.</DialogDescription>
         </DialogHeader>
         
         <WasherSolicitationHeader 

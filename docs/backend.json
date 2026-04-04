@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -9,15 +8,12 @@
         "id": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
-        "phoneNumber": { "type": "string", "description": "Número de WhatsApp del usuario para contacto." },
+        "phoneNumber": { "type": "string" },
         "role": { 
           "type": "string", 
-          "enum": ["admin", "moderador", "dueño", "repartidor", "cliente"],
-          "description": "Define los permisos del usuario en la plataforma."
+          "enum": ["admin", "moderador", "dueño", "repartidor", "cliente"]
         },
-        "favoriteStores": { "type": "array", "items": { "type": "string" } },
-        "favoriteProducts": { "type": "array", "items": { "type": "string" } },
-        "balance": { "type": "number", "description": "Saldo actual del repartidor (puede ser negativo por deudas)." },
+        "balance": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "email", "role"]
@@ -25,62 +21,36 @@
     "Order": {
       "title": "Order",
       "type": "object",
-      "description": "Registro de un pedido realizado por un cliente.",
+      "description": "Registro de un pedido o solicitud de alquiler.",
       "properties": {
         "id": { "type": "string" },
         "customerId": { "type": "string" },
-        "customerName": { "type": "string" },
-        "customerPhone": { "type": "string" },
-        "customerAddress": { "type": "string" },
         "storeId": { "type": "string" },
-        "storeName": { "type": "string" },
-        "storeOwnerId": { "type": "string" },
-        "storeAddress": { "type": "string" },
-        "items": { 
-          "type": "array", 
-          "items": { 
-            "type": "object",
-            "properties": {
-              "id": { "type": "string" },
-              "name": { "type": "string" },
-              "price": { "type": "number" },
-              "quantity": { "type": "number" },
-              "imageUrl": { "type": "string" }
-            }
-          } 
-        },
-        "productName": { "type": "string" },
-        "totalPrice": { "type": "number" },
-        "paymentMethod": { "type": "string", "enum": ["cash", "digital"] },
         "status": { 
           "type": "string", 
           "enum": ["pending", "preparing", "ready_for_pickup", "at_store", "delivered_to_driver", "shipped", "delivered", "cancelled"] 
         },
-        "deliveryDriverId": { "type": "string" },
-        "deliveryDriverName": { "type": "string" },
-        "deliveryCode": { "type": "string" },
+        "totalPrice": { "type": "number" },
+        "washerType": { "type": "string" },
         "isLogisticsPublic": { "type": "boolean" },
         "participants": { "type": "array", "items": { "type": "string" } },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "customerId", "storeId", "status", "participants"]
+      "required": ["id", "customerId", "status", "participants"]
     },
-    "Incident": {
-      "title": "Incident",
+    "Offer": {
+      "title": "Offer",
       "type": "object",
-      "description": "Registros de incidentes operativos para el Agente de Soporte.",
+      "description": "Propuesta de precio para un alquiler de lavadora.",
       "properties": {
         "id": { "type": "string" },
-        "orderId": { "type": "string" },
+        "storeId": { "type": "string" },
         "driverId": { "type": "string" },
-        "reason": { "type": "string" },
-        "hasProducts": { "type": "boolean" },
-        "orderValue": { "type": "number" },
-        "type": { "type": "string" },
-        "agentOwner": { "type": "string", "enum": ["soporte"] },
+        "price": { "type": "number" },
+        "comment": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["orderId", "driverId", "reason", "type", "agentOwner"]
+      "required": ["storeId", "driverId", "price"]
     }
   },
   "auth": {
@@ -93,7 +63,7 @@
         "definition": {
           "entityName": "User",
           "schema": { "$ref": "#/backend/entities/User" },
-          "description": "Perfiles de usuario."
+          "description": "Perfiles."
         }
       },
       {
@@ -101,15 +71,15 @@
         "definition": {
           "entityName": "Order",
           "schema": { "$ref": "#/backend/entities/Order" },
-          "description": "Pedidos principales."
+          "description": "Pedidos."
         }
       },
       {
-        "path": "/incidents/{incidentId}",
+        "path": "/orders/{orderId}/offers/{offerId}",
         "definition": {
-          "entityName": "Incident",
-          "schema": { "$ref": "#/backend/entities/Incident" },
-          "description": "Logs de incidentes operativos."
+          "entityName": "Offer",
+          "schema": { "$ref": "#/backend/entities/Offer" },
+          "description": "Contraofertas."
         }
       }
     ]

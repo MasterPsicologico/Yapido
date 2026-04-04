@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,13 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   Loader2, Radar, Store as StoreIcon, MessageCircle, Phone, 
-  CheckCircle2, XCircle, ArrowLeft, Sparkles, Clock, Wallet, ShieldCheck
+  CheckCircle2, XCircle, Clock, Wallet, ShieldCheck, Sparkles
 } from 'lucide-react';
-import { useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, orderBy, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
+import { doc, collection, query, orderBy, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 
 export default function WasherWaitingRoom() {
   const params = useParams();
@@ -25,7 +23,7 @@ export default function WasherWaitingRoom() {
   
   const [timeRemaining, setTimeRemaining] = useState(300); // 5 minutos
 
-  // Listeners de la Orden y Ofertas
+  // Listeners de la Orden y Ofertas (CON REGLAS DE SEGURIDAD CORREGIDAS)
   const orderRef = useMemoFirebase(() => (!firestore || !id) ? null : doc(firestore, 'orders', id), [firestore, id]);
   const { data: order, isLoading: loadingOrder } = useDoc(orderRef);
 
@@ -33,11 +31,11 @@ export default function WasherWaitingRoom() {
     if (!firestore || !id) return null;
     return query(collection(firestore, 'orders', id, 'offers'), orderBy('createdAt', 'desc'));
   }, [firestore, id]);
-  const { data: offers, isLoading: loadingOffers } = useCollection(offersQuery);
+  const { data: offers } = useCollection(offersQuery);
 
   // Redirección si la orden ya fue asignada
   useEffect(() => {
-    if (order && order.deliveryDriverId) {
+    if (order && order.deliveryDriverId && order.status !== 'pending') {
       toast({ title: "¡Lavadora en camino!", description: "Un repartidor ha tomado tu ruta." });
       router.push('/admin/orders');
     }
@@ -60,29 +58,22 @@ export default function WasherWaitingRoom() {
   const handleAcceptOffer = (offer: any) => {
     if (!firestore || !orderRef) return;
     
-    // ASIGNACIÓN MAESTRA
+    // ASIGNACIÓN MAESTRA Y ACUERDO CERRADO
     updateDocumentNonBlocking(orderRef, {
       status: 'shipped',
       deliveryDriverId: offer.driverId,
       deliveryDriverName: offer.driverName,
-      deliveryDriverPhone: offer.driverPhone,
       storeId: offer.storeId,
       storeName: offer.storeName,
       totalPrice: offer.price, // Precio de la contraoferta
       acceptedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      participants: arrayUnion(offer.driverId, offer.storeOwnerId),
-      negotiationComplete: true
+      participants: arrayUnion(offer.driverId, offer.storeOwnerId || 'SYSTEM'),
+      isLogisticsPublic: false // Ya no es pública, tiene dueño
     });
 
-    toast({ title: "¡Oferta Aceptada!", className: "bg-green-600 text-white" });
+    toast({ title: "¡Trato Cerrado!", className: "bg-green-600 text-white" });
     router.push('/admin/orders');
-  };
-
-  const handleCancelRequest = () => {
-    if (!orderRef) return;
-    updateDocumentNonBlocking(orderRef, { status: 'cancelled', updatedAt: serverTimestamp() });
-    router.push('/');
   };
 
   if (loadingOrder) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
@@ -160,7 +151,7 @@ export default function WasherWaitingRoom() {
                         ACEPTAR TRATO
                       </Button>
                       <div className="flex gap-2">
-                        <a href={`tel:${offer.driverPhone}`} className="flex-1"><Button variant="outline" className="w-full h-14 rounded-2xl border-slate-100 text-slate-400 hover:bg-slate-50"><Phone className="w-5 h-5" /></Button></a>
+                        <a href={`tel:${offer.driverPhone || '3000000000'}`} className="flex-1"><Button variant="outline" className="w-full h-14 rounded-2xl border-slate-100 text-slate-400 hover:bg-slate-50"><Phone className="w-5 h-5" /></Button></a>
                         <Button variant="outline" className="flex-1 h-14 rounded-2xl border-slate-100 text-slate-400 hover:bg-slate-50"><MessageCircle className="w-5 h-5" /></Button>
                       </div>
                     </div>
@@ -186,7 +177,7 @@ export default function WasherWaitingRoom() {
             </div>
           )}
           
-          <Button onClick={handleCancelRequest} variant="ghost" className="text-slate-400 hover:text-red-500 font-black text-[10px] uppercase tracking-widest">
+          <Button onClick={() => router.push('/')} variant="ghost" className="text-slate-400 hover:text-red-500 font-black text-[10px] uppercase tracking-widest">
             <XCircle className="w-4 h-4 mr-2" /> Cancelar Solicitud
           </Button>
         </footer>

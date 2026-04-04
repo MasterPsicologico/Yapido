@@ -19,7 +19,6 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isSignedIn();
-      // Permitir que admins aprueben cuentas
       allow write: if isSignedIn() && (request.auth.uid == userId || isAdmin());
     }
 
@@ -49,12 +48,10 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      // Regla de Visibilidad Optimizada para Repartidores y Participantes
       allow read: if isSignedIn() && (
         isAdmin() ||
         request.auth.uid in resource.data.get('participants', []) ||
         resource.data.get('isLogisticsPublic', false) == true ||
-        resource.data.get('storeId', '') == getUserData().get('linkedStoreId', 'NON_EXISTENT') ||
         request.auth.uid == resource.data.get('storeOwnerId', '') ||
         request.auth.uid == resource.data.get('customerId', '')
       );
@@ -80,6 +77,16 @@ service cloud.firestore {
           isAdmin() ||
           request.auth.uid in get(/databases/$(database)/documents/orders/$(orderId)).data.get('participants', [])
         );
+      }
+
+      // REGLAS PARA CONTRAOFERTAS (SOLUCIONA EL ERROR DE PERMISOS)
+      match /offers/{offerId} {
+        allow read: if isSignedIn() && (
+          isAdmin() ||
+          request.auth.uid == get(/databases/$(database)/documents/orders/$(orderId)).data.customerId ||
+          request.auth.uid == get(/databases/$(database)/documents/orders/$(orderId)).data.storeOwnerId
+        );
+        allow create: if isSignedIn();
       }
     }
 
