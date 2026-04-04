@@ -1,12 +1,11 @@
 
 "use client";
 
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Camera, Loader2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useRef } from 'react';
-import { useRouter } from 'next/navigation';
 
 interface StoreHeaderProps {
   imageUrl?: string;
@@ -29,11 +28,29 @@ export function StoreHeader({
 }: StoreHeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const [localImage, setLocalImage] = useState<string | null>(null);
+  
+  // CACHÉ INSTANTÁNEO DE CABECERA
+  const CACHE_KEY = `vitriniando_store_header_${name?.replace(/\s/g, '_')}`;
+
+  useEffect(() => {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) setLocalImage(cached);
+  }, [CACHE_KEY]);
+
+  useEffect(() => {
+    if (imageUrl && imageUrl !== localImage) {
+      setLocalImage(imageUrl);
+      localStorage.setItem(CACHE_KEY, imageUrl);
+    }
+  }, [imageUrl, localImage, CACHE_KEY]);
+
+  const displayImage = localImage || imageUrl || 'https://picsum.photos/seed/bakery/1920/1080';
 
   return (
     <div className="relative h-[48vh] w-full">
       <Image 
-        src={imageUrl || 'https://picsum.photos/seed/bakery/1920/1080'} 
+        src={displayImage} 
         alt={name || 'Vitriniando'} 
         fill 
         className="object-cover" 

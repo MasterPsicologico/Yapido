@@ -109,7 +109,7 @@ export default function ProfilePage() {
       updateDocumentNonBlocking(storeRef, { privateDrivers: arrayRemove(user.uid) });
       updateDocumentNonBlocking(userRef, { 
         linkedStoreId: null, 
-        role: 'cliente', // Volver a cliente o mantener rol según lógica de app
+        role: 'cliente', 
         updatedAt: serverTimestamp() 
       });
       
@@ -162,7 +162,6 @@ export default function ProfilePage() {
         </div>
 
         <div className="space-y-8 pb-20">
-          {/* SECCIÓN VINCULACIÓN: DINÁMICA SEGÚN ESTADO */}
           {profile?.linkedStoreId ? (
             <Card className="border-none rounded-[40px] bg-slate-900 text-white p-8 shadow-2xl overflow-hidden relative group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
@@ -181,25 +180,25 @@ export default function ProfilePage() {
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Sincronizando empresa...</span>
                   </div>
                 ) : linkedStore ? (
-                  <div className="flex items-center justify-between gap-4 p-6 rounded-[32px] bg-white/5 border border-white/10 group-hover:bg-white/10 transition-all shadow-inner">
-                    <div className="flex items-center gap-5">
-                      <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center text-primary border border-primary/20 shadow-lg">
-                        <Waves className="w-7 h-7 animate-pulse" />
+                  <Link href={`/stores/${linkedStore.id}`} className="block">
+                    <div className="flex items-center justify-between gap-4 p-6 rounded-[32px] bg-white/5 border border-white/10 hover:bg-white/10 transition-all shadow-inner group/card">
+                      <div className="flex items-center gap-5">
+                        <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center text-primary border border-primary/20 shadow-lg">
+                          <Waves className="w-7 h-7 animate-pulse" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] leading-none">REPARTIDOR DE</p>
+                          <h4 className="text-2xl font-black italic uppercase tracking-tighter leading-none text-white group-hover/card:text-primary transition-colors">{linkedStore.name}</h4>
+                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                            <MapPin className="w-3 h-3" /> {linkedStore.address || 'Ubicación vinculada'}
+                          </p>
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] leading-none">REPARTIDOR DE</p>
-                        <h4 className="text-2xl font-black italic uppercase tracking-tighter leading-none text-white">{linkedStore.name}</h4>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                          <MapPin className="w-3 h-3" /> {linkedStore.address || 'Ubicación vinculada'}
-                        </p>
+                      <div className="rounded-full h-12 w-12 flex items-center justify-center text-white/20 group-hover/card:text-white group-hover/card:translate-x-1 transition-all">
+                        <ChevronRight className="w-8 h-8" />
                       </div>
                     </div>
-                    <Button asChild size="icon" variant="ghost" className="rounded-full h-12 w-12 text-white/20 hover:text-white hover:bg-white/10 group-hover:translate-x-1 transition-all">
-                      <Link href={`/admin/washer/${linkedStore.id}`}>
-                        <ArrowRight className="w-6 h-6" />
-                      </Link>
-                    </Button>
-                  </div>
+                  </Link>
                 ) : (
                   <div className="bg-red-500/10 p-6 rounded-[32px] border border-red-500/20 flex items-center gap-4">
                     <XCircle className="w-6 h-6 text-red-500" />

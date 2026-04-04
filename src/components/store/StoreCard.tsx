@@ -1,10 +1,10 @@
 
 "use client";
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { 
-  Store as StoreIcon, 
   MapPin, 
   ChevronRight, 
   Zap, 
@@ -14,12 +14,10 @@ import {
   Sparkles, 
   TrendingUp, 
   ShieldCheck, 
-  ChevronDown, 
   Crown, 
   Leaf, 
   Heart, 
   Medal, 
-  Trash2, 
   Plus,
   Package,
   Target,
@@ -72,7 +70,22 @@ export function StoreCard({ store }: { store: any }) {
   const firestore = useFirestore();
   const { isAdmin, profile } = useProfile();
   const { user } = useUser();
+  const [localImage, setLocalImage] = useState<string | null>(null);
   
+  const CACHE_KEY = `vitriniando_store_img_${store.id}`;
+
+  useEffect(() => {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) setLocalImage(cached);
+  }, [CACHE_KEY]);
+
+  useEffect(() => {
+    if (store.imageUrl && store.imageUrl !== localImage) {
+      setLocalImage(store.imageUrl);
+      localStorage.setItem(CACHE_KEY, store.imageUrl);
+    }
+  }, [store.imageUrl, localImage, CACHE_KEY]);
+
   const isFavorite = profile?.favoriteStores?.includes(store.id);
   const isOwner = user?.uid === store.ownerId;
   const isWasherRental = store.mainCategoryId === 'category-washer' || store.type === 'washer_rental' || store.name?.toLowerCase().includes('lavadora');
@@ -91,8 +104,8 @@ export function StoreCard({ store }: { store: any }) {
     e.stopPropagation();
     if (!user || !firestore) return;
     const userRef = doc(firestore, 'users', user.uid);
-    if (isFavorite) updateDocumentNonBlocking(userRef, { favoriteProducts: arrayRemove(store.id) });
-    else updateDocumentNonBlocking(userRef, { favoriteProducts: arrayUnion(store.id) });
+    if (isFavorite) updateDocumentNonBlocking(userRef, { favoriteStores: arrayRemove(store.id) });
+    else updateDocumentNonBlocking(userRef, { favoriteStores: arrayUnion(store.id) });
   };
 
   const handleAddBadge = (badgeKey: BadgeKey) => {
@@ -130,6 +143,8 @@ export function StoreCard({ store }: { store: any }) {
     { id: 'community', label: 'VALOR', color: 'bg-purple-50/60', border: 'border-purple-100', icon: Heart, textColor: 'text-purple-600', accent: 'bg-purple-500' },
   ];
 
+  const displayImage = localImage || store.imageUrl || 'https://picsum.photos/seed/store/800/600';
+
   return (
     <Card className={cn(
       "group flex flex-col h-full border-none rounded-[48px] shadow-[0_15px_50px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.12)] transition-all duration-700 bg-white overflow-hidden relative",
@@ -151,11 +166,11 @@ export function StoreCard({ store }: { store: any }) {
 
       <div className="block relative aspect-[16/11] w-full overflow-hidden bg-slate-50">
         <Link 
-          href={(isWasherRental && !isOwner) ? "#" : `/stores/${store.id}`} 
+          href={`/stores/${store.id}`} 
           onClick={handleClosedClick}
         >
           <Image
-            src={store.imageUrl || 'https://picsum.photos/seed/store/800/600'}
+            src={displayImage}
             alt={store.name}
             fill
             className="object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
@@ -187,7 +202,6 @@ export function StoreCard({ store }: { store: any }) {
 
         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/30 to-transparent z-10 pointer-events-none" />
 
-        {/* Info Inferior sobre la imagen (Limpiada de título) */}
         <div className="absolute bottom-8 left-8 right-8 z-20 text-white flex items-center justify-between gap-4 pointer-events-none">
           <div className="flex items-center gap-2.5 opacity-90 max-w-[70%]">
             <MapPin className="w-4 h-4 text-primary" />
@@ -203,7 +217,6 @@ export function StoreCard({ store }: { store: any }) {
         </div>
       </div>
 
-      {/* Contenido de la Tarjeta - Título reubicado aquí para no estorbar la imagen */}
       <CardContent className="p-8 flex flex-col flex-1 space-y-6 bg-white">
         <div className="space-y-2">
           <h3 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none group-hover:text-primary transition-colors">
