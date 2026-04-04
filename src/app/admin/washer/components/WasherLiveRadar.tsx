@@ -48,21 +48,22 @@ export function WasherLiveRadar({ storeId, storeName, ownerId }: WasherLiveRadar
     
     const orderRef = doc(firestore, 'orders', order.id);
     
-    // ACEPTACIÓN MAESTRA: Se vincula la tienda y se asigna el precio solicitado
+    // ACEPTACIÓN MAESTRA: Se vincula la tienda y se pone en espera de repartidor
+    // Cambiamos 'shipped' por 'ready_for_pickup' para que el repartidor pueda verla y aceptarla
     updateDocumentNonBlocking(orderRef, {
-      status: 'shipped',
+      status: 'ready_for_pickup', 
       storeId: storeId,
       storeName: storeName,
       storeOwnerId: ownerId,
       acceptedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       participants: arrayUnion(ownerId),
-      isLogisticsPublic: false // Sacar del radar público
+      isLogisticsPublic: false // Sacar del radar público de otros negocios
     });
 
     toast({ 
       title: "¡Misión Aceptada!", 
-      description: "El pedido se ha movido a tu log de operaciones.",
+      description: "El pedido ha sido despachado a tu flota de repartidores.",
       className: "bg-green-600 text-white border-none"
     });
   };
