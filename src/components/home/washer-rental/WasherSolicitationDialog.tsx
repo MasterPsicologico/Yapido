@@ -13,7 +13,6 @@ import { WasherTimeSelector } from './WasherTimeSelector';
 import { WasherPaymentSelector } from './WasherPaymentSelector';
 import { WasherSolicitationFooter } from './WasherSolicitationFooter';
 import { WasherServiceDetails } from './WasherServiceDetails';
-import { WasherRouteSelector } from './WasherRouteSelector';
 import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -50,8 +49,6 @@ export function WasherSolicitationDialog({
   const [washerType, setWasherType] = useState<'automatica' | 'semiautomatica'>('automatica');
   const [floor, setFloor] = useState("1");
   const [hasElevator, setHasElevator] = useState(false);
-  const [needsInstallation, setNeedsInstallation] = useState(true);
-  const [routeType, setRouteType] = useState<'round_trip' | 'delivery' | 'pickup'>('round_trip');
   const [hasStairs, setHasStairs] = useState(false);
   const [stairCount, setStairCount] = useState(1);
 
@@ -69,7 +66,7 @@ export function WasherSolicitationDialog({
     }
   }, [profile, isOpen, pricingConfig]);
 
-  // LÓGICA DE CÁLCULO MAESTRO DINÁMICO - CORREGIDA (FIX NaN)
+  // LÓGICA DE CÁLCULO MAESTRO DINÁMICO
   const totalPrice = useMemo(() => {
     const config = pricingConfig || {};
     
@@ -78,24 +75,19 @@ export function WasherSolicitationDialog({
       ? Number(config.rateAuto || 3500) 
       : Number(config.rateSemi || 3000);
 
-    // 2. Calcular Extras Fijos
-    const installExtra = needsInstallation ? Number(config.installFee || 10000) : 0;
-    
-    // 3. CÁLCULO DINÁMICO DE ESCALERAS (Precio por tramo)
+    // 2. CÁLCULO DINÁMICO DE ESCALERAS (Precio por tramo)
     const stairsExtra = hasStairs ? (Number(stairCount || 0) * Number(config.stairsFee || 5000)) : 0;
     
-    const routeExtra = routeType === 'round_trip' ? Number(config.roundTripFee || 5000) : 0;
-
-    // 4. Calcular Extra por Piso (Solo si es > 1 y no hay ascensor)
+    // 3. Calcular Extra por Piso (Solo si es > 1 y no hay ascensor)
     const floorNum = Number(floor) || 1;
     const floorExtra = (floorNum > 1 && !hasElevator) 
       ? (floorNum - 1) * Number(config.floorFee || 2000) 
       : 0;
 
-    const calculatedTotal = (Number(requestHours) * rate) + installExtra + stairsExtra + routeExtra + floorExtra;
+    const calculatedTotal = (Number(requestHours) * rate) + stairsExtra + floorExtra;
 
     return isNaN(calculatedTotal) ? 0 : calculatedTotal;
-  }, [requestHours, washerType, floor, hasElevator, needsInstallation, routeType, hasStairs, stairCount, pricingConfig]);
+  }, [requestHours, washerType, floor, hasElevator, hasStairs, stairCount, pricingConfig]);
 
   const formattedPrice = new Intl.NumberFormat('es-CO', { 
     style: 'currency', currency: 'COP', maximumFractionDigits: 0 
@@ -126,8 +118,6 @@ export function WasherSolicitationDialog({
       washerType,
       floor,
       hasElevator,
-      needsInstallation,
-      routeType,
       hasStairs,
       stairCount
     });
@@ -162,12 +152,9 @@ export function WasherSolicitationDialog({
               washerType={washerType} setWasherType={setWasherType}
               floor={floor} setFloor={setFloor}
               hasElevator={hasElevator} setHasElevator={setHasElevator}
-              needsInstallation={needsInstallation} setNeedsInstallation={setNeedsInstallation}
               hasStairs={hasStairs} setHasStairs={setHasStairs}
               stairCount={stairCount} setStairCount={setStairCount}
             />
-
-            <WasherRouteSelector routeType={routeType} setRouteType={setRouteType} />
 
             <WasherTimeSelector 
               requestHours={requestHours}

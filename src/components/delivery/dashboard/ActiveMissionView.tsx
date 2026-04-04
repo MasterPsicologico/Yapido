@@ -111,12 +111,12 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
                 <span className={cn("text-sm font-black italic uppercase", mission.hasElevator ? "text-green-400" : "text-red-400")}>{mission.hasElevator ? 'SÍ TIENE' : 'NO TIENE'}</span>
               </div>
               <div className="space-y-1">
-                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Instalación</p>
-                <span className="text-sm font-black italic uppercase text-primary">{mission.needsInstallation ? 'REQUERIDA' : 'SOLO ENTREGA'}</span>
+                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Dificultad</p>
+                <span className={cn("text-sm font-black italic uppercase", mission.hasStairs ? "text-amber-400" : "text-slate-400")}>{mission.hasStairs ? `${mission.stairCount || 1} ESCALAS` : 'SIN ESCALAS'}</span>
               </div>
               <div className="space-y-1">
-                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Factor Escalas</p>
-                <span className={cn("text-sm font-black italic uppercase", mission.hasStairs ? "text-amber-400" : "text-slate-400")}>{mission.hasStairs ? 'SÍ HAY ESCALAS' : 'SIN ESCALAS'}</span>
+                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Equipo</p>
+                <span className="text-sm font-black italic uppercase text-slate-300">{mission.washerType || 'LAVADORA'}</span>
               </div>
             </div>
           </div>

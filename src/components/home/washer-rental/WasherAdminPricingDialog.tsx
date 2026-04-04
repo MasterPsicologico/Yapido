@@ -2,7 +2,7 @@
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Settings2, Sparkles, Wallet, Zap, ArrowUpCircle, CheckCircle2, RotateCcw, AlertTriangle, ImageIcon } from 'lucide-react';
+import { Settings2, Sparkles, Wallet, Zap, ArrowUpCircle, AlertTriangle, ImageIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -88,7 +88,7 @@ export function WasherAdminPricingDialog({
             <div className="space-y-6">
               <div className="flex items-center gap-2 text-slate-400 mb-2">
                 <ArrowUpCircle className="w-3 h-3" />
-                <span className="text-[9px] font-black uppercase tracking-widest">Recargos y Servicios</span>
+                <span className="text-[9px] font-black uppercase tracking-widest">Recargos por Dificultad</span>
               </div>
 
               <div className="grid gap-4">
@@ -109,22 +109,6 @@ export function WasherAdminPricingDialog({
                     <Input name="stairsFee" type="number" defaultValue={pricingConfig?.stairsFee || 5000} className="w-24 h-10 rounded-xl bg-white border-none font-black text-right" />
                   </div>
                   <p className="text-[8px] font-bold text-slate-400 uppercase italic ml-11">Este valor se multiplicará por el número de escalas</p>
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-green-500 shadow-sm"><CheckCircle2 className="w-4 h-4" /></div>
-                    <span className="text-[10px] font-black uppercase">Instalación</span>
-                  </div>
-                  <Input name="installFee" type="number" defaultValue={pricingConfig?.installFee || 10000} className="w-24 h-10 rounded-xl bg-white border-none font-black text-right" />
-                </div>
-
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-blue-500 shadow-sm"><RotateCcw className="w-4 h-4" /></div>
-                    <span className="text-[10px] font-black uppercase">Ida y Vuelta</span>
-                  </div>
-                  <Input name="roundTripFee" type="number" defaultValue={pricingConfig?.roundTripFee || 5000} className="w-24 h-10 rounded-xl bg-white border-none font-black text-right" />
                 </div>
               </div>
             </div>

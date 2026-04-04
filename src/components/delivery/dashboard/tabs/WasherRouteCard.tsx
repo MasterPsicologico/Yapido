@@ -10,12 +10,12 @@ import {
   Zap, 
   Wallet, 
   Clock, 
-  RotateCcw, 
   ShieldCheck, 
   AlertTriangle,
   Star,
   Info,
-  CheckCircle2
+  CheckCircle2,
+  ArrowUpCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -66,13 +66,13 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
             </div>
             <div className="text-right flex flex-col items-end">
               <Badge className="bg-slate-900 text-white border-none font-black text-sm italic uppercase px-4 h-10 rounded-2xl shadow-xl">
-                {order.productName || 'Lavadora 5H'}
+                {order.productName || 'Lavadora'}
               </Badge>
-              <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mt-2">{order.washerType || 'AUTOMÁTICA'}</span>
+              <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mt-2">{order.washerType || 'EQUIPO'}</span>
             </div>
           </div>
 
-          {/* 4 & 5. UBICACIÓN Y TIEMPO */}
+          {/* 4 & 5. UBICACIÓN Y TRAYECTO */}
           <div className="bg-slate-50 p-6 rounded-[32px] border border-slate-100 flex flex-col gap-6 relative overflow-hidden">
             <div className="absolute right-0 top-0 h-full w-32 bg-gradient-to-l from-white/10 to-transparent pointer-events-none" />
             
@@ -97,36 +97,22 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
                 <div><p className="text-[8px] font-black text-slate-400 uppercase">Tiempo Est.</p><p className="text-sm font-black text-slate-700 leading-none">35 min</p></div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 shadow-sm"><RotateCcw className="w-4 h-4" /></div>
-                <div><p className="text-[8px] font-black text-slate-400 uppercase">Ruta</p><p className="text-sm font-black text-slate-700 leading-none">{order.routeType === 'round_trip' ? 'Ida y Vuelta' : 'Entrega'}</p></div>
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 shadow-sm"><ArrowUpCircle className="w-4 h-4" /></div>
+                <div><p className="text-[8px] font-black text-slate-400 uppercase">Piso</p><p className="text-sm font-black text-slate-700 leading-none">{order.floor || '1'}</p></div>
               </div>
             </div>
           </div>
 
-          {/* 6 & 8. DETALLES Y ALERTAS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2">Especificaciones</p>
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-2 text-slate-600">
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                  <span className="text-[11px] font-bold uppercase italic">Piso {order.floor || '1'} {order.hasElevator ? '(Ascensor)' : '(Escaleras)'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-600">
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                  <span className="text-[11px] font-bold uppercase italic">{order.needsInstallation ? 'Requiere Instalación' : 'Solo entrega'}</span>
-                </div>
+          {/* ALERTAS */}
+          {order.hasStairs && (
+            <div className="bg-amber-50 border border-amber-100 p-4 rounded-3xl flex items-center gap-3 animate-pulse">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Dificultad Física</span>
+                <span className="text-[8px] font-bold text-amber-500 uppercase tracking-widest">Requiere subir {order.stairCount || 1} tramos</span>
               </div>
             </div>
-
-            {/* ALERTA DE ESCALERAS */}
-            {order.hasStairs && (
-              <div className="bg-amber-50 border border-amber-100 p-4 rounded-3xl flex items-center gap-3 animate-pulse">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-                <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Requiere subir escalas</span>
-              </div>
-            )}
-          </div>
+          )}
 
           {/* 9. CLIENTE */}
           <div className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100">

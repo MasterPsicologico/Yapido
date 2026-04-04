@@ -2,7 +2,7 @@
 "use client";
 
 import { useRef, useState } from 'react';
-import { LayoutGrid, ArrowUpCircle, CheckCircle2, AlertTriangle, Settings2, Camera, Loader2, ImageIcon, Plus } from 'lucide-react';
+import { LayoutGrid, ArrowUpCircle, Settings2, Camera, Loader2, ImageIcon, Plus, AlertTriangle } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
@@ -20,8 +20,6 @@ interface WasherServiceDetailsProps {
   setFloor: (v: string) => void;
   hasElevator: boolean;
   setHasElevator: (v: boolean) => void;
-  needsInstallation: boolean;
-  setNeedsInstallation: (v: boolean) => void;
   hasStairs: boolean;
   setHasStairs: (v: boolean) => void;
   stairCount: number;
@@ -30,7 +28,7 @@ interface WasherServiceDetailsProps {
 
 export function WasherServiceDetails({
   isAdmin, washerType, setWasherType, floor, setFloor, hasElevator, setHasElevator, 
-  needsInstallation, setNeedsInstallation, hasStairs, setHasStairs, stairCount, setStairCount
+  hasStairs, setHasStairs, stairCount, setStairCount
 }: WasherServiceDetailsProps) {
   const firestore = useFirestore();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -150,20 +148,6 @@ export function WasherServiceDetails({
         </div>
 
         <div className="grid grid-cols-1 gap-3">
-          <button 
-            onClick={() => setNeedsInstallation(!needsInstallation)}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-2xl border transition-all",
-              needsInstallation ? "bg-green-50 border-green-200 text-green-700 shadow-sm" : "bg-white border-slate-100 text-slate-400"
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className={cn("w-5 h-5", needsInstallation ? "text-green-500" : "text-slate-200")} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Requiere Instalación</span>
-            </div>
-            <div className={cn("w-2 h-2 rounded-full", needsInstallation ? "bg-green-500 animate-pulse" : "bg-slate-200")} />
-          </button>
-
           <div className="space-y-4">
             <button 
               onClick={() => {

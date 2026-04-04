@@ -59,12 +59,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
     return format(date, 'HH:mm');
   }, [mission.acceptedAt, mission.createdAt]);
 
-  const etaTime = useMemo(() => {
-    const date = parseTimestamp(mission.acceptedAt) || parseTimestamp(mission.createdAt);
-    if (!date) return '--:--';
-    return format(new Date(date.getTime() + 30 * 60000), 'HH:mm');
-  }, [mission.acceptedAt, mission.createdAt]);
-
   return (
     <div className="flex flex-col h-[calc(100dvh-64px)] animate-in slide-in-from-bottom duration-500 overflow-hidden relative z-[40]">
       <div className="h-16 bg-slate-900 flex items-center justify-between px-4 text-white shrink-0 shadow-xl z-20">
@@ -117,20 +111,14 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
                 <span className={cn("text-sm font-black italic uppercase", mission.hasElevator ? "text-green-400" : "text-red-400")}>{mission.hasElevator ? 'SÍ TIENE' : 'NO TIENE'}</span>
               </div>
               <div className="space-y-1">
-                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Instalación</p>
-                <span className="text-sm font-black italic uppercase text-primary">{mission.needsInstallation ? 'REQUERIDA' : 'SOLO ENTREGA'}</span>
+                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Dificultad</p>
+                <span className={cn("text-sm font-black italic uppercase", mission.hasStairs ? "text-amber-400" : "text-slate-400")}>{mission.hasStairs ? `${mission.stairCount || 1} ESCALAS` : 'SIN ESCALAS'}</span>
               </div>
               <div className="space-y-1">
-                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Tipo de Trayecto</p>
-                <span className="text-sm font-black italic uppercase text-slate-300">{mission.routeType === 'round_trip' ? 'IDA Y VUELTA' : 'DIRECTO'}</span>
+                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Equipo</p>
+                <span className="text-sm font-black italic uppercase text-slate-300">{mission.washerType || 'LAVADORA'}</span>
               </div>
             </div>
-            {mission.isHeavyLoad && (
-              <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3">
-                <AlertTriangle className="w-5 h-5 text-red-500 animate-pulse" />
-                <span className="text-[9px] font-black text-red-400 uppercase tracking-widest">ALERTA: CARGA PESADA EXTREMA</span>
-              </div>
-            )}
           </div>
 
           {!isWithDriver ? (
