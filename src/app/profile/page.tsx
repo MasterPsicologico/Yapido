@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { 
   User as UserIcon, 
   MapPin, 
@@ -15,13 +16,19 @@ import {
   Trash2,
   ArrowLeft,
   Link2,
-  CheckCircle2
+  CheckCircle2,
+  ShieldCheck,
+  Waves,
+  ArrowRight,
+  ChevronRight,
+  XCircle
 } from 'lucide-react';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
-import { doc, serverTimestamp, collection, query, where, getDocs, arrayUnion } from 'firebase/firestore';
+import { useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, serverTimestamp, collection, query, where, getDocs, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -34,6 +41,14 @@ export default function ProfilePage() {
   const [driverCode, setDriverCode] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isLinking, setIsLinking] = useState(false);
+  const [isUnlinking, setIsUnlinking] = useState(false);
+
+  // FETCH: Datos de la tienda vinculada si existe
+  const linkedStoreRef = useMemoFirebase(() => 
+    (!firestore || !profile?.linkedStoreId) ? null : doc(firestore, 'stores', profile.linkedStoreId), 
+    [firestore, profile?.linkedStoreId]
+  );
+  const { data: linkedStore, isLoading: loadingLinkedStore } = useDoc(linkedStoreRef);
 
   useEffect(() => {
     if (profile) {
@@ -84,6 +99,28 @@ export default function ProfilePage() {
     }
   };
 
+  const handleUnlink = async () => {
+    if (!user || !firestore || !profile?.linkedStoreId) return;
+    setIsUnlinking(true);
+    try {
+      const storeRef = doc(firestore, 'stores', profile.linkedStoreId);
+      const userRef = doc(firestore, 'users', user.uid);
+      
+      updateDocumentNonBlocking(storeRef, { privateDrivers: arrayRemove(user.uid) });
+      updateDocumentNonBlocking(userRef, { 
+        linkedStoreId: null, 
+        role: 'cliente', // Volver a cliente o mantener rol según lógica de app
+        updatedAt: serverTimestamp() 
+      });
+      
+      toast({ title: "Vinculación terminada", description: "Has salido de la flota privada." });
+    } catch (e) {
+      toast({ title: "Error al desvincular", variant: "destructive" });
+    } finally {
+      setIsUnlinking(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!user || !firestore) return;
     setIsSaving(true);
@@ -112,44 +149,105 @@ export default function ProfilePage() {
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
-        <Button variant="ghost" onClick={() => router.back()} className="mb-6 gap-2 text-slate-400 font-bold hover:text-primary p-0 h-auto">
-          <ArrowLeft className="w-4 h-4" /> Volver
+        <Button variant="ghost" onClick={() => router.back()} className="mb-6 gap-2 text-slate-400 font-bold hover:text-primary p-0 h-auto group transition-colors">
+          <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+            <ArrowLeft className="w-4 h-4" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest">Volver</span>
         </Button>
 
         <div className="flex items-center gap-4 mb-10">
           <div className="w-16 h-16 bg-primary rounded-[24px] flex items-center justify-center text-white shadow-2xl"><UserIcon className="w-8 h-8" /></div>
-          <div><h1 className="text-4xl font-black italic uppercase tracking-tighter leading-none">Mi Perfil</h1><p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2">Gestión de Cuenta</p></div>
+          <div><h1 className="text-4xl font-black italic uppercase tracking-tighter leading-none text-slate-900">Mi Perfil</h1><p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2">Gestión de Cuenta</p></div>
         </div>
 
         <div className="space-y-8 pb-20">
-          {/* SECCIÓN VINCULACIÓN: EXCLUSIVO REPARTIDORES */}
-          <Card className="border-none rounded-[40px] bg-slate-900 text-white p-8 shadow-2xl overflow-hidden relative group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
-            <div className="relative z-10 space-y-6">
-              <div className="flex items-center gap-3 text-primary">
-                <Link2 className="w-5 h-5" />
-                <h3 className="font-black text-sm uppercase tracking-widest">¿Eres Repartidor Personal?</h3>
+          {/* SECCIÓN VINCULACIÓN: DINÁMICA SEGÚN ESTADO */}
+          {profile?.linkedStoreId ? (
+            <Card className="border-none rounded-[40px] bg-slate-900 text-white p-8 shadow-2xl overflow-hidden relative group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
+              <div className="relative z-10 space-y-8">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-primary">
+                    <ShieldCheck className="w-5 h-5" />
+                    <h3 className="font-black text-sm uppercase tracking-widest italic">Vinculación Activa</h3>
+                  </div>
+                  <Badge className="bg-green-500 text-white border-none rounded-full px-4 h-7 text-[8px] font-black uppercase italic tracking-widest animate-pulse">IDENTIDAD DE FLOTA</Badge>
+                </div>
+
+                {loadingLinkedStore ? (
+                  <div className="flex items-center gap-3 py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Sincronizando empresa...</span>
+                  </div>
+                ) : linkedStore ? (
+                  <div className="flex items-center justify-between gap-4 p-6 rounded-[32px] bg-white/5 border border-white/10 group-hover:bg-white/10 transition-all shadow-inner">
+                    <div className="flex items-center gap-5">
+                      <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center text-primary border border-primary/20 shadow-lg">
+                        <Waves className="w-7 h-7 animate-pulse" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] leading-none">REPARTIDOR DE</p>
+                        <h4 className="text-2xl font-black italic uppercase tracking-tighter leading-none text-white">{linkedStore.name}</h4>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                          <MapPin className="w-3 h-3" /> {linkedStore.address || 'Ubicación vinculada'}
+                        </p>
+                      </div>
+                    </div>
+                    <Button asChild size="icon" variant="ghost" className="rounded-full h-12 w-12 text-white/20 hover:text-white hover:bg-white/10 group-hover:translate-x-1 transition-all">
+                      <Link href={`/admin/washer/${linkedStore.id}`}>
+                        <ArrowRight className="w-6 h-6" />
+                      </Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="bg-red-500/10 p-6 rounded-[32px] border border-red-500/20 flex items-center gap-4">
+                    <XCircle className="w-6 h-6 text-red-500" />
+                    <p className="text-xs font-bold text-red-200">No se pudo cargar la información de la empresa.</p>
+                  </div>
+                )}
+
+                <div className="flex justify-center pt-2">
+                  <Button 
+                    onClick={handleUnlink}
+                    disabled={isUnlinking}
+                    variant="ghost"
+                    className="text-slate-500 hover:text-red-500 hover:bg-red-500/10 font-black text-[9px] uppercase tracking-[0.3em] h-10 px-6 rounded-full transition-all"
+                  >
+                    {isUnlinking ? <Loader2 className="w-3 h-3 animate-spin" /> : "DESVINCULAR DE EMPRESA"}
+                  </Button>
+                </div>
               </div>
-              <p className="text-slate-400 text-xs font-bold leading-relaxed">
-                Si trabajas para una tienda de lavadoras, ingresa el código único proporcionado por el dueño para vincularte instantáneamente a su flota privada.
-              </p>
-              <div className="flex gap-2">
-                <Input 
-                  value={driverCode} 
-                  onChange={(e) => setDriverCode(e.target.value.toUpperCase())}
-                  placeholder="INGRESA CÓDIGO" 
-                  className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-black text-center tracking-[0.3em] uppercase"
-                />
-                <Button 
-                  onClick={handleLinkDriver} 
-                  disabled={isLinking || !driverCode} 
-                  className="h-14 px-8 rounded-2xl bg-primary text-white font-black uppercase text-xs tracking-widest gap-2 shadow-xl"
-                >
-                  {isLinking ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="w-4 h-4" /> VINCULAR</>}
-                </Button>
+            </Card>
+          ) : (
+            <Card className="border-none rounded-[40px] bg-slate-900 text-white p-8 shadow-2xl overflow-hidden relative group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
+              <div className="relative z-10 space-y-6">
+                <div className="flex items-center gap-3 text-primary">
+                  <Link2 className="w-5 h-5" />
+                  <h3 className="font-black text-sm uppercase tracking-widest">¿Eres Repartidor Personal?</h3>
+                </div>
+                <p className="text-slate-400 text-xs font-bold leading-relaxed">
+                  Si trabajas para una tienda de lavadoras, ingresa el código único proporcionado por el dueño para vincularte instantáneamente a su flota privada.
+                </p>
+                <div className="flex gap-2">
+                  <Input 
+                    value={driverCode} 
+                    onChange={(e) => setDriverCode(e.target.value.toUpperCase())}
+                    placeholder="INGRESA CÓDIGO" 
+                    className="h-14 rounded-2xl bg-white/5 border-white/10 text-white font-black text-center tracking-[0.3em] uppercase"
+                  />
+                  <Button 
+                    onClick={handleLinkDriver} 
+                    disabled={isLinking || !driverCode} 
+                    className="h-14 px-8 rounded-2xl bg-primary text-white font-black uppercase text-xs tracking-widest gap-2 shadow-xl"
+                  >
+                    {isLinking ? <Loader2 className="animate-spin" /> : <><CheckCircle2 className="w-4 h-4" /> VINCULAR</>}
+                  </Button>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          )}
 
           <Card className="border-none rounded-[48px] shadow-2xl overflow-hidden bg-white p-10 space-y-10">
             <div className="space-y-3">
