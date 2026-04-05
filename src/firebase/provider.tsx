@@ -60,6 +60,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   useEffect(() => {
     if (!auth) return;
 
+    // Solo procesamos el resultado del redireccionamiento una vez.
     getRedirectResult(auth).catch(() => {});
 
     const unsubscribe = onAuthStateChanged(
@@ -67,9 +68,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       async (firebaseUser) => {
         if (firebaseUser && firestore) {
           // CONTROL DE FLUJO: Solo escribir en Firestore si es un login nuevo o cambio de usuario en esta sesión
+          // Evitamos resetear el ref si el usuario es el mismo para prevenir bucles por refrescos de token
           if (hasUpdatedSession.current !== firebaseUser.uid) {
             const userRef = doc(firestore, 'users', firebaseUser.uid);
             try {
+              // Verificamos existencia antes de escribir para no gastar cuota de escritura innecesaria
               const docSnap = await getDoc(userRef);
               if (!docSnap.exists()) {
                 setDocumentNonBlocking(userRef, {
@@ -82,9 +85,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                   role: 'cliente' 
                 }, { merge: true });
               } else {
-                // Actualizar solo una vez por carga de aplicación
+                // Actualizar solo una vez por carga de aplicación para marcar actividad reciente
                 updateDocumentNonBlocking(userRef, { lastLogin: serverTimestamp() });
               }
+              // Marcamos como actualizado para esta UID en esta sesión del navegador
               hasUpdatedSession.current = firebaseUser.uid;
             } catch (e) {
               console.warn("Fallo silencioso en persistencia de perfil");
@@ -92,7 +96,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           }
           setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
         } else {
-          hasUpdatedSession.current = null;
+          // Al cerrar sesión, no reseteamos el ref de forma agresiva para evitar bucles si el estado fluctúa
           setUserAuthState({ user: null, isUserLoading: false, userError: null });
         }
       },
@@ -117,7 +121,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   return (
     <FirebaseContext.Provider value={contextValue}>
-      <div key={userAuthState.user?.uid || 'guest'}>
+      {/* ELIMINADO EL KEY DINÁMICO: Esto causaba que toda la aplicación se desmontara y montara en cada 
+          cambio de usuario, disparando efectos de carga pesados y saturando la base de datos. */}
+      <div>
         <FirebaseErrorListener />
         {children}
       </div>
