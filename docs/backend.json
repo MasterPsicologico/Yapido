@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -29,7 +30,7 @@
         "storeId": { "type": "string" },
         "status": { 
           "type": "string", 
-          "enum": ["pending", "preparing", "ready_for_pickup", "at_store", "delivered_to_driver", "shipped", "delivered", "cancelled"] 
+          "enum": ["pending", "preparing", "ready_for_pickup", "at_store", "delivered_to_driver", "at_destination", "delivered", "cancelled"] 
         },
         "totalPrice": { "type": "number" },
         "washerType": { "type": "string" },
@@ -38,22 +39,6 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "customerId", "status", "participants"]
-    },
-    "Offer": {
-      "title": "Offer",
-      "type": "object",
-      "description": "Propuesta de precio para un alquiler de lavadora.",
-      "properties": {
-        "id": { "type": "string" },
-        "storeId": { "type": "string" },
-        "storeName": { "type": "string" },
-        "driverId": { "type": "string" },
-        "driverName": { "type": "string" },
-        "price": { "type": "number" },
-        "comment": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["storeId", "driverId", "price"]
     }
   },
   "auth": {
@@ -66,7 +51,7 @@
         "definition": {
           "entityName": "User",
           "schema": { "$ref": "#/backend/entities/User" },
-          "description": "Perfiles."
+          "description": "Perfiles de usuario."
         }
       },
       {
@@ -74,15 +59,7 @@
         "definition": {
           "entityName": "Order",
           "schema": { "$ref": "#/backend/entities/Order" },
-          "description": "Pedidos."
-        }
-      },
-      {
-        "path": "/orders/{orderId}/offers/{offerId}",
-        "definition": {
-          "entityName": "Offer",
-          "schema": { "$ref": "#/backend/entities/Offer" },
-          "description": "Contraofertas enviadas por los repartidores o tiendas."
+          "description": "Pedidos y solicitudes de alquiler."
         }
       }
     ]
