@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, DollarSign, Loader2 } from 'lucide-react';
+import { ShieldCheck, DollarSign, Loader2, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -110,29 +110,63 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
         </div>
       </CardContent>
 
-      {/* DIÁLOGO DE CONTRAOFERTA */}
+      {/* DIÁLOGO DE CONTRAOFERTA (REDISEÑADO CON MÁRGENES DE SEGURIDAD) */}
       <Dialog open={isOfferDialogOpen} onOpenChange={setIsOfferDialogOpen}>
-        <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px]">
-          <DialogHeader className="items-center text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <DollarSign className="w-8 h-8 text-primary" />
+        <DialogContent className="rounded-[48px] border-none shadow-2xl p-10 sm:max-w-[480px] w-[92vw] max-h-[92dvh] overflow-y-auto no-scrollbar outline-none z-[600] [&>button:last-child]:hidden">
+          {/* Botón de Cierre Manual Pro */}
+          <button 
+            onClick={() => setIsOfferDialogOpen(false)}
+            className="absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-all active:scale-90 z-50 shadow-sm"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          <DialogHeader className="items-center text-center space-y-4 pt-4">
+            <div className="w-20 h-20 bg-primary/10 rounded-[32px] flex items-center justify-center shadow-inner animate-in zoom-in duration-500">
+              <DollarSign className="w-10 h-10 text-primary" />
             </div>
-            <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter text-slate-900">Enviar Contraoferta</DialogTitle>
-            <DialogDescription className="text-slate-400 font-medium text-xs">Propón un nuevo precio para este servicio de {order.requestHours} horas.</DialogDescription>
+            <div className="space-y-1">
+              <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">
+                Enviar Contraoferta
+              </DialogTitle>
+              <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mt-2">
+                Propón un nuevo precio para este servicio de {order.requestHours}h
+              </DialogDescription>
+            </div>
           </DialogHeader>
-          <div className="py-6 space-y-6">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Precio Propuesto (COP)</Label>
-              <Input type="number" value={offerPrice} onChange={(e) => setOfferPrice(e.target.value)} className="h-16 rounded-2xl bg-slate-50 border-none font-black text-3xl px-6 text-center text-primary" />
+
+          <div className="py-10 space-y-10">
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-[0.3em]">Precio Sugerido (COP)</Label>
+              <div className="relative group">
+                <div className="absolute inset-0 bg-primary/5 rounded-[24px] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                <Input 
+                  type="number" 
+                  value={offerPrice} 
+                  onChange={(e) => setOfferPrice(e.target.value)} 
+                  className="relative z-10 h-20 rounded-[24px] bg-slate-50 border-none font-black text-4xl px-8 text-center text-primary shadow-inner focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" 
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">Comentario de Servicio</Label>
-              <Textarea value={offerComment} onChange={(e) => setOfferComment(e.target.value)} placeholder="Ej: Llego en 10 min, instalación incluida..." className="rounded-2xl bg-slate-50 border-none min-h-[100px] font-bold" />
+
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-[0.3em]">Nota de Compromiso</Label>
+              <Textarea 
+                value={offerComment} 
+                onChange={(e) => setOfferComment(e.target.value)} 
+                placeholder="Ej: Llego en 10 min, instalación incluida..." 
+                className="rounded-[32px] bg-slate-50 border-none min-h-[120px] p-6 font-bold text-slate-700 shadow-inner focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all resize-none" 
+              />
             </div>
           </div>
-          <DialogFooter>
-            <Button onClick={handleSendOffer} disabled={isSendingOffer || !offerPrice} className="w-full h-16 rounded-[24px] bg-slate-900 text-white font-black uppercase tracking-widest gap-3 shadow-xl active:scale-95 transition-all">
-              {isSendingOffer ? <Loader2 className="animate-spin" /> : "DESPACHAR PROPUESTA"}
+
+          <DialogFooter className="pb-4">
+            <Button 
+              onClick={handleSendOffer} 
+              disabled={isSendingOffer || !offerPrice} 
+              className="w-full h-20 rounded-[32px] bg-slate-900 text-white font-black uppercase tracking-[0.15em] text-sm gap-4 shadow-2xl active:scale-95 transition-all border-b-[8px] border-slate-950"
+            >
+              {isSendingOffer ? <Loader2 className="w-6 h-6 animate-spin" /> : "DESPACHAR PROPUESTA"}
             </Button>
           </DialogFooter>
         </DialogContent>
