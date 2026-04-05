@@ -82,9 +82,14 @@ service cloud.firestore {
       );
 
       match /messages/{messageId} {
+        // Permitir leer/escribir mensajes si:
+        // 1. Es Admin
+        // 2. Es un participante registrado del chat
+        // 3. Es un repartidor y la orden es pública (Chat anticipado)
         allow read, write: if isSignedIn() && (
           isAdmin() ||
-          request.auth.uid in get(/databases/$(database)/documents/orders/$(orderId)).data.get('participants', [])
+          request.auth.uid in get(/databases/$(database)/documents/orders/$(orderId)).data.get('participants', []) ||
+          (isRepartidor() && get(/databases/$(database)/documents/orders/$(orderId)).data.get('isLogisticsPublic', false) == true)
         );
       }
 
