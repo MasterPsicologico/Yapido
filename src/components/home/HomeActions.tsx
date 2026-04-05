@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -9,9 +10,21 @@ import { compressImage } from '@/lib/image-compression';
 
 // Importación de Sub-Módulos Atómicos
 import { WasherRentalCard } from './washer-rental/WasherRentalCard';
-import { WasherSolicitationDialog } from './washer-rental/WasherSolicitationDialog';
+import { WasherSolicitationDialog } from './washer-rental/solicitation/WasherSolicitationDialog';
 import { WasherAdminPricingDialog } from './washer-rental/WasherAdminPricingDialog';
 import { WasherStoreCreationDialog } from './washer-rental/WasherStoreCreationDialog';
+
+export const checkIsBusinessOpen = (openTime?: string, closeTime?: string) => {
+  if (!openTime || !closeTime) return false;
+  const now = new Date();
+  const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+  const [openH, openM] = openTime.split(':').map(Number);
+  const [closeH, closeM] = closeTime.split(':').map(Number);
+  const openMinutes = openH * 60 + openM;
+  const closeMinutes = closeH * 60 + closeM;
+  if (closeMinutes < openMinutes) return currentTotalMinutes >= openMinutes || currentTotalMinutes < closeMinutes;
+  return currentTotalMinutes >= openMinutes && currentTotalMinutes < closeMinutes;
+};
 
 interface HomeActionsProps {
   isAdmin: boolean;
@@ -31,22 +44,7 @@ interface HomeActionsProps {
   onStoreSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
-export const checkIsBusinessOpen = (openTime?: string, closeTime?: string) => {
-  if (!openTime || !closeTime) return false;
-  const now = new Date();
-  const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
-  const [openH, openM] = openTime.split(':').map(Number);
-  const [closeH, closeM] = closeTime.split(':').map(Number);
-  const openMinutes = openH * 60 + openM;
-  const closeMinutes = closeH * 60 + closeM;
-  if (closeMinutes < openMinutes) return currentTotalMinutes >= openMinutes || currentTotalMinutes < closeMinutes;
-  return currentTotalMinutes >= openMinutes && currentTotalMinutes < closeMinutes;
-};
-
-export function HomeActions({
-  isAdmin, profile, openStore, setOpenStore
-}: HomeActionsProps) {
-  
+export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeActionsProps) {
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
@@ -57,7 +55,6 @@ export function HomeActions({
   const [isSendingRequest, setIsSendingRequest] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
-  // FETCH: Configuraciones Globales
   const lockRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_lock'), [firestore]);
   const { data: lockData } = useDoc(lockRef);
 
@@ -78,51 +75,26 @@ export function HomeActions({
 
   const handleToggleLock = async () => {
     if (!isAdmin || !firestore) return;
-    try {
-      const nextState = !lockData?.active;
-      await setDocumentNonBlocking(lockRef, { 
-        active: nextState, 
-        updatedAt: serverTimestamp(),
-        updatedBy: user?.uid
-      }, { merge: true });
-      toast({ title: nextState ? "Modo Enfoque Activado" : "Marketplace Restaurado" });
-    } catch (e) {
-      toast({ title: "Error al cambiar estado", variant: "destructive" });
-    }
+    const nextState = !lockData?.active;
+    await setDocumentNonBlocking(lockRef, { active: nextState, updatedAt: serverTimestamp(), updatedBy: user?.uid }, { merge: true });
+    toast({ title: nextState ? "Modo Enfoque Activado" : "Marketplace Restaurado" });
   };
 
   const handleWasherRequest = async (data: any): Promise<string | undefined> => {
     if (!user || !firestore) return;
     try {
-      // Actualizamos perfil del cliente
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { 
         displayName: data.customerName, address: data.customerAddress, phoneNumber: data.customerPhone, updatedAt: serverTimestamp() 
       });
-
-      // Creamos la orden principal (RETORNAMOS EL ID PARA REDIRECCIÓN)
       const docRef = await addDoc(collection(firestore, 'orders'), {
-        customerId: user.uid, 
-        customerName: data.customerName, 
-        customerPhone: data.customerPhone, 
-        customerAddress: data.customerAddress,
-        type: 'WASHER_RENTAL_REQUEST', 
-        status: 'pending', 
-        requestHours: data.requestHours, 
-        totalPrice: data.totalPrice,
-        paymentMethod: data.paymentMethod,
-        washerType: data.washerType,
-        floor: data.floor,
-        hasElevator: data.hasElevator,
-        hasStairs: data.hasStairs,
-        stairCount: data.stairCount,
-        createdAt: serverTimestamp(), 
-        updatedAt: serverTimestamp(),
-        participants: [user.uid, 'ADMIN_WASHER_POOL'], 
-        isLogisticsPublic: true, 
-        productName: `Alquiler ${data.washerType === 'automatica' ? 'Auto' : 'Semi'} (${data.requestHours}h)`,
+        customerId: user.uid, customerName: data.customerName, customerPhone: data.customerPhone, 
+        customerAddress: data.customerAddress, type: 'WASHER_RENTAL_REQUEST', status: 'pending', 
+        requestHours: data.requestHours, totalPrice: data.totalPrice, paymentMethod: data.paymentMethod,
+        washerType: data.washerType, floor: data.floor, hasElevator: data.hasElevator,
+        hasStairs: data.hasStairs, stairCount: data.stairCount, createdAt: serverTimestamp(), 
+        updatedAt: serverTimestamp(), participants: [user.uid, 'ADMIN_WASHER_POOL'], 
+        isLogisticsPublic: true, productName: `Alquiler ${data.washerType === 'automatica' ? 'Auto' : 'Semi'} (${data.requestHours}h)`,
       });
-
-      toast({ title: "¡Solicitud Enviada!", className: "bg-green-600 text-white border-none" });
       return docRef.id;
     } catch (e) {
       toast({ title: "Error al procesar", variant: "destructive" });
@@ -134,20 +106,13 @@ export function HomeActions({
     e.preventDefault();
     if (!isAdmin) return;
     const fd = new FormData(e.currentTarget);
-    try {
-      await setDocumentNonBlocking(pricingRef, {
-        minHours: Number(fd.get('minHours')), 
-        rateAuto: Number(fd.get('rateAuto')),
-        rateSemi: Number(fd.get('rateSemi')),
-        floorFee: Number(fd.get('floorFee')),
-        stairsFee: Number(fd.get('stairsFee')),
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-      toast({ title: "Economía Sincronizada" });
-      setShowAdminPricing(false);
-    } catch (e) {
-      toast({ title: "Error", variant: "destructive" });
-    }
+    await setDocumentNonBlocking(pricingRef, {
+      minHours: Number(fd.get('minHours')), rateAuto: Number(fd.get('rateAuto')),
+      rateSemi: Number(fd.get('rateSemi')), floorFee: Number(fd.get('floorFee')),
+      stairsFee: Number(fd.get('stairsFee')), updatedAt: serverTimestamp()
+    }, { merge: true });
+    toast({ title: "Economía Sincronizada" });
+    setShowAdminPricing(false);
   };
 
   const handleCreateWasherStore = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -183,8 +148,6 @@ export function HomeActions({
       const compressed = await compressImage(file, 1920, 1080, 0.8);
       setDocumentNonBlocking(bannerConfigRef, { backgroundImage: compressed, updatedAt: serverTimestamp() }, { merge: true });
       toast({ title: "Portada actualizada" });
-    } catch (error) {
-      toast({ title: "Fallo en carga", variant: "destructive" });
     } finally {
       setIsUploadingBanner(false);
     }
@@ -193,42 +156,18 @@ export function HomeActions({
   return (
     <div className="flex flex-col w-full">
       <WasherRentalCard 
-        isAdmin={isAdmin}
-        bannerConfig={bannerConfig}
-        isAnyStoreOpen={isAnyStoreOpen}
-        isUploadingBanner={isUploadingBanner}
-        isLocked={lockData?.active === true}
-        onToggleLock={handleToggleLock}
-        onOpenSolicitation={() => setOpenWasher(true)}
-        onOpenStoreCreation={() => setOpenAddWasherStore(true)}
-        onBannerUpload={handleBannerUpload}
+        isAdmin={isAdmin} bannerConfig={bannerConfig} isAnyStoreOpen={isAnyStoreOpen}
+        isUploadingBanner={isUploadingBanner} isLocked={lockData?.active === true}
+        onToggleLock={handleToggleLock} onOpenSolicitation={() => setOpenWasher(true)}
+        onOpenStoreCreation={() => setOpenAddWasherStore(true)} onBannerUpload={handleBannerUpload}
       />
-
       <WasherSolicitationDialog 
-        isOpen={openWasher}
-        onOpenChange={setOpenWasher}
-        isAdmin={isAdmin}
-        profile={profile}
-        pricingConfig={pricingConfig}
-        isAnyStoreOpen={isAnyStoreOpen}
-        onOpenAdminSettings={() => setShowAdminPricing(true)}
-        onSubmitRequest={handleWasherRequest}
+        isOpen={openWasher} onOpenChange={setOpenWasher} isAdmin={isAdmin}
+        profile={profile} pricingConfig={pricingConfig} isAnyStoreOpen={isAnyStoreOpen}
+        onOpenAdminSettings={() => setShowAdminPricing(true)} onSubmitRequest={handleWasherRequest}
       />
-
-      <WasherAdminPricingDialog 
-        isOpen={showAdminPricing}
-        onOpenChange={setShowAdminPricing}
-        pricingConfig={pricingConfig}
-        onUpdatePricing={handleUpdatePricing}
-      />
-
-      <WasherStoreCreationDialog 
-        isOpen={openAddWasherStore}
-        onOpenChange={setOpenAddWasherStore}
-        profile={profile}
-        isSending={isSendingRequest}
-        onCreateStore={handleCreateWasherStore}
-      />
+      <WasherAdminPricingDialog isOpen={showAdminPricing} onOpenChange={setShowAdminPricing} pricingConfig={pricingConfig} onUpdatePricing={handleUpdatePricing} />
+      <WasherStoreCreationDialog isOpen={openAddWasherStore} onOpenChange={setOpenAddWasherStore} profile={profile} isSending={isSendingRequest} onCreateStore={handleCreateWasherStore} />
     </div>
   );
 }
