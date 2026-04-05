@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -310,6 +311,10 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
       {/* DIÁLOGO DE CHAT */}
       <Dialog open={isMissionChatOpen} onOpenChange={setIsMissionChatOpen}>
         <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[300] [&>button:last-child]:hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Chat de Misión</DialogTitle>
+            <DialogDescription>Canal de comunicación seguro para la entrega.</DialogDescription>
+          </DialogHeader>
           <OrderChat orderId={mission.id} orderData={mission} onClose={() => setIsMissionChatOpen(false)} />
         </DialogContent>
       </Dialog>
