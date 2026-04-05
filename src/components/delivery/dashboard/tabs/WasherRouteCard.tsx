@@ -96,6 +96,9 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
           </div>
 
           <RouteActions 
+            orderId={order.id}
+            storeName={order.storeName || 'Lava Express'}
+            requestHours={order.requestHours}
             customerPhone={order.customerPhone} 
             customerAddress={order.customerAddress} 
             onOpenChat={handleOpenChat} 

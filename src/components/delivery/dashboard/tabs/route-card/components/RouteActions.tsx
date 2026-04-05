@@ -11,13 +11,36 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
 );
 
 interface RouteActionsProps {
+  orderId: string;
+  storeName: string;
+  requestHours: number;
   customerPhone: string;
   customerAddress: string;
   onOpenChat: () => void;
   onOpenOffer: () => void;
 }
 
-export function RouteActions({ customerPhone, customerAddress, onOpenChat, onOpenOffer }: RouteActionsProps) {
+export function RouteActions({ 
+  orderId, 
+  storeName, 
+  requestHours, 
+  customerPhone, 
+  customerAddress, 
+  onOpenChat, 
+  onOpenOffer 
+}: RouteActionsProps) {
+  
+  const handleWhatsAppOpen = () => {
+    const cleanPhone = customerPhone?.replace(/\D/g, '');
+    const shortId = orderId.slice(-6).toUpperCase();
+    
+    // MENSAJE HUMANIZADO Y ESTRUCTURADO
+    const message = `¡Hola! 👋 Te escribo de parte de la flota de *${storeName}*. Recibimos tu solicitud para el alquiler de lavadora por *${requestHours} horas* en la dirección *${customerAddress}*. (Ref: #${shortId}). ¿Quiero confirmar la solicitud del pedido?`;
+    
+    const url = `https://wa.me/57${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="grid grid-cols-5 gap-2">
       <a href={`tel:${customerPhone}`} className="w-full">
@@ -26,7 +49,7 @@ export function RouteActions({ customerPhone, customerAddress, onOpenChat, onOpe
         </Button>
       </a>
       <Button 
-        onClick={() => window.open(`https://wa.me/57${customerPhone?.replace(/\D/g, '')}`, '_blank')}
+        onClick={handleWhatsAppOpen}
         variant="outline" 
         className="w-full h-12 rounded-xl border-slate-100 text-[#25d366] hover:bg-[#25d366]/5 transition-all active:scale-95 shadow-sm"
       >
