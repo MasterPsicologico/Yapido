@@ -26,29 +26,28 @@ interface ReleaseMissionDialogProps {
 export function ReleaseMissionDialog({ isOpen, onOpenChange, onConfirmRelease }: ReleaseMissionDialogProps) {
   const [selectedReason, setSelectedReason] = useState<typeof RELEASE_REASONS[0] | null>(null);
 
-  const handleClose = () => {
-    if (!selectedReason) {
-      onOpenChange(false);
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] w-[92vw] sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl rounded-[40px] bg-slate-900/95 backdrop-blur-2xl text-white outline-none [&>button:last-child]:hidden z-[600]">
-        <div className="flex flex-col h-full max-h-[90dvh]">
+      <DialogContent className="max-h-[85dvh] w-[92vw] sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl rounded-[40px] bg-slate-900/95 backdrop-blur-2xl text-white outline-none [&>button:last-child]:hidden z-[600]">
+        <div className="flex flex-col h-full max-h-[85dvh]">
           {/* Header Fijo */}
           <ReleaseHeader 
             onClose={() => onOpenChange(false)} 
             isAlarm={selectedReason?.isAlarm || false} 
           />
 
-          {/* Cuerpo con Scroll */}
-          <div className="flex-1 min-h-0 px-6 py-2">
-            <p className="text-[10px] text-slate-400 text-center px-4 mb-6 uppercase font-bold tracking-widest leading-relaxed">
-              Selecciona el motivo. Si es una emergencia, el patrón será alertado inmediatamente.
+          {/* Instrucción Estática (Fuera del Scroll para mayor claridad) */}
+          <div className="px-10 pb-4 shrink-0">
+            <p className="text-[9px] text-slate-400 text-center uppercase font-black tracking-[0.2em] leading-relaxed opacity-60">
+              Selecciona el motivo del reporte
             </p>
-            <ScrollArea className="h-full pr-4 pb-4">
-              <div className="space-y-3">
+          </div>
+
+          {/* Cuerpo con Scroll Área Protegida */}
+          <div className="flex-1 min-h-0 px-6">
+            <ScrollArea className="h-full w-full">
+              <div className="space-y-3 pb-12 px-2"> 
+                {/* El pb-12 asegura que la última opción no quede detrás del footer */}
                 {RELEASE_REASONS.map((r) => (
                   <ReleaseReasonItem 
                     key={r.id}
@@ -61,7 +60,7 @@ export function ReleaseMissionDialog({ isOpen, onOpenChange, onConfirmRelease }:
             </ScrollArea>
           </div>
 
-          {/* Footer Fijo */}
+          {/* Footer Fijo con Sombra de Elevación */}
           <ActionFooter 
             onConfirm={() => selectedReason && onConfirmRelease(selectedReason.label)}
             isDisabled={!selectedReason}
