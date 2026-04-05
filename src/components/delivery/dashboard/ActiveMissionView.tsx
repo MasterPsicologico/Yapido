@@ -4,16 +4,17 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { format, addHours, differenceInSeconds } from 'date-fns';
 import { 
-  X, Clock, Store as StoreIcon, MapPinned, MessageCircle, Phone, 
-  Wallet, ShieldCheck, AlertTriangle, RotateCcw, CheckCircle2, Navigation,
-  Settings2, ArrowUpCircle, Timer, Camera, Loader2, Map, Sparkles
+  Clock, Store as StoreIcon, MapPinned, MessageCircle, Phone, 
+  ShieldCheck, CheckCircle2, Navigation,
+  Settings2, ArrowUpCircle, Timer, Camera, Loader2, X, RotateCcw
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { OrderChat } from '@/components/chat/OrderChat';
+import { ReleaseMissionDialog } from './release-mission';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
@@ -25,21 +26,11 @@ interface ActiveMissionViewProps {
   onOpenMaps: (address: string) => void;
 }
 
-const RELEASE_REASONS = [
-  { id: "pinchazo", label: "Me he pinchado", isAlarm: true },
-  { id: "gasolina", label: "Sin gasolina", isAlarm: true },
-  { id: "accidente", label: "Accidente en ruta", isAlarm: true },
-  { id: "falla_tecnica", label: "Falla técnica vehículo", isAlarm: false },
-  { id: "espera_excesiva", label: "Espera excesiva en tienda", isAlarm: false },
-  { id: "otro", label: "Otro motivo", isAlarm: false }
-];
-
 export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, onRelease, onOpenMaps }: ActiveMissionViewProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMissionChatOpen, setIsMissionChatOpen] = useState(false);
   const [isReleaseDialogOpen, setIsReleaseDialogOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [selectedReason, setSelectedReason] = useState<any>(null);
   const [evidencePhoto, setEvidencePhoto] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   
@@ -51,7 +42,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
     return () => clearInterval(timer);
   }, []);
 
-  // Lógica de Estados
   const isAtDestination = mission.status === 'at_destination';
   const isInUse = mission.status === 'delivered';
   const isWithDriver = mission.status === 'delivered_to_driver' || isAtDestination || isInUse;
@@ -121,7 +111,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
     try {
       const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
       setEvidencePhoto(dataUrl);
-      // Guardar evidencia inmediatamente si ya estamos en destino
       if (isAtDestination) {
         onUpdateStatus('at_destination', { deliveryEvidence: dataUrl });
       }
@@ -133,11 +122,8 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
     }
   };
 
-  const currentAddress = isAtDestination || isInUse ? mission.customerAddress : mission.storeAddress;
-
   return (
     <div className="flex flex-col h-[calc(100dvh-64px)] animate-in slide-in-from-bottom duration-500 overflow-hidden relative z-[40]">
-      {/* HEADER DE MISIÓN INDUSTRIAL */}
       <div className="h-16 bg-slate-900 flex items-center justify-between px-4 text-white shrink-0 shadow-xl z-20">
         <Button 
           variant="ghost" 
@@ -165,7 +151,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
       <main className="flex-1 overflow-y-auto no-scrollbar bg-[#f8fafc]">
         <div className="px-6 py-8 pb-24 space-y-8 max-w-2xl mx-auto">
           
-          {/* CRONÓMETRO REGRESIVO (CUANDO ESTÁ EN USO) */}
           {isInUse && usageProgress && (
             <section className="animate-in zoom-in duration-500">
               <Card className="border-none rounded-[40px] bg-slate-950 text-white p-8 shadow-2xl relative overflow-hidden ring-4 ring-amber-500/20">
@@ -191,7 +176,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             </section>
           )}
 
-          {/* TÍTULO COMPACTO */}
           <section className="text-center space-y-3">
             <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.5em]">MISIÓN #{mission.id.slice(-6).toUpperCase()}</p>
             <h1 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">
@@ -199,7 +183,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             </h1>
           </section>
 
-          {/* TARJETA DE DIRECCIÓN PRIORITARIA */}
           <section className="animate-in slide-in-from-right-4 duration-500">
             <Card className="border-none rounded-[36px] bg-white shadow-xl p-8 space-y-6 ring-1 ring-black/[0.03]">
               <div className="flex items-start justify-between gap-4">
@@ -214,7 +197,7 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
                 </div>
                 <Button 
                   onClick={() => onOpenMaps(mission.customerAddress)}
-                  className="rounded-2xl h-14 w-14 bg-slate-900 text-white shadow-lg active:scale-90 transition-all group"
+                  className="rounded-2xl h-14 w-14 bg-slate-900 text-white shadow-lg active:scale-90 transition-all group shrink-0"
                 >
                   <Navigation className="w-6 h-6 group-hover:animate-bounce" />
                 </Button>
@@ -241,7 +224,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             </Card>
           </section>
 
-          {/* BOTONES DE ACCIÓN LOGÍSTICA */}
           <section className="space-y-4">
             {mission.status === 'ready_for_pickup' && (
               <Button onClick={() => onUpdateStatus('delivered_to_driver')} className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all border-b-[8px] border-blue-800 active:border-b-0">
@@ -290,7 +272,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             )}
           </section>
 
-          {/* FICHA TÉCNICA */}
           <div className="bg-white p-6 rounded-[36px] shadow-sm border border-slate-100 space-y-6">
             <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
               <Settings2 className="w-4 h-4 text-primary" />
@@ -307,7 +288,7 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
               <div className="space-y-1">
                 <p className="text-[8px] font-black text-slate-400 uppercase">Dificultad</p>
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className={cn("w-4 h-4", mission.hasStairs ? "text-amber-500" : "text-slate-200")} />
+                  <Loader2 className={cn("w-4 h-4 animate-spin text-primary", !mission.hasStairs && "hidden")} />
                   <span className="text-sm font-black italic uppercase">{mission.hasStairs ? `${mission.stairCount} ESCALAS` : 'SIN ESCALAS'}</span>
                 </div>
               </div>
@@ -324,12 +305,11 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
         </div>
       </main>
 
-      {/* OVERLAY DE CAMARA PROFESIONAL */}
       {isCameraOpen && (
         <div className="fixed inset-0 z-[500] bg-black flex flex-col p-6 animate-in fade-in">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+              <ShieldCheck className="w-4 h-4 text-primary animate-pulse" />
               <h4 className="text-white font-black uppercase text-[10px] tracking-[0.3em] italic">Capturar Evidencia</h4>
             </div>
             <Button variant="ghost" size="icon" onClick={stopCamera} className="text-white"><X className="w-6 h-6" /></Button>
@@ -345,7 +325,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
         </div>
       )}
 
-      {/* DIÁLOGO DE CHAT */}
       <Dialog open={isMissionChatOpen} onOpenChange={setIsMissionChatOpen}>
         <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[300] [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
@@ -356,28 +335,22 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
         </DialogContent>
       </Dialog>
       
-      {/* DIÁLOGO DE LIBERACIÓN */}
-      <Dialog open={isReleaseDialogOpen} onOpenChange={setIsReleaseDialogOpen}>
-        <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] z-[400] bg-slate-900/95 backdrop-blur-2xl text-white outline-none [&>button:last-child]:hidden">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Liberar Misión</DialogTitle>
-            <DialogDescription>Protocolo de deserción.</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center text-center space-y-4 pt-4 mb-6">
-            <RotateCcw className="w-14 h-14 text-primary animate-spin-slow" />
-            <h3 className="text-3xl font-black italic uppercase tracking-tighter text-white leading-none">Liberar Misión</h3>
-            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]">Protocolo de Deserción</p>
-          </div>
-          <div className="py-6 space-y-3">
-            {RELEASE_REASONS.map(r => (
-              <button key={r.id} onClick={() => setSelectedReason(r)} className={cn("w-full p-4 rounded-2xl text-left text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-between", selectedReason?.id === r.id ? "bg-primary text-white border-primary shadow-xl" : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10")}>
-                {r.label}{r.isAlarm && <Badge className="bg-red-500 text-white border-none text-[7px] px-2 h-4 ml-2">ALARMA</Badge>}
-              </button>
-            ))}
-          </div>
-          <DialogFooter><Button onClick={() => onRelease(selectedReason?.label)} disabled={!selectedReason} className={cn("w-full h-16 rounded-[24px] font-black uppercase text-sm tracking-widest shadow-lg active:scale-95 transition-all", selectedReason?.isAlarm ? "bg-red-600 hover:bg-red-700" : "bg-primary")}>{selectedReason?.isAlarm ? "ALERTAR Y LIBERAR" : "CONFIRMAR LIBERACIÓN"}</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Nuevo Diálogo de Liberación Atómico */}
+      <ReleaseMissionDialog 
+        isOpen={isReleaseDialogOpen}
+        onOpenChange={setIsReleaseDialogOpen}
+        onConfirmRelease={(reason) => {
+          setIsReleaseDialogOpen(false);
+          onRelease(reason);
+        }}
+      />
+
+      <div className="shrink-0 p-6 bg-white/80 backdrop-blur-xl border-t border-slate-100">
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center gap-2"><ShieldCheck className="w-3.5 h-3.5 text-green-500" /><span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Protocolo Operativo Activo</span></div>
+          <div className="h-1 w-20 bg-slate-100 rounded-full overflow-hidden relative"><div className="absolute inset-0 bg-green-500 animate-progress-loading" /></div>
+        </div>
+      </div>
     </div>
   );
 }
