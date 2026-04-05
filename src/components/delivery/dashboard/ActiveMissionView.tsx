@@ -2,11 +2,11 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { format, addHours, differenceInMinutes, differenceInSeconds } from 'date-fns';
+import { format, addHours, differenceInSeconds } from 'date-fns';
 import { 
   X, Clock, Store as StoreIcon, MapPinned, MessageCircle, Phone, 
   Wallet, ShieldCheck, AlertTriangle, RotateCcw, CheckCircle2, Navigation,
-  Settings2, ArrowUpCircle, Timer, Camera, Loader2
+  Settings2, ArrowUpCircle, Timer, Camera, Loader2, Map
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { OrderChat } from '@/components/chat/OrderChat';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { compressImage } from '@/lib/image-compression';
 
 interface ActiveMissionViewProps {
   mission: any;
@@ -61,13 +60,14 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
     return new Date(ts);
   };
 
-  const useProgress = useMemo(() => {
+  const usageProgress = useMemo(() => {
     if (!isInUse || !mission.deliveredAt) return null;
     const deliveredAt = parseTimestamp(mission.deliveredAt);
     if (!deliveredAt) return null;
     
-    const expiryTime = addHours(deliveredAt, Number(mission.requestHours || 5));
-    const totalSeconds = Number(mission.requestHours || 5) * 3600;
+    const durationHours = Number(mission.requestHours || 5);
+    const expiryTime = addHours(deliveredAt, durationHours);
+    const totalSeconds = durationHours * 3600;
     const remainingSeconds = Math.max(0, differenceInSeconds(expiryTime, new Date()));
     
     const hours = Math.floor(remainingSeconds / 3600);
@@ -121,11 +121,14 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
       startCamera();
       return;
     }
-    onUpdateStatus('delivered', { deliveryEvidence: evidencePhoto });
+    onUpdateStatus('delivered', { deliveredAt: new Date(), deliveryEvidence: evidencePhoto });
   };
+
+  const currentAddress = isWithDriver ? mission.customerAddress : mission.storeAddress;
 
   return (
     <div className="flex flex-col h-[calc(100dvh-64px)] animate-in slide-in-from-bottom duration-500 overflow-hidden relative z-[40]">
+      {/* HEADER DE MISIÓN */}
       <div className="h-16 bg-slate-900 flex items-center justify-between px-4 text-white shrink-0 shadow-xl z-20">
         <Button 
           variant="ghost" 
@@ -137,115 +140,150 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
         </Button>
         <div className="flex items-center gap-2">
           <div className={cn("w-2 h-2 rounded-full animate-pulse", isInUse ? "bg-amber-500" : isWithDriver ? "bg-purple-500" : "bg-green-500")} />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-            {isInUse ? "LAVADORA EN USO" : isWithDriver ? "EN RUTA" : "BUSCANDO PAQUETE"}
+          <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+            {isInUse ? "EN USO" : isWithDriver ? "EN RUTA" : "BUSCANDO"}
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm font-black italic">{format(currentTime, 'HH:mm')}</span>
+          <span className="text-sm font-black italic tracking-tighter">{format(currentTime, 'HH:mm')}</span>
           <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"><Clock className="w-4 h-4 text-primary" /></div>
         </div>
       </div>
 
-      <main className="flex-1 overflow-y-auto no-scrollbar">
-        <div className="px-6 py-10 pb-20 space-y-8 max-w-2xl mx-auto">
+      <main className="flex-1 overflow-y-auto no-scrollbar bg-[#f8fafc]">
+        <div className="px-6 py-8 pb-24 space-y-8 max-w-2xl mx-auto">
           
-          {isInUse && useProgress && (
+          {/* CRONÓMETRO REGRESIVO (CUANDO ESTÁ EN USO) */}
+          {isInUse && usageProgress && (
             <section className="animate-in zoom-in duration-500">
-              <Card className="border-none rounded-[48px] bg-slate-900 text-white p-8 shadow-2xl relative overflow-hidden">
+              <Card className="border-none rounded-[40px] bg-slate-950 text-white p-8 shadow-2xl relative overflow-hidden ring-4 ring-amber-500/20">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
-                <div className="relative z-10 flex flex-col items-center text-center space-y-6">
-                  <Badge className="bg-amber-500 text-white border-none font-black text-[8px] uppercase px-4 h-6 tracking-widest italic animate-pulse">
+                <div className="relative z-10 flex flex-col items-center text-center space-y-4">
+                  <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.4em] italic animate-pulse">
                     TIEMPO RESTANTE
-                  </Badge>
+                  </p>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-7xl font-black italic tracking-tighter tabular-nums">
-                      {useProgress.hours}:{useProgress.minutes < 10 ? `0${useProgress.minutes}` : useProgress.minutes}
+                    <span className="text-7xl font-black italic tracking-tighter tabular-nums leading-none">
+                      {usageProgress.hours}:{usageProgress.minutes < 10 ? `0${usageProgress.minutes}` : usageProgress.minutes}
                     </span>
-                    <span className="text-xs font-black text-amber-500 uppercase tracking-widest">{useProgress.seconds < 10 ? `0${useProgress.seconds}` : useProgress.seconds}s</span>
+                    <span className="text-sm font-black text-amber-500 uppercase tracking-widest">{usageProgress.seconds < 10 ? `0${usageProgress.seconds}` : usageProgress.seconds}s</span>
                   </div>
-                  <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full bg-amber-500 transition-all duration-1000" style={{ width: `${useProgress.percentage}%` }} />
+                  <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden mt-2">
+                    <div className="h-full bg-amber-500 transition-all duration-1000 shadow-[0_0_15px_rgba(245,158,11,0.5)]" style={{ width: `${usageProgress.percentage}%` }} />
                   </div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-                    Recoger a las <span className="text-white">{useProgress.expiryLabel}</span>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+                    Recoger a las <span className="text-white">{usageProgress.expiryLabel}</span>
                   </p>
                 </div>
               </Card>
             </section>
           )}
 
-          <section className="text-center space-y-4">
-            <p className="text-[9px] font-black text-primary uppercase tracking-[0.4em]">MISIÓN ACTIVA #{mission.id.slice(-6).toUpperCase()}</p>
-            <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900">{mission.productName}</h1>
-            <div className="flex flex-col items-center gap-2">
-              <div className="bg-slate-900 text-white px-5 py-2 rounded-full"><StoreIcon className="w-4 h-4 text-primary inline mr-2" /><span className="text-xs font-black uppercase italic">{mission.storeName}</span></div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase">{mission.storeAddress}</p>
-            </div>
+          {/* TÍTULO COMPACTO Y ESTÉTICO */}
+          <section className="text-center space-y-3">
+            <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.5em]">MISIÓN #{mission.id.slice(-6).toUpperCase()}</p>
+            <h1 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">
+              ALQUILER DE LAVADORA <span className="text-primary">({mission.requestHours}H)</span>
+            </h1>
           </section>
 
-          {!isWithDriver ? (
-            <Button onClick={() => onUpdateStatus('delivered_to_driver')} className="w-full h-24 rounded-[32px] bg-primary text-white font-black text-2xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all">
-              <CheckCircle2 className="w-8 h-8" /> RECOGÍ EL PEDIDO
-            </Button>
-          ) : !isInUse ? (
-            <div className="space-y-4">
-              {evidencePhoto ? (
-                <div className="relative aspect-video rounded-[32px] overflow-hidden border-4 border-white shadow-2xl group">
-                  <Image src={evidencePhoto} alt="Evidencia" fill className="object-cover" />
-                  <button onClick={() => setEvidencePhoto(null)} className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full shadow-lg"><X className="w-4 h-4" /></button>
+          {/* TARJETA DE DIRECCIÓN (LA MÁS IMPORTANTE) */}
+          <section className="animate-in slide-in-from-right-4 duration-500">
+            <Card className="border-none rounded-[36px] bg-white shadow-xl p-8 space-y-6 ring-1 ring-black/[0.03]">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1.5 flex-1">
+                  <div className="flex items-center gap-2 text-primary">
+                    <MapPinned className="w-4 h-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest italic">Destino de Entrega</span>
+                  </div>
+                  <h2 className="text-2xl font-black text-slate-900 leading-tight uppercase italic tracking-tighter">
+                    {currentAddress}
+                  </h2>
                 </div>
-              ) : null}
-              <Button onClick={handleFinalDelivery} className="w-full h-24 rounded-[32px] bg-green-500 text-white font-black text-2xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all">
-                {evidencePhoto ? <><CheckCircle2 className="w-8 h-8" /> FINALIZAR ENTREGA</> : <><Navigation className="w-8 h-8" /> LLEGUÉ AL DESTINO</>}
+                <Button 
+                  onClick={() => onOpenMaps(currentAddress)}
+                  className="rounded-2xl h-14 w-14 bg-slate-900 text-white shadow-lg active:scale-90 transition-all group"
+                >
+                  <Navigation className="w-6 h-6 group-hover:animate-bounce" />
+                </Button>
+              </div>
+
+              <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-10 h-10 border-2 border-slate-50 shadow-sm">
+                    <AvatarImage src={customerProfile?.photoURL} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-black text-xs">{mission.customerName?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase leading-none">Cliente</p>
+                    <p className="text-sm font-black uppercase italic text-slate-700">{mission.customerName}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <a href={`tel:${mission.customerPhone}`}>
+                    <Button size="icon" variant="ghost" className="rounded-full h-10 w-10 bg-slate-50 text-slate-400 hover:text-primary"><Phone className="w-4 h-4" /></Button>
+                  </a>
+                  <Button onClick={() => setIsMissionChatOpen(true)} size="icon" variant="ghost" className="rounded-full h-10 w-10 bg-slate-50 text-slate-400 hover:text-primary"><MessageCircle className="w-4 h-4" /></Button>
+                </div>
+              </div>
+            </Card>
+          </section>
+
+          {/* BOTONES DE ACCIÓN DINÁMICOS */}
+          <section className="space-y-4">
+            {!isWithDriver ? (
+              <Button onClick={() => onUpdateStatus('delivered_to_driver')} className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all border-b-[8px] border-blue-800 active:border-b-0">
+                <CheckCircle2 className="w-7 h-7" /> RECOGÍ EL EQUIPO
               </Button>
-            </div>
-          ) : (
-            <Button className="w-full h-20 rounded-[32px] bg-slate-900 text-white font-black text-lg uppercase italic gap-4 shadow-xl border-2 border-white/5 opacity-50 cursor-not-allowed">
-              <Timer className="w-6 h-6" /> AGUARDANDO RECOGIDA
-            </Button>
-          )}
+            ) : !isInUse ? (
+              <div className="space-y-4">
+                {evidencePhoto && (
+                  <div className="relative aspect-video rounded-[36px] overflow-hidden border-4 border-white shadow-2xl">
+                    <Image src={evidencePhoto} alt="Evidencia" fill className="object-cover" />
+                    <button onClick={() => setEvidencePhoto(null)} className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full shadow-lg"><X className="w-4 h-4" /></button>
+                  </div>
+                )}
+                <Button onClick={handleFinalDelivery} className="w-full h-24 rounded-[36px] bg-green-500 text-white font-black text-2xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all border-b-[10px] border-green-700 active:border-b-0">
+                  {evidencePhoto ? <><Timer className="w-8 h-8 animate-pulse" /> INICIAR TIEMPO</> : <><Navigation className="w-8 h-8" /> LLEGUÉ AL DESTINO</>}
+                </Button>
+              </div>
+            ) : (
+              <div className="bg-slate-900 rounded-[36px] p-8 text-center space-y-4 border-2 border-white/5 opacity-60">
+                <ShieldCheck className="w-10 h-10 text-primary mx-auto" />
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Lavadora Entregada • Misión en Custodia</p>
+              </div>
+            )}
+          </section>
 
-          <Button variant="outline" onClick={() => onOpenMaps(isInUse || isWithDriver ? mission.customerAddress : mission.storeAddress)} className="w-full h-16 rounded-[24px] border-slate-200 text-slate-600 font-black uppercase text-xs tracking-widest gap-3 shadow-inner">
-            <MapPinned className="w-5 h-5 text-primary" /> {isInUse ? "VER UBICACIÓN ACTUAL" : "VER EN EL MAPA"}
-          </Button>
-
-          <div className="bg-slate-950 text-white p-6 rounded-[40px] shadow-2xl space-y-6">
-            <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-              <Settings2 className="w-5 h-5 text-primary" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Especificaciones de Entrega</span>
+          {/* BLOQUE TÉCNICO COMPACTO */}
+          <div className="bg-white p-6 rounded-[36px] shadow-sm border border-slate-100 space-y-6">
+            <div className="flex items-center gap-3 border-b border-slate-50 pb-4">
+              <Settings2 className="w-4 h-4 text-primary" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Ficha Técnica Logística</span>
             </div>
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-1">
-                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Ubicación Piso</p>
+                <p className="text-[8px] font-black text-slate-400 uppercase">Ubicación Piso</p>
                 <div className="flex items-center gap-2">
                   <ArrowUpCircle className="w-4 h-4 text-primary" />
                   <span className="text-sm font-black italic uppercase">Piso {mission.floor || '1'}</span>
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Equipo</p>
-                <span className="text-sm font-black italic uppercase text-slate-300">{mission.washerType || 'LAVADORA'}</span>
+                <p className="text-[8px] font-black text-slate-400 uppercase">Dificultad</p>
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className={cn("w-4 h-4", mission.hasStairs ? "text-amber-500" : "text-slate-200")} />
+                  <span className="text-sm font-black italic uppercase">{mission.hasStairs ? `${mission.stairCount} ESCALAS` : 'SIN ESCALAS'}</span>
+                </div>
               </div>
               <div className="space-y-1">
-                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Dificultad</p>
-                <span className={cn("text-sm font-black italic uppercase", mission.hasStairs ? "text-amber-400" : "text-slate-400")}>{mission.hasStairs ? `${mission.stairCount || 1} ESCALAS` : 'SIN ESCALAS'}</span>
+                <p className="text-[8px] font-black text-slate-400 uppercase">Equipo</p>
+                <span className="text-sm font-black italic uppercase text-slate-700">{mission.washerType || 'LAVADORA'}</span>
               </div>
               <div className="space-y-1">
-                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Contrato</p>
-                <span className="text-sm font-black italic uppercase text-primary">{mission.requestHours} HORAS</span>
+                <p className="text-[8px] font-black text-slate-400 uppercase">Cobro Sugerido</p>
+                <span className="text-sm font-black italic text-primary">{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(mission.totalPrice || 0)}</span>
               </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-6 border-t border-dashed">
-            <div className="flex items-center gap-4">
-              <Avatar className="w-14 h-14 border-4 border-white shadow-xl"><AvatarImage src={customerProfile?.photoURL} /><AvatarFallback className="bg-primary text-white font-black text-xl">{mission.customerName?.charAt(0)}</AvatarFallback></Avatar>
-              <div><p className="text-[9px] font-black text-slate-400 uppercase">Cliente VIP</p><p className="text-lg font-black uppercase italic leading-none">{mission.customerName}</p></div>
-            </div>
-            <div className="flex gap-2">
-              <a href={`tel:${mission.customerPhone}`}><Button variant="ghost" size="icon" className="rounded-full bg-white text-slate-600 h-12 w-12 shadow-md hover:bg-slate-50"><Phone className="w-5 h-5" /></Button></a>
-              <Button onClick={() => setIsMissionChatOpen(true)} className="rounded-full bg-slate-900 text-white h-12 w-12 shadow-xl hover:bg-black"><MessageCircle className="w-5 h-5 text-primary" /></Button>
             </div>
           </div>
         </div>
@@ -255,47 +293,39 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
       {isCameraOpen && (
         <div className="fixed inset-0 z-[500] bg-black flex flex-col p-6 animate-in fade-in">
           <div className="flex justify-between items-center mb-4">
-            <h4 className="text-white font-black uppercase text-xs tracking-widest italic">Capturar Evidencia de Instalación</h4>
+            <h4 className="text-white font-black uppercase text-[10px] tracking-[0.3em] italic">Evidencia de Instalación</h4>
             <Button variant="ghost" size="icon" onClick={stopCamera} className="text-white"><X className="w-6 h-6" /></Button>
           </div>
-          <div className="flex-1 relative rounded-[32px] overflow-hidden bg-slate-900 border-2 border-white/10 shadow-2xl">
+          <div className="flex-1 relative rounded-[40px] overflow-hidden bg-slate-900 border-2 border-white/10 shadow-2xl">
             <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
           </div>
           <div className="py-10 flex justify-center">
-            <Button onClick={capturePhoto} className="w-24 h-24 rounded-full bg-white text-black border-8 border-slate-300 active:scale-90 shadow-2xl flex items-center justify-center">
-              {isCompressing ? <Loader2 className="w-10 h-10 animate-spin" /> : <Camera className="w-10 h-10" />}
+            <Button onClick={capturePhoto} className="w-24 h-24 rounded-full bg-white text-black border-[10px] border-slate-300 active:scale-90 shadow-2xl flex items-center justify-center">
+              {isCompressing ? <Loader2 className="w-10 h-10 animate-spin text-primary" /> : <Camera className="w-10 h-10" />}
             </Button>
           </div>
         </div>
       )}
 
-      <div className="shrink-0 p-6 bg-white/80 backdrop-blur-xl border-t border-slate-100">
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center gap-2"><ShieldCheck className="w-3.5 h-3.5 text-green-500" /><span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Protocolo Operativo Activo</span></div>
-          <div className="h-1 w-20 bg-slate-100 rounded-full overflow-hidden relative"><div className="absolute inset-0 bg-green-500 animate-progress-loading" /></div>
-        </div>
-      </div>
-
+      {/* DIÁLOGO DE CHAT */}
       <Dialog open={isMissionChatOpen} onOpenChange={setIsMissionChatOpen}>
         <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[300] [&>button:last-child]:hidden">
           <OrderChat orderId={mission.id} orderData={mission} onClose={() => setIsMissionChatOpen(false)} />
         </DialogContent>
       </Dialog>
       
+      {/* DIÁLOGO DE LIBERACIÓN */}
       <Dialog open={isReleaseDialogOpen} onOpenChange={setIsReleaseDialogOpen}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto no-scrollbar rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] z-[400] bg-slate-900/95 backdrop-blur-2xl text-white outline-none [&>button:last-child]:hidden">
-          <div className="absolute top-6 right-6 z-50">
-            <button onClick={() => setIsReleaseDialogOpen(false)} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all"><X className="w-6 h-6" /></button>
-          </div>
+        <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] z-[400] bg-slate-900/95 backdrop-blur-2xl text-white outline-none [&>button:last-child]:hidden">
           <DialogHeader className="items-center text-center space-y-4 pt-4">
-            <div className="relative"><RotateCcw className="w-14 h-14 text-primary animate-spin-slow" />{selectedReason?.isAlarm && <AlertTriangle className="absolute -top-2 -right-2 w-6 h-6 text-red-500 animate-bounce" />}</div>
-            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-white leading-none">Liberar Pedido</DialogTitle>
+            <RotateCcw className="w-14 h-14 text-primary animate-spin-slow" />
+            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-white leading-none">Liberar Misión</DialogTitle>
             <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]">Protocolo de Deserción</DialogDescription>
           </DialogHeader>
           <div className="py-6 space-y-3">
             {RELEASE_REASONS.map(r => (
               <button key={r.id} onClick={() => setSelectedReason(r)} className={cn("w-full p-4 rounded-2xl text-left text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-between", selectedReason?.id === r.id ? "bg-primary text-white border-primary shadow-xl" : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10")}>
-                {r.label}{r.isAlarm && <Badge className="bg-red-500 text-white border-none text-[7px] px-2 h-4">ALARMA</Badge>}
+                {r.label}{r.isAlarm && <Badge className="bg-red-500 text-white border-none text-[7px] px-2 h-4 ml-2">ALARMA</Badge>}
               </button>
             ))}
           </div>
