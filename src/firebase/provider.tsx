@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useRef } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
@@ -53,6 +54,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     userError: null,
   });
 
+  // REF PARA EVITAR BUCLES DE ESCRITURA EN FIRESTORE
+  const hasUpdatedSession = useRef<string | null>(null);
+
   useEffect(() => {
     if (!auth) return;
 
@@ -62,25 +66,33 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       auth,
       async (firebaseUser) => {
         if (firebaseUser && firestore) {
-          const userRef = doc(firestore, 'users', firebaseUser.uid);
-          try {
-            const docSnap = await getDoc(userRef);
-            if (!docSnap.exists()) {
-              setDocumentNonBlocking(userRef, {
-                id: firebaseUser.uid,
-                email: firebaseUser.email,
-                displayName: firebaseUser.displayName,
-                photoURL: firebaseUser.photoURL,
-                createdAt: serverTimestamp(),
-                lastLogin: serverTimestamp(),
-                role: 'cliente' 
-              }, { merge: true });
-            } else {
-              updateDocumentNonBlocking(userRef, { lastLogin: serverTimestamp() });
+          // CONTROL DE FLUJO: Solo escribir en Firestore si es un login nuevo o cambio de usuario en esta sesión
+          if (hasUpdatedSession.current !== firebaseUser.uid) {
+            const userRef = doc(firestore, 'users', firebaseUser.uid);
+            try {
+              const docSnap = await getDoc(userRef);
+              if (!docSnap.exists()) {
+                setDocumentNonBlocking(userRef, {
+                  id: firebaseUser.uid,
+                  email: firebaseUser.email,
+                  displayName: firebaseUser.displayName,
+                  photoURL: firebaseUser.photoURL,
+                  createdAt: serverTimestamp(),
+                  lastLogin: serverTimestamp(),
+                  role: 'cliente' 
+                }, { merge: true });
+              } else {
+                // Actualizar solo una vez por carga de aplicación
+                updateDocumentNonBlocking(userRef, { lastLogin: serverTimestamp() });
+              }
+              hasUpdatedSession.current = firebaseUser.uid;
+            } catch (e) {
+              console.warn("Fallo silencioso en persistencia de perfil");
             }
-          } catch (e) {}
+          }
           setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
         } else {
+          hasUpdatedSession.current = null;
           setUserAuthState({ user: null, isUserLoading: false, userError: null });
         }
       },
