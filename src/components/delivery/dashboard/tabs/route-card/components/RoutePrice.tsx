@@ -3,26 +3,36 @@
 
 import { Wallet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface RoutePriceProps {
   formattedPrice: string;
   requestHours: number;
   washerType: string;
+  createdAt?: any;
 }
 
-export function RoutePrice({ formattedPrice, requestHours, washerType }: RoutePriceProps) {
+export function RoutePrice({ formattedPrice, requestHours, washerType, createdAt }: RoutePriceProps) {
+  // Procesar el timestamp de Firestore de forma segura
+  const dateObj = createdAt?.toDate?.() || (createdAt?.seconds ? new Date(createdAt.seconds * 1000) : new Date());
+  const formattedDate = format(dateObj, "dd MMM, HH:mm", { locale: es });
+
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="space-y-1">
-        {/* Etiqueta de Ganancia: Se mantiene minimalista en la parte superior */}
-        <div className="flex items-center gap-2 text-red-600/40 mb-1">
+        {/* Etiqueta de Ganancia Sutil */}
+        <div className="flex items-center gap-2 text-slate-400 mb-1">
           <Wallet className="w-3.5 h-3.5" />
           <span className="text-[8px] font-black uppercase tracking-[0.2em] italic">GANANCIA BRUTA</span>
         </div>
         
-        {/* Cantidad de horas: Reubicada justo encima del precio, roja y sin contenedor */}
-        <div className="text-3xl sm:text-4xl font-black italic tracking-tighter text-red-600 leading-none">
-          {requestHours}H MISIÓN
+        {/* Línea de Horas y Tiempo de Solicitud: Negro, elegante y tamaño medio */}
+        <div className="text-lg sm:text-xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">
+          {requestHours} horas <span className="text-slate-300 mx-1">•</span> 
+          <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase align-middle">
+            {formattedDate}
+          </span>
         </div>
 
         {/* Precio: Protagonista absoluto en Rojo Élite */}
@@ -32,7 +42,7 @@ export function RoutePrice({ formattedPrice, requestHours, washerType }: RoutePr
       </div>
       
       <div className="text-right">
-        {/* El tipo de equipo se mantiene como metadato sutil a la derecha */}
+        {/* Metadato sutil del equipo */}
         <Badge className="bg-primary/10 text-primary border-none text-[7px] font-black uppercase px-2 italic">
           {washerType === 'automatica' ? 'Auto' : 'Semi'}
         </Badge>

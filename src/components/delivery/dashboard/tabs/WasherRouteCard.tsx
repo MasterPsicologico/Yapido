@@ -84,6 +84,7 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
             formattedPrice={formattedPrice} 
             requestHours={order.requestHours} 
             washerType={order.washerType} 
+            createdAt={order.createdAt}
           />
 
           <div className="bg-slate-50 p-7 rounded-[40px] border border-slate-100 flex flex-col gap-6 shadow-inner">
@@ -110,10 +111,9 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
         </div>
       </CardContent>
 
-      {/* DIÁLOGO DE CONTRAOFERTA (REDISEÑADO CON MÁRGENES DE SEGURIDAD) */}
+      {/* DIÁLOGO DE CONTRAOFERTA */}
       <Dialog open={isOfferDialogOpen} onOpenChange={setIsOfferDialogOpen}>
         <DialogContent className="rounded-[48px] border-none shadow-2xl p-10 sm:max-w-[480px] w-[92vw] max-h-[92dvh] overflow-y-auto no-scrollbar outline-none z-[600] [&>button:last-child]:hidden">
-          {/* Botón de Cierre Manual Pro */}
           <button 
             onClick={() => setIsOfferDialogOpen(false)}
             className="absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-all active:scale-90 z-50 shadow-sm"
