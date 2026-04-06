@@ -5,15 +5,14 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Hourglass } from 'lucide-react';
+import { Loader2, CheckCircle2, Zap, ArrowRight, Hourglass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, limit, or } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import Link from 'next/link';
 import { compressImage } from '@/lib/image-compression';
 
 // Componentes Fragmentados
@@ -40,8 +39,8 @@ export default function DeliveryDashboardPage() {
   const [isReleasing, setIsReleasing] = useState(false);
   const [releaseLogs, setReleaseLogs] = useState<string[]>([]);
   const [isUploadingDashboard, setIsUploadingDashboard] = useState<'active' | 'inactive' | null>(null);
-  const [adminForceWelcome, setAdminForceWelcome] = useState(false);
 
+  // Redirección de onboarding si es necesario
   useEffect(() => {
     if (!loadingProfile && profile?.role === 'repartidor' && profile?.hasSeenApproval === false && !isAdmin) {
       router.replace('/delivery/approved');
@@ -54,65 +53,41 @@ export default function DeliveryDashboardPage() {
   const dashboardConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_dashboard'), [firestore]);
   const { data: dashboardConfig } = useDoc(dashboardConfigRef);
 
-  useEffect(() => {
-    if (!loadingProfile && profile && !profile.phoneNumber) {
-      toast({ title: "Acceso Restringido", description: "Registra tu teléfono.", variant: "destructive" });
-      router.push('/profile');
-    }
-  }, [profile, loadingProfile, router]);
-
-  const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
-  const isPendingApproval = profile?.deliveryRequested === true && profile?.role !== 'repartidor';
-
+  // Filtro de Órdenes Disponibles (Radar)
   const allActiveOrdersQuery = useMemoFirebase(() => {
-    if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
+    if (!firestore || !user?.uid || !isOnline) return null;
     const publicConstraint = where('isLogisticsPublic', '==', true);
     if (profile?.linkedStoreId) {
       const storeConstraint = where('storeId', '==', profile.linkedStoreId);
       return query(collection(firestore, 'orders'), or(publicConstraint, storeConstraint), limit(50));
     }
     return query(collection(firestore, 'orders'), publicConstraint, limit(50));
-  }, [firestore, isConfirmedRepartidor, isOnline, profile?.linkedStoreId]);
+  }, [firestore, user?.uid, isOnline, profile?.linkedStoreId]);
 
-  const { data: rawAllOrders, isLoading: loadingRoutes } = useCollection(allActiveOrdersQuery);
+  const { data: rawAllOrders } = useCollection(allActiveOrdersQuery);
 
   const availableOrders = useMemo(() => {
     if (!rawAllOrders) return [];
-    return rawAllOrders.filter(order => {
-      const isSearchable = ['pending', 'preparing', 'ready_for_pickup'].includes(order.status);
-      if (!isSearchable) return false;
-      if (order.deliveryDriverId && order.deliveryDriverId !== user?.uid) return false;
-      return true;
-    }).sort((a, b) => {
-      const timeA = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
-      const timeB = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
-      return timeB - timeA;
-    });
+    return rawAllOrders.filter(order => 
+      ['pending', 'preparing', 'ready_for_pickup'].includes(order.status) &&
+      (!order.deliveryDriverId || order.deliveryDriverId === user?.uid)
+    ).sort((a, b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
   }, [rawAllOrders, user?.uid]);
 
+  // Filtro de Mis Entregas (Activas y en Uso)
   const myDeliveriesQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
+    if (!firestore || !user?.uid) return null;
     return query(
       collection(firestore, 'orders'), 
       where('participants', 'array-contains', user.uid), 
       where('status', 'in', ['shipped', 'at_destination', 'delivered'])
     );
-  }, [firestore, user?.uid, isConfirmedRepartidor]);
-
-  const historyQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
-    return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid), where('status', '==', 'completed'), limit(50));
-  }, [firestore, user?.uid, isConfirmedRepartidor]);
+  }, [firestore, user?.uid]);
 
   const { data: rawMy } = useCollection(myDeliveriesQuery);
-  const { data: history } = useCollection(historyQuery);
 
-  const stats = useMemo(() => ({
-    rating: profile?.avgRating || 5.0,
-    deliveredCount: history?.length || 0
-  }), [profile, history]);
-
-  // LÓGICA DE CONTINUIDAD: La misión heroica solo bloquea la pantalla en ruta o instalación
+  // LOGICA CRITICA: ¿Qué se muestra en pantalla completa?
+  // Solo misiones que requieren transporte o instalación.
   const activeMission = useMemo(() => 
     rawMy?.find(o => 
       o.deliveryDriverId === user?.uid && 
@@ -121,10 +96,10 @@ export default function DeliveryDashboardPage() {
     [rawMy, user?.uid]
   );
 
-  // Alquileres que están actualmente en uso por el cliente
+  // Alquileres en segundo plano (Ya instalados)
   const inUseRentals = useMemo(() => 
-    rawMy?.filter(o => o.status === 'delivered') || [],
-    [rawMy]
+    rawMy?.filter(o => o.deliveryDriverId === user?.uid && o.status === 'delivered') || [],
+    [rawMy, user?.uid]
   );
 
   const customerRef = useMemoFirebase(() => 
@@ -148,14 +123,19 @@ export default function DeliveryDashboardPage() {
   };
 
   const handleUpdateMissionStatus = (newStatus: string, metadata: any = {}) => {
-    if (!activeMission && !metadata.id) return;
     const id = metadata.id || activeMission?.id;
+    if (!firestore || !id) return;
+    
     const orderRef = doc(firestore, 'orders', id);
     const updateData: any = { ...metadata, status: newStatus, updatedAt: serverTimestamp() };
+    
     if (newStatus === 'delivered') {
       updateData.deliveredAt = serverTimestamp();
-      toast({ title: "¡Lavadora Instalada!", description: "El tiempo ha comenzado a correr." });
+      toast({ title: "¡Lavadora Instalada!", description: "Misión movida a segundo plano." });
+      // Forzamos el cambio de pestaña para que el usuario vea dónde quedó el pedido
+      setActiveTab("my-deliveries");
     }
+    
     updateDocumentNonBlocking(orderRef, updateData);
   };
 
@@ -171,7 +151,7 @@ export default function DeliveryDashboardPage() {
     try {
       const result = await releaseOrder({
         orderId: activeMission.id, driverId: user.uid, reason,
-        hasProducts: activeMission.status === 'delivered_to_driver', orderValue: activeMission.totalPrice || 0,
+        hasProducts: false, orderValue: activeMission.totalPrice || 0,
         storeId: activeMission.storeId, storeName: activeMission.storeName
       });
       setReleaseLogs(prev => [...prev, ...result.agentLogs]);
@@ -187,12 +167,8 @@ export default function DeliveryDashboardPage() {
     try {
       const compressed = await compressImage(file, 1920, 1080, 0.85);
       const updateKey = target === 'active' ? 'bgActive' : 'bgInactive';
-      const cacheKey = target === 'active' ? CACHE_ACTIVE : CACHE_INACTIVE;
-      localStorage.setItem(cacheKey, compressed);
       await setDocumentNonBlocking(dashboardConfigRef, { [updateKey]: compressed, updatedAt: serverTimestamp() }, { merge: true });
       toast({ title: "Fondo actualizado" });
-    } catch (error) {
-      toast({ title: "Error al actualizar", variant: "destructive" });
     } finally {
       setIsUploadingDashboard(null);
     }
@@ -200,9 +176,10 @@ export default function DeliveryDashboardPage() {
 
   if (loadingProfile) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
 
-  const showWelcome = (!isConfirmedRepartidor && !isPendingApproval) || (isAdmin && adminForceWelcome) || isPendingApproval;
+  const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
+  const isPendingApproval = profile?.deliveryRequested === true && profile?.role !== 'repartidor';
 
-  if (showWelcome) {
+  if (!isConfirmedRepartidor) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
         <Navbar />
@@ -219,11 +196,11 @@ export default function DeliveryDashboardPage() {
               <div className="space-y-8">
                 <div className="flex items-start gap-6">
                   <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 shrink-0 shadow-inner"><CheckCircle2 className="w-6 h-6" /></div>
-                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Genera Ganancias</h4><p className="text-xs text-slate-400 font-medium">Aumenta tus ingresos completando misiones locales con total libertad.</p></div>
+                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Genera Ganancias</h4><p className="text-xs text-slate-400 font-medium">Aumenta tus ingresos completando misiones locales.</p></div>
                 </div>
                 <div className="flex items-start gap-6">
                   <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0 shadow-inner"><Zap className="w-6 h-6" /></div>
-                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Control Absoluto</h4><p className="text-xs text-slate-400 font-medium">Tú decides tu horario y tu zona. Sin jefes ni ataduras.</p></div>
+                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Control Absoluto</h4><p className="text-xs text-slate-400 font-medium">Tú decides tu horario y tu zona.</p></div>
                 </div>
               </div>
               {isPendingApproval ? (
@@ -249,11 +226,17 @@ export default function DeliveryDashboardPage() {
       <AgentProgressOverlay isOpen={isReleasing} logs={releaseLogs} onComplete={() => { setIsReleasing(false); router.replace('/delivery/release-success'); }} />
 
       {activeMission ? (
-        <ActiveMissionView mission={activeMission} customerProfile={customerProfile} onUpdateStatus={handleUpdateMissionStatus} onRelease={handleReleaseOrder} onOpenMaps={(addr) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank')} />
+        <ActiveMissionView 
+          mission={activeMission} 
+          customerProfile={customerProfile} 
+          onUpdateStatus={handleUpdateMissionStatus} 
+          onRelease={handleReleaseOrder} 
+          onOpenMaps={(addr) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank')} 
+        />
       ) : (
         <div className="flex-1 overflow-y-auto no-scrollbar">
           <DashboardHeader 
-            profile={profile} level={level} stats={stats} 
+            profile={profile} level={level} stats={{ rating: profile?.avgRating || 5.0, deliveredCount: 0 }} 
             isOnline={isOnline} onToggleOnline={() => setIsOnline(!isOnline)} 
             isAdmin={isAdmin} dashboardConfig={dashboardConfig} 
             onImageUpload={handleDashboardImageUpload} isUploading={isUploadingDashboard}
@@ -262,7 +245,12 @@ export default function DeliveryDashboardPage() {
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mb-12 space-y-8">
               <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3">
                 <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white uppercase">Radar Rutas</TabsTrigger>
-                <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white uppercase">En Curso ({inUseRentals.length})</TabsTrigger>
+                <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white uppercase relative">
+                  En Curso
+                  {inUseRentals.length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-black animate-in zoom-in">{inUseRentals.length}</span>
+                  )}
+                </TabsTrigger>
                 <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white uppercase">Balance</TabsTrigger>
               </TabsList>
               <TabsContent value="available">
@@ -275,7 +263,7 @@ export default function DeliveryDashboardPage() {
                 <EarningsTab balance={profile?.balance || 0} />
               </TabsContent>
             </Tabs>
-            <WeeklyChallenge history={history} />
+            <WeeklyChallenge orders={[]} />
           </main>
         </div>
       )}

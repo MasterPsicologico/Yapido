@@ -13,7 +13,6 @@ import {
   CheckCircle2, 
   Smartphone,
   MessageCircle,
-  Plus,
   History
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -37,7 +36,9 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
       <div className="text-center py-20 bg-white rounded-[48px] border-2 border-dashed border-slate-100 animate-in fade-in duration-500">
         <History className="w-16 h-16 mx-auto text-slate-100 mb-4" />
         <h3 className="text-2xl font-black text-slate-300 uppercase italic tracking-tighter">Sin Alquileres Activos</h3>
-        <p className="text-slate-300 text-[10px] font-bold uppercase tracking-widest mt-2 px-10">Gestiona tus equipos instalados desde aquí cuando el tiempo empiece a correr.</p>
+        <p className="text-slate-300 text-[10px] font-bold uppercase tracking-widest mt-2 px-10">
+          Los equipos que instales aparecerán aquí para control de tiempo en segundo plano.
+        </p>
       </div>
     );
   }
@@ -56,15 +57,15 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
   return (
     <div className="grid gap-4 animate-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center justify-between px-4 mb-2">
-        <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 italic">Control de Flota en Calle</h3>
-        <Badge className="bg-secondary text-white border-none font-black text-[8px] px-3">{rentals.length} EQUIPOS</Badge>
+        <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 italic">Control en Segundo Plano</h3>
+        <Badge className="bg-secondary text-white border-none font-black text-[8px] px-3">{rentals.length} ACTIVOS</Badge>
       </div>
 
       {rentals.map((order) => {
         const isExpanded = expandedId === order.id;
         
-        // Lógica de progreso simplificada para el item de la lista
-        const deliveredAt = order.deliveredAt?.toDate?.() || new Date(order.deliveredAt.seconds * 1000);
+        // Lógica de cronómetro para el fondo
+        const deliveredAt = order.deliveredAt?.toDate?.() || new Date(order.deliveredAt?.seconds * 1000) || new Date();
         const expiryTime = addHours(deliveredAt, order.requestHours || 5);
         const remaining = Math.max(0, differenceInSeconds(expiryTime, new Date()));
         const isExpired = remaining <= 0;
@@ -75,7 +76,6 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
             isExpanded ? "shadow-2xl bg-slate-900 ring-primary/20 scale-[1.02]" : "shadow-sm bg-white ring-black/[0.02]"
           )}>
             <CardContent className="p-0">
-              {/* CABECERA RESUMIDA */}
               <div 
                 onClick={() => setExpandedId(isExpanded ? null : order.id)}
                 className="p-6 flex items-center justify-between cursor-pointer"
@@ -99,13 +99,11 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                 {isExpanded ? <ChevronUp className="text-slate-500" /> : <ChevronDown className="text-slate-300" />}
               </div>
 
-              {/* DETALLES EXPANDIDOS */}
               {isExpanded && (
                 <div className="px-6 pb-8 space-y-8 animate-in slide-in-from-top-2 duration-300">
                   <div className="h-px bg-white/5 mx-2" />
                   
-                  {/* Cronómetro Atómico Reutilizado */}
-                  <div className="scale-90 origin-top">
+                  <div className="scale-95 origin-top">
                     <MissionUsageCountdown 
                       progress={{
                         hours: Math.floor(remaining / 3600),
@@ -120,25 +118,17 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => window.open(`tel:${order.customerPhone}`)}
-                      className="h-14 rounded-2xl border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest gap-2"
-                    >
+                    <Button variant="outline" onClick={() => window.open(`tel:${order.customerPhone}`)} className="h-14 rounded-2xl border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest gap-2">
                       <Smartphone className="w-4 h-4 text-primary" /> LLAMAR
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => window.open(`https://wa.me/57${order.customerPhone.replace(/\D/g, '')}`)}
-                      className="h-14 rounded-2xl border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest gap-2"
-                    >
+                    <Button variant="outline" onClick={() => window.open(`https://wa.me/57${order.customerPhone.replace(/\D/g, '')}`)} className="h-14 rounded-2xl border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest gap-2">
                       <MessageCircle className="w-4 h-4 text-green-500" /> CHAT
                     </Button>
                   </div>
 
                   <Button 
                     onClick={() => onUpdateStatus('completed', { id: order.id })}
-                    className="w-full h-16 rounded-[24px] bg-green-600 text-white font-black uppercase text-xs tracking-widest gap-3 shadow-xl active:scale-95 transition-all border-b-4 border-green-800"
+                    className="w-full h-16 rounded-[24px] bg-green-600 text-white font-black uppercase text-xs tracking-widest gap-3 shadow-xl border-b-4 border-green-800 active:border-b-0"
                   >
                     <CheckCircle2 className="w-5 h-5" /> RECOGER Y FINALIZAR
                   </Button>
