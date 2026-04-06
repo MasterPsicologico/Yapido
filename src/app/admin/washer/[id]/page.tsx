@@ -50,13 +50,13 @@ export default function WasherAdminPage() {
 
   const { data: history } = useCollection(historyQuery);
 
-  // QUERY MAESTRA: Alquileres vivos para el panel activo
+  // QUERY MAESTRA: Alquileres vivos para el panel activo (Incluimos todos los estados intermedios)
   const activeRentalsQuery = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return query(
       collection(firestore, 'orders'),
       where('storeId', '==', id),
-      where('status', 'in', ['shipped', 'at_destination', 'delivered']),
+      where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver', 'at_destination', 'delivered']),
       orderBy('createdAt', 'desc')
     );
   }, [firestore, id]);

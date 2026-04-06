@@ -72,7 +72,6 @@ export default function DeliveryDashboardPage() {
     
     if (profile?.linkedStoreId) {
       const storeConstraint = where('storeId', '==', profile.linkedStoreId);
-      // Usamos OR para que el repartidor vea las solicitudes generales y las asignadas a su patrón
       return query(
         collection(firestore, 'orders'), 
         or(publicConstraint, storeConstraint),
@@ -88,10 +87,8 @@ export default function DeliveryDashboardPage() {
   const availableOrders = useMemo(() => {
     if (!rawAllOrders) return [];
     return rawAllOrders.filter(order => {
-      // Un repartidor ve pedidos pendientes o que el dueño ya preparó (ready_for_pickup)
       const isSearchable = ['pending', 'preparing', 'ready_for_pickup'].includes(order.status);
       if (!isSearchable) return false;
-      // Si ya tiene un conductor y no soy yo, ocultar
       if (order.deliveryDriverId && order.deliveryDriverId !== user?.uid) return false;
       return true;
     }).sort((a, b) => {
@@ -103,12 +100,17 @@ export default function DeliveryDashboardPage() {
 
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
-    return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid), where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver', 'delivered']));
+    // INCLUIMOS TODOS LOS ESTADOS VIVOS EN LA CONSULTA
+    return query(
+      collection(firestore, 'orders'), 
+      where('participants', 'array-contains', user.uid), 
+      where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver', 'at_destination', 'delivered'])
+    );
   }, [firestore, user?.uid, isConfirmedRepartidor]);
 
   const historyQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
-    return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid), where('status', '==', 'delivered'), limit(50));
+    return query(collection(firestore, 'orders'), where('participants', 'array-contains', user.uid), where('status', '==', 'completed'), limit(50));
   }, [firestore, user?.uid, isConfirmedRepartidor]);
 
   const { data: rawMy } = useCollection(myDeliveriesQuery);
@@ -119,9 +121,12 @@ export default function DeliveryDashboardPage() {
     deliveredCount: history?.length || 0
   }), [profile, history]);
 
-  // Misión activa: estamos en ruta o entregando
+  // CORRECCIÓN MAESTRA: La misión se mantiene activa en CUALQUIER estado que no sea 'completed' o 'cancelled'
   const activeMission = useMemo(() => 
-    rawMy?.find(o => o.deliveryDriverId === user?.uid && ['shipped', 'at_store', 'delivered_to_driver'].includes(o.status)),
+    rawMy?.find(o => 
+      o.deliveryDriverId === user?.uid && 
+      ['shipped', 'at_store', 'delivered_to_driver', 'at_destination', 'delivered'].includes(o.status)
+    ),
     [rawMy, user?.uid]
   );
 
