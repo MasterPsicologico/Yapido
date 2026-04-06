@@ -16,6 +16,9 @@ interface MissionActionOrchestratorProps {
   onClearPhoto: () => void;
 }
 
+/**
+ * Módulo de Acciones Simplificado: Salida directa a destino.
+ */
 export function MissionActionOrchestrator({
   status,
   isAtDestination,
@@ -26,30 +29,14 @@ export function MissionActionOrchestrator({
   onStartCamera,
   onClearPhoto
 }: MissionActionOrchestratorProps) {
+  
+  // Determinamos si estamos en cualquier fase de transporte (aceptado, en tienda o cargado)
+  const isEnRoute = status === 'shipped' || status === 'at_store' || status === 'delivered_to_driver';
+
   return (
     <section className="space-y-4">
-      {/* 1. RECIÉN ACEPTADO: IR A TIENDA */}
-      {status === 'shipped' && (
-        <Button 
-          onClick={() => onUpdateStatus('at_store')} 
-          className="w-full h-20 rounded-[32px] bg-orange-500 text-white font-black text-xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all border-b-[8px] border-orange-700 active:border-b-0"
-        >
-          <StoreIcon className="w-7 h-7" /> LLEGUÉ A LA TIENDA
-        </Button>
-      )}
-
-      {/* 2. EN TIENDA: RECOGER EQUIPO */}
-      {status === 'at_store' && (
-        <Button 
-          onClick={() => onUpdateStatus('delivered_to_driver')} 
-          className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all border-b-[8px] border-blue-800 active:border-b-0"
-        >
-          <CheckCircle2 className="w-7 h-7" /> RECOGÍ EL EQUIPO
-        </Button>
-      )}
-
-      {/* 3. CON EQUIPO: IR AL CLIENTE */}
-      {status === 'delivered_to_driver' && (
+      {/* 1. FLUJO DIRECTO: EN CAMINO AL CLIENTE */}
+      {isEnRoute && !isAtDestination && (
         <Button 
           onClick={() => onUpdateStatus('at_destination')} 
           className="w-full h-20 rounded-[32px] bg-blue-600 text-white font-black text-xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all border-b-[8px] border-blue-900 active:border-b-0"
@@ -58,7 +45,7 @@ export function MissionActionOrchestrator({
         </Button>
       )}
 
-      {/* 4. EN DESTINO: ENTREGAR E INICIAR USO */}
+      {/* 2. EN DESTINO: ENTREGAR E INICIAR USO */}
       {isAtDestination && (
         <div className="space-y-6">
           <Button 
@@ -88,12 +75,12 @@ export function MissionActionOrchestrator({
         </div>
       )}
 
-      {/* 5. EN USO: MODO CUSTODIA */}
+      {/* 3. EN USO: MODO CUSTODIA */}
       {isInUse && (
         <div className="bg-slate-900 rounded-[36px] p-8 text-center space-y-4 border-2 border-white/5 opacity-60">
           <ShieldCheck className="w-10 h-10 text-primary mx-auto" />
           <p className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none">
-            Lavadora Entregada • Misión en Custodia
+            Misión Entregada • En Tiempo de Uso
           </p>
         </div>
       )}

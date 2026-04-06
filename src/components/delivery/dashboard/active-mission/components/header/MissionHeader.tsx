@@ -15,6 +15,9 @@ interface MissionHeaderProps {
   currentTime: Date;
 }
 
+/**
+ * Encabezado de Misión con estados simplificados para Aguachica.
+ */
 export function MissionHeader({ 
   onReleaseOpen, 
   status, 
@@ -24,22 +27,17 @@ export function MissionHeader({
   currentTime 
 }: MissionHeaderProps) {
   
-  // LÓGICA DE ETIQUETA DE ESTADO DINÁMICA
   const getStatusLabel = () => {
     if (isInUse) return "EN USO";
-    if (isAtDestination) return "EN DESTINO";
-    if (status === 'delivered_to_driver') return "CON CARGA";
-    if (status === 'at_store') return "EN TIENDA";
-    if (status === 'shipped') return "EN RUTA";
-    return "MISIÓN";
+    if (isAtDestination) return "EN EL DESTINO";
+    if (status === 'shipped' || status === 'delivered_to_driver' || status === 'at_store') return "EN RUTA AL CLIENTE";
+    return "MISIÓN ACTIVA";
   };
 
   const getStatusColor = () => {
     if (isInUse) return "bg-amber-500";
     if (isAtDestination) return "bg-blue-500";
-    if (status === 'delivered_to_driver') return "bg-purple-500";
-    if (status === 'at_store') return "bg-primary";
-    if (status === 'shipped') return "bg-orange-500";
+    if (status === 'shipped' || status === 'delivered_to_driver' || status === 'at_store') return "bg-primary";
     return "bg-green-500";
   };
 
