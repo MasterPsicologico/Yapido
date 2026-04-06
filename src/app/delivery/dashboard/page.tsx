@@ -1,18 +1,17 @@
 
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Camera, LayoutGrid, Edit3, Hourglass } from 'lucide-react';
+import { Loader2, Truck, CheckCircle2, Zap, ArrowRight, Clock, ShieldCheck, Hourglass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, orderBy, limit, or } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, limit, or } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
 import { compressImage } from '@/lib/image-compression';
@@ -23,6 +22,7 @@ import { DashboardHeader } from '@/components/delivery/dashboard/DashboardHeader
 import { ActiveMissionView } from '@/components/delivery/dashboard/ActiveMissionView';
 import { RoutesTab } from '@/components/delivery/dashboard/tabs/RoutesTab';
 import { EarningsTab } from '@/components/delivery/dashboard/tabs/EarningsTab';
+import { MyDeliveriesTab } from '@/components/delivery/dashboard/tabs/MyDeliveriesTab';
 import { releaseOrder } from '@/ai/flows/release-order-flow';
 import { AgentProgressOverlay } from '@/components/agents/AgentProgressOverlay';
 
@@ -64,21 +64,13 @@ export default function DeliveryDashboardPage() {
   const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
   const isPendingApproval = profile?.deliveryRequested === true && profile?.role !== 'repartidor';
 
-  // CONSULTA MAESTRA DE VISIÓN TOTAL: Ve lo público Y lo de su propia tienda
   const allActiveOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !isConfirmedRepartidor || !isOnline) return null;
-    
     const publicConstraint = where('isLogisticsPublic', '==', true);
-    
     if (profile?.linkedStoreId) {
       const storeConstraint = where('storeId', '==', profile.linkedStoreId);
-      return query(
-        collection(firestore, 'orders'), 
-        or(publicConstraint, storeConstraint),
-        limit(50)
-      );
+      return query(collection(firestore, 'orders'), or(publicConstraint, storeConstraint), limit(50));
     }
-    
     return query(collection(firestore, 'orders'), publicConstraint, limit(50));
   }, [firestore, isConfirmedRepartidor, isOnline, profile?.linkedStoreId]);
 
@@ -100,11 +92,10 @@ export default function DeliveryDashboardPage() {
 
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isConfirmedRepartidor) return null;
-    // INCLUIMOS TODOS LOS ESTADOS VIVOS EN LA CONSULTA
     return query(
       collection(firestore, 'orders'), 
       where('participants', 'array-contains', user.uid), 
-      where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver', 'at_destination', 'delivered'])
+      where('status', 'in', ['shipped', 'at_destination', 'delivered'])
     );
   }, [firestore, user?.uid, isConfirmedRepartidor]);
 
@@ -121,13 +112,19 @@ export default function DeliveryDashboardPage() {
     deliveredCount: history?.length || 0
   }), [profile, history]);
 
-  // CORRECCIÓN MAESTRA: La misión se mantiene activa en CUALQUIER estado que no sea 'completed' o 'cancelled'
+  // LÓGICA DE CONTINUIDAD: La misión heroica solo bloquea la pantalla en ruta o instalación
   const activeMission = useMemo(() => 
     rawMy?.find(o => 
       o.deliveryDriverId === user?.uid && 
-      ['shipped', 'at_store', 'delivered_to_driver', 'at_destination', 'delivered'].includes(o.status)
+      ['shipped', 'at_destination'].includes(o.status)
     ),
     [rawMy, user?.uid]
+  );
+
+  // Alquileres que están actualmente en uso por el cliente
+  const inUseRentals = useMemo(() => 
+    rawMy?.filter(o => o.status === 'delivered') || [],
+    [rawMy]
   );
 
   const customerRef = useMemoFirebase(() => 
@@ -148,17 +145,18 @@ export default function DeliveryDashboardPage() {
       participants: arrayUnion(user.uid)
     });
     toast({ title: "Ruta Aceptada" });
-    setActiveTab("my-deliveries");
   };
 
   const handleUpdateMissionStatus = (newStatus: string, metadata: any = {}) => {
-    if (!activeMission || !firestore) return;
-    const orderRef = doc(firestore, 'orders', activeMission.id);
+    if (!activeMission && !metadata.id) return;
+    const id = metadata.id || activeMission?.id;
+    const orderRef = doc(firestore, 'orders', id);
     const updateData: any = { ...metadata, status: newStatus, updatedAt: serverTimestamp() };
-    if (newStatus === 'delivered_to_driver') updateData.pickedUpAt = serverTimestamp();
-    if (newStatus === 'delivered') updateData.deliveredAt = serverTimestamp();
+    if (newStatus === 'delivered') {
+      updateData.deliveredAt = serverTimestamp();
+      toast({ title: "¡Lavadora Instalada!", description: "El tiempo ha comenzado a correr." });
+    }
     updateDocumentNonBlocking(orderRef, updateData);
-    toast({ title: "Estado Actualizado" });
   };
 
   const handleReleaseOrder = async (reason: string) => {
@@ -190,16 +188,9 @@ export default function DeliveryDashboardPage() {
       const compressed = await compressImage(file, 1920, 1080, 0.85);
       const updateKey = target === 'active' ? 'bgActive' : 'bgInactive';
       const cacheKey = target === 'active' ? CACHE_ACTIVE : CACHE_INACTIVE;
-      
       localStorage.setItem(cacheKey, compressed);
-      
-      await setDocumentNonBlocking(dashboardConfigRef, {
-        [updateKey]: compressed,
-        updatedAt: serverTimestamp(),
-        updatedBy: user?.uid
-      }, { merge: true });
-      
-      toast({ title: `Fondo de ${target === 'active' ? 'Turno' : 'Descanso'} actualizado` });
+      await setDocumentNonBlocking(dashboardConfigRef, { [updateKey]: compressed, updatedAt: serverTimestamp() }, { merge: true });
+      toast({ title: "Fondo actualizado" });
     } catch (error) {
       toast({ title: "Error al actualizar", variant: "destructive" });
     } finally {
@@ -228,36 +219,23 @@ export default function DeliveryDashboardPage() {
               <div className="space-y-8">
                 <div className="flex items-start gap-6">
                   <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 shrink-0 shadow-inner"><CheckCircle2 className="w-6 h-6" /></div>
-                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Genera Ganancias</h4><p className="text-xs text-slate-400 font-medium">Aumenta tus ingresos completando misiones locales con total libertad y respaldo tecnológico.</p></div>
+                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Genera Ganancias</h4><p className="text-xs text-slate-400 font-medium">Aumenta tus ingresos completando misiones locales con total libertad.</p></div>
                 </div>
                 <div className="flex items-start gap-6">
                   <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0 shadow-inner"><Zap className="w-6 h-6" /></div>
-                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Control Absoluto</h4><p className="text-xs text-slate-400 font-medium">Tú decides tu horario y tu zona. Sin jefes ni ataduras, solo tú y tu ruta.</p></div>
+                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Control Absoluto</h4><p className="text-xs text-slate-400 font-medium">Tú decides tu horario y tu zona. Sin jefes ni ataduras.</p></div>
                 </div>
               </div>
-
               {isPendingApproval ? (
-                <div className="space-y-6">
-                  <div className="bg-orange-50 border border-orange-100 p-6 rounded-[32px] flex items-center gap-4 animate-pulse">
-                    <Hourglass className="w-8 h-8 text-orange-500" />
-                    <div>
-                      <p className="text-xs font-black uppercase text-orange-600 tracking-widest">Estado: Pendiente</p>
-                      <p className="text-[10px] font-bold text-orange-400 uppercase">Tu solicitud está en revisión</p>
-                    </div>
-                  </div>
-                  <Button disabled className="w-full h-20 rounded-[32px] bg-slate-200 text-slate-400 font-black uppercase tracking-widest gap-3 border-none shadow-none cursor-not-allowed">
-                    SOLICITUD EN PROCESO
-                  </Button>
+                <div className="bg-orange-50 border border-orange-100 p-6 rounded-[32px] flex items-center gap-4 animate-pulse">
+                  <Hourglass className="w-8 h-8 text-orange-500" />
+                  <div><p className="text-xs font-black uppercase text-orange-600 tracking-widest">Estado: Pendiente</p><p className="text-[10px] font-bold text-orange-400 uppercase">Tu solicitud está en revisión</p></div>
                 </div>
               ) : (
                 <Button asChild className="w-full h-20 rounded-[32px] bg-primary text-white font-black uppercase tracking-widest gap-3 border-b-[10px] border-blue-800 shadow-xl active:translate-y-2 active:border-b-0 transition-all">
-                  <Link href={isAdmin && !adminForceWelcome ? '#' : '/delivery/register'}>
-                    {isAdmin && !adminForceWelcome ? "PANEL DE CONTROL ACTIVO" : "QUIERO SER REPARTIDOR"} <ArrowRight className="w-4 h-4" />
-                  </Link>
+                  <Link href="/delivery/register">QUIERO SER REPARTIDOR <ArrowRight className="w-4 h-4" /></Link>
                 </Button>
               )}
-
-              {isAdmin && <Button onClick={() => setAdminForceWelcome(false)} variant="ghost" className="w-full h-12 font-black uppercase text-[10px] tracking-widest text-slate-400">VOLVER AL MONITOR</Button>}
             </Card>
           </div>
         </main>
@@ -277,29 +255,26 @@ export default function DeliveryDashboardPage() {
           <DashboardHeader 
             profile={profile} level={level} stats={stats} 
             isOnline={isOnline} onToggleOnline={() => setIsOnline(!isOnline)} 
-            isAdmin={isAdmin} 
-            dashboardConfig={dashboardConfig} 
-            onImageUpload={handleDashboardImageUpload} 
-            isUploading={isUploadingDashboard}
+            isAdmin={isAdmin} dashboardConfig={dashboardConfig} 
+            onImageUpload={handleDashboardImageUpload} isUploading={isUploadingDashboard}
           />
           <main className="container mx-auto px-4 py-8 max-w-2xl">
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mb-12 space-y-8">
               <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3">
-                <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white">RUTAS LIBRES</TabsTrigger>
-                <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white">ACTIVAS ({rawMy?.length || 0})</TabsTrigger>
-                <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white">INGRESOS</TabsTrigger>
+                <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white uppercase">Radar Rutas</TabsTrigger>
+                <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white uppercase">En Curso ({inUseRentals.length})</TabsTrigger>
+                <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white uppercase">Balance</TabsTrigger>
               </TabsList>
               <TabsContent value="available">
-                {loadingRoutes ? (
-                  <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>
-                ) : (
-                  <RoutesTab isOnline={isOnline} orders={availableOrders} onAccept={handleAcceptOrder} onGoOnline={() => setIsOnline(true)} />
-                )}
+                <RoutesTab isOnline={isOnline} orders={availableOrders} onAccept={handleAcceptOrder} onGoOnline={() => setIsOnline(true)} />
               </TabsContent>
-              <TabsContent value="my-deliveries"><div className="text-center py-20 text-slate-300 font-black uppercase italic tracking-widest">Sin entregas activas</div></TabsContent>
-              <TabsContent value="earnings"><EarningsTab balance={profile?.balance || 0} /></TabsContent>
+              <TabsContent value="my-deliveries">
+                <MyDeliveriesTab rentals={inUseRentals} onUpdateStatus={handleUpdateMissionStatus} />
+              </TabsContent>
+              <TabsContent value="earnings">
+                <EarningsTab balance={profile?.balance || 0} />
+              </TabsContent>
             </Tabs>
-
             <WeeklyChallenge history={history} />
           </main>
         </div>
