@@ -42,9 +42,12 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
     return () => clearInterval(timer);
   }, []);
 
+  // DEFINICIÓN QUIRÚRGICA DE ESTADOS
+  const isAtStore = mission.status === 'at_store';
+  const isMovingToCustomer = mission.status === 'delivered_to_driver';
   const isAtDestination = mission.status === 'at_destination';
   const isInUse = mission.status === 'delivered';
-  const isWithDriver = mission.status === 'delivered_to_driver' || isAtDestination || isInUse;
+  const isWithDriver = isMovingToCustomer || isAtDestination || isInUse;
   
   const parseTimestamp = (ts: any) => {
     if (!ts) return null;

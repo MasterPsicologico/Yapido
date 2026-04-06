@@ -23,6 +23,26 @@ export function MissionHeader({
   isAtDestination, 
   currentTime 
 }: MissionHeaderProps) {
+  
+  // LÓGICA DE ETIQUETA DE ESTADO DINÁMICA
+  const getStatusLabel = () => {
+    if (isInUse) return "EN USO";
+    if (isAtDestination) return "EN DESTINO";
+    if (status === 'delivered_to_driver') return "CON CARGA";
+    if (status === 'at_store') return "EN TIENDA";
+    if (status === 'shipped') return "EN RUTA";
+    return "MISIÓN";
+  };
+
+  const getStatusColor = () => {
+    if (isInUse) return "bg-amber-500";
+    if (isAtDestination) return "bg-blue-500";
+    if (status === 'delivered_to_driver') return "bg-purple-500";
+    if (status === 'at_store') return "bg-primary";
+    if (status === 'shipped') return "bg-orange-500";
+    return "bg-green-500";
+  };
+
   return (
     <div className="h-16 bg-slate-900 flex items-center justify-between px-4 text-white shrink-0 shadow-xl z-20">
       <Button 
@@ -35,12 +55,9 @@ export function MissionHeader({
       </Button>
       
       <div className="flex items-center gap-2">
-        <div className={cn(
-          "w-2 h-2 rounded-full animate-pulse", 
-          isInUse ? "bg-amber-500" : isAtDestination ? "bg-blue-500" : isWithDriver ? "bg-purple-500" : "bg-green-500"
-        )} />
+        <div className={cn("w-2 h-2 rounded-full animate-pulse", getStatusColor())} />
         <span className="text-[9px] font-black uppercase tracking-[0.2em]">
-          {isInUse ? "EN USO" : isAtDestination ? "EN DESTINO" : isWithDriver ? "EN RUTA" : "BUSCANDO"}
+          {getStatusLabel()}
         </span>
       </div>
 

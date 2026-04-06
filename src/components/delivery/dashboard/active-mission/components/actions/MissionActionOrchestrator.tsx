@@ -1,7 +1,7 @@
 
 "use client";
 
-import { CheckCircle2, Navigation, Timer, Camera, Loader2, X, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Navigation, Timer, Camera, Loader2, X, ShieldCheck, Store as StoreIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 
@@ -28,7 +28,18 @@ export function MissionActionOrchestrator({
 }: MissionActionOrchestratorProps) {
   return (
     <section className="space-y-4">
-      {status === 'ready_for_pickup' && (
+      {/* 1. RECIÉN ACEPTADO: IR A TIENDA */}
+      {status === 'shipped' && (
+        <Button 
+          onClick={() => onUpdateStatus('at_store')} 
+          className="w-full h-20 rounded-[32px] bg-orange-500 text-white font-black text-xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all border-b-[8px] border-orange-700 active:border-b-0"
+        >
+          <StoreIcon className="w-7 h-7" /> LLEGUÉ A LA TIENDA
+        </Button>
+      )}
+
+      {/* 2. EN TIENDA: RECOGER EQUIPO */}
+      {status === 'at_store' && (
         <Button 
           onClick={() => onUpdateStatus('delivered_to_driver')} 
           className="w-full h-20 rounded-[32px] bg-primary text-white font-black text-xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all border-b-[8px] border-blue-800 active:border-b-0"
@@ -37,15 +48,17 @@ export function MissionActionOrchestrator({
         </Button>
       )}
 
+      {/* 3. CON EQUIPO: IR AL CLIENTE */}
       {status === 'delivered_to_driver' && (
         <Button 
           onClick={() => onUpdateStatus('at_destination')} 
-          className="w-full h-20 rounded-[32px] bg-blue-600 text-white font-black text-xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all border-b-[8px] border-blue-800 active:border-b-0"
+          className="w-full h-20 rounded-[32px] bg-blue-600 text-white font-black text-xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all border-b-[8px] border-blue-900 active:border-b-0"
         >
           <Navigation className="w-7 h-7" /> LLEGUÉ AL DESTINO
         </Button>
       )}
 
+      {/* 4. EN DESTINO: ENTREGAR E INICIAR USO */}
       {isAtDestination && (
         <div className="space-y-6">
           <Button 
@@ -75,6 +88,7 @@ export function MissionActionOrchestrator({
         </div>
       )}
 
+      {/* 5. EN USO: MODO CUSTODIA */}
       {isInUse && (
         <div className="bg-slate-900 rounded-[36px] p-8 text-center space-y-4 border-2 border-white/5 opacity-60">
           <ShieldCheck className="w-10 h-10 text-primary mx-auto" />
