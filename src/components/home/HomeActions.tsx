@@ -83,17 +83,35 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
   const handleWasherRequest = async (data: any): Promise<string | undefined> => {
     if (!user || !firestore) return;
     try {
+      // Actualizar perfil del usuario con los datos ingresados
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { 
-        displayName: data.customerName, address: data.customerAddress, phoneNumber: data.customerPhone, updatedAt: serverTimestamp() 
+        displayName: data.customerName, 
+        address: data.customerAddress, 
+        phoneNumber: data.customerPhone, 
+        updatedAt: serverTimestamp() 
       });
+
       const docRef = await addDoc(collection(firestore, 'orders'), {
-        customerId: user.uid, customerName: data.customerName, customerPhone: data.customerPhone, 
-        customerAddress: data.customerAddress, type: 'WASHER_RENTAL_REQUEST', status: 'pending', 
-        requestHours: data.requestHours, totalPrice: data.totalPrice, paymentMethod: data.paymentMethod,
-        washerType: data.washerType, floor: data.floor, hasElevator: data.hasElevator,
-        hasStairs: data.hasStairs, stairCount: data.stairCount, createdAt: serverTimestamp(), 
-        updatedAt: serverTimestamp(), participants: [user.uid, 'ADMIN_WASHER_POOL'], 
-        isLogisticsPublic: true, productName: `Alquiler ${data.washerType === 'automatica' ? 'Auto' : 'Semi'} (${data.requestHours}h)`,
+        customerId: user.uid,
+        customerName: data.customerName,
+        customerPhone: data.customerPhone, 
+        customerAddress: data.customerAddress, // PRIVADO
+        customerSector: data.customerSector, // PÚBLICO
+        type: 'WASHER_RENTAL_REQUEST',
+        status: 'pending', 
+        requestHours: data.requestHours,
+        totalPrice: data.totalPrice,
+        paymentMethod: data.paymentMethod,
+        washerType: data.washerType,
+        floor: data.floor,
+        hasElevator: data.hasElevator,
+        hasStairs: data.hasStairs,
+        stairCount: data.stairCount,
+        createdAt: serverTimestamp(), 
+        updatedAt: serverTimestamp(),
+        participants: [user.uid, 'ADMIN_WASHER_POOL'], 
+        isLogisticsPublic: true,
+        productName: `Alquiler ${data.washerType === 'automatica' ? 'Auto' : 'Semi'} (${data.requestHours}h)`,
       });
       return docRef.id;
     } catch (e) {

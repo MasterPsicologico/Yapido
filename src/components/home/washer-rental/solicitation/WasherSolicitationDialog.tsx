@@ -7,16 +7,16 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 
-// IMPORTACIÓN DE COMPONENTES ATÓMICOS
+// Importación de Funciones Atómicas Subdivididas (REPARADO)
 import { SolicitationHeader } from './components/header/SolicitationHeader';
 import { NameField } from './components/identity/NameField';
 import { AddressField } from './components/identity/AddressField';
 import { PhoneField } from './components/identity/PhoneField';
-import { ServiceConfiguration } from './components/service/ServiceConfiguration';
 import { DurationManager } from './components/pricing/DurationManager';
 import { PaymentStrategySelector } from './components/payment/PaymentStrategySelector';
 import { SubmitAction } from './components/actions/SubmitAction';
 import { SuccessProtocol } from './components/actions/SuccessProtocol';
+import { ServiceConfiguration } from './components/service/ServiceConfiguration';
 
 interface WasherSolicitationDialogProps {
   isOpen: boolean;
@@ -29,32 +29,42 @@ interface WasherSolicitationDialogProps {
   onSubmitRequest: (data: any) => Promise<string | undefined>;
 }
 
-export type OrderSubmissionStatus = 'idle' | 'sending' | 'success';
+export type OrderSubmissionStatus = 'idle' | 'sending' | 'success' | 'timeout';
 
 export function WasherSolicitationDialog({
-  isOpen, onOpenChange, isAdmin, profile, pricingConfig, isAnyStoreOpen, onOpenAdminSettings, onSubmitRequest
+  isOpen,
+  onOpenChange,
+  isAdmin,
+  profile,
+  pricingConfig,
+  isAnyStoreOpen,
+  onOpenAdminSettings,
+  onSubmitRequest
 }: WasherSolicitationDialogProps) {
   const router = useRouter();
   
-  // ESTADOS MAESTROS
+  // Estados de Formulario
   const [tempName, setTempName] = useState("");
   const [tempAddress, setTempAddress] = useState("");
+  const [tempSector, setTempSector] = useState("");
   const [tempPhone, setTempPhone] = useState("");
   const [requestHours, setRequestHours] = useState(5);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'digital'>('cash');
   
+  // Detalles Técnicos
   const [washerType, setWasherType] = useState<'automatica' | 'semiautomatica'>('automatica');
   const [floor, setFloor] = useState("1");
   const [hasElevator, setHasElevator] = useState(false);
   const [hasStairs, setHasStairs] = useState(false);
   const [stairCount, setStairCount] = useState(1);
 
+  // Estados de Proceso y Navegación
   const [orderStatus, setOrderStatus] = useState<OrderSubmissionStatus>('idle');
   const [submittedOrderId, setSubmittedOrderId] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
 
-  // SINCRONIZACIÓN DE PERFIL
+  // Inicialización de Perfil
   useEffect(() => {
     if (profile && isOpen && orderStatus === 'idle') {
       setTempName(profile.displayName || "");
@@ -66,7 +76,7 @@ export function WasherSolicitationDialog({
     }
   }, [profile, isOpen, pricingConfig, orderStatus]);
 
-  // REDIRECCIÓN AUTOMÁTICA
+  // LÓGICA DE REDIRECCIÓN AUTOMÁTICA
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (orderStatus === 'success' && submittedOrderId && redirectCountdown > 0) {
@@ -77,7 +87,7 @@ export function WasherSolicitationDialog({
     return () => clearTimeout(timer);
   }, [orderStatus, submittedOrderId, redirectCountdown, router]);
 
-  // CÁLCULO ECONÓMICO
+  // CÁLCULO ECONÓMICO MAESTRO
   const totalPrice = useMemo(() => {
     const config = pricingConfig || {};
     const rate = washerType === 'automatica' ? Number(config.rateAuto || 3500) : Number(config.rateSemi || 3000);
@@ -92,6 +102,7 @@ export function WasherSolicitationDialog({
   }).format(totalPrice);
 
   const handleAdjustHours = (delta: number) => {
+    if (orderStatus !== 'idle') return;
     const minHours = Number(pricingConfig?.minHours || 5);
     const newHours = requestHours + delta;
     if (newHours < minHours) {
@@ -105,17 +116,28 @@ export function WasherSolicitationDialog({
   };
 
   const handleFormSubmit = async () => {
-    if (!tempAddress || !tempPhone || !tempName) {
+    if (!tempAddress || !tempPhone || !tempName || !tempSector) {
       toast({ title: "Datos incompletos", variant: "destructive" });
       return;
     }
+
     setOrderStatus('sending');
     try {
       const orderId = await onSubmitRequest({
-        customerName: tempName, customerAddress: tempAddress, customerPhone: tempPhone,
-        requestHours, totalPrice, paymentMethod, washerType, floor,
-        hasElevator, hasStairs, stairCount
+        customerName: tempName,
+        customerAddress: tempAddress,
+        customerSector: tempSector,
+        customerPhone: tempPhone,
+        requestHours,
+        totalPrice,
+        paymentMethod,
+        washerType,
+        floor,
+        hasElevator,
+        hasStairs,
+        stairCount
       });
+      
       if (orderId) {
         setSubmittedOrderId(orderId);
         setOrderStatus('success');
@@ -136,13 +158,21 @@ export function WasherSolicitationDialog({
           <DialogDescription>Formulario de solicitud sincronizado.</DialogDescription>
         </DialogHeader>
         
-        <SolicitationHeader isAdmin={isAdmin} onOpenAdminSettings={onOpenAdminSettings} onClose={() => onOpenChange(false)} />
+        <SolicitationHeader 
+          isAdmin={isAdmin} 
+          onOpenAdminSettings={onOpenAdminSettings} 
+          onClose={() => onOpenChange(false)} 
+        />
 
         <div className="flex-1 overflow-y-auto no-scrollbar bg-white rounded-t-[40px] mt-2 border-t-4 border-slate-950">
           <div className="max-w-md mx-auto py-8 px-6 space-y-10">
+            
             <div className={cn("space-y-6 transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
               <NameField value={tempName} onChange={setTempName} />
-              <AddressField value={tempAddress} onChange={setTempAddress} />
+              <AddressField 
+                address={tempAddress} onAddressChange={setTempAddress}
+                sector={tempSector} onSectorChange={setTempSector}
+              />
               <PhoneField value={tempPhone} onChange={setTempPhone} />
             </div>
 
@@ -159,27 +189,33 @@ export function WasherSolicitationDialog({
 
             <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
               <DurationManager 
-                requestHours={requestHours} onAdjust={handleAdjustHours}
+                requestHours={requestHours}
+                onAdjust={handleAdjustHours}
                 minHours={Number(pricingConfig?.minHours || 5)}
-                formattedPrice={formattedPrice} flashEffect={flashEffect}
+                formattedPrice={formattedPrice}
+                flashEffect={flashEffect}
               />
             </div>
 
             <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-              <PaymentStrategySelector method={paymentMethod} onChange={setPaymentMethod} />
+              <PaymentStrategySelector 
+                method={paymentMethod}
+                onChange={setPaymentMethod}
+              />
             </div>
 
             {orderStatus === 'success' ? (
               <SuccessProtocol countdown={redirectCountdown} />
             ) : (
               <SubmitAction 
-                isSending={orderStatus === 'sending'} 
-                isAnyStoreOpen={isAnyStoreOpen} 
-                formattedPrice={formattedPrice} 
-                paymentMethod={paymentMethod} 
-                onSubmit={handleFormSubmit} 
+                isSending={orderStatus === 'sending'}
+                isAnyStoreOpen={isAnyStoreOpen}
+                formattedPrice={formattedPrice}
+                paymentMethod={paymentMethod}
+                onSubmit={handleFormSubmit}
               />
             )}
+            
           </div>
         </div>
       </DialogContent>

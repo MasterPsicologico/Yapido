@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Phone, MessageCircle, Navigation } from 'lucide-react';
+import { Lock, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -18,6 +18,7 @@ interface RouteActionsProps {
   customerAddress: string;
   onOpenChat: () => void;
   onOpenOffer: () => void;
+  isUnlocked?: boolean; // Control de revelación post-aceptación
 }
 
 export function RouteActions({ 
@@ -27,49 +28,63 @@ export function RouteActions({
   customerPhone, 
   customerAddress, 
   onOpenChat, 
-  onOpenOffer 
+  onOpenOffer,
+  isUnlocked = false 
 }: RouteActionsProps) {
   
-  const handleWhatsAppOpen = () => {
-    const cleanPhone = customerPhone?.replace(/\D/g, '');
-    const shortId = orderId.slice(-6).toUpperCase();
-    
-    // MENSAJE HUMANIZADO Y ESTRUCTURADO
-    const message = `¡Hola! 👋 Te escribo de parte de la flota de *${storeName}*. Recibimos tu solicitud para el alquiler de lavadora por *${requestHours} horas* en la dirección *${customerAddress}*. (Ref: #${shortId}). ¿Quiero confirmar la solicitud del pedido?`;
-    
-    const url = `https://wa.me/57${cleanPhone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+  const handleWhatsApp = () => {
+    if (!customerPhone) return;
+    const cleanPhone = customerPhone.replace(/\D/g, '');
+    const ref = orderId.slice(-6).toUpperCase();
+    const message = `¡Hola! 👋 Te escribo de parte de la flota de *${storeName}*. Recibí tu solicitud para el alquiler de lavadora por *${requestHours} horas* en la dirección *${customerAddress}* (Ref: #${ref}). ¿Quiero confirmar la solicitud del pedido?`;
+    window.open(`https://wa.me/57${cleanPhone.startsWith('57') ? cleanPhone.slice(2) : cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  return (
-    <div className="grid grid-cols-5 gap-2">
-      <a href={`tel:${customerPhone}`} className="w-full">
-        <Button variant="outline" className="w-full h-12 rounded-xl border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-primary transition-all active:scale-95 shadow-sm">
-          <Phone className="w-4 h-4" />
+  if (!isUnlocked) {
+    return (
+      <div className="grid grid-cols-2 gap-3">
+        {/* BOTÓN DE ESTADO BLOQUEADO: CONTACTOS */}
+        <div className="flex items-center gap-3 px-6 h-12 rounded-xl bg-slate-50 border border-slate-100 opacity-60">
+          <Lock className="w-4 h-4 text-slate-300" />
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">
+            Contactos Bloqueados
+          </span>
+        </div>
+
+        {/* BOTÓN DE CONTRAOFERTA (PERMITIDO SIEMPRE) */}
+        <Button 
+          onClick={onOpenOffer} 
+          variant="outline" 
+          className="w-full h-12 rounded-xl border-primary/20 text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95"
+        >
+          ENVIAR TRATO
         </Button>
-      </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-2">
       <Button 
-        onClick={handleWhatsAppOpen}
-        variant="outline" 
-        className="w-full h-12 rounded-xl border-slate-100 text-[#25d366] hover:bg-[#25d366]/5 transition-all active:scale-95 shadow-sm"
+        onClick={onOpenChat} 
+        variant="ghost" 
+        className="h-12 rounded-xl bg-slate-900 text-white hover:bg-black font-black text-[9px] uppercase tracking-widest gap-2"
       >
-        <WhatsAppIcon className="w-5 h-5" />
+        <MessageCircle className="w-4 h-4 text-primary" /> CHAT
       </Button>
+      
       <Button 
-        onClick={onOpenChat}
-        variant="outline" 
-        className="w-full h-12 rounded-xl border-slate-100 text-primary hover:bg-primary/5 transition-all active:scale-95 shadow-sm"
+        onClick={handleWhatsApp}
+        className="h-12 rounded-xl bg-[#25d366] text-white hover:bg-[#128c7e] font-black text-[9px] uppercase tracking-widest gap-2"
       >
-        <MessageCircle className="w-5 h-5" />
+        <WhatsAppIcon className="w-4 h-4" /> WHATSAPP
       </Button>
+
       <Button 
+        onClick={onOpenOffer} 
         variant="outline" 
-        onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(customerAddress)}`, '_blank')}
-        className="w-full h-12 rounded-xl border-slate-100 text-slate-400 hover:bg-slate-50 hover:text-primary transition-all active:scale-95 shadow-sm"
+        className="h-12 rounded-xl border-slate-200 text-slate-600 font-black text-[9px] uppercase tracking-widest"
       >
-        <Navigation className="w-4 h-4" />
-      </Button>
-      <Button onClick={onOpenOffer} variant="outline" className="w-full h-12 rounded-xl border-primary/20 text-primary hover:bg-primary/5 font-black text-[8px] uppercase tracking-widest shadow-sm transition-all active:scale-95 leading-none px-1">
         TRATO
       </Button>
     </div>
