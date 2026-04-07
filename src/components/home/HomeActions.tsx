@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp, doc, query, where, addDoc } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, query, where } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { compressImage } from '@/lib/image-compression';
@@ -81,9 +81,16 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
   };
 
   const handleWasherRequest = async (data: any): Promise<string | undefined> => {
-    if (!user || !firestore) return;
+    if (!user || !firestore) {
+      toast({ title: "Sesión requerida", description: "Inicia sesión para solicitar.", variant: "destructive" });
+      return undefined;
+    }
+    
     try {
-      // Actualizar perfil del usuario con los datos ingresados
+      // 1. Obtener ID instantáneo para el radar
+      const orderRef = doc(collection(firestore, 'orders'));
+      
+      // 2. Actualizar perfil de forma asíncrona
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { 
         displayName: data.customerName, 
         address: data.customerAddress, 
@@ -91,12 +98,14 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
         updatedAt: serverTimestamp() 
       });
 
-      const docRef = await addDoc(collection(firestore, 'orders'), {
+      // 3. Crear el pedido con la nueva arquitectura de privacidad
+      setDocumentNonBlocking(orderRef, {
+        id: orderRef.id,
         customerId: user.uid,
         customerName: data.customerName,
         customerPhone: data.customerPhone, 
-        customerAddress: data.customerAddress, // PRIVADO (PROTEGIDO)
-        customerSector: data.customerSector,   // PÚBLICO (RADAR)
+        customerAddress: data.customerAddress, // PRIVADO
+        customerSector: data.customerSector,   // PÚBLICO
         type: 'WASHER_RENTAL_REQUEST',
         status: 'pending', 
         requestHours: data.requestHours,
@@ -112,10 +121,11 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
         participants: [user.uid, 'ADMIN_WASHER_POOL'], 
         isLogisticsPublic: true,
         productName: `Alquiler ${data.washerType === 'automatica' ? 'Auto' : 'Semi'} (${data.requestHours}h)`,
-      });
-      return docRef.id;
+      }, { merge: true });
+
+      return orderRef.id;
     } catch (e) {
-      toast({ title: "Error al procesar", variant: "destructive" });
+      toast({ title: "Fallo de conexión", description: "Inténtalo de nuevo.", variant: "destructive" });
       return undefined;
     }
   };

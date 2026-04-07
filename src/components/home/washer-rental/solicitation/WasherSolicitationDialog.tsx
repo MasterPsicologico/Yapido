@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 
-// Importación de Componentes Atómicos por Silos
+// Importación de Componentes Atómicos por Silos - CORREGIDO
 import { SolicitationHeader } from './components/header/SolicitationHeader';
 import { NameField } from './components/identity/NameField';
 import { AddressField } from './components/identity/AddressField';
@@ -113,8 +113,9 @@ export function WasherSolicitationDialog({
   };
 
   const handleFormSubmit = async () => {
-    if (!tempAddress || !tempPhone || !tempName || !tempSector) {
-      toast({ title: "Datos incompletos", description: "Completa todos los campos, incluyendo el sector.", variant: "destructive" });
+    // Validación simplificada para evitar bloqueos silenciosos
+    if (!tempAddress || !tempPhone || !tempName) {
+      toast({ title: "Datos incompletos", description: "Por favor llena tu nombre, teléfono y dirección.", variant: "destructive" });
       return;
     }
 
@@ -123,7 +124,7 @@ export function WasherSolicitationDialog({
       const orderId = await onSubmitRequest({
         customerName: tempName,
         customerAddress: tempAddress,
-        customerSector: tempSector,
+        customerSector: tempSector || "Sector por definir",
         customerPhone: tempPhone,
         requestHours,
         totalPrice,
@@ -139,11 +140,11 @@ export function WasherSolicitationDialog({
         setSubmittedOrderId(orderId);
         setOrderStatus('success');
       } else {
-        throw new Error("Fallo al generar ID");
+        setOrderStatus('idle');
       }
     } catch (e) {
       setOrderStatus('idle');
-      toast({ title: "Error de red", variant: "destructive" });
+      toast({ title: "Error de red", description: "No se pudo conectar con el radar.", variant: "destructive" });
     }
   };
 
@@ -151,8 +152,8 @@ export function WasherSolicitationDialog({
     <Dialog open={isOpen} onOpenChange={(v) => { if (orderStatus === 'idle') onOpenChange(v); }}>
       <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-[#0a0a0a] p-0 overflow-hidden flex flex-col z-[600] animate-in slide-in-from-bottom duration-500 [&>button:last-child]:hidden">
         <DialogHeader className="sr-only">
-          <DialogTitle>Solicitud de Alquiler</DialogTitle>
-          <DialogDescription>Gestión de pedido sincronizada.</DialogDescription>
+          <DialogTitle>Nueva Solicitud Alquiler</DialogTitle>
+          <DialogDescription>Formulario de solicitud sincronizado.</DialogDescription>
         </DialogHeader>
         
         <SolicitationHeader 
