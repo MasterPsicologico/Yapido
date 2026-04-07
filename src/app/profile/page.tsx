@@ -144,27 +144,6 @@ export default function ProfilePage() {
         </div>
 
         <div className="space-y-8 pb-20">
-          {/* CUADERNO DIGITAL DE VENTAS (LINK MAESTRO) */}
-          {isOwner && (
-            <Link href="/admin/manage" className="block">
-              <Card className="border-none rounded-[40px] bg-slate-950 text-white p-8 shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-all">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 rounded-full blur-3xl -mr-24 -mt-24" />
-                <div className="flex items-center justify-between relative z-10">
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-[24px] bg-white/10 flex items-center justify-center border border-white/5 shadow-xl group-hover:bg-primary transition-colors">
-                      <BookOpen className="w-8 h-8 text-primary group-hover:text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black italic uppercase tracking-tighter">Cuaderno Digital</h3>
-                      <p className="text-slate-500 font-bold text-[9px] uppercase tracking-[0.3em] mt-1">Análisis Diario • Semanal • Anual</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-6 h-6 text-slate-700 group-hover:text-white" />
-                </div>
-              </Card>
-            </Link>
-          )}
-
           {profile?.linkedStoreId ? (
             <Card className="border-none rounded-[40px] bg-slate-900 text-white p-8 shadow-2xl overflow-hidden relative group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
