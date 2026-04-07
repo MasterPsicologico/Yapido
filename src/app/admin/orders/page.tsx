@@ -228,6 +228,10 @@ export default function OrdersManagementPage() {
 
       <Dialog open={!!activeOrderId} onOpenChange={() => setActiveOrderId(null)}>
         <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] flex flex-col">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Chat Maestro de Órdenes</DialogTitle>
+            <DialogDescription>Gestión centralizada de comunicación.</DialogDescription>
+          </DialogHeader>
           {activeOrderId && <OrderChat orderId={activeOrderId} orderData={rawOrders?.find(o => o.id === activeOrderId)} onClose={() => setActiveOrderId(null)} />}
         </DialogContent>
       </Dialog>
