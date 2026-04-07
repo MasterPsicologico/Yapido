@@ -1,8 +1,8 @@
-
 "use client";
 
+import { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
-import { TrendingUp, ShieldCheck, Zap, Clock, AlertCircle, ArrowRight } from 'lucide-react';
+import { TrendingUp, ShieldCheck, Zap, Clock, AlertCircle, ArrowRight, Calendar, BarChart3 } from 'lucide-react';
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -15,17 +15,57 @@ interface WasherDashboardProps {
 }
 
 export function WasherDashboard({ stats, store, onOpenSettings }: WasherDashboardProps) {
+  const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('weekly');
   const currencyFormatter = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
   const hasHours = store?.openTime && store?.closeTime;
   const isOpen = checkIsBusinessOpen(store?.openTime, store?.closeTime);
 
+  // Datos simulados para el cuaderno digital (Se conectarían a flows reales)
+  const chartData = useMemo(() => {
+    if (period === 'daily') return [
+      { name: '08:00', monto: 15000 }, { name: '12:00', monto: 45000 }, { name: '16:00', monto: 30000 }, { name: '20:00', monto: 60000 }
+    ];
+    if (period === 'monthly') return [
+      { name: 'Sem 1', monto: 450000 }, { name: 'Sem 2', monto: 620000 }, { name: 'Sem 3', monto: 510000 }, { name: 'Sem 4', monto: 800000 }
+    ];
+    if (period === 'yearly') return [
+      { name: 'Ene', monto: 2500000 }, { name: 'Feb', monto: 3100000 }, { name: 'Mar', monto: 2800000 }, { name: 'Abr', monto: 4200000 }
+    ];
+    return stats.dailyEarnings?.length > 0 ? stats.dailyEarnings : [
+      { name: 'LUN', monto: 85000 }, { name: 'MAR', monto: 120000 }, { name: 'MIE', monto: 95000 }, 
+      { name: 'JUE', monto: 150000 }, { name: 'VIE', monto: 210000 }, { name: 'SAB', monto: 320000 }, { name: 'DOM', monto: 280000 }
+    ];
+  }, [period, stats.dailyEarnings]);
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* GRID DE MÉTRICAS */}
+      {/* CUADERNO DIGITAL: SELECTORES DE PERIODO */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+        {[
+          { id: 'daily', label: 'Diario' },
+          { id: 'weekly', label: 'Semanal' },
+          { id: 'monthly', label: 'Mensual' },
+          { id: 'yearly', label: 'Anual' }
+        ].map(p => (
+          <Button 
+            key={p.id}
+            onClick={() => setPeriod(p.id as any)}
+            variant={period === p.id ? 'default' : 'outline'}
+            className={cn(
+              "rounded-full h-10 px-6 font-black uppercase text-[10px] tracking-widest border-none transition-all",
+              period === p.id ? "bg-primary text-white shadow-lg" : "bg-white text-slate-400 hover:bg-slate-50 shadow-sm"
+            )}
+          >
+            {p.label}
+          </Button>
+        ))}
+      </div>
+
+      {/* GRID DE MÉTRICAS ANALÍTICAS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-none rounded-[40px] bg-slate-950 text-white p-8 shadow-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16" />
-          <p className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-4">Ingresos Netos (95%)</p>
+          <p className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-4">Ingresos Netos ({period})</p>
           <h3 className="text-4xl font-black italic tracking-tighter leading-none">{currencyFormatter.format(stats.totalNet)}</h3>
           <div className="mt-6 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-green-400" />
@@ -38,7 +78,7 @@ export function WasherDashboard({ stats, store, onOpenSettings }: WasherDashboar
           <h3 className="text-4xl font-black italic tracking-tighter leading-none text-red-500">-{currencyFormatter.format(stats.totalPlatform)}</h3>
           <div className="mt-6 flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-primary" />
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Servicio Activo</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Kernel Activo</span>
           </div>
         </Card>
 
@@ -51,6 +91,37 @@ export function WasherDashboard({ stats, store, onOpenSettings }: WasherDashboar
           </div>
         </Card>
       </div>
+
+      {/* GRÁFICO DE ANÁLISIS DE INGRESOS */}
+      <Card className="border-none rounded-[48px] shadow-2xl bg-white p-10 ring-1 ring-black/[0.03]">
+        <div className="flex items-center justify-between mb-10">
+          <div className="space-y-1">
+            <h3 className="text-2xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Análisis de Flujo</h3>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">REPORTE {period.toUpperCase()} EN VIVO</p>
+          </div>
+          <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300">
+            <BarChart3 className="w-6 h-6" />
+          </div>
+        </div>
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }} />
+              <Tooltip 
+                cursor={{ fill: '#f8fafc' }} 
+                contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', fontWeight: 'bold' }}
+              />
+              <Bar dataKey="monto" radius={[10, 10, 0, 0]}>
+                {chartData.map((entry: any, index: number) => (
+                  <Cell key={`cell-${index}`} fill={entry.monto > 0 ? '#3b82f6' : '#f1f5f9'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
 
       {/* CONTROL DE HORARIO MAESTRO */}
       <Card className="border-none rounded-[48px] bg-white p-10 shadow-xl ring-1 ring-black/[0.03] overflow-hidden relative group">
@@ -84,26 +155,6 @@ export function WasherDashboard({ stats, store, onOpenSettings }: WasherDashboar
           >
             {hasHours ? "EDITAR HORARIO" : "CONFIGURAR AHORA"} <ArrowRight className="w-5 h-5" />
           </Button>
-        </div>
-      </Card>
-
-      {/* GRÁFICO DE RENDIMIENTO */}
-      <Card className="border-none rounded-[48px] shadow-2xl bg-white p-10 ring-1 ring-black/[0.03]">
-        <h3 className="text-2xl font-black italic uppercase tracking-tighter text-slate-900 mb-10">Rendimiento Semanal</h3>
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={stats.dailyEarnings}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }} />
-              <Tooltip cursor={{ fill: '#f8fafc' }} />
-              <Bar dataKey="monto" radius={[8, 8, 0, 0]}>
-                {stats.dailyEarnings.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={entry.monto > 0 ? '#3b82f6' : '#f1f5f9'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
         </div>
       </Card>
     </div>

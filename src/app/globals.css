@@ -25,27 +25,6 @@
     --ring: 215 88% 60%;
     --radius: 0.75rem;
   }
-  .dark {
-    --background: 215 50% 5%;
-    --foreground: 210 40% 98%;
-    --card: 215 50% 10%;
-    --card-foreground: 210 40% 98%;
-    --popover: 215 50% 10%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 215 88% 65%;
-    --primary-foreground: 215 50% 10%;
-    --secondary: 185 93% 45%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 215 30% 20%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 185 93% 45%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 215 30% 25%;
-    --input: 215 30% 25%;
-    --ring: 215 88% 65%;
-  }
 }
 
 @layer base {
@@ -57,24 +36,10 @@
   }
 }
 
-@keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
 @keyframes progress-loading {
   0% { width: 0%; transform: translateX(-100%); }
   50% { width: 70%; transform: translateX(0%); }
   100% { width: 100%; transform: translateX(100%); }
-}
-
-@keyframes vibrate {
-  0% { transform: translate(0); }
-  25% { transform: translate(-2px, 2px); }
-  50% { transform: translate(2px, -2px); }
-  75% { transform: translate(-2px, -2px); }
-  100% { transform: translate(0); }
 }
 
 @keyframes shimmer {
@@ -83,53 +48,40 @@
   100% { transform: translateX(150%) skewX(-45deg); }
 }
 
-/* EFECTO DE VIBRACIÓN MECÁNICA FUERTE */
 @keyframes shake-strong {
   0%, 100% { transform: translateX(0); }
   10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
   20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
 
-/* ILUMINACIÓN VERDE EXPANSIVA */
-@keyframes glow-green-border {
-  0% { box-shadow: inset 0 0 0 rgba(34, 197, 94, 0), 0 0 0 rgba(34, 197, 94, 0); }
-  50% { box-shadow: inset 0 0 80px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.6); }
-  100% { box-shadow: inset 0 0 0 rgba(34, 197, 94, 0), 0 0 0 rgba(34, 197, 94, 0); }
-}
-
-/* ILUMINACIÓN ROJA EXPANSIVA */
-@keyframes glow-red-border {
-  0% { box-shadow: inset 0 0 0 rgba(239, 68, 68, 0), 0 0 0 rgba(239, 68, 68, 0); }
-  50% { box-shadow: inset 0 0 80px rgba(239, 68, 68, 0.8), 0 0 40px rgba(239, 68, 68, 0.6); }
-  100% { box-shadow: inset 0 0 0 rgba(239, 68, 68, 0), 0 0 0 rgba(239, 68, 68, 0); }
+/* ANIMACIÓN DE ALERTA ROJA EXPANSIVA PARA SEGUNDO PLANO */
+@keyframes pulse-red-glow {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); 
+    border-color: rgba(239, 68, 68, 0.1);
+    background-color: white;
+  }
+  50% { 
+    box-shadow: 0 0 25px 5px rgba(239, 68, 68, 0.4); 
+    border-color: rgba(239, 68, 68, 0.8);
+    background-color: rgba(254, 242, 242, 1);
+  }
 }
 
 .animate-shimmer {
   animation: shimmer 3s infinite ease-in-out;
 }
 
-.animate-gradient {
-  animation: gradient 3s ease infinite;
-}
-
 .animate-progress-loading {
   animation: progress-loading 2s ease-in-out infinite;
-}
-
-.animate-vibrate {
-  animation: vibrate 0.2s linear infinite;
 }
 
 .animate-shake-strong {
   animation: shake-strong 0.6s cubic-bezier(.36,.07,.19,.97) both;
 }
 
-.animate-glow-green-strong {
-  animation: glow-green-border 1.5s ease-in-out forwards;
-}
-
-.animate-glow-red-strong {
-  animation: glow-red-border 1.5s ease-in-out forwards;
+.animate-pulse-red-glow {
+  animation: pulse-red-glow 2s infinite;
 }
 
 .no-scrollbar::-webkit-scrollbar {

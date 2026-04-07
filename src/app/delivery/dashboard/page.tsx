@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -11,12 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, limit, or } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, limit, or, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { compressImage } from '@/lib/image-compression';
 
-// Componentes Fragmentados
 import { WeeklyChallenge } from '@/components/delivery/weekly-challenge';
 import { DashboardHeader } from '@/components/delivery/dashboard/DashboardHeader';
 import { ActiveMissionView } from '@/components/delivery/dashboard/ActiveMissionView';
@@ -38,34 +36,27 @@ export default function DeliveryDashboardPage() {
   const [releaseLogs, setReleaseLogs] = useState<string[]>([]);
   const [isUploadingDashboard, setIsUploadingDashboard] = useState<'active' | 'inactive' | null>(null);
 
-  // Redirección de onboarding si es necesario
   useEffect(() => {
     if (!loadingProfile && profile?.role === 'repartidor' && profile?.hasSeenApproval === false && !isAdmin) {
       router.replace('/delivery/approved');
     }
   }, [profile, loadingProfile, router, isAdmin]);
 
-  const welcomeConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_welcome'), [firestore]);
-  const { data: welcomeConfig } = useDoc(welcomeConfigRef);
-
   const dashboardConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_dashboard'), [firestore]);
   const { data: dashboardConfig } = useDoc(dashboardConfigRef);
 
-  // Filtro de Órdenes Disponibles (Radar) - Blindado contra errores de permisos
+  const welcomeConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_welcome'), [firestore]);
+  const { data: welcomeConfig } = useDoc(welcomeConfigRef);
+
+  // Radar: Rutas libres
   const allActiveOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isOnline || loadingProfile) return null;
-    
-    const canSeeRadar = isRepartidor || isAdmin;
-    if (!canSeeRadar) return null;
+    if (!isRepartidor && !isAdmin) return null;
 
     const publicConstraint = where('isLogisticsPublic', '==', true);
-    
-    // Si tiene tienda vinculada, puede ver las de su tienda o las públicas
     if (profile?.linkedStoreId) {
-      const storeConstraint = where('storeId', '==', profile.linkedStoreId);
-      return query(collection(firestore, 'orders'), or(publicConstraint, storeConstraint), limit(50));
+      return query(collection(firestore, 'orders'), or(publicConstraint, where('storeId', '==', profile.linkedStoreId)), limit(50));
     }
-    
     return query(collection(firestore, 'orders'), publicConstraint, limit(50));
   }, [firestore, user?.uid, isOnline, profile?.linkedStoreId, isRepartidor, isAdmin, loadingProfile]);
 
@@ -79,19 +70,20 @@ export default function DeliveryDashboardPage() {
     ).sort((a, b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
   }, [rawAllOrders, user?.uid]);
 
-  // Filtro de Mis Entregas (Alineado con regla de participantes)
+  // Filtro de Mis Entregas (Control en Segundo Plano)
+  // Sincronización: Incluye 'picking_up' para el flujo de recogida de dos pasos
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
       collection(firestore, 'orders'), 
       where('participants', 'array-contains', user.uid), 
-      where('status', 'in', ['shipped', 'at_destination', 'delivered'])
+      where('status', 'in', ['shipped', 'at_destination', 'delivered', 'picking_up']),
+      orderBy('updatedAt', 'desc') // Orden cronológico inverso: el último movido arriba
     );
   }, [firestore, user?.uid]);
 
   const { data: rawMy } = useCollection(myDeliveriesQuery);
 
-  // Misión Heroica: Solo bloquea pantalla en trayecto o al llegar
   const activeMission = useMemo(() => 
     rawMy?.find(o => 
       o.deliveryDriverId === user?.uid && 
@@ -101,7 +93,10 @@ export default function DeliveryDashboardPage() {
   );
 
   const inUseRentals = useMemo(() => 
-    rawMy?.filter(o => o.deliveryDriverId === user?.uid && o.status === 'delivered') || [],
+    rawMy?.filter(o => 
+      o.deliveryDriverId === user?.uid && 
+      ['delivered', 'picking_up'].includes(o.status)
+    ) || [],
     [rawMy, user?.uid]
   );
 
@@ -135,8 +130,12 @@ export default function DeliveryDashboardPage() {
     
     if (newStatus === 'delivered') {
       updateData.deliveredAt = serverTimestamp();
-      toast({ title: "¡Lavadora Instalada!", description: "Misión movida a segundo plano." });
+      toast({ title: "¡Instalación Exitosa!", description: "Equipo en uso." });
       setActiveTab("my-deliveries");
+    }
+
+    if (newStatus === 'completed') {
+      toast({ title: "Contrato Finalizado", className: "bg-green-600 text-white" });
     }
     
     updateDocumentNonBlocking(orderRef, updateData);
@@ -150,7 +149,7 @@ export default function DeliveryDashboardPage() {
       isLogisticsPublic: true, updatedAt: serverTimestamp(), participants: arrayRemove(user.uid)
     });
     setIsReleasing(true);
-    setReleaseLogs(["Protocolo de liberación activado..."]);
+    setReleaseLogs(["Iniciando protocolo de liberación..."]);
     try {
       const result = await releaseOrder({
         orderId: activeMission.id, driverId: user.uid, reason,
@@ -159,7 +158,7 @@ export default function DeliveryDashboardPage() {
       });
       setReleaseLogs(prev => [...prev, ...result.agentLogs]);
     } catch (e) {
-      setReleaseLogs(prev => [...prev, "Finalizando procesos..."]);
+      setIsReleasing(false);
     }
   };
 
@@ -180,14 +179,13 @@ export default function DeliveryDashboardPage() {
   if (loadingProfile) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
 
   const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
-  const isPendingApproval = profile?.deliveryRequested === true && profile?.role !== 'repartidor';
 
   if (!isConfirmedRepartidor) {
     return (
       <div className="flex flex-col min-h-screen bg-[#f8fafc]">
         <Navbar />
-        <main className="flex-1 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-          <div className="relative w-full aspect-[16/10] mb-2 overflow-hidden shadow-xl">
+        <main className="flex-1 w-full pb-20">
+          <div className="relative w-full aspect-[16/10] overflow-hidden shadow-xl">
             {welcomeConfig?.backgroundImage ? (
               <Image src={welcomeConfig.backgroundImage} alt="Portada" fill className="object-cover object-top" priority />
             ) : (
@@ -199,23 +197,16 @@ export default function DeliveryDashboardPage() {
               <div className="space-y-8">
                 <div className="flex items-start gap-6">
                   <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 shrink-0 shadow-inner"><CheckCircle2 className="w-6 h-6" /></div>
-                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Genera Ganancias</h4><p className="text-xs text-slate-400 font-medium">Aumenta tus ingresos completando misiones locales.</p></div>
+                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic">Genera Ganancias</h4><p className="text-xs text-slate-400 font-medium">Aumenta tus ingresos completando misiones.</p></div>
                 </div>
                 <div className="flex items-start gap-6">
                   <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0 shadow-inner"><Zap className="w-6 h-6" /></div>
-                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic tracking-tighter">Control Absoluto</h4><p className="text-xs text-slate-400 font-medium">Tú decides tu horario y tu zona.</p></div>
+                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic">Control Absoluto</h4><p className="text-xs text-slate-400 font-medium">Tú decides tu horario y tu zona.</p></div>
                 </div>
               </div>
-              {isPendingApproval ? (
-                <div className="bg-orange-50 border border-orange-100 p-6 rounded-[32px] flex items-center gap-4 animate-pulse">
-                  <Hourglass className="w-8 h-8 text-orange-500" />
-                  <div><p className="text-xs font-black uppercase text-orange-600 tracking-widest">Estado: Pendiente</p><p className="text-[10px] font-bold text-orange-400 uppercase">Tu solicitud está en revisión</p></div>
-                </div>
-              ) : (
-                <Button asChild className="w-full h-20 rounded-[32px] bg-primary text-white font-black uppercase tracking-widest gap-3 border-b-[10px] border-blue-800 shadow-xl active:translate-y-2 active:border-b-0 transition-all">
-                  <Link href="/delivery/register">QUIERO SER REPARTIDOR <ArrowRight className="w-4 h-4" /></Link>
-                </Button>
-              )}
+              <Button asChild className="w-full h-20 rounded-[32px] bg-primary text-white font-black uppercase text-sm tracking-widest gap-3 border-b-[10px] border-blue-800 shadow-xl active:translate-y-2 active:border-b-0 transition-all">
+                <Link href="/delivery/register">QUIERO SER REPARTIDOR <ArrowRight className="w-4 h-4" /></Link>
+              </Button>
             </Card>
           </div>
         </main>
@@ -246,18 +237,14 @@ export default function DeliveryDashboardPage() {
           />
           <main className="container mx-auto px-4 py-8 max-w-2xl">
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mb-12 space-y-8">
-              <div className="w-full overflow-x-auto no-scrollbar">
-                <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full min-w-[320px] grid grid-cols-3">
-                  <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white uppercase">Radar Rutas</TabsTrigger>
-                  <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white uppercase relative">
-                    En Curso
-                    {inUseRentals.length > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-black animate-in zoom-in">{inUseRentals.length}</span>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white uppercase">Balance</TabsTrigger>
-                </TabsList>
-              </div>
+              <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3">
+                <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white uppercase">Radar Rutas</TabsTrigger>
+                <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white uppercase relative">
+                  En Curso
+                  {inUseRentals.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-black">{inUseRentals.length}</span>}
+                </TabsTrigger>
+                <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white uppercase">Balance</TabsTrigger>
+              </TabsList>
               <TabsContent value="available">
                 <RoutesTab isOnline={isOnline} orders={availableOrders} onAccept={handleAcceptOrder} onGoOnline={() => setIsOnline(true)} />
               </TabsContent>
