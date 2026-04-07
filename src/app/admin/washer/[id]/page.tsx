@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -86,19 +85,19 @@ export default function WasherAdminPage() {
           </Button>
           
           <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-slate-900 rounded-[32px] flex items-center justify-center text-white shadow-2xl relative border border-white/5">
-              <Zap className="w-10 h-10 text-primary animate-pulse" />
-              <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-[#f8fafc] flex items-center justify-center"><ShieldCheck className="w-4 h-4 text-white" /></div>
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-900 rounded-[24px] sm:rounded-[32px] flex items-center justify-center text-white shadow-2xl relative border border-white/5">
+              <Zap className="w-8 h-8 sm:w-10 sm:h-10 text-primary animate-pulse" />
+              <div className="absolute -top-2 -right-2 w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full border-4 border-[#f8fafc] flex items-center justify-center"><ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 text-white" /></div>
             </div>
             <div className="space-y-1">
-              <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900">Consola de Mando</h1>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-1">{store?.name?.toUpperCase()}</p>
+              <h1 className="text-3xl sm:text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900">Consola de Mando</h1>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.4em] ml-1">{store?.name?.toUpperCase()}</p>
             </div>
           </div>
         </div>
 
-        {/* NAVEGACIÓN DE PESTAÑAS */}
-        <div className="flex gap-2 bg-white p-1.5 rounded-full shadow-sm border border-slate-100 w-fit overflow-x-auto no-scrollbar">
+        {/* NAVEGACIÓN DE PESTAÑAS - CORREGIDO PARA MÓVIL */}
+        <div className="flex gap-2 bg-white p-1.5 rounded-full shadow-sm border border-slate-100 w-full overflow-x-auto no-scrollbar whitespace-nowrap">
           {[
             { id: 'stats', label: 'Dashboard' },
             { id: 'active', label: 'Alquileres Activos' },
@@ -109,7 +108,7 @@ export default function WasherAdminPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)} 
               variant={activeTab === tab.id ? 'default' : 'ghost'} 
-              className="rounded-full h-10 text-[9px] font-black uppercase px-5 tracking-widest"
+              className="rounded-full h-10 text-[9px] font-black uppercase px-5 tracking-widest shrink-0"
             >
               {tab.label}
             </Button>

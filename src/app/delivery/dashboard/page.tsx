@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -245,16 +244,18 @@ export default function DeliveryDashboardPage() {
           />
           <main className="container mx-auto px-4 py-8 max-w-2xl">
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mb-12 space-y-8">
-              <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3">
-                <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white uppercase">Radar Rutas</TabsTrigger>
-                <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white uppercase relative">
-                  En Curso
-                  {inUseRentals.length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-black animate-in zoom-in">{inUseRentals.length}</span>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white uppercase">Balance</TabsTrigger>
-              </TabsList>
+              <div className="w-full overflow-x-auto no-scrollbar">
+                <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full min-w-[320px] grid grid-cols-3">
+                  <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white uppercase">Radar Rutas</TabsTrigger>
+                  <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white uppercase relative">
+                    En Curso
+                    {inUseRentals.length > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-black animate-in zoom-in">{inUseRentals.length}</span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white uppercase">Balance</TabsTrigger>
+                </TabsList>
+              </div>
               <TabsContent value="available">
                 <RoutesTab isOnline={isOnline} orders={availableOrders} onAccept={handleAcceptOrder} onGoOnline={() => setIsOnline(true)} />
               </TabsContent>
