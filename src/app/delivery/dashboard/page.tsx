@@ -3,6 +3,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Navbar } from '@/components/layout/Navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, CheckCircle2, Zap, ArrowRight, Hourglass } from 'lucide-react';
@@ -24,9 +25,6 @@ import { EarningsTab } from '@/components/delivery/dashboard/tabs/EarningsTab';
 import { MyDeliveriesTab } from '@/components/delivery/dashboard/tabs/MyDeliveriesTab';
 import { releaseOrder } from '@/ai/flows/release-order-flow';
 import { AgentProgressOverlay } from '@/components/agents/AgentProgressOverlay';
-
-const CACHE_ACTIVE = 'vitriniando_delivery_bg_active';
-const CACHE_INACTIVE = 'vitriniando_delivery_bg_inactive';
 
 export default function DeliveryDashboardPage() {
   const { user } = useUser();
@@ -74,7 +72,7 @@ export default function DeliveryDashboardPage() {
     ).sort((a, b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
   }, [rawAllOrders, user?.uid]);
 
-  // Filtro de Mis Entregas (Activas y en Uso)
+  // Filtro de Mis Entregas
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
@@ -86,8 +84,8 @@ export default function DeliveryDashboardPage() {
 
   const { data: rawMy } = useCollection(myDeliveriesQuery);
 
-  // LOGICA CRITICA: ¿Qué se muestra en pantalla completa?
-  // Solo misiones que requieren transporte o instalación.
+  // LÓGICA CRÍTICA: La tarjeta heroica solo bloquea pantalla en trayecto o llegada
+  // Una vez entregada (delivered), pasa a segundo plano.
   const activeMission = useMemo(() => 
     rawMy?.find(o => 
       o.deliveryDriverId === user?.uid && 
@@ -96,7 +94,7 @@ export default function DeliveryDashboardPage() {
     [rawMy, user?.uid]
   );
 
-  // Alquileres en segundo plano (Ya instalados)
+  // Alquileres en segundo plano (Instalados y activos)
   const inUseRentals = useMemo(() => 
     rawMy?.filter(o => o.deliveryDriverId === user?.uid && o.status === 'delivered') || [],
     [rawMy, user?.uid]
@@ -117,7 +115,8 @@ export default function DeliveryDashboardPage() {
       status: 'shipped', 
       acceptedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      participants: arrayUnion(user.uid)
+      participants: arrayUnion(user.uid),
+      isLogisticsPublic: false
     });
     toast({ title: "Ruta Aceptada" });
   };
@@ -132,7 +131,6 @@ export default function DeliveryDashboardPage() {
     if (newStatus === 'delivered') {
       updateData.deliveredAt = serverTimestamp();
       toast({ title: "¡Lavadora Instalada!", description: "Misión movida a segundo plano." });
-      // Forzamos el cambio de pestaña para que el usuario vea dónde quedó el pedido
       setActiveTab("my-deliveries");
     }
     

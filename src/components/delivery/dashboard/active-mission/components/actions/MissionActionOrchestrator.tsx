@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Navigation, PackageCheck, CheckCircle2 } from 'lucide-react';
+import { Navigation, PackageCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface MissionActionOrchestratorProps {
@@ -15,8 +15,8 @@ interface MissionActionOrchestratorProps {
 }
 
 /**
- * Orquestador de Acciones para la Flota de Aguachica.
- * Simplificado para transiciones rápidas y cierre de tarjeta.
+ * Orquestador de Acciones Logísticas para Aguachica.
+ * Diseñado para transiciones de alta velocidad y liberación inmediata de pantalla.
  */
 export function MissionActionOrchestrator({
   status,
@@ -28,7 +28,7 @@ export function MissionActionOrchestrator({
 
   return (
     <section className="space-y-4">
-      {/* ESTADO 1: SALIENDO DE BASE HACIA EL CLIENTE */}
+      {/* PASO 1: EN CAMINO AL CLIENTE */}
       {isEnRoute && (
         <Button 
           onClick={() => onUpdateStatus('at_destination')} 
@@ -38,7 +38,7 @@ export function MissionActionOrchestrator({
         </Button>
       )}
 
-      {/* ESTADO 2: EN CASA DEL CLIENTE (INSTALACIÓN) */}
+      {/* PASO 2: INSTALACIÓN FINAL (Este botón cierra la tarjeta heroica) */}
       {isAtDestination && (
         <Button 
           onClick={() => onUpdateStatus('delivered')} 
