@@ -95,8 +95,8 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
         customerId: user.uid,
         customerName: data.customerName,
         customerPhone: data.customerPhone, 
-        customerAddress: data.customerAddress, // PRIVADO
-        customerSector: data.customerSector, // PÚBLICO
+        customerAddress: data.customerAddress, // PRIVADO (PROTEGIDO)
+        customerSector: data.customerSector,   // PÚBLICO (RADAR)
         type: 'WASHER_RENTAL_REQUEST',
         status: 'pending', 
         requestHours: data.requestHours,

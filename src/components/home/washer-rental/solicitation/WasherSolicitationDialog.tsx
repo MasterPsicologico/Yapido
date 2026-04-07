@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 
-// Importación de Funciones Atómicas Subdivididas (REPARADO)
+// Importación de Componentes Atómicos por Silos
 import { SolicitationHeader } from './components/header/SolicitationHeader';
 import { NameField } from './components/identity/NameField';
 import { AddressField } from './components/identity/AddressField';
@@ -58,13 +58,12 @@ export function WasherSolicitationDialog({
   const [hasStairs, setHasStairs] = useState(false);
   const [stairCount, setStairCount] = useState(1);
 
-  // Estados de Proceso y Navegación
+  // Estados de Proceso
   const [orderStatus, setOrderStatus] = useState<OrderSubmissionStatus>('idle');
   const [submittedOrderId, setSubmittedOrderId] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
 
-  // Inicialización de Perfil
   useEffect(() => {
     if (profile && isOpen && orderStatus === 'idle') {
       setTempName(profile.displayName || "");
@@ -76,7 +75,6 @@ export function WasherSolicitationDialog({
     }
   }, [profile, isOpen, pricingConfig, orderStatus]);
 
-  // LÓGICA DE REDIRECCIÓN AUTOMÁTICA
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (orderStatus === 'success' && submittedOrderId && redirectCountdown > 0) {
@@ -87,7 +85,6 @@ export function WasherSolicitationDialog({
     return () => clearTimeout(timer);
   }, [orderStatus, submittedOrderId, redirectCountdown, router]);
 
-  // CÁLCULO ECONÓMICO MAESTRO
   const totalPrice = useMemo(() => {
     const config = pricingConfig || {};
     const rate = washerType === 'automatica' ? Number(config.rateAuto || 3500) : Number(config.rateSemi || 3000);
@@ -117,7 +114,7 @@ export function WasherSolicitationDialog({
 
   const handleFormSubmit = async () => {
     if (!tempAddress || !tempPhone || !tempName || !tempSector) {
-      toast({ title: "Datos incompletos", variant: "destructive" });
+      toast({ title: "Datos incompletos", description: "Completa todos los campos, incluyendo el sector.", variant: "destructive" });
       return;
     }
 
@@ -154,8 +151,8 @@ export function WasherSolicitationDialog({
     <Dialog open={isOpen} onOpenChange={(v) => { if (orderStatus === 'idle') onOpenChange(v); }}>
       <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-[#0a0a0a] p-0 overflow-hidden flex flex-col z-[600] animate-in slide-in-from-bottom duration-500 [&>button:last-child]:hidden">
         <DialogHeader className="sr-only">
-          <DialogTitle>Nueva Solicitud Alquiler</DialogTitle>
-          <DialogDescription>Formulario de solicitud sincronizado.</DialogDescription>
+          <DialogTitle>Solicitud de Alquiler</DialogTitle>
+          <DialogDescription>Gestión de pedido sincronizada.</DialogDescription>
         </DialogHeader>
         
         <SolicitationHeader 
