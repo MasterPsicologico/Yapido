@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -5,12 +6,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout/Navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, CheckCircle2, Zap, ArrowRight, Hourglass } from 'lucide-react';
+import { Loader2, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, limit, or, orderBy } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, limit, or } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { compressImage } from '@/lib/image-compression';
@@ -70,34 +71,45 @@ export default function DeliveryDashboardPage() {
     ).sort((a, b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
   }, [rawAllOrders, user?.uid]);
 
-  // Filtro de Mis Entregas (Control en Segundo Plano)
-  // Sincronización: Incluye 'picking_up' para el flujo de recogida de dos pasos
+  // CONSULTA DE ENTREGAS: Optimizada para evitar errores de índices compuestos
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
       collection(firestore, 'orders'), 
       where('participants', 'array-contains', user.uid), 
-      where('status', 'in', ['shipped', 'at_destination', 'delivered', 'picking_up']),
-      orderBy('updatedAt', 'desc') // Orden cronológico inverso: el último movido arriba
+      where('status', 'in', ['shipped', 'at_destination', 'delivered', 'picking_up', 'at_store', 'delivered_to_driver'])
     );
   }, [firestore, user?.uid]);
 
   const { data: rawMy } = useCollection(myDeliveriesQuery);
 
+  // ORDENAMIENTO EN MEMORIA (Seguro y veloz)
+  const sortedMyOrders = useMemo(() => {
+    if (!rawMy) return [];
+    return [...rawMy].sort((a, b) => {
+      const timeA = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
+      const timeB = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
+      return timeB - timeA;
+    });
+  }, [rawMy]);
+
+  // DEFINICIÓN DE MISIÓN ACTIVA (HERÓICA)
+  // Incluye todos los estados de trayecto e instalación
   const activeMission = useMemo(() => 
-    rawMy?.find(o => 
+    sortedMyOrders.find(o => 
       o.deliveryDriverId === user?.uid && 
-      ['shipped', 'at_destination'].includes(o.status)
+      ['shipped', 'at_destination', 'at_store', 'delivered_to_driver'].includes(o.status)
     ),
-    [rawMy, user?.uid]
+    [sortedMyOrders, user?.uid]
   );
 
+  // ALQUILERES EN USO (SEGUNDO PLANO)
   const inUseRentals = useMemo(() => 
-    rawMy?.filter(o => 
+    sortedMyOrders.filter(o => 
       o.deliveryDriverId === user?.uid && 
       ['delivered', 'picking_up'].includes(o.status)
-    ) || [],
-    [rawMy, user?.uid]
+    ),
+    [sortedMyOrders, user?.uid]
   );
 
   const customerRef = useMemoFirebase(() => 
@@ -118,7 +130,7 @@ export default function DeliveryDashboardPage() {
       participants: arrayUnion(user.uid),
       isLogisticsPublic: false
     });
-    toast({ title: "Ruta Aceptada" });
+    toast({ title: "Ruta Aceptada", className: "bg-primary text-white" });
   };
 
   const handleUpdateMissionStatus = (newStatus: string, metadata: any = {}) => {
@@ -237,13 +249,13 @@ export default function DeliveryDashboardPage() {
           />
           <main className="container mx-auto px-4 py-8 max-w-2xl">
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mb-12 space-y-8">
-              <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3">
-                <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white uppercase">Radar Rutas</TabsTrigger>
-                <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white uppercase relative">
+              <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3 overflow-hidden">
+                <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white uppercase truncate">Radar</TabsTrigger>
+                <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white uppercase relative truncate">
                   En Curso
                   {inUseRentals.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-black">{inUseRentals.length}</span>}
                 </TabsTrigger>
-                <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white uppercase">Balance</TabsTrigger>
+                <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white uppercase truncate">Balance</TabsTrigger>
               </TabsList>
               <TabsContent value="available">
                 <RoutesTab isOnline={isOnline} orders={availableOrders} onAccept={handleAcceptOrder} onGoOnline={() => setIsOnline(true)} />
