@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 
-// Importación de Componentes Atómicos por Silos - CORREGIDO
+// Importación de Componentes Atómicos
 import { SolicitationHeader } from './components/header/SolicitationHeader';
 import { NameField } from './components/identity/NameField';
 import { AddressField } from './components/identity/AddressField';
@@ -43,6 +43,12 @@ export function WasherSolicitationDialog({
 }: WasherSolicitationDialogProps) {
   const router = useRouter();
   
+  // Refs para Auto-Scroll Maestro
+  const nameRef = useRef<HTMLDivElement>(null);
+  const phoneRef = useRef<HTMLDivElement>(null);
+  const sectorRef = useRef<HTMLDivElement>(null);
+  const addressRef = useRef<HTMLDivElement>(null);
+
   // Estados de Formulario
   const [tempName, setTempName] = useState("");
   const [tempAddress, setTempAddress] = useState("");
@@ -51,6 +57,9 @@ export function WasherSolicitationDialog({
   const [requestHours, setRequestHours] = useState(5);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'digital'>('cash');
   
+  // Estado de Errores de Validación
+  const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
+
   // Detalles Técnicos
   const [washerType, setWasherType] = useState<'automatica' | 'semiautomatica'>('automatica');
   const [floor, setFloor] = useState("1");
@@ -113,9 +122,39 @@ export function WasherSolicitationDialog({
   };
 
   const handleFormSubmit = async () => {
-    // Validación simplificada para evitar bloqueos silenciosos
-    if (!tempAddress || !tempPhone || !tempName) {
-      toast({ title: "Datos incompletos", description: "Por favor llena tu nombre, teléfono y dirección.", variant: "destructive" });
+    // 1. Limpiar errores previos
+    setFieldErrors({});
+    const newErrors: Record<string, boolean> = {};
+
+    // 2. Validación Quirúrgica
+    if (!tempName.trim()) newErrors.name = true;
+    if (!tempPhone.trim()) newErrors.phone = true;
+    if (!tempSector.trim()) newErrors.sector = true;
+    if (!tempAddress.trim()) newErrors.address = true;
+
+    // 3. Ejecutar Redirección si hay errores
+    if (Object.keys(newErrors).length > 0) {
+      setFieldErrors(newErrors);
+      
+      // Determinar a qué campo hacer scroll (el primero en orden de aparición)
+      let targetRef = null;
+      if (newErrors.name) targetRef = nameRef;
+      else if (newErrors.sector || newErrors.address) {
+        // Scroll al componente de dirección (usando ID manual para mayor precisión)
+        const el = document.getElementById(newErrors.sector ? 'field-sector' : 'field-address');
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      else if (newErrors.phone) targetRef = phoneRef;
+
+      if (targetRef?.current) {
+        targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      toast({ 
+        title: "Campos Requeridos", 
+        description: "Completa la información marcada para continuar.", 
+        variant: "destructive" 
+      });
       return;
     }
 
@@ -124,7 +163,7 @@ export function WasherSolicitationDialog({
       const orderId = await onSubmitRequest({
         customerName: tempName,
         customerAddress: tempAddress,
-        customerSector: tempSector || "Sector por definir",
+        customerSector: tempSector,
         customerPhone: tempPhone,
         requestHours,
         totalPrice,
@@ -163,15 +202,27 @@ export function WasherSolicitationDialog({
         />
 
         <div className="flex-1 overflow-y-auto no-scrollbar bg-white rounded-t-[40px] mt-2 border-t-4 border-slate-950">
-          <div className="max-w-md mx-auto py-8 px-6 space-y-10">
+          <div className="max-w-md mx-auto py-8 px-6 space-y-10 pb-32">
             
             <div className={cn("space-y-6 transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-              <NameField value={tempName} onChange={setTempName} />
+              <NameField 
+                ref={nameRef}
+                value={tempName} 
+                onChange={setTempName} 
+                hasError={fieldErrors.name}
+              />
               <AddressField 
                 address={tempAddress} onAddressChange={setTempAddress}
                 sector={tempSector} onSectorChange={setTempSector}
+                errorSector={fieldErrors.sector}
+                errorAddress={fieldErrors.address}
               />
-              <PhoneField value={tempPhone} onChange={setTempPhone} />
+              <PhoneField 
+                ref={phoneRef}
+                value={tempPhone} 
+                onChange={setTempPhone} 
+                hasError={fieldErrors.phone}
+              />
             </div>
 
             <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
