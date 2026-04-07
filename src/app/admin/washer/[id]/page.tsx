@@ -28,7 +28,7 @@ export default function WasherAdminPage() {
   const params = useParams();
   const id = params?.id as string;
   const router = useRouter();
-  const { user, profile, isLoading: profileLoading } = useProfile();
+  const { user, profile, isAdmin, isLoading: profileLoading } = useProfile();
   const firestore = useFirestore();
   
   const [activeTab, setActiveTab] = useState<'stats' | 'active' | 'drivers' | 'orders'>('stats');
@@ -37,29 +37,31 @@ export default function WasherAdminPage() {
   const storeRef = useMemoFirebase(() => (!firestore || !id) ? null : doc(firestore, 'stores', id), [firestore, id]);
   const { data: store, isLoading: loadingStore } = useDoc(storeRef);
 
-  // QUERY MAESTRA: Pedidos finalizados para historial
+  // QUERY MAESTRA: Pedidos finalizados para historial (Alineada con reglas de Owner)
   const historyQuery = useMemoFirebase(() => {
-    if (!firestore || !id) return null;
+    if (!firestore || !id || !user?.uid) return null;
     return query(
       collection(firestore, 'orders'),
+      where('storeOwnerId', '==', user.uid),
       where('storeId', '==', id),
       where('status', '==', 'completed'),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, id]);
+  }, [firestore, id, user?.uid]);
 
   const { data: history } = useCollection(historyQuery);
 
-  // QUERY MAESTRA: Alquileres vivos para el panel activo (Incluimos todos los estados intermedios)
+  // QUERY MAESTRA: Alquileres vivos para el panel activo (Alineada con reglas de Owner)
   const activeRentalsQuery = useMemoFirebase(() => {
-    if (!firestore || !id) return null;
+    if (!firestore || !id || !user?.uid) return null;
     return query(
       collection(firestore, 'orders'),
+      where('storeOwnerId', '==', user.uid),
       where('storeId', '==', id),
       where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver', 'at_destination', 'delivered']),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, id]);
+  }, [firestore, id, user?.uid]);
 
   const { data: activeRentals } = useCollection(activeRentalsQuery);
 
@@ -95,7 +97,7 @@ export default function WasherAdminPage() {
           </div>
         </div>
 
-        {/* NAVEGACIÓN DE PESTAÑAS ACTUALIZADA */}
+        {/* NAVEGACIÓN DE PESTAÑAS */}
         <div className="flex gap-2 bg-white p-1.5 rounded-full shadow-sm border border-slate-100 w-fit overflow-x-auto no-scrollbar">
           {[
             { id: 'stats', label: 'Dashboard' },
@@ -119,7 +121,6 @@ export default function WasherAdminPage() {
         {activeTab === 'drivers' && <WasherDrivers store={store} />}
         {activeTab === 'orders' && <WasherOrders orders={history} router={router} />}
         
-        {/* RADAR SIEMPRE VISIBLE EN EL FONDO O SEGÚN NECESIDAD */}
         <WasherLiveRadar storeId={id} storeName={store?.name || 'Tienda'} ownerId={store?.ownerId || ''} />
       </main>
     </div>

@@ -31,13 +31,13 @@ export function WasherLiveRadar({ storeId, storeName, ownerId }: WasherLiveRadar
   const firestore = useFirestore();
   const { user } = useUser();
 
-  // Radar: Busca pedidos pendientes que sean públicos o específicos de esta tienda
+  // Radar: Busca pedidos pendientes que sean públicos (Alineado con reglas de seguridad)
   const radarQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, 'orders'),
-      where('status', '==', 'pending'),
-      where('isLogisticsPublic', '==', true)
+      where('isLogisticsPublic', '==', true),
+      where('status', '==', 'pending')
     );
   }, [firestore]);
 
@@ -49,7 +49,6 @@ export function WasherLiveRadar({ storeId, storeName, ownerId }: WasherLiveRadar
     const orderRef = doc(firestore, 'orders', order.id);
     
     // ACEPTACIÓN MAESTRA: Se vincula la tienda y se pone en espera de repartidor
-    // Cambiamos 'shipped' por 'ready_for_pickup' para que el repartidor pueda verla y aceptarla
     updateDocumentNonBlocking(orderRef, {
       status: 'ready_for_pickup', 
       storeId: storeId,
@@ -98,7 +97,7 @@ export function WasherLiveRadar({ storeId, storeName, ownerId }: WasherLiveRadar
                     {req.customerName}
                   </h4>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <MapPin className="w-3 h-3 text-primary" /> {req.customerAddress}
+                    <MapPin className="w-3 h-3 text-primary" /> {req.customerSector || 'Sector por definir'}
                   </p>
                 </div>
                 <div className="text-right">
@@ -139,9 +138,7 @@ export function WasherLiveRadar({ storeId, storeName, ownerId }: WasherLiveRadar
               </div>
 
               <div className="flex gap-2">
-                <Button onClick={() => window.open(`tel:${req.customerPhone}`)} variant="outline" className="flex-1 h-12 rounded-2xl border-slate-100 text-slate-400 hover:bg-slate-50"><Phone className="w-4 h-4" /></Button>
-                <Button onClick={() => window.open(`https://wa.me/57${req.customerPhone?.replace(/\D/g, '')}`)} variant="outline" className="flex-1 h-12 rounded-2xl border-slate-100 text-slate-400 hover:bg-slate-50"><Zap className="w-4 h-4 fill-green-500 text-green-500" /></Button>
-                <Button onClick={() => handleAcceptOrder(req)} className="flex-[3] h-12 rounded-2xl bg-slate-900 text-white font-black uppercase text-xs tracking-widest gap-2 shadow-xl hover:bg-primary transition-all">
+                <Button onClick={() => handleAcceptOrder(req)} className="w-full h-16 rounded-[24px] bg-slate-900 text-white font-black uppercase text-xs tracking-widest gap-3 shadow-xl hover:bg-primary transition-all">
                   <CheckCircle2 className="w-4 h-4" /> ACEPTAR ESTE TRATO
                 </Button>
               </div>

@@ -28,7 +28,7 @@ import { AgentProgressOverlay } from '@/components/agents/AgentProgressOverlay';
 
 export default function DeliveryDashboardPage() {
   const { user } = useUser();
-  const { profile, level, isAdmin, isLoading: loadingProfile } = useProfile();
+  const { profile, level, isAdmin, isRepartidor, isLoading: loadingProfile } = useProfile();
   const firestore = useFirestore();
   const router = useRouter();
   
@@ -51,16 +51,23 @@ export default function DeliveryDashboardPage() {
   const dashboardConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_dashboard'), [firestore]);
   const { data: dashboardConfig } = useDoc(dashboardConfigRef);
 
-  // Filtro de Órdenes Disponibles (Radar)
+  // Filtro de Órdenes Disponibles (Radar) - Blindado contra errores de permisos
   const allActiveOrdersQuery = useMemoFirebase(() => {
-    if (!firestore || !user?.uid || !isOnline) return null;
+    if (!firestore || !user?.uid || !isOnline || loadingProfile) return null;
+    
+    const canSeeRadar = isRepartidor || isAdmin;
+    if (!canSeeRadar) return null;
+
     const publicConstraint = where('isLogisticsPublic', '==', true);
+    
+    // Si tiene tienda vinculada, puede ver las de su tienda o las públicas
     if (profile?.linkedStoreId) {
       const storeConstraint = where('storeId', '==', profile.linkedStoreId);
       return query(collection(firestore, 'orders'), or(publicConstraint, storeConstraint), limit(50));
     }
+    
     return query(collection(firestore, 'orders'), publicConstraint, limit(50));
-  }, [firestore, user?.uid, isOnline, profile?.linkedStoreId]);
+  }, [firestore, user?.uid, isOnline, profile?.linkedStoreId, isRepartidor, isAdmin, loadingProfile]);
 
   const { data: rawAllOrders } = useCollection(allActiveOrdersQuery);
 
@@ -72,7 +79,7 @@ export default function DeliveryDashboardPage() {
     ).sort((a, b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
   }, [rawAllOrders, user?.uid]);
 
-  // Filtro de Mis Entregas
+  // Filtro de Mis Entregas (Alineado con regla de participantes)
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
@@ -84,8 +91,6 @@ export default function DeliveryDashboardPage() {
 
   const { data: rawMy } = useCollection(myDeliveriesQuery);
 
-  // LÓGICA CRÍTICA: La tarjeta heroica solo bloquea pantalla en trayecto o llegada
-  // Una vez entregada (delivered), pasa a segundo plano.
   const activeMission = useMemo(() => 
     rawMy?.find(o => 
       o.deliveryDriverId === user?.uid && 
@@ -94,7 +99,6 @@ export default function DeliveryDashboardPage() {
     [rawMy, user?.uid]
   );
 
-  // Alquileres en segundo plano (Instalados y activos)
   const inUseRentals = useMemo(() => 
     rawMy?.filter(o => o.deliveryDriverId === user?.uid && o.status === 'delivered') || [],
     [rawMy, user?.uid]
