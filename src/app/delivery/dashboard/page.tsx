@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -90,6 +91,7 @@ export default function DeliveryDashboardPage() {
 
   const { data: rawMy } = useCollection(myDeliveriesQuery);
 
+  // Misión Heroica: Solo bloquea pantalla en trayecto o al llegar
   const activeMission = useMemo(() => 
     rawMy?.find(o => 
       o.deliveryDriverId === user?.uid && 
