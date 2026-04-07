@@ -16,20 +16,27 @@ interface AddressFieldProps {
 export function AddressField({ address, onAddressChange, sector, onSectorChange }: AddressFieldProps) {
   return (
     <div className="space-y-6">
-      {/* CAMPO 1: BARRIO / SECTOR (PÚBLICO PARA EL RADAR) */}
+      {/* CAMPO 1: BARRIO / SECTOR (PÚBLICO PARA EL RADAR) - ESTILO DORADO ACTUALIZADO */}
       <div className="space-y-2 group">
         <div className="flex items-center gap-2 ml-4">
-          <Navigation className="w-3 h-3 text-primary animate-pulse" />
+          <Sparkles className="w-3 h-3 text-yellow-600 animate-pulse" />
           <Label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Barrio o Sector (Público)</Label>
         </div>
         <div className="relative overflow-hidden rounded-[24px]">
-          <div className="absolute left-5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 z-10">
+          {/* Capa de Brillo Shimmer */}
+          <div className="absolute -inset-[100%] bg-gradient-to-r from-transparent via-yellow-200/20 to-transparent skew-x-12 animate-shimmer pointer-events-none" />
+          
+          <div className="absolute left-5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-slate-900 shadow-md z-10">
             <Navigation className="w-5 h-5" />
           </div>
+          
           <Input 
             value={sector} 
             onChange={(e) => onSectorChange(e.target.value)} 
-            className="h-16 rounded-[24px] border-2 border-slate-100 pl-16 pr-6 font-bold text-slate-900 text-lg bg-slate-50 focus:bg-white focus:border-primary transition-all"
+            className={cn(
+              "h-16 rounded-[24px] border-2 border-yellow-500/20 pl-16 pr-6 font-black text-slate-900 text-lg transition-all duration-500",
+              "bg-gradient-to-r from-yellow-50/50 to-white focus:bg-white focus:border-yellow-500 focus:shadow-[0_0_25px_rgba(234,179,8,0.2)]"
+            )}
             placeholder="Ej: Barrio El Centro o Sector Norte" 
           />
         </div>
@@ -44,9 +51,11 @@ export function AddressField({ address, onAddressChange, sector, onSectorChange 
         </div>
         <div className="relative overflow-hidden rounded-[24px]">
           <div className="absolute -inset-[100%] bg-gradient-to-r from-transparent via-yellow-200/20 to-transparent skew-x-12 animate-shimmer pointer-events-none" />
+          
           <div className="absolute left-5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-slate-900 shadow-md z-10">
             <MapPin className="w-5 h-5" />
           </div>
+          
           <Input 
             value={address} 
             onChange={(e) => onAddressChange(e.target.value)} 
