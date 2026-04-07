@@ -4,6 +4,7 @@
 import { Settings2 } from 'lucide-react';
 import { WasherTypeSelector } from './WasherTypeSelector';
 import { AccessibilityInputs } from './AccessibilityInputs';
+import { cn } from '@/lib/utils';
 
 interface ServiceConfigurationProps {
   isAdmin: boolean;
@@ -19,27 +20,41 @@ interface ServiceConfigurationProps {
   setStairCount: (v: number) => void;
 }
 
+/**
+ * ServiceConfiguration - Contenedor con ADN Dorado Morrocoy
+ */
 export function ServiceConfiguration({
   isAdmin, washerType, setWasherType, floor, setFloor, hasElevator, setHasElevator, 
   hasStairs, setHasStairs, stairCount, setStairCount
 }: ServiceConfigurationProps) {
   return (
-    <div className="space-y-8 bg-slate-50 p-6 rounded-[32px] border border-slate-100 shadow-inner">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm">
-          <Settings2 className="w-4 h-4" />
+    <div className={cn(
+      "relative space-y-8 overflow-hidden p-8 rounded-[40px] border-2 transition-all duration-500 shadow-xl",
+      "bg-gradient-to-br from-yellow-50/50 via-white to-yellow-50/30 border-yellow-500/20"
+    )}>
+      {/* Efecto Shimmer de fondo */}
+      <div className="absolute -inset-[100%] bg-gradient-to-r from-transparent via-yellow-200/10 to-transparent skew-x-12 animate-shimmer pointer-events-none" />
+
+      <div className="relative z-10 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-slate-950 shadow-md">
+          <Settings2 className="w-5 h-5" />
         </div>
-        <h3 className="font-black text-[10px] uppercase tracking-[0.3em] text-slate-400">Detalles del Servicio</h3>
+        <div>
+          <h3 className="font-black text-[11px] uppercase tracking-[0.3em] text-yellow-700 leading-none italic">Detalles del Servicio</h3>
+          <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Configuración Técnica Élite</p>
+        </div>
       </div>
 
-      <WasherTypeSelector isAdmin={isAdmin} selectedType={washerType} onSelect={setWasherType} />
-      
-      <AccessibilityInputs 
-        floor={floor} setFloor={setFloor} 
-        hasElevator={hasElevator} setHasElevator={setHasElevator}
-        hasStairs={hasStairs} setHasStairs={setHasStairs}
-        stairCount={stairCount} setStairCount={setStairCount}
-      />
+      <div className="relative z-10 space-y-10">
+        <WasherTypeSelector isAdmin={isAdmin} selectedType={washerType} onSelect={setWasherType} />
+        
+        <AccessibilityInputs 
+          floor={floor} setFloor={setFloor} 
+          hasElevator={hasElevator} setHasElevator={setHasElevator}
+          hasStairs={hasStairs} setHasStairs={setHasStairs}
+          stairCount={stairCount} setStairCount={setStairCount}
+        />
+      </div>
     </div>
   );
 }

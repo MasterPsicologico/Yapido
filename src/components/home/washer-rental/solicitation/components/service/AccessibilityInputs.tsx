@@ -23,27 +23,36 @@ export function AccessibilityInputs({
   const stairOptions = [1, 2, 3, 4, 5];
 
   return (
-    <div className="grid gap-6">
-      <div className="grid grid-cols-2 gap-4">
+    <div className="grid gap-8">
+      <div className="grid grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label className="text-[9px] font-black uppercase text-slate-400 ml-2">¿Qué piso?</Label>
-          <div className="relative">
-            <ArrowUpCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+          <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">¿Qué piso?</Label>
+          <div className="relative group">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-slate-950 shadow-sm z-10">
+              <ArrowUpCircle className="w-4 h-4" />
+            </div>
             <input 
               type="number" 
               value={floor} 
               onChange={(e) => setFloor(e.target.value)} 
-              className="w-full h-12 rounded-2xl bg-white border border-slate-200 pl-10 font-black text-sm outline-none focus:ring-2 focus:ring-primary/20"
+              className={cn(
+                "w-full h-14 rounded-2xl pl-14 pr-4 font-black text-sm outline-none transition-all duration-300",
+                "bg-white border-2 border-yellow-500/10 focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/5 shadow-sm"
+              )}
             />
           </div>
         </div>
-        <div className="flex flex-col justify-center items-center gap-2">
-          <Label className="text-[9px] font-black uppercase text-slate-400">¿Hay Ascensor?</Label>
-          <Switch checked={hasElevator} onCheckedChange={setHasElevator} className="data-[state=checked]:bg-primary" />
+        <div className="flex flex-col justify-center items-center gap-3">
+          <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">¿Hay Ascensor?</Label>
+          <Switch 
+            checked={hasElevator} 
+            onCheckedChange={setHasElevator} 
+            className="data-[state=checked]:bg-yellow-500 shadow-lg" 
+          />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1">
         <div className="space-y-4">
           <button 
             onClick={() => {
@@ -51,31 +60,44 @@ export function AccessibilityInputs({
               if (!hasStairs) setStairCount(1);
             }}
             className={cn(
-              "flex items-center justify-between w-full p-4 rounded-2xl border transition-all",
-              hasStairs ? "bg-amber-50 border-amber-200 text-amber-700 shadow-sm" : "bg-white border-slate-100 text-slate-400"
+              "flex items-center justify-between w-full p-5 rounded-[24px] border-2 transition-all duration-500 group",
+              hasStairs 
+                ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]" 
+                : "bg-white border-yellow-500/10 text-slate-400 hover:border-yellow-500/30"
             )}
           >
-            <div className="flex items-center gap-3">
-              <AlertTriangle className={cn("w-5 h-5", hasStairs ? "text-amber-500" : "text-slate-200")} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Hay Escalas / Escaleras</span>
+            <div className="flex items-center gap-4">
+              <div className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center shadow-inner transition-colors",
+                hasStairs ? "bg-white/10 text-yellow-500" : "bg-slate-50 text-slate-300 group-hover:text-yellow-500"
+              )}>
+                <AlertTriangle className={cn("w-5 h-5", hasStairs && "animate-pulse")} />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-[0.15em] italic">Hay Escalas / Escaleras</span>
             </div>
-            <div className={cn("w-2 h-2 rounded-full", hasStairs ? "bg-amber-500 animate-pulse" : "bg-slate-200")} />
+            <div className={cn(
+              "w-2 h-2 rounded-full transition-all duration-500",
+              hasStairs ? "bg-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.8)] scale-125" : "bg-slate-200"
+            )} />
           </button>
 
+          {/* SELECTOR DE TRAMOS DE ESCALERAS - ESTILO ORO */}
           {hasStairs && (
-            <div className="p-4 bg-white rounded-3xl border border-amber-100 animate-in slide-in-from-top-2 duration-300">
-              <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 text-center">¿Cuántos tramos / escalas?</p>
-              <div className="flex justify-between gap-2">
+            <div className="p-5 bg-white rounded-[32px] border-2 border-yellow-500/10 animate-in slide-in-from-top-2 duration-500 shadow-inner">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 text-center">Indique el nivel de dificultad (Tramos)</p>
+              <div className="flex justify-between gap-3">
                 {stairOptions.map((opt) => (
                   <button
                     key={opt}
                     onClick={() => setStairCount(opt)}
                     className={cn(
-                      "flex-1 h-10 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-0.5",
-                      stairCount === opt ? "bg-amber-500 text-white shadow-lg scale-105" : "bg-slate-50 text-slate-400 hover:bg-slate-100"
+                      "flex-1 h-12 rounded-2xl font-black text-sm transition-all duration-300 flex items-center justify-center relative overflow-hidden",
+                      stairCount === opt 
+                        ? "bg-gradient-to-br from-yellow-400 to-yellow-600 text-slate-950 shadow-lg scale-110 z-10" 
+                        : "bg-slate-50 text-slate-400 hover:bg-slate-100"
                     )}
                   >
-                    {opt}{opt === 5 && <Plus className="w-2.5 h-2.5" />}
+                    {opt}{opt === 5 && <Plus className="w-3 h-3 ml-0.5" />}
                   </button>
                 ))}
               </div>
