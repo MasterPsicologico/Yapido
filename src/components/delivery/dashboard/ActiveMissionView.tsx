@@ -3,9 +3,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { format, addHours, differenceInSeconds } from 'date-fns';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, DollarSign, CheckCircle2, Wallet, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { OrderChat } from '@/components/chat/OrderChat';
 import { ReleaseMissionDialog } from './release-mission';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
@@ -33,6 +33,7 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMissionChatOpen, setIsMissionChatOpen] = useState(false);
   const [isReleaseDialogOpen, setIsReleaseDialogOpen] = useState(false);
+  const [isConfirmPaymentOpen, setIsConfirmPaymentOpen] = useState(false);
   const firestore = useFirestore();
 
   useEffect(() => {
@@ -87,10 +88,17 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
       updatedAt: serverTimestamp()
     });
 
-    toast({ 
-      title: `${extra > 0 ? '+' : ''}${extra} Hora ${extra > 0 ? 'añadida' : 'removida'}`, 
-      className: extra > 0 ? "bg-green-600 text-white" : "bg-red-600 text-white"
-    });
+    toast({ title: `${extra > 0 ? '+' : ''}${extra} Hora ${extra > 0 ? 'añadida' : 'removida'}` });
+  };
+
+  const handleInitialInstallClick = () => {
+    setIsConfirmPaymentOpen(true);
+  };
+
+  const handleFinalConfirmPayment = () => {
+    onUpdateStatus('delivered');
+    setIsConfirmPaymentOpen(false);
+    toast({ title: "Ciclo de cobro cerrado", className: "bg-green-600 text-white" });
   };
 
   return (
@@ -137,7 +145,7 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             isAtDestination={mission.status === 'at_destination'}
             isInUse={isInUse}
             isExpired={usageProgress?.isExpired}
-            onUpdateStatus={onUpdateStatus}
+            onUpdateStatus={mission.status === 'at_destination' ? handleInitialInstallClick : onUpdateStatus}
             onStartCamera={() => {}}
             evidencePhoto={null}
           />
@@ -151,6 +159,58 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
           />
         </div>
       </main>
+
+      {/* DIÁLOGO DE CONFIRMACIÓN DE COBRO MAESTRO */}
+      <Dialog open={isConfirmPaymentOpen} onOpenChange={setIsConfirmPaymentOpen}>
+        <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] bg-white z-[500]">
+          <DialogHeader className="items-center text-center space-y-4">
+            <div className="w-20 h-20 bg-green-50 rounded-[28px] flex items-center justify-center text-green-600 shadow-inner">
+              <DollarSign className="w-10 h-10 animate-pulse" />
+            </div>
+            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">
+              Confirmar Cobro
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]">
+              Auditoría de Liquidación Inmediata
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-10 text-center space-y-6">
+            <p className="text-sm font-bold text-slate-500 uppercase tracking-tight">¿Has recibido el pago total del servicio?</p>
+            <div className="bg-slate-900 p-8 rounded-[32px] shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-primary/10 rounded-full blur-2xl" />
+              <p className="text-[9px] font-black text-primary uppercase tracking-[0.4em] mb-2">VALOR A RECAUDAR</p>
+              <h4 className="text-5xl font-black italic tracking-tighter text-white">
+                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(mission.totalPrice || 0)}
+              </h4>
+              <div className="flex justify-center gap-2 mt-4">
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+                  {mission.paymentMethod === 'cash' ? <Wallet className="w-3 h-3 text-yellow-500" /> : <CreditCard className="w-3 h-3 text-blue-400" />}
+                  <span className="text-[8px] font-black uppercase text-white/60">
+                    {mission.paymentMethod === 'cash' ? 'EFECTIVO' : 'DIGITAL'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col gap-3 sm:flex-col">
+            <Button 
+              onClick={handleFinalConfirmPayment}
+              className="w-full h-16 rounded-[24px] bg-green-500 hover:bg-green-600 text-white font-black text-lg uppercase italic tracking-widest gap-3 shadow-xl active:scale-95"
+            >
+              <CheckCircle2 className="w-6 h-6" /> SÍ, HE COBRADO
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsConfirmPaymentOpen(false)}
+              className="text-slate-400 font-black text-[10px] uppercase tracking-widest h-10 rounded-full"
+            >
+              VOLVER Y REVISAR
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isMissionChatOpen} onOpenChange={setIsMissionChatOpen}>
         <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[300] [&>button:last-child]:hidden">
