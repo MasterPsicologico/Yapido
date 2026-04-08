@@ -12,7 +12,6 @@ import {
   ChevronUp, 
   CheckCircle2, 
   Smartphone,
-  MessageCircle,
   History,
   Clock,
   Navigation,
@@ -59,6 +58,16 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
     return () => clearInterval(timer);
   }, []);
 
+  // Bloqueo de scroll del body cuando hay una terminal abierta
+  useEffect(() => {
+    if (expandedId) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [expandedId]);
+
   const monthDays = useMemo(() => {
     const start = startOfMonth(new Date());
     const end = endOfMonth(new Date());
@@ -67,23 +76,17 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
 
   const handleAdjustHours = (orderId: string, extra: number, currentHours: number) => {
     if (!firestore) return;
-    
     if (extra < 0 && currentHours <= 1) {
       toast({ title: "Acción Denegada", description: "Mínimo 1 hora de servicio.", variant: "destructive" });
       return;
     }
-
     const orderRef = doc(firestore, 'orders', orderId);
     updateDocumentNonBlocking(orderRef, {
       requestHours: increment(extra),
       totalPrice: increment(extra * 3500),
       updatedAt: serverTimestamp()
     });
-    
-    toast({ 
-      title: extra > 0 ? "+1 Hora Añadida" : "-1 Hora Removida",
-      className: extra > 0 ? "bg-green-600 text-white" : "bg-red-600 text-white"
-    });
+    toast({ title: extra > 0 ? "+1 Hora Añadida" : "-1 Hora Removida", className: extra > 0 ? "bg-green-600 text-white" : "bg-red-600 text-white" });
   };
 
   const filteredRentals = useMemo(() => {
@@ -125,23 +128,12 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                   onClick={() => setSelectedDate(day)}
                   className={cn(
                     "flex flex-col items-center justify-center min-w-[60px] h-20 rounded-[24px] transition-all duration-500 border-2",
-                    isSelected 
-                      ? "bg-slate-900 border-primary text-white shadow-2xl scale-110 z-10" 
-                      : "bg-white border-slate-100 text-slate-400 hover:border-primary/20 shadow-sm"
+                    isSelected ? "bg-slate-900 border-primary text-white shadow-2xl scale-110 z-10" : "bg-white border-slate-100 text-slate-400 hover:border-primary/20 shadow-sm"
                   )}
                 >
-                  <span className={cn(
-                    "text-[8px] font-black uppercase tracking-widest mb-1",
-                    isSelected ? "text-primary" : "text-slate-300"
-                  )}>
-                    {format(day, "eee", { locale: es })}
-                  </span>
-                  <span className="text-xl font-black italic tracking-tighter leading-none">
-                    {format(day, "d")}
-                  </span>
-                  {isTodayDay && !isSelected && (
-                    <div className="w-1 h-1 rounded-full bg-primary mt-1 animate-pulse" />
-                  )}
+                  <span className={cn("text-[8px] font-black uppercase tracking-widest mb-1", isSelected ? "text-primary" : "text-slate-300")}>{format(day, "eee", { locale: es })}</span>
+                  <span className="text-xl font-black italic tracking-tighter leading-none">{format(day, "d")}</span>
+                  {isTodayDay && !isSelected && <div className="w-1 h-1 rounded-full bg-primary mt-1 animate-pulse" />}
                 </button>
               );
             })}
@@ -152,99 +144,92 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
 
       <div className="grid gap-4">
         <div className="flex items-center justify-between px-4">
-          <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 italic">
-            Control de Campo <span className="text-slate-400 ml-1">/ {format(selectedDate, "dd MMM", { locale: es })}</span>
-          </h3>
-          <Badge className="bg-secondary text-white border-none font-black text-[8px] px-3">
-            {activeCount} ACTIVOS
-          </Badge>
+          <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 italic">Control de Campo <span className="text-slate-400 ml-1">/ {format(selectedDate, "dd MMM", { locale: es })}</span></h3>
+          <Badge className="bg-secondary text-white border-none font-black text-[8px] px-3">{activeCount} ACTIVOS</Badge>
         </div>
 
         {filteredRentals.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-[48px] border-2 border-dashed border-slate-100">
-            <History className="w-16 h-16 mx-auto text-slate-100 mb-4" />
-            <h3 className="text-2xl font-black text-slate-300 uppercase italic tracking-tighter">Sin Operaciones</h3>
-            <p className="text-slate-300 text-[10px] font-bold uppercase tracking-widest mt-2 px-10">
-              No hay registros para la fecha seleccionada.
-            </p>
+            <History className="w-16 h-16 mx-auto text-slate-100 mb-4" /><h3 className="text-2xl font-black text-slate-300 uppercase italic tracking-tighter">Sin Operaciones</h3><p className="text-slate-300 text-[10px] font-bold uppercase tracking-widest mt-2 px-10">No hay registros para la fecha seleccionada.</p>
           </div>
         ) : (
           filteredRentals.map((order) => {
             const isExpanded = expandedId === order.id;
             const isCompleted = order.status === 'completed';
-            
             const deliveredAt = order.deliveredAt?.toDate?.() || (order.deliveredAt?.seconds ? new Date(order.deliveredAt.seconds * 1000) : null);
             const durationHours = order.requestHours || 5;
             const expiryTime = deliveredAt ? addHours(deliveredAt, durationHours) : null;
-            
             const remaining = expiryTime ? differenceInSeconds(expiryTime, now) : 0;
             const isExpired = remaining < 0 && !isCompleted;
             const absRemaining = Math.abs(remaining);
-
             const timeIn = deliveredAt ? format(deliveredAt, "HH:mm") : "--:--";
             const timeOut = expiryTime ? format(expiryTime, "HH:mm") : "--:--";
 
             return (
-              <Card key={order.id} className={cn(
-                "border-none rounded-[32px] overflow-hidden transition-all duration-500 ring-2",
-                "bg-slate-900 shadow-xl", 
-                isExpanded ? "ring-primary/40" : "ring-white/5",
-                isExpired && "animate-pulse-red-glow ring-red-500/50",
-                isCompleted && "ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.4)]"
-              )}>
-                <CardContent className="p-0">
-                  <div 
-                    onClick={() => setExpandedId(isExpanded ? null : order.id)}
-                    className="p-6 flex items-center justify-between cursor-pointer"
-                  >
+              <div key={order.id}>
+                {/* VISTA COMPACTA DE LISTA */}
+                <Card 
+                  onClick={() => setExpandedId(order.id)}
+                  className={cn(
+                    "border-none rounded-[32px] overflow-hidden transition-all duration-500 ring-2 cursor-pointer",
+                    "bg-slate-900 shadow-xl", 
+                    isExpired && "animate-pulse-red-glow ring-red-500/50",
+                    isCompleted && "ring-green-500/50"
+                  )}
+                >
+                  <CardContent className="p-6 flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1 min-w-0">
                       <div className={cn(
                         "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors shadow-inner",
-                        isExpanded ? "bg-primary text-white" : 
-                        isCompleted ? "bg-green-500 text-white shadow-green-200 shadow-xl" :
-                        isExpired ? "bg-red-500 text-white" : "bg-white/10 text-slate-400"
+                        isCompleted ? "bg-green-500 text-white" : isExpired ? "bg-red-500 text-white" : "bg-white/10 text-slate-400"
                       )}>
                         {isCompleted ? <CheckCircle2 className="w-6 h-6 animate-in zoom-in" /> : <Timer className={cn("w-6 h-6", isExpired && "animate-bounce")} />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h4 className="text-lg font-black uppercase italic tracking-tighter leading-none truncate text-white">
-                          {order.customerName}
-                        </h4>
-                        <div className="flex flex-wrap items-center gap-2 mt-1.5 overflow-hidden">
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <Clock className="w-3 h-3 text-slate-500" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                              Inicio: {timeIn}
-                            </span>
-                          </div>
-                          {!isCompleted && (
-                            <>
-                              <div className="w-[1px] h-2 bg-white/10 shrink-0" />
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <Navigation className={cn("w-3 h-3", isExpired ? "text-red-500" : "text-slate-500")} />
-                                <span className={cn("text-[9px] font-black uppercase tracking-widest", isExpired ? "text-red-500 animate-pulse" : "text-slate-400")}>
-                                  Fin: {timeOut}
-                                </span>
-                              </div>
-                            </>
-                          )}
-                          {isCompleted && (
-                            <Badge className="bg-green-500 text-white border-none text-[9px] font-black uppercase px-3 h-6 flex items-center shrink-0">
-                              ENTREGA FINALIZADA
-                            </Badge>
-                          )}
+                        <h4 className="text-lg font-black uppercase italic tracking-tighter leading-none truncate text-white">{order.customerName}</h4>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <Clock className="w-3 h-3 text-slate-500" /><span className="text-[9px] font-black uppercase text-slate-400">Inicio: {timeIn}</span>
+                          {isCompleted && <Badge className="bg-green-500 text-white border-none text-[8px] font-black uppercase px-2 h-5 ml-2">FINALIZADO</Badge>}
                         </div>
                       </div>
                     </div>
-                    {isExpanded ? <ChevronUp className="text-slate-500 shrink-0 ml-2" /> : <ChevronDown className="text-slate-500 shrink-0 ml-2" />}
-                  </div>
+                    <ChevronDown className="text-slate-500" />
+                  </CardContent>
+                </Card>
 
-                  {isExpanded && (
-                    <div className="px-6 pb-8 space-y-8 animate-in slide-in-from-top-2 duration-300">
-                      <div className="h-px bg-white/5 mx-2" />
-                      
-                      {!isCompleted && (
-                        <div className="scale-95 origin-top">
+                {/* VISTA TERMINAL PANTALLA COMPLETA */}
+                {isExpanded && (
+                  <div className="fixed inset-0 z-[600] bg-slate-950 flex flex-col animate-in fade-in zoom-in duration-300">
+                    {/* Header de la Terminal */}
+                    <div className="h-20 bg-slate-900 border-b border-white/5 flex items-center justify-between px-6 shrink-0 shadow-2xl relative z-10">
+                       <div className="flex items-center gap-4">
+                          <div className={cn(
+                            "w-12 h-12 rounded-2xl flex items-center justify-center",
+                            isCompleted ? "bg-green-500 text-white" : isExpired ? "bg-red-500 text-white" : "bg-primary text-white"
+                          )}>
+                            {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : <Timer className="w-6 h-6" />}
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-black uppercase italic tracking-tighter text-white leading-none truncate max-w-[180px]">{order.customerName}</h4>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Terminal de Mando</p>
+                          </div>
+                       </div>
+                       <Button 
+                         variant="ghost" 
+                         size="icon" 
+                         onClick={() => setExpandedId(null)}
+                         className="h-12 w-12 rounded-full bg-white/5 text-white/40 hover:text-red-500 hover:bg-red-500/10 transition-all shadow-xl active:scale-90"
+                       >
+                         <X className="w-6 h-6 stroke-[3]" />
+                       </Button>
+                    </div>
+
+                    {/* Cuerpo de la Terminal con Scroll */}
+                    <ScrollArea className="flex-1 w-full">
+                      <div className="p-6 pb-32 space-y-10 max-w-2xl mx-auto">
+                        <div className="h-1 w-12 bg-white/10 rounded-full mx-auto" />
+                        
+                        {!isCompleted && (
                           <MissionUsageCountdown 
                             progress={{
                               hours: Math.floor(absRemaining / 3600),
@@ -258,76 +243,65 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                             onAddHours={() => handleAdjustHours(order.id, 1, order.requestHours)}
                             onRemoveHour={() => handleAdjustHours(order.id, -1, order.requestHours)}
                           />
-                        </div>
-                      )}
+                        )}
 
-                      <div className="bg-white/5 p-5 rounded-3xl border border-white/5 space-y-3 shadow-inner">
-                        <div className="flex items-center gap-3">
-                          <MapPin className="w-4 h-4 text-primary" />
-                          <span className="text-xs font-bold text-slate-300">{order.customerAddress}</span>
+                        <div className="bg-white/5 p-8 rounded-[40px] border border-white/5 space-y-4 shadow-inner">
+                          <div className="flex items-start gap-4">
+                            <MapPin className="w-6 h-6 text-primary shrink-0 mt-1" />
+                            <span className="text-lg font-black uppercase italic text-slate-200 tracking-tight leading-snug">{order.customerAddress}</span>
+                          </div>
+                          {isCompleted && (
+                            <div className="flex items-center gap-3 pt-4 border-t border-white/5 text-xs font-black text-slate-500 uppercase tracking-widest">
+                              <Zap className="w-4 h-4 text-primary" /> Valor Final: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice || 0)}
+                            </div>
+                          )}
                         </div>
-                        {isCompleted && (
-                          <div className="flex items-center gap-3 pt-2 border-t border-white/5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                            <Zap className="w-3.5 h-3.5 text-primary" /> Valor Final: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice || 0)}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <Button 
+                            onClick={() => window.open(`https://wa.me/57${order.customerPhone.replace(/\D/g, '')}`)}
+                            className="h-16 rounded-[24px] bg-gradient-to-br from-[#fef08a] via-[#eab308] to-[#a16207] text-slate-950 font-black uppercase text-xs tracking-widest gap-3 shadow-xl border-b-4 border-[#854d0e] active:border-b-0 active:translate-y-1 transition-all"
+                          >
+                            <WhatsAppIcon className="w-5 h-5" /> WHATSAPP
+                          </Button>
+                          <Button 
+                            onClick={() => setInternalChatOrder(order)}
+                            className="h-16 rounded-[24px] bg-primary text-white font-black uppercase text-xs tracking-widest gap-3 shadow-xl active:scale-95 transition-all"
+                          >
+                            <MessageSquareText className="w-5 h-5" /> CHAT INTERNO
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            onClick={() => window.open(`tel:${order.customerPhone}`)}
+                            className="h-16 rounded-[24px] border-white/10 bg-white/5 text-white font-black uppercase text-xs tracking-widest gap-3 active:scale-95 transition-all"
+                          >
+                            <Smartphone className="w-5 h-5 text-slate-400" /> LLAMAR
+                          </Button>
+                        </div>
+
+                        {!isCompleted && (
+                          <div className="space-y-6">
+                            <MyDeliveriesActions orderId={order.id} status={order.status} onUpdateStatus={onUpdateStatus} onFinalize={handleFinalizePickUp} />
+                            <PickupNavDetails status={order.status} customerAddress={order.customerAddress} customerSector={order.customerSector} />
                           </div>
                         )}
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {/* WHATSAPP - PREMIUM ORO */}
-                        <Button 
-                          onClick={() => window.open(`https://wa.me/57${order.customerPhone.replace(/\D/g, '')}`)}
-                          className="h-14 rounded-2xl bg-gradient-to-br from-[#fef08a] via-[#eab308] to-[#a16207] text-slate-950 font-black uppercase text-[10px] tracking-widest gap-2 shadow-lg border-b-4 border-[#854d0e] active:border-b-0 active:translate-y-1 transition-all"
-                        >
-                          <WhatsAppIcon className="w-4 h-4" /> WHATSAPP
-                        </Button>
-
-                        {/* CHAT INTERNO - PRIMARY / CYAN */}
-                        <Button 
-                          onClick={() => setInternalChatOrder(order)}
-                          className="h-14 rounded-2xl bg-primary text-white font-black uppercase text-[10px] tracking-widest gap-2 shadow-lg active:scale-95 transition-all"
-                        >
-                          <MessageSquareText className="w-4 h-4" /> CHAT INTERNO
-                        </Button>
-
-                        {/* LLAMAR - SLATE DARK */}
-                        <Button 
-                          variant="outline" 
-                          onClick={() => window.open(`tel:${order.customerPhone}`)}
-                          className="h-14 rounded-2xl border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest gap-2 active:scale-95 transition-all"
-                        >
-                          <Smartphone className="w-4 h-4 text-slate-400" /> LLAMAR
-                        </Button>
-                      </div>
-
-                      {!isCompleted && (
-                        <div className="space-y-4">
-                          <MyDeliveriesActions 
-                            orderId={order.id}
-                            status={order.status}
-                            onUpdateStatus={onUpdateStatus}
-                            onFinalize={handleFinalizePickUp}
-                          />
-                          
-                          <PickupNavDetails 
-                            status={order.status}
-                            customerAddress={order.customerAddress}
-                            customerSector={order.customerSector}
-                          />
+                        
+                        <div className="flex flex-col items-center gap-3 pt-10 opacity-20">
+                          <Zap className="w-6 h-6 text-primary animate-pulse" />
+                          <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white">Vitriniando AI Central • Kernel v1.0.4</p>
                         </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                      </div>
+                    </ScrollArea>
+                  </div>
+                )}
+              </div>
             );
           })
         )}
       </div>
 
-      {/* DIÁLOGO DE CHAT INTERNO */}
       <Dialog open={!!internalChatOrder} onOpenChange={v => !v && setInternalChatOrder(null)}>
-        <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col z-[500]">
+        <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col z-[700] [&>button:last-child]:hidden">
           <DialogHeader className="p-6 border-b shrink-0 flex flex-row items-center justify-between">
             <DialogTitle className="text-xl font-black italic uppercase tracking-tighter">Canal Seguro</DialogTitle>
             <Button variant="ghost" size="icon" onClick={() => setInternalChatOrder(null)}><X className="w-6 h-6" /></Button>
