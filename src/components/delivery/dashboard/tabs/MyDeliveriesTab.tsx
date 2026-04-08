@@ -17,7 +17,9 @@ import {
   Clock,
   Navigation,
   Calendar,
-  Zap
+  Zap,
+  MessageSquareText,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MissionUsageCountdown } from '../active-mission/components/timer/MissionUsageCountdown';
@@ -27,10 +29,18 @@ import { toast } from '@/hooks/use-toast';
 import { format, addHours, differenceInSeconds, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { OrderChat } from '@/components/chat/OrderChat';
 
 // COMPONENTES FRAGMENTADOS ATÓMICAMENTE
 import { MyDeliveriesActions } from './my-deliveries/components/MyDeliveriesActions';
 import { PickupNavDetails } from './my-deliveries/components/PickupNavDetails';
+
+const WhatsAppIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.353-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.131.57-.074 1.758-.706 2.006-1.388.248-.683.248-1.265.173-1.388-.075-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .01 5.393 0 12.03c0 2.123.54 4.197 1.57 6.05L0 24l6.15-1.612a11.81 11.81 0 005.89 1.568h.005c6.634 0 12.04-5.39 12.043-12.03a11.82 11.82 0 00-3.48-8.513z"/>
+  </svg>
+);
 
 interface MyDeliveriesTabProps {
   rentals: any[];
@@ -41,6 +51,7 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [now, setNow] = useState(new Date());
+  const [internalChatOrder, setInternalChatOrder] = useState<any | null>(null);
   const firestore = useFirestore();
 
   useEffect(() => {
@@ -176,7 +187,7 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
             return (
               <Card key={order.id} className={cn(
                 "border-none rounded-[32px] overflow-hidden transition-all duration-500 ring-2",
-                "bg-slate-900 shadow-xl", // FONDO AZUL OSCURO MAESTRO REESTABLECIDO
+                "bg-slate-900 shadow-xl", 
                 isExpanded ? "ring-primary/40" : "ring-white/5",
                 isExpired && "animate-pulse-red-glow ring-red-500/50",
                 isCompleted && "ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.4)]"
@@ -199,7 +210,7 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                         <h4 className="text-lg font-black uppercase italic tracking-tighter leading-none truncate text-white">
                           {order.customerName}
                         </h4>
-                        <div className="flex items-center gap-3 mt-1.5 overflow-hidden">
+                        <div className="flex flex-wrap items-center gap-2 mt-1.5 overflow-hidden">
                           <div className="flex items-center gap-1.5 shrink-0">
                             <Clock className="w-3 h-3 text-slate-500" />
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
@@ -218,7 +229,9 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                             </>
                           )}
                           {isCompleted && (
-                            <Badge className="bg-green-500 text-white border-none text-[7px] font-black uppercase px-2 h-4">ENTREGA FINALIZADA</Badge>
+                            <Badge className="bg-green-500 text-white border-none text-[9px] font-black uppercase px-3 h-6 flex items-center shrink-0">
+                              ENTREGA FINALIZADA
+                            </Badge>
                           )}
                         </div>
                       </div>
@@ -260,12 +273,30 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                         )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <Button variant="outline" onClick={() => window.open(`tel:${order.customerPhone}`)} className="h-14 rounded-2xl border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest gap-2 active:scale-95 transition-all">
-                          <Smartphone className="w-4 h-4 text-primary" /> LLAMAR
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {/* WHATSAPP - PREMIUM ORO */}
+                        <Button 
+                          onClick={() => window.open(`https://wa.me/57${order.customerPhone.replace(/\D/g, '')}`)}
+                          className="h-14 rounded-2xl bg-gradient-to-br from-[#fef08a] via-[#eab308] to-[#a16207] text-slate-950 font-black uppercase text-[10px] tracking-widest gap-2 shadow-lg border-b-4 border-[#854d0e] active:border-b-0 active:translate-y-1 transition-all"
+                        >
+                          <WhatsAppIcon className="w-4 h-4" /> WHATSAPP
                         </Button>
-                        <Button variant="outline" onClick={() => window.open(`https://wa.me/57${order.customerPhone.replace(/\D/g, '')}`)} className="h-14 rounded-2xl border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest gap-2 active:scale-95 transition-all">
-                          <MessageCircle className="w-4 h-4 text-green-500" /> CHAT
+
+                        {/* CHAT INTERNO - PRIMARY / CYAN */}
+                        <Button 
+                          onClick={() => setInternalChatOrder(order)}
+                          className="h-14 rounded-2xl bg-primary text-white font-black uppercase text-[10px] tracking-widest gap-2 shadow-lg active:scale-95 transition-all"
+                        >
+                          <MessageSquareText className="w-4 h-4" /> CHAT INTERNO
+                        </Button>
+
+                        {/* LLAMAR - SLATE DARK */}
+                        <Button 
+                          variant="outline" 
+                          onClick={() => window.open(`tel:${order.customerPhone}`)}
+                          className="h-14 rounded-2xl border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest gap-2 active:scale-95 transition-all"
+                        >
+                          <Smartphone className="w-4 h-4 text-slate-400" /> LLAMAR
                         </Button>
                       </div>
 
@@ -293,6 +324,21 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
           })
         )}
       </div>
+
+      {/* DIÁLOGO DE CHAT INTERNO */}
+      <Dialog open={!!internalChatOrder} onOpenChange={v => !v && setInternalChatOrder(null)}>
+        <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col z-[500]">
+          <DialogHeader className="p-6 border-b shrink-0 flex flex-row items-center justify-between">
+            <DialogTitle className="text-xl font-black italic uppercase tracking-tighter">Canal Seguro</DialogTitle>
+            <Button variant="ghost" size="icon" onClick={() => setInternalChatOrder(null)}><X className="w-6 h-6" /></Button>
+          </DialogHeader>
+          {internalChatOrder && (
+            <div className="flex-1 min-h-0 w-full animate-in zoom-in duration-300">
+              <OrderChat orderId={internalChatOrder.id} orderData={internalChatOrder} onClose={() => setInternalChatOrder(null)} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
