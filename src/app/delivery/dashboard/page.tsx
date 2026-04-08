@@ -71,19 +71,19 @@ export default function DeliveryDashboardPage() {
     ).sort((a, b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
   }, [rawAllOrders, user?.uid]);
 
-  // CONSULTA DE ENTREGAS: Optimizada para evitar errores de índices compuestos
+  // CONSULTA DE ENTREGAS: Incluye 'completed' para el historial diario
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
       collection(firestore, 'orders'), 
       where('participants', 'array-contains', user.uid), 
-      where('status', 'in', ['shipped', 'at_destination', 'delivered', 'picking_up', 'at_store', 'delivered_to_driver'])
+      where('status', 'in', ['shipped', 'at_destination', 'delivered', 'picking_up', 'at_store', 'delivered_to_driver', 'completed'])
     );
   }, [firestore, user?.uid]);
 
   const { data: rawMy } = useCollection(myDeliveriesQuery);
 
-  // ORDENAMIENTO EN MEMORIA (Seguro y veloz)
+  // ORDENAMIENTO EN MEMORIA
   const sortedMyOrders = useMemo(() => {
     if (!rawMy) return [];
     return [...rawMy].sort((a, b) => {
@@ -93,8 +93,7 @@ export default function DeliveryDashboardPage() {
     });
   }, [rawMy]);
 
-  // DEFINICIÓN DE MISIÓN ACTIVA (HERÓICA)
-  // Incluye todos los estados de trayecto e instalación
+  // DEFINICIÓN DE MISIÓN ACTIVA (ESTADOS DE TRAYECTO)
   const activeMission = useMemo(() => 
     sortedMyOrders.find(o => 
       o.deliveryDriverId === user?.uid && 
@@ -103,12 +102,12 @@ export default function DeliveryDashboardPage() {
     [sortedMyOrders, user?.uid]
   );
 
-  // ALQUILERES EN USO (SEGUNDO PLANO)
-  const inUseRentals = useMemo(() => 
+  // CONTEO DE ACTIVOS PARA EL BADGE (SOLO EN USO O RECOGIENDO)
+  const activeBadgeCount = useMemo(() => 
     sortedMyOrders.filter(o => 
       o.deliveryDriverId === user?.uid && 
-      ['delivered', 'picking_up'].includes(o.status)
-    ),
+      ['delivered', 'picking_up', 'shipped', 'at_destination', 'at_store', 'delivered_to_driver'].includes(o.status)
+    ).length,
     [sortedMyOrders, user?.uid]
   );
 
@@ -253,7 +252,7 @@ export default function DeliveryDashboardPage() {
                 <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white uppercase truncate">Radar</TabsTrigger>
                 <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white uppercase relative truncate">
                   En Curso
-                  {inUseRentals.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-black">{inUseRentals.length}</span>}
+                  {activeBadgeCount > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-black">{activeBadgeCount}</span>}
                 </TabsTrigger>
                 <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white uppercase truncate">Balance</TabsTrigger>
               </TabsList>
@@ -261,13 +260,13 @@ export default function DeliveryDashboardPage() {
                 <RoutesTab isOnline={isOnline} orders={availableOrders} onAccept={handleAcceptOrder} onGoOnline={() => setIsOnline(true)} />
               </TabsContent>
               <TabsContent value="my-deliveries">
-                <MyDeliveriesTab rentals={inUseRentals} onUpdateStatus={handleUpdateMissionStatus} />
+                <MyDeliveriesTab rentals={sortedMyOrders} onUpdateStatus={handleUpdateMissionStatus} />
               </TabsContent>
               <TabsContent value="earnings">
                 <EarningsTab balance={profile?.balance || 0} />
               </TabsContent>
             </Tabs>
-            <WeeklyChallenge orders={[]} />
+            <WeeklyChallenge orders={sortedMyOrders} />
           </main>
         </div>
       )}
