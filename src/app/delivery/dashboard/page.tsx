@@ -105,7 +105,6 @@ export default function DeliveryDashboardPage() {
   const sortedMyOrders = useMemo(() => {
     if (!rawMy) return [];
     return [...rawMy].sort((a, b) => {
-      // ESTABILIZACIÓN MAESTRA: El orden se fija por creación para evitar saltos visuales al actualizar estados
       const timeA = a.createdAt?.toMillis?.() || (a.createdAt?.seconds * 1000) || 0;
       const timeB = b.createdAt?.toMillis?.() || (b.createdAt?.seconds * 1000) || 0;
       return timeB - timeA;
@@ -265,13 +264,13 @@ export default function DeliveryDashboardPage() {
           />
           <main className="container mx-auto px-4 py-8 max-w-2xl">
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mb-12 space-y-8">
-              <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3 overflow-hidden">
+              <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3 overflow-visible">
                 <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white uppercase truncate">Radar</TabsTrigger>
                 <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white uppercase relative overflow-visible">
                   <div className="flex items-center justify-center gap-2">
                     <span>En Curso</span>
                     {activeBadgeCount > 0 && (
-                      <span className="w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[9px] font-black shadow-lg animate-in zoom-in shrink-0">
+                      <span className="absolute -top-2 -right-2 min-w-[20px] h-5 px-1 bg-red-500 text-white rounded-full flex items-center justify-center text-[9px] font-black shadow-lg animate-in zoom-in shrink-0 border-2 border-white">
                         {activeBadgeCount}
                       </span>
                     )}
