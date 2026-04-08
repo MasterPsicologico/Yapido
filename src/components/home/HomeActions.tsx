@@ -90,10 +90,11 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
       // 1. Obtener ID instantáneo para el radar
       const orderRef = doc(collection(firestore, 'orders'));
       
-      // 2. Actualizar perfil de forma asíncrona
+      // 2. Actualizar perfil de forma asíncrona - SINCRONIZACIÓN PERMANENTE DE BARRIO
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { 
         displayName: data.customerName, 
         address: data.customerAddress, 
+        sector: data.customerSector,
         phoneNumber: data.customerPhone, 
         updatedAt: serverTimestamp() 
       });

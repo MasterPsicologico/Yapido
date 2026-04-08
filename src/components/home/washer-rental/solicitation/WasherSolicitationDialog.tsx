@@ -77,6 +77,7 @@ export function WasherSolicitationDialog({
     if (profile && isOpen && orderStatus === 'idle') {
       setTempName(profile.displayName || "");
       setTempAddress(profile.address || "");
+      setTempSector(profile.sector || "");
       setTempPhone(profile.phoneNumber || "");
     }
     if (pricingConfig?.minHours && isOpen && orderStatus === 'idle') {
@@ -136,11 +137,9 @@ export function WasherSolicitationDialog({
     if (Object.keys(newErrors).length > 0) {
       setFieldErrors(newErrors);
       
-      // Determinar a qué campo hacer scroll (el primero en orden de aparición)
       let targetRef = null;
       if (newErrors.name) targetRef = nameRef;
       else if (newErrors.sector || newErrors.address) {
-        // Scroll al componente de dirección (usando ID manual para mayor precisión)
         const el = document.getElementById(newErrors.sector ? 'field-sector' : 'field-address');
         el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }

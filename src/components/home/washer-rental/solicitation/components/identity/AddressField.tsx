@@ -24,9 +24,6 @@ export function AddressField({
   errorSector,
   errorAddress
 }: AddressFieldProps) {
-  // Usamos un objeto para pasar las refs desde el padre si fuera necesario, 
-  // pero aquí las manejamos con IDs para el scroll del contenedor si es simple.
-  
   return (
     <div className="space-y-6">
       {/* CAMPO 1: BARRIO / SECTOR (PÚBLICO PARA EL RADAR) */}
@@ -55,7 +52,7 @@ export function AddressField({
             onChange={(e) => onSectorChange(e.target.value)} 
             className={cn(
               "h-16 rounded-[24px] border-2 pl-16 pr-6 font-black text-slate-900 text-lg transition-all duration-500",
-              "bg-gradient-to-r from-yellow-50/50 to-white focus:bg-white",
+              "bg-gradient-to-r from-yellow-50/50 to-white focus:bg-white placeholder:font-medium placeholder:text-slate-400/60",
               errorSector 
                 ? "border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]" 
                 : "border-yellow-500/20 focus:border-yellow-500 focus:shadow-[0_0_25px_rgba(234,179,8,0.2)]"
@@ -91,12 +88,12 @@ export function AddressField({
             onChange={(e) => onAddressChange(e.target.value)} 
             className={cn(
               "h-16 rounded-[24px] border-2 pl-16 pr-6 font-black text-slate-900 text-lg transition-all duration-500",
-              "bg-gradient-to-r from-yellow-50/50 to-white focus:bg-white",
+              "bg-gradient-to-r from-yellow-50/50 to-white focus:bg-white placeholder:font-medium placeholder:text-slate-400/60",
               errorAddress 
                 ? "border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]" 
                 : "border-yellow-500/20 focus:border-yellow-500 focus:shadow-[0_0_25px_rgba(234,179,8,0.2)]"
             )}
-            placeholder="Calle, Número, Casa..." 
+            placeholder="Calle 10 No 23-56" 
           />
         </div>
       </div>
