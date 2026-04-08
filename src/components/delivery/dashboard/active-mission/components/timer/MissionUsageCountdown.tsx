@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -28,8 +29,7 @@ interface MissionUsageCountdownProps {
 
 /**
  * MissionUsageCountdown - Orquestador Atómico: Centro de Control de Tiempo.
- * Mantiene el fondo azul oscuro (slate-950) inalterable.
- * Aplica luminiscencia roja externa cuando el tiempo expira.
+ * Actualizado a fondo Blanco Élite con contraste Slate-900.
  */
 export function MissionUsageCountdown({ progress, onAddHours, onRemoveHour }: MissionUsageCountdownProps) {
   const [pulseColor, setPulseColor] = useState<'none' | 'green' | 'red'>('none');
@@ -45,27 +45,27 @@ export function MissionUsageCountdown({ progress, onAddHours, onRemoveHour }: Mi
   return (
     <section className="animate-in zoom-in duration-500">
       <Card className={cn(
-        "border-none rounded-[48px] p-8 shadow-2xl relative overflow-hidden ring-8 transition-all duration-700 bg-slate-950 text-white",
-        pulseColor === 'green' ? "ring-green-500/40" : 
-        pulseColor === 'red' ? "ring-red-500/40" :
-        progress.isExpired ? "ring-red-500/30 animate-pulse-red-glow" : "ring-amber-500/20"
+        "border-none rounded-[48px] p-8 shadow-2xl relative overflow-hidden ring-8 transition-all duration-700 bg-white text-slate-900",
+        pulseColor === 'green' ? "ring-green-500/20" : 
+        pulseColor === 'red' ? "ring-red-500/20" :
+        progress.isExpired ? "ring-red-500/10 animate-pulse-red-glow" : "ring-amber-500/10"
       )}>
         <div className={cn(
           "absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl -mr-24 -mt-24 transition-colors duration-1000",
-          pulseColor === 'green' ? "bg-green-500/20" :
-          pulseColor === 'red' ? "bg-red-500/20" :
-          progress.isExpired ? "bg-red-500/20" : "bg-amber-500/10"
+          pulseColor === 'green' ? "bg-green-500/5" :
+          pulseColor === 'red' ? "bg-red-500/5" :
+          progress.isExpired ? "bg-red-500/5" : "bg-amber-500/5"
         )} />
         
         <div className="relative z-10 flex flex-col items-center text-center space-y-6">
           <div className="flex flex-col items-center gap-2">
             {progress.isExpired ? (
-              <div className="flex items-center gap-2 bg-red-600 px-4 py-1.5 rounded-full animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.5)]">
+              <div className="flex items-center gap-2 bg-red-600 px-4 py-1.5 rounded-full animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.3)]">
                 <AlertCircle className="w-4 h-4 text-white" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">RECOGER AHORA</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">RECOGER AHORA</span>
               </div>
             ) : (
-              <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.4em] italic">
+              <p className="text-[10px] font-black text-amber-600 uppercase tracking-[0.4em] italic">
                 TIEMPO DE USO ACTIVO
               </p>
             )}

@@ -13,22 +13,22 @@ interface TimerDisplayProps {
 
 /**
  * TimerDisplay - Componente Atómico: El núcleo visual del tiempo.
- * Se ha inyectado soporte para visualización de saldo negativo cuando el tiempo expira.
+ * Ajustado para fondo blanco con tipografía Slate-900.
  */
 export function TimerDisplay({ hours, minutes, seconds, isExpired, pulseColor }: TimerDisplayProps) {
   return (
     <div className="flex flex-baseline gap-2">
       <span className={cn(
         "text-7xl font-black italic tracking-tighter tabular-nums leading-none transition-colors duration-500",
-        pulseColor === 'green' ? "text-green-400" : 
-        pulseColor === 'red' ? "text-red-400" : 
-        isExpired ? "text-red-500" : "text-white"
+        pulseColor === 'green' ? "text-green-600" : 
+        pulseColor === 'red' ? "text-red-600" : 
+        isExpired ? "text-red-600" : "text-slate-900"
       )}>
         {isExpired && "-"}{hours}:{minutes < 10 ? `0${minutes}` : minutes}
       </span>
       <span className={cn(
         "text-sm font-black uppercase tracking-widest self-end mb-1",
-        isExpired ? "text-red-500" : "text-amber-500"
+        isExpired ? "text-red-600" : "text-amber-600"
       )}>
         {seconds < 10 ? `0${seconds}` : seconds}s
       </span>

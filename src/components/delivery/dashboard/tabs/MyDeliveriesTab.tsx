@@ -9,12 +9,10 @@ import {
   Timer, 
   MapPin, 
   ChevronDown, 
-  ChevronUp, 
   CheckCircle2, 
   Smartphone,
   History,
   Clock,
-  Navigation,
   Calendar,
   Zap,
   MessageSquareText,
@@ -58,7 +56,6 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
     return () => clearInterval(timer);
   }, []);
 
-  // Bloqueo de scroll del body cuando hay una terminal abierta
   useEffect(() => {
     if (expandedId) {
       document.body.style.overflow = 'hidden';
@@ -167,12 +164,12 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
 
             return (
               <div key={order.id}>
-                {/* VISTA COMPACTA DE LISTA */}
+                {/* VISTA COMPACTA DE LISTA - FONDO BLANCO */}
                 <Card 
                   onClick={() => setExpandedId(order.id)}
                   className={cn(
                     "border-none rounded-[32px] overflow-hidden transition-all duration-500 ring-2 cursor-pointer",
-                    "bg-slate-900 shadow-xl", 
+                    "bg-white shadow-xl", 
                     isExpired && "animate-pulse-red-glow ring-red-500/50",
                     isCompleted && "ring-green-500/50"
                   )}
@@ -181,36 +178,36 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                     <div className="flex items-center gap-4 flex-1 min-w-0">
                       <div className={cn(
                         "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors shadow-inner",
-                        isCompleted ? "bg-green-500 text-white" : isExpired ? "bg-red-500 text-white" : "bg-white/10 text-slate-400"
+                        isCompleted ? "bg-green-500 text-white" : isExpired ? "bg-red-500 text-white" : "bg-slate-50 text-slate-400"
                       )}>
                         {isCompleted ? <CheckCircle2 className="w-6 h-6 animate-in zoom-in" /> : <Timer className={cn("w-6 h-6", isExpired && "animate-bounce")} />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h4 className="text-lg font-black uppercase italic tracking-tighter leading-none truncate text-white">{order.customerName}</h4>
+                        <h4 className="text-lg font-black uppercase italic tracking-tighter leading-none truncate text-slate-900">{order.customerName}</h4>
                         <div className="flex items-center gap-2 mt-1.5">
-                          <Clock className="w-3 h-3 text-slate-500" /><span className="text-[9px] font-black uppercase text-slate-400">Inicio: {timeIn}</span>
+                          <Clock className="w-3 h-3 text-slate-300" /><span className="text-[9px] font-black uppercase text-slate-400">Inicio: {timeIn}</span>
                           {isCompleted && <Badge className="bg-green-500 text-white border-none text-[8px] font-black uppercase px-2 h-5 ml-2">FINALIZADO</Badge>}
                         </div>
                       </div>
                     </div>
-                    <ChevronDown className="text-slate-500" />
+                    <ChevronDown className="text-slate-300" />
                   </CardContent>
                 </Card>
 
-                {/* VISTA TERMINAL PANTALLA COMPLETA */}
+                {/* VISTA TERMINAL PANTALLA COMPLETA - FONDO BLANCO */}
                 {isExpanded && (
-                  <div className="fixed inset-0 z-[600] bg-slate-950 flex flex-col animate-in fade-in zoom-in duration-300">
+                  <div className="fixed inset-0 z-[600] bg-white flex flex-col animate-in fade-in zoom-in duration-300">
                     {/* Header de la Terminal */}
-                    <div className="h-20 bg-slate-900 border-b border-white/5 flex items-center justify-between px-6 shrink-0 shadow-2xl relative z-10">
+                    <div className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-6 shrink-0 shadow-sm relative z-10">
                        <div className="flex items-center gap-4">
                           <div className={cn(
-                            "w-12 h-12 rounded-2xl flex items-center justify-center",
+                            "w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner",
                             isCompleted ? "bg-green-500 text-white" : isExpired ? "bg-red-500 text-white" : "bg-primary text-white"
                           )}>
                             {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : <Timer className="w-6 h-6" />}
                           </div>
                           <div>
-                            <h4 className="text-xl font-black uppercase italic tracking-tighter text-white leading-none truncate max-w-[180px]">{order.customerName}</h4>
+                            <h4 className="text-xl font-black uppercase italic tracking-tighter text-slate-900 leading-none truncate max-w-[180px]">{order.customerName}</h4>
                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Terminal de Mando</p>
                           </div>
                        </div>
@@ -218,16 +215,16 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                          variant="ghost" 
                          size="icon" 
                          onClick={() => setExpandedId(null)}
-                         className="h-12 w-12 rounded-full bg-white/5 text-white/40 hover:text-red-500 hover:bg-red-500/10 transition-all shadow-xl active:scale-90"
+                         className="h-12 w-12 rounded-full bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-90"
                        >
                          <X className="w-6 h-6 stroke-[3]" />
                        </Button>
                     </div>
 
                     {/* Cuerpo de la Terminal con Scroll */}
-                    <ScrollArea className="flex-1 w-full">
+                    <ScrollArea className="flex-1 w-full bg-[#f8fafc]">
                       <div className="p-6 pb-32 space-y-10 max-w-2xl mx-auto">
-                        <div className="h-1 w-12 bg-white/10 rounded-full mx-auto" />
+                        <div className="h-1 w-12 bg-slate-200 rounded-full mx-auto" />
                         
                         {!isCompleted && (
                           <MissionUsageCountdown 
@@ -245,13 +242,13 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                           />
                         )}
 
-                        <div className="bg-white/5 p-8 rounded-[40px] border border-white/5 space-y-4 shadow-inner">
+                        <div className="bg-white p-8 rounded-[40px] border border-slate-100 space-y-4 shadow-xl">
                           <div className="flex items-start gap-4">
                             <MapPin className="w-6 h-6 text-primary shrink-0 mt-1" />
-                            <span className="text-lg font-black uppercase italic text-slate-200 tracking-tight leading-snug">{order.customerAddress}</span>
+                            <span className="text-lg font-black uppercase italic text-slate-900 tracking-tight leading-snug">{order.customerAddress}</span>
                           </div>
                           {isCompleted && (
-                            <div className="flex items-center gap-3 pt-4 border-t border-white/5 text-xs font-black text-slate-500 uppercase tracking-widest">
+                            <div className="flex items-center gap-3 pt-4 border-t border-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">
                               <Zap className="w-4 h-4 text-primary" /> Valor Final: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice || 0)}
                             </div>
                           )}
@@ -273,7 +270,7 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                           <Button 
                             variant="outline" 
                             onClick={() => window.open(`tel:${order.customerPhone}`)}
-                            className="h-16 rounded-[24px] border-white/10 bg-white/5 text-white font-black uppercase text-xs tracking-widest gap-3 active:scale-95 transition-all"
+                            className="h-16 rounded-[24px] border-slate-200 bg-white text-slate-600 font-black uppercase text-xs tracking-widest gap-3 active:scale-95 transition-all shadow-sm"
                           >
                             <Smartphone className="w-5 h-5 text-slate-400" /> LLAMAR
                           </Button>
@@ -286,9 +283,9 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                           </div>
                         )}
                         
-                        <div className="flex flex-col items-center gap-3 pt-10 opacity-20">
+                        <div className="flex flex-col items-center gap-3 pt-10 opacity-40">
                           <Zap className="w-6 h-6 text-primary animate-pulse" />
-                          <p className="text-[8px] font-black uppercase tracking-[0.5em] text-white">Vitriniando AI Central • Kernel v1.0.4</p>
+                          <p className="text-[8px] font-black uppercase tracking-[0.5em] text-slate-400">Vitriniando AI Central • Kernel v1.0.4</p>
                         </div>
                       </div>
                     </ScrollArea>
@@ -303,8 +300,8 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
       <Dialog open={!!internalChatOrder} onOpenChange={v => !v && setInternalChatOrder(null)}>
         <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col z-[700] [&>button:last-child]:hidden">
           <DialogHeader className="p-6 border-b shrink-0 flex flex-row items-center justify-between">
-            <DialogTitle className="text-xl font-black italic uppercase tracking-tighter">Canal Seguro</DialogTitle>
-            <Button variant="ghost" size="icon" onClick={() => setInternalChatOrder(null)}><X className="w-6 h-6" /></Button>
+            <DialogTitle className="text-xl font-black italic uppercase tracking-tighter text-slate-900">Canal Seguro</DialogTitle>
+            <Button variant="ghost" size="icon" onClick={() => setInternalChatOrder(null)}><X className="w-6 h-6 text-slate-400" /></Button>
           </DialogHeader>
           {internalChatOrder && (
             <div className="flex-1 min-h-0 w-full animate-in zoom-in duration-300">
