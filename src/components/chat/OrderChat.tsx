@@ -184,34 +184,55 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
       {/* Area de Mensajes (Flexible pero Restringida) */}
       <div className="relative overflow-hidden bg-slate-50 min-h-0 flex-1">
         <ScrollArea className="h-full w-full">
-          <div className="p-6 space-y-6">
-            {messages?.map((msg) => {
-              const isMe = msg.senderId === user?.uid;
-              return (
-                <div key={msg.id} className={cn("flex flex-col animate-in fade-in slide-in-from-bottom-2", isMe ? "items-end" : "items-start")}>
-                  <div className={cn("max-w-[85%] p-4 rounded-[24px] shadow-sm", isMe ? "bg-primary text-white rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none border border-slate-100")}>
-                    {!isMe && <p className="text-[10px] font-black uppercase opacity-50 mb-1.5">{msg.senderName}</p>}
-                    {msg.type === 'text' ? (
-                      <p className="text-sm font-semibold leading-relaxed">{msg.text}</p>
-                    ) : (
-                      <div 
-                        className="relative aspect-square w-32 rounded-xl overflow-hidden border border-black/5 bg-slate-100 cursor-pointer group/img active:scale-95 transition-transform"
-                        onClick={() => setFullScreenImage(msg.imageUrl)}
-                      >
-                        <Image src={msg.imageUrl} alt="Evidencia" fill className="object-cover" />
-                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                          <Maximize2 className="w-5 h-5 text-white" />
-                        </div>
-                      </div>
-                    )}
-                    <p className={cn("text-[9px] mt-2 font-bold uppercase opacity-40", isMe ? "text-right" : "text-left")}>
-                      {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), "HH:mm") : '...'}
-                    </p>
+          <div className="p-6 space-y-6 min-h-full flex flex-col">
+            {/* ESTADO VACÍO: PROTOCOLO DE BIENVENIDA */}
+            {(!loadingMessages && (!messages || messages.length === 0)) ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 py-20 animate-in fade-in zoom-in duration-700">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/20 rounded-[32px] animate-ping [animation-duration:3s]" />
+                  <div className="relative w-20 h-20 bg-white rounded-[32px] shadow-2xl flex items-center justify-center border border-slate-100 ring-8 ring-slate-50/50">
+                    <MessageCircle className="w-10 h-10 text-primary animate-pulse" />
                   </div>
                 </div>
-              );
-            })}
-            <div ref={messagesEndRef} className="h-4 w-full" />
+                <div className="space-y-2 px-8">
+                  <h3 className="text-2xl font-black italic uppercase tracking-tighter text-slate-900 leading-tight">
+                    ¿Necesitas ayuda?
+                  </h3>
+                  <p className="text-slate-400 font-black text-[10px] uppercase tracking-[0.3em] italic leading-relaxed">
+                    Pregunta lo que quieras, <br /> estamos en línea para ti
+                  </p>
+                </div>
+                <div className="h-0.5 w-8 bg-primary/20 rounded-full" />
+              </div>
+            ) : (
+              messages?.map((msg) => {
+                const isMe = msg.senderId === user?.uid;
+                return (
+                  <div key={msg.id} className={cn("flex flex-col animate-in fade-in slide-in-from-bottom-2", isMe ? "items-end" : "items-start")}>
+                    <div className={cn("max-w-[85%] p-4 rounded-[24px] shadow-sm", isMe ? "bg-primary text-white rounded-tr-none" : "bg-white text-slate-800 rounded-tl-none border border-slate-100")}>
+                      {!isMe && <p className="text-[10px] font-black uppercase opacity-50 mb-1.5">{msg.senderName}</p>}
+                      {msg.type === 'text' ? (
+                        <p className="text-sm font-semibold leading-relaxed">{msg.text}</p>
+                      ) : (
+                        <div 
+                          className="relative aspect-square w-32 rounded-xl overflow-hidden border border-black/5 bg-slate-100 cursor-pointer group/img active:scale-95 transition-transform"
+                          onClick={() => setFullScreenImage(msg.imageUrl)}
+                        >
+                          <Image src={msg.imageUrl} alt="Evidencia" fill className="object-cover" />
+                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                            <Maximize2 className="w-5 h-5 text-white" />
+                          </div>
+                        </div>
+                      )}
+                      <p className={cn("text-[9px] mt-2 font-bold uppercase opacity-40", isMe ? "text-right" : "text-left")}>
+                        {msg.createdAt?.toDate ? format(msg.createdAt.toDate(), "HH:mm") : '...'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <div ref={messagesEndRef} className="h-4 w-full mt-auto" />
           </div>
         </ScrollArea>
       </div>
@@ -224,7 +245,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
           <Button variant="outline" size="icon" onClick={startCamera} className="rounded-full h-10 w-10 border-slate-200 shrink-0"><Camera className="w-5 h-5 text-slate-400" /></Button>
           <div className="flex-1 relative">
             <Input 
-              placeholder="Mensaje..." 
+              placeholder="Escribe aquí..." 
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !isSending && handleSendMessage({ text, type: 'text' })}
