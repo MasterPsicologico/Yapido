@@ -64,6 +64,7 @@ const STATUS_CONTENT: Record<string, any> = {
 /**
  * VisualNotificationListener - El Especialista en Notificaciones Inmersivas.
  * Monitorea cambios de estado y dispara ventanas de pantalla completa.
+ * REPARADO: Ahora incluye scroll seguro para evitar desbordamiento de botones en móviles.
  */
 export function VisualNotificationListener() {
   const { user } = useUser();
@@ -98,8 +99,7 @@ export function VisualNotificationListener() {
 
           // REGLA MAESTRA: Solo notificar si el estado ha cambiado y es relevante
           if (order.status !== lastStatus && STATUS_CONTENT[order.status]) {
-            // No notificar si el usuario fue quien cambió el estado (si fuera repartidor)
-            // Aquí priorizamos la notificación al CLIENTE
+            // Priorizamos la notificación al CLIENTE
             if (order.customerId === user.uid) {
               setActiveAlert(order);
             }
@@ -123,7 +123,7 @@ export function VisualNotificationListener() {
     setActiveAlert(null);
 
     if (goToOrder) {
-      // REDIRECCIÓN DIRECTA: Inyectamos el ID en el hash para que admin/orders lo abra
+      // REDIRECCIÓN DIRECTA
       window.dispatchEvent(new CustomEvent('order-attended', { detail: { orderId: alertId } }));
       router.push(`/admin/orders#${alertId}`);
     }
@@ -140,61 +140,66 @@ export function VisualNotificationListener() {
           <DialogDescription>Actualización de estado en tiempo real.</DialogDescription>
         </DialogHeader>
 
-        <main className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-12">
-          {/* ORNATO SUPERIOR */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-center gap-3 text-primary">
-              <ShieldCheck className="w-4 h-4" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em]">Vitriniando AI Central</span>
+        {/* CONTENEDOR MAESTRO CON SCROLL SEGURO */}
+        <main className="flex-1 overflow-y-auto no-scrollbar">
+          <div className="min-h-full flex flex-col items-center justify-center p-8 text-center space-y-10 sm:space-y-12 py-12">
+            
+            {/* ORNATO SUPERIOR */}
+            <div className="space-y-4 shrink-0">
+              <div className="flex items-center justify-center gap-3 text-primary">
+                <ShieldCheck className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Vitriniando AI Central</span>
+              </div>
+              <div className="h-0.5 w-12 bg-primary/20 rounded-full mx-auto" />
             </div>
-            <div className="h-0.5 w-12 bg-primary/20 rounded-full mx-auto" />
-          </div>
 
-          {/* ICONO HEROICO */}
-          <div className="relative">
-            <div className={cn("absolute inset-0 rounded-[40px] animate-ping opacity-20", content?.bg.replace('bg-', 'bg-'))} />
-            <div className={cn(
-              "relative w-32 h-32 rounded-[40px] flex items-center justify-center shadow-2xl border-b-8 transition-all duration-700",
-              content?.bg, content?.color, 
-              "border-slate-200"
-            )}>
-              <Icon className="w-16 h-16 animate-in zoom-in duration-500" />
-              <Sparkles className="absolute -top-3 -right-3 w-8 h-8 text-yellow-400 animate-pulse" />
+            {/* ICONO HEROICO */}
+            <div className="relative shrink-0">
+              <div className={cn("absolute inset-0 rounded-[40px] animate-ping opacity-20", content?.bg.replace('bg-', 'bg-'))} />
+              <div className={cn(
+                "relative w-32 h-32 rounded-[40px] flex items-center justify-center shadow-2xl border-b-8 transition-all duration-700",
+                content?.bg, content?.color, 
+                "border-slate-200"
+              )}>
+                <Icon className="w-16 h-16 animate-in zoom-in duration-500" />
+                <Sparkles className="absolute -top-3 -right-3 w-8 h-8 text-yellow-400 animate-pulse" />
+              </div>
             </div>
-          </div>
 
-          {/* MENSAJE MAESTRO */}
-          <div className="space-y-4 max-w-sm">
-            <h2 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter leading-[0.9] text-slate-900">
-              {content?.title}
-            </h2>
-            <p className="text-sm sm:text-base font-bold text-slate-400 uppercase tracking-tight leading-relaxed px-4">
-              {content?.desc}
-            </p>
-          </div>
+            {/* MENSAJE MAESTRO */}
+            <div className="space-y-4 max-w-sm shrink-0">
+              <h2 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter leading-[0.9] text-slate-900">
+                {content?.title}
+              </h2>
+              <p className="text-sm sm:text-base font-bold text-slate-400 uppercase tracking-tight leading-relaxed px-4">
+                {content?.desc}
+              </p>
+            </div>
 
-          {/* ACCIÓN DIRECTA */}
-          <div className="w-full max-w-xs space-y-6">
-            <Button 
-              onClick={() => handleAcknowledge(true)}
-              className="w-full h-24 rounded-[32px] bg-primary hover:bg-primary/90 text-white font-black text-xl uppercase italic tracking-widest gap-4 shadow-[0_20px_50px_rgba(59,130,246,0.3)] border-b-[10px] border-blue-800 active:border-b-0 active:translate-y-2 transition-all group"
-            >
-              GESTIONAR AHORA <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-            </Button>
+            {/* ACCIÓN DIRECTA */}
+            <div className="w-full max-w-xs space-y-6 shrink-0">
+              <Button 
+                onClick={() => handleAcknowledge(true)}
+                className="w-full h-24 rounded-[32px] bg-primary hover:bg-primary/90 text-white font-black text-xl uppercase italic tracking-widest gap-4 shadow-[0_20px_50px_rgba(59,130,246,0.3)] border-b-[10px] border-blue-800 active:border-b-0 active:translate-y-2 transition-all group"
+              >
+                GESTIONAR AHORA <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+              </Button>
 
-            <button 
-              onClick={() => handleAcknowledge(false)}
-              className="text-[10px] font-black text-slate-300 hover:text-slate-500 uppercase tracking-[0.3em] transition-colors"
-            >
-              ENTENDIDO, CERRAR
-            </button>
+              <button 
+                onClick={() => handleAcknowledge(false)}
+                className="text-[10px] font-black text-slate-300 hover:text-slate-500 uppercase tracking-[0.3em] transition-colors"
+              >
+                ENTENDIDO, CERRAR
+              </button>
+            </div>
+
           </div>
         </main>
 
-        <footer className="h-16 bg-slate-50 border-t flex items-center justify-center px-8 shrink-0">
+        <footer className="h-16 bg-slate-50 border-t flex items-center justify-center px-8 shrink-0 relative z-10">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.5em]">Protocolo de Sincronización Élite Activo</span>
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.5em]">Sincronización Élite Activa</span>
           </div>
         </footer>
       </DialogContent>
