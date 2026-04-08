@@ -87,7 +87,6 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
 
   const handleFinalizePickUp = (orderId: string) => {
     onUpdateStatus('completed', { id: orderId });
-    // Contraer inmediatamente para el efecto visual de "tarea cumplida"
     setExpandedId(null);
   };
 
@@ -177,9 +176,10 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
             return (
               <Card key={order.id} className={cn(
                 "border-none rounded-[32px] overflow-hidden transition-all duration-500 ring-2",
-                isExpanded ? "shadow-2xl bg-slate-900 ring-primary/20" : "shadow-sm bg-white ring-black/[0.02]",
+                "bg-slate-900 shadow-xl", // FONDO AZUL OSCURO MAESTRO REESTABLECIDO
+                isExpanded ? "ring-primary/40" : "ring-white/5",
                 isExpired && "animate-pulse-red-glow ring-red-500/50",
-                isCompleted && "ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.4)] bg-green-50/20"
+                isCompleted && "ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.4)]"
               )}>
                 <CardContent className="p-0">
                   <div 
@@ -191,27 +191,27 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                         "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors shadow-inner",
                         isExpanded ? "bg-primary text-white" : 
                         isCompleted ? "bg-green-500 text-white shadow-green-200 shadow-xl" :
-                        isExpired ? "bg-red-500 text-white" : "bg-slate-50 text-slate-400"
+                        isExpired ? "bg-red-500 text-white" : "bg-white/10 text-slate-400"
                       )}>
                         {isCompleted ? <CheckCircle2 className="w-6 h-6 animate-in zoom-in" /> : <Timer className={cn("w-6 h-6", isExpired && "animate-bounce")} />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h4 className={cn("text-lg font-black uppercase italic tracking-tighter leading-none truncate", isExpanded ? "text-white" : "text-slate-900")}>
+                        <h4 className="text-lg font-black uppercase italic tracking-tighter leading-none truncate text-white">
                           {order.customerName}
                         </h4>
                         <div className="flex items-center gap-3 mt-1.5 overflow-hidden">
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <Clock className="w-3 h-3 text-slate-400" />
-                            <span className={cn("text-[9px] font-black uppercase tracking-widest", isExpanded ? "text-slate-400" : "text-slate-500")}>
+                            <Clock className="w-3 h-3 text-slate-500" />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">
                               Inicio: {timeIn}
                             </span>
                           </div>
                           {!isCompleted && (
                             <>
-                              <div className="w-[1px] h-2 bg-slate-200 shrink-0" />
+                              <div className="w-[1px] h-2 bg-white/10 shrink-0" />
                               <div className="flex items-center gap-1.5 shrink-0">
-                                <Navigation className={cn("w-3 h-3", isExpired ? "text-red-500" : "text-slate-400")} />
-                                <span className={cn("text-[9px] font-black uppercase tracking-widest", isExpired ? "text-red-600 animate-pulse" : isExpanded ? "text-slate-400" : "text-slate-500")}>
+                                <Navigation className={cn("w-3 h-3", isExpired ? "text-red-500" : "text-slate-500")} />
+                                <span className={cn("text-[9px] font-black uppercase tracking-widest", isExpired ? "text-red-500 animate-pulse" : "text-slate-400")}>
                                   Fin: {timeOut}
                                 </span>
                               </div>
@@ -223,7 +223,7 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                         </div>
                       </div>
                     </div>
-                    {isExpanded ? <ChevronUp className="text-slate-500 shrink-0 ml-2" /> : <ChevronDown className="text-slate-300 shrink-0 ml-2" />}
+                    {isExpanded ? <ChevronUp className="text-slate-500 shrink-0 ml-2" /> : <ChevronDown className="text-slate-500 shrink-0 ml-2" />}
                   </div>
 
                   {isExpanded && (
@@ -255,7 +255,7 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                         </div>
                         {isCompleted && (
                           <div className="flex items-center gap-3 pt-2 border-t border-white/5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                            <Zap className="w-3.5 h-3.5" /> Valor Final: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice || 0)}
+                            <Zap className="w-3.5 h-3.5 text-primary" /> Valor Final: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice || 0)}
                           </div>
                         )}
                       </div>
@@ -278,7 +278,6 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                             onFinalize={handleFinalizePickUp}
                           />
                           
-                          {/* MÓDULO DE NAVEGACIÓN DESPLEGADO DINÁMICAMENTE EN FASE 2 */}
                           <PickupNavDetails 
                             status={order.status}
                             customerAddress={order.customerAddress}
