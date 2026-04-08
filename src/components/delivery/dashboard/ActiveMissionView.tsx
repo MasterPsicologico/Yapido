@@ -40,7 +40,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
     return () => clearInterval(timer);
   }, []);
 
-  const isAtDestination = mission.status === 'at_destination';
   const isInUse = mission.status === 'delivered';
   
   const parseTimestamp = (ts: any) => {
@@ -66,14 +65,22 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
       seconds: remainingSeconds % 60,
       isExpired: remainingSeconds <= 0,
       expiryLabel: format(expiryTime, 'HH:mm'),
-      percentage: Math.min(100, (1 - (remainingSeconds / totalSeconds)) * 100)
+      percentage: Math.min(100, (1 - (remainingSeconds / totalSeconds)) * 100),
+      dropOffTime: format(deliveredAt, 'HH:mm'),
+      originalExpiry: format(expiryTime, 'HH:mm')
     };
   }, [isInUse, mission.deliveredAt, mission.requestHours, currentTime]);
 
-  const handleAddHours = (extra: number) => {
+  const handleAdjustHours = (extra: number) => {
     if (!firestore || !mission.id) return;
     const orderRef = doc(firestore, 'orders', mission.id);
     const extraCharge = extra * 3500; 
+
+    // Bloqueo de seguridad para no quitar más horas de las permitidas
+    if (extra < 0 && (mission.requestHours || 5) <= 1) {
+      toast({ title: "Acción Denegada", description: "Mínimo 1 hora de servicio.", variant: "destructive" });
+      return;
+    }
 
     updateDocumentNonBlocking(orderRef, {
       requestHours: increment(extra),
@@ -82,9 +89,8 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
     });
 
     toast({ 
-      title: `+${extra} Hora añadida`, 
-      description: "El cronómetro y el precio se han actualizado.",
-      className: "bg-primary text-white border-none" 
+      title: `${extra > 0 ? '+' : ''}${extra} Hora ${extra > 0 ? 'añadida' : 'removida'}`, 
+      className: extra > 0 ? "bg-green-600 text-white" : "bg-red-600 text-white"
     });
   };
 
@@ -95,7 +101,7 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
         status={mission.status}
         isWithDriver={true}
         isInUse={isInUse}
-        isAtDestination={isAtDestination}
+        isAtDestination={mission.status === 'at_destination'}
         currentTime={currentTime}
       />
 
@@ -105,7 +111,8 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
           {isInUse && usageProgress && (
             <MissionUsageCountdown 
               progress={usageProgress} 
-              onAddHours={handleAddHours} 
+              onAddHours={() => handleAdjustHours(1)} 
+              onRemoveHour={() => handleAdjustHours(-1)}
             />
           )}
 
@@ -125,7 +132,7 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
 
           <MissionActionOrchestrator 
             status={mission.status}
-            isAtDestination={isAtDestination}
+            isAtDestination={mission.status === 'at_destination'}
             isInUse={isInUse}
             isExpired={usageProgress?.isExpired}
             onUpdateStatus={onUpdateStatus}
