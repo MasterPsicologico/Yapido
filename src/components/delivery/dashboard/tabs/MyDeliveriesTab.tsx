@@ -28,6 +28,10 @@ import { format, addHours, differenceInSeconds, startOfMonth, endOfMonth, eachDa
 import { es } from 'date-fns/locale';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
+// COMPONENTES FRAGMENTADOS ATÓMICAMENTE
+import { MyDeliveriesActions } from './my-deliveries/components/MyDeliveriesActions';
+import { PickupNavDetails } from './my-deliveries/components/PickupNavDetails';
+
 interface MyDeliveriesTabProps {
   rentals: any[];
   onUpdateStatus: (status: string, metadata?: any) => void;
@@ -44,7 +48,6 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
     return () => clearInterval(timer);
   }, []);
 
-  // GENERADOR DE DÍAS DEL MES ACTUAL
   const monthDays = useMemo(() => {
     const start = startOfMonth(new Date());
     const end = endOfMonth(new Date());
@@ -72,7 +75,6 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
     });
   };
 
-  // FILTRADO DINÁMICO POR FECHA
   const filteredRentals = useMemo(() => {
     return rentals.filter(order => {
       const orderDate = order.createdAt?.toDate?.() || (order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000) : null);
@@ -83,9 +85,14 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
 
   const activeCount = filteredRentals.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length;
 
+  const handleFinalizePickUp = (orderId: string) => {
+    onUpdateStatus('completed', { id: orderId });
+    // Contraer inmediatamente para el efecto visual de "tarea cumplida"
+    setExpandedId(null);
+  };
+
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700">
-      {/* SECCIÓN 1: CALENDARIO MAESTRO HORIZONTAL */}
       <section className="space-y-4">
         <div className="flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
@@ -133,7 +140,6 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
         </ScrollArea>
       </section>
 
-      {/* SECCIÓN 2: LISTADO DE MISIONES DEL DÍA */}
       <div className="grid gap-4">
         <div className="flex items-center justify-between px-4">
           <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 italic">
@@ -173,7 +179,7 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                 "border-none rounded-[32px] overflow-hidden transition-all duration-500 ring-2",
                 isExpanded ? "shadow-2xl bg-slate-900 ring-primary/20" : "shadow-sm bg-white ring-black/[0.02]",
                 isExpired && "animate-pulse-red-glow ring-red-500/50",
-                isCompleted && "opacity-70 grayscale-[0.5]"
+                isCompleted && "ring-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.4)] bg-green-50/20"
               )}>
                 <CardContent className="p-0">
                   <div 
@@ -184,10 +190,10 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                       <div className={cn(
                         "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors shadow-inner",
                         isExpanded ? "bg-primary text-white" : 
-                        isCompleted ? "bg-green-50 text-green-500" :
+                        isCompleted ? "bg-green-500 text-white shadow-green-200 shadow-xl" :
                         isExpired ? "bg-red-500 text-white" : "bg-slate-50 text-slate-400"
                       )}>
-                        {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : <Timer className={cn("w-6 h-6", isExpired && "animate-bounce")} />}
+                        {isCompleted ? <CheckCircle2 className="w-6 h-6 animate-in zoom-in" /> : <Timer className={cn("w-6 h-6", isExpired && "animate-bounce")} />}
                       </div>
                       <div className="min-w-0 flex-1">
                         <h4 className={cn("text-lg font-black uppercase italic tracking-tighter leading-none truncate", isExpanded ? "text-white" : "text-slate-900")}>
@@ -212,7 +218,7 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                             </>
                           )}
                           {isCompleted && (
-                            <Badge className="bg-green-500/10 text-green-600 border-none text-[7px] font-black uppercase px-2 h-4">FINALIZADO</Badge>
+                            <Badge className="bg-green-500 text-white border-none text-[7px] font-black uppercase px-2 h-4">ENTREGA FINALIZADA</Badge>
                           )}
                         </div>
                       </div>
@@ -264,22 +270,20 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                       </div>
 
                       {!isCompleted && (
-                        <div className="pt-2">
-                          {['delivered', 'at_destination'].includes(order.status) ? (
-                            <Button 
-                              onClick={() => onUpdateStatus('picking_up', { id: order.id })}
-                              className="w-full h-16 rounded-[24px] bg-slate-100 text-slate-900 font-black uppercase text-xs tracking-widest gap-3 shadow-xl hover:bg-white active:scale-95 transition-all"
-                            >
-                              <Navigation className="w-5 h-5 text-primary" /> IR A RECOGER LAVADORA
-                            </Button>
-                          ) : (
-                            <Button 
-                              onClick={() => onUpdateStatus('completed', { id: order.id })}
-                              className="w-full h-20 rounded-[24px] bg-green-600 text-white font-black uppercase text-xs tracking-widest gap-3 shadow-[0_15px_40px_rgba(34,197,94,0.4)] border-b-[8px] border-green-800 active:border-b-0 active:translate-y-2 transition-all"
-                            >
-                              <CheckCircle2 className="w-6 h-6 animate-bounce" /> RECOGÍ LA LAVADORA
-                            </Button>
-                          )}
+                        <div className="space-y-4">
+                          <MyDeliveriesActions 
+                            orderId={order.id}
+                            status={order.status}
+                            onUpdateStatus={onUpdateStatus}
+                            onFinalize={handleFinalizePickUp}
+                          />
+                          
+                          {/* MÓDULO DE NAVEGACIÓN DESPLEGADO DINÁMICAMENTE EN FASE 2 */}
+                          <PickupNavDetails 
+                            status={order.status}
+                            customerAddress={order.customerAddress}
+                            customerSector={order.customerSector}
+                          />
                         </div>
                       )}
                     </div>

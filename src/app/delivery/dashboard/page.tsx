@@ -37,7 +37,6 @@ export default function DeliveryDashboardPage() {
   const [releaseLogs, setReleaseLogs] = useState<string[]>([]);
   const [isUploadingDashboard, setIsUploadingDashboard] = useState<'active' | 'inactive' | null>(null);
   
-  // MOTOR DE TIEMPO REAL PARA EL RADAR (ACTUALIZACIÓN CADA SEGUNDO)
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -56,7 +55,6 @@ export default function DeliveryDashboardPage() {
   const welcomeConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_welcome'), [firestore]);
   const { data: welcomeConfig } = useDoc(welcomeConfigRef);
 
-  // Radar: Rutas libres
   const allActiveOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isOnline || loadingProfile) return null;
     if (!isRepartidor && !isAdmin) return null;
@@ -70,7 +68,6 @@ export default function DeliveryDashboardPage() {
 
   const { data: rawAllOrders } = useCollection(allActiveOrdersQuery);
 
-  // FILTRADO DINÁMICO: Solo misiones de menos de 15 minutos
   const availableOrders = useMemo(() => {
     if (!rawAllOrders) return [];
     return rawAllOrders.filter(order => {
@@ -79,11 +76,10 @@ export default function DeliveryDashboardPage() {
       
       const createdAt = order.createdAt?.toMillis?.() || (order.createdAt?.seconds * 1000) || 0;
       const ageInSeconds = (now - createdAt) / 1000;
-      return ageInSeconds < 900; // 15 minutos = 900 segundos
+      return ageInSeconds < 900; 
     }).sort((a, b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
   }, [rawAllOrders, user?.uid, now]);
 
-  // DETECTAR SI HAY MISIONES PARA RECICLAR (MÁS DE 15 MINUTOS)
   const hasRecycledOrders = useMemo(() => {
     if (!rawAllOrders) return false;
     return rawAllOrders.some(order => {
@@ -95,19 +91,17 @@ export default function DeliveryDashboardPage() {
     });
   }, [rawAllOrders, now, user?.uid]);
 
-  // CONSULTA DE ENTREGAS: Incluye 'completed' para el historial diario
   const myDeliveriesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
       collection(firestore, 'orders'), 
       where('participants', 'array-contains', user.uid), 
-      where('status', 'in', ['shipped', 'at_destination', 'delivered', 'picking_up', 'at_store', 'delivered_to_driver', 'completed'])
+      where('status', 'in', ['shipped', 'at_destination', 'delivered', 'picking_up', 'at_pickup', 'at_store', 'delivered_to_driver', 'completed'])
     );
   }, [firestore, user?.uid]);
 
   const { data: rawMy } = useCollection(myDeliveriesQuery);
 
-  // ORDENAMIENTO EN MEMORIA
   const sortedMyOrders = useMemo(() => {
     if (!rawMy) return [];
     return [...rawMy].sort((a, b) => {
@@ -117,7 +111,6 @@ export default function DeliveryDashboardPage() {
     });
   }, [rawMy]);
 
-  // DEFINICIÓN DE MISIÓN ACTIVA (ESTADOS DE TRAYECTO)
   const activeMission = useMemo(() => 
     sortedMyOrders.find(o => 
       o.deliveryDriverId === user?.uid && 
@@ -126,11 +119,10 @@ export default function DeliveryDashboardPage() {
     [sortedMyOrders, user?.uid]
   );
 
-  // CONTEO DE ACTIVOS PARA EL BADGE (SOLO EN USO O RECOGIENDO)
   const activeBadgeCount = useMemo(() => 
     sortedMyOrders.filter(o => 
       o.deliveryDriverId === user?.uid && 
-      ['delivered', 'picking_up', 'shipped', 'at_destination', 'at_store', 'delivered_to_driver'].includes(o.status)
+      ['delivered', 'picking_up', 'at_pickup', 'shipped', 'at_destination', 'at_store', 'delivered_to_driver'].includes(o.status)
     ).length,
     [sortedMyOrders, user?.uid]
   );
