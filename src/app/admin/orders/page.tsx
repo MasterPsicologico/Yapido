@@ -45,12 +45,6 @@ import { useCart } from '@/context/CartContext';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
-const WhatsAppIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.353-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.131.57-.074 1.758-.706 2.006-1.388.248-.683.248-1.265.173-1.388-.075-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .01 5.393 0 12.03c0 2.123.54 4.197 1.57 6.05L0 24l6.15-1.612a11.81 11.81 0 005.89 1.568h.005c6.634 0 12.04-5.39 12.043-12.03a11.82 11.82 0 00-3.48-8.513z"/>
-  </svg>
-);
-
 const STATUS_CONFIG = {
   inquiry: { label: "CONSULTA", color: "text-cyan-500", bg: "bg-cyan-50", border: "border-cyan-100", icon: MessageCircle },
   pending: { label: "PENDIENTE", color: "text-orange-500", bg: "bg-orange-50", border: "border-orange-100", icon: Timer },
@@ -67,19 +61,25 @@ export default function OrdersManagementPage() {
   const { user } = useUser();
   const { profile, isLoading: profileLoading } = useProfile();
   const firestore = useFirestore();
-  const { addToCart } = useCart();
   const router = useRouter();
   
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [showMyPurchases, setShowMyPurchases] = useState(false);
-  const [validatingOrder, setValidatingOrder] = useState<any | null>(null);
-  const [cancellingOrder, setCancellingOrder] = useState<any | null>(null);
-  
-  const [ratingOrder, setRatingOrder] = useState<any | null>(null);
-  const [ratingType, setRatingType] = useState<'to_store' | 'to_driver' | 'to_customer'>('to_store');
 
-  const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
+  // EFECTO DE NAVEGACIÓN DIRECTA: Detecta ID en el hash para abrir el chat de inmediato
+  useEffect(() => {
+    const handleHash = () => {
+      const hashId = window.location.hash.replace('#', '');
+      if (hashId && hashId.length > 5) {
+        setActiveOrderId(hashId);
+      }
+    };
+
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   useEffect(() => {
     if (!profileLoading && profile && !profile.phoneNumber) {
@@ -118,12 +118,6 @@ export default function OrdersManagementPage() {
     });
   }, [myStores, rawOrders]);
 
-  const handleUpdateStatus = (orderId: string, newStatus: string) => {
-    if (!firestore) return;
-    updateDocumentNonBlocking(doc(firestore, 'orders', orderId), { status: newStatus, updatedAt: serverTimestamp() });
-    toast({ title: "Estado Actualizado" });
-  };
-
   if (profileLoading || ordersLoading || storesLoading) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
 
   const isDetailView = selectedStoreId || showMyPurchases;
@@ -147,7 +141,7 @@ export default function OrdersManagementPage() {
           </Button>
           <div className="grid gap-8">
             {filteredOrders?.map(order => (
-              <Card key={order.id} className="border-none rounded-[40px] shadow-xl bg-white overflow-hidden ring-1 ring-black/[0.03]">
+              <Card key={order.id} id={order.id} className="border-none rounded-[40px] shadow-xl bg-white overflow-hidden ring-1 ring-black/[0.03]">
                 <CardContent className="p-8 space-y-6">
                   <div className="flex items-center justify-between">
                     <Badge className={cn("text-[9px] font-black uppercase px-3 h-6 border-none", order.storeOwnerId === user?.uid ? "bg-primary" : "bg-secondary")}>
@@ -161,7 +155,7 @@ export default function OrdersManagementPage() {
                     <span className="text-lg font-black text-primary">{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice || 0)}</span>
                   </div>
                   <div className="flex gap-2">
-                    <Button onClick={() => setActiveOrderId(order.id)} className="flex-1 h-12 rounded-2xl bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest gap-2">CHAT</Button>
+                    <Button onClick={() => setActiveOrderId(order.id)} className="flex-1 h-12 rounded-2xl bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest gap-2">CHAT INTERNO</Button>
                     <Button onClick={() => window.open(`https://wa.me/57${(order.customerPhone || '').replace(/\D/g, '')}`)} className="flex-1 h-12 rounded-2xl bg-[#25d366] text-white font-black text-[10px] uppercase tracking-widest gap-2">WHATSAPP</Button>
                   </div>
                 </CardContent>
@@ -176,7 +170,6 @@ export default function OrdersManagementPage() {
             <div><h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none text-slate-900">Panel Maestro</h1><p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2">Centro de Comando Digital</p></div>
           </div>
 
-          {/* SECCIÓN DE PROVEEDORES DE CONFIANZA */}
           {trustedStores && trustedStores.length > 0 && (
             <section className="space-y-6">
               <div className="flex items-center gap-3">
@@ -226,13 +219,13 @@ export default function OrdersManagementPage() {
         </main>
       )}
 
-      <Dialog open={!!activeOrderId} onOpenChange={() => setActiveOrderId(null)}>
-        <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] flex flex-col">
+      <Dialog open={!!activeOrderId} onOpenChange={(v) => { if(!v) { setActiveOrderId(null); window.location.hash = ''; } }}>
+        <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] flex flex-col z-[500] [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>Chat Maestro de Órdenes</DialogTitle>
             <DialogDescription>Gestión centralizada de comunicación.</DialogDescription>
           </DialogHeader>
-          {activeOrderId && <OrderChat orderId={activeOrderId} orderData={rawOrders?.find(o => o.id === activeOrderId)} onClose={() => setActiveOrderId(null)} />}
+          {activeOrderId && <OrderChat orderId={activeOrderId} orderData={rawOrders?.find(o => o.id === activeOrderId)} onClose={() => { setActiveOrderId(null); window.location.hash = ''; }} />}
         </DialogContent>
       </Dialog>
     </div>

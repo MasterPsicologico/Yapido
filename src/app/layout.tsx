@@ -4,6 +4,7 @@ import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
+import { VisualNotificationListener } from '@/components/notification/VisualNotificationListener';
 import { CartProvider } from '@/context/CartContext';
 
 export const metadata: Metadata = {
@@ -26,8 +27,10 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background text-foreground min-h-screen">
         <FirebaseClientProvider>
           <CartProvider>
-            {/* El ChatNotificationListener vive aquí para estar activo en toda la app */}
+            {/* El ChatNotificationListener gestiona audio y toasts */}
             <ChatNotificationListener />
+            {/* El VisualNotificationListener gestiona los diálogos inmersivos de pantalla completa */}
+            <VisualNotificationListener />
             {children}
             <Toaster />
           </CartProvider>
