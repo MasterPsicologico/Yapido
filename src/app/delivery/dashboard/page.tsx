@@ -105,8 +105,9 @@ export default function DeliveryDashboardPage() {
   const sortedMyOrders = useMemo(() => {
     if (!rawMy) return [];
     return [...rawMy].sort((a, b) => {
-      const timeA = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
-      const timeB = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
+      // ESTABILIZACIÓN MAESTRA: El orden se fija por creación para evitar saltos visuales al actualizar estados
+      const timeA = a.createdAt?.toMillis?.() || (a.createdAt?.seconds * 1000) || 0;
+      const timeB = b.createdAt?.toMillis?.() || (b.createdAt?.seconds * 1000) || 0;
       return timeB - timeA;
     });
   }, [rawMy]);
@@ -224,7 +225,7 @@ export default function DeliveryDashboardPage() {
               <div className="space-y-8">
                 <div className="flex items-start gap-6">
                   <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 shrink-0 shadow-inner"><CheckCircle2 className="w-6 h-6" /></div>
-                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic">Genera Ganancias</h4><p className="text-xs text-slate-400 font-medium">Aumenta tus ingresos completando misiones.</p></div>
+                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic"><span className="text-primary">Genera</span> Ganancias</h4><p className="text-xs text-slate-400 font-medium">Aumenta tus ingresos completando misiones.</p></div>
                 </div>
                 <div className="flex items-start gap-6">
                   <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0 shadow-inner"><Zap className="w-6 h-6" /></div>
