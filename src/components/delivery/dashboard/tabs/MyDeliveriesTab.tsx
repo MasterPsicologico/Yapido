@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,6 @@ import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, increment, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { format, addHours, differenceInSeconds } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 interface MyDeliveriesTabProps {
   rentals: any[];
@@ -40,15 +38,25 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
     return () => clearInterval(timer);
   }, []);
 
-  const handleAddHours = (orderId: string, extra: number) => {
+  const handleAdjustHours = (orderId: string, extra: number, currentHours: number) => {
     if (!firestore) return;
+    
+    if (extra < 0 && currentHours <= 1) {
+      toast({ title: "Acción Denegada", description: "Mínimo 1 hora de servicio.", variant: "destructive" });
+      return;
+    }
+
     const orderRef = doc(firestore, 'orders', orderId);
     updateDocumentNonBlocking(orderRef, {
       requestHours: increment(extra),
       totalPrice: increment(extra * 3500),
       updatedAt: serverTimestamp()
     });
-    toast({ title: `+${extra}h Añadidas` });
+    
+    toast({ 
+      title: extra > 0 ? "+1 Hora Añadida" : "-1 Hora Removida",
+      className: extra > 0 ? "bg-green-600 text-white" : "bg-red-600 text-white"
+    });
   };
 
   if (rentals.length === 0) {
@@ -73,7 +81,6 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
       {rentals.map((order) => {
         const isExpanded = expandedId === order.id;
         
-        // LÓGICA DE TIEMPO Y EXPIRACIÓN
         const deliveredAt = order.deliveredAt?.toDate?.() || (order.deliveredAt?.seconds ? new Date(order.deliveredAt.seconds * 1000) : null);
         const durationHours = order.requestHours || 5;
         const expiryTime = deliveredAt ? addHours(deliveredAt, durationHours) : null;
@@ -137,9 +144,11 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                         seconds: remaining % 60,
                         percentage: expiryTime ? Math.min(100, (1 - (remaining / (durationHours * 3600))) * 100) : 0,
                         expiryLabel: timeOut,
-                        isExpired
+                        isExpired,
+                        dropOffTime: timeIn
                       }}
-                      onAddHours={(h) => handleAddHours(order.id, h)}
+                      onAddHours={() => handleAdjustHours(order.id, 1, order.requestHours)}
+                      onRemoveHour={() => handleAdjustHours(order.id, -1, order.requestHours)}
                     />
                   </div>
 

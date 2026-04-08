@@ -1,11 +1,15 @@
-
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus, Minus, Wallet, AlertCircle, Clock, CalendarCheck } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Importación de Piezas Atómicas
+import { TimerDisplay } from './TimerDisplay';
+import { TimerHistory } from './TimerHistory';
+import { TimerProgressBar } from './TimerProgressBar';
+import { TimeAdjustmentControls } from './TimeAdjustmentControls';
 
 interface MissionUsageCountdownProps {
   progress: {
@@ -23,7 +27,8 @@ interface MissionUsageCountdownProps {
 }
 
 /**
- * MissionUsageCountdown - Cronómetro Maestro con Historial y Respuesta Háptica Visual.
+ * MissionUsageCountdown - Orquestador Atómico: Centro de Control de Tiempo.
+ * Ensambla todas las piezas fragmentadas en un solo contenedor blindado.
  */
 export function MissionUsageCountdown({ progress, onAddHours, onRemoveHour }: MissionUsageCountdownProps) {
   const [pulseColor, setPulseColor] = useState<'none' | 'green' | 'red'>('none');
@@ -31,7 +36,7 @@ export function MissionUsageCountdown({ progress, onAddHours, onRemoveHour }: Mi
   const handleAction = (isAdd: boolean) => {
     setPulseColor(isAdd ? 'green' : 'red');
     if (isAdd) onAddHours(1);
-    else onRemoveHour?.();
+    else if (onRemoveHour) onRemoveHour();
     
     setTimeout(() => setPulseColor('none'), 1500);
   };
@@ -65,69 +70,30 @@ export function MissionUsageCountdown({ progress, onAddHours, onRemoveHour }: Mi
             )}
           </div>
 
-          <div className="flex items-baseline gap-2">
-            <span className={cn(
-              "text-7xl font-black italic tracking-tighter tabular-nums leading-none transition-colors",
-              pulseColor === 'green' ? "text-green-400" : pulseColor === 'red' ? "text-red-400" : progress.isExpired ? "text-red-500" : "text-white"
-            )}>
-              {progress.hours}:{progress.minutes < 10 ? `0${progress.minutes}` : progress.minutes}
-            </span>
-            <span className={cn(
-              "text-sm font-black uppercase tracking-widest",
-              progress.isExpired ? "text-red-500" : "text-amber-500"
-            )}>
-              {progress.seconds < 10 ? `0${progress.seconds}` : progress.seconds}s
-            </span>
-          </div>
+          <TimerDisplay 
+            hours={progress.hours} 
+            minutes={progress.minutes} 
+            seconds={progress.seconds} 
+            isExpired={progress.isExpired}
+            pulseColor={pulseColor}
+          />
 
-          {/* HISTORIAL DE TIEMPOS MAESTRO */}
-          <div className="w-full grid grid-cols-2 gap-4 py-4 border-y border-white/5">
-            <div className="text-center space-y-1">
-              <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Hora de Entrega</p>
-              <div className="flex items-center justify-center gap-2 text-slate-300">
-                <CalendarCheck className="w-3 h-3 text-primary" />
-                <span className="text-[11px] font-black italic">{progress.dropOffTime || '--:--'}</span>
-              </div>
-            </div>
-            <div className="text-center space-y-1">
-              <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Recogida Programada</p>
-              <div className="flex items-center justify-center gap-2 text-slate-300">
-                <Clock className="w-3 h-3 text-orange-500" />
-                <span className="text-[11px] font-black italic">{progress.originalExpiry || '--:--'}</span>
-              </div>
-            </div>
-          </div>
+          <TimerHistory 
+            dropOffTime={progress.dropOffTime} 
+            originalExpiry={progress.expiryLabel} 
+          />
 
-          {/* BARRA DE PROGRESO */}
-          <div className="w-full h-2.5 bg-white/5 rounded-full overflow-hidden shadow-inner">
-            <div 
-              className={cn(
-                "h-full transition-all duration-1000",
-                pulseColor === 'green' ? "bg-green-500" :
-                pulseColor === 'red' ? "bg-red-500" :
-                progress.isExpired ? "bg-red-600 shadow-[0_0_20px_rgba(220,38,38,0.8)]" : "bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]"
-              )} 
-              style={{ width: `${progress.percentage}%` }} 
-            />
-          </div>
+          <TimerProgressBar 
+            percentage={progress.percentage} 
+            isExpired={progress.isExpired} 
+            pulseColor={pulseColor}
+          />
 
-          {/* CONTROLES DE AJUSTE TEMPORAL */}
-          <div className="grid grid-cols-2 gap-3 w-full">
-            <Button 
-              onClick={() => handleAction(false)}
-              variant="outline"
-              className="h-14 rounded-2xl border-white/5 bg-white/5 text-white/40 font-black uppercase text-[10px] tracking-widest gap-2 hover:bg-red-500/10 hover:text-red-500 transition-all active:scale-95"
-            >
-              <Minus className="w-4 h-4" /> QUITAR HORA
-            </Button>
-            <Button 
-              onClick={() => handleAction(true)}
-              variant="outline"
-              className="h-14 rounded-2xl border-white/10 bg-white/5 text-white font-black uppercase text-[10px] tracking-widest gap-2 hover:bg-green-500/10 hover:text-green-500 transition-all active:scale-95"
-            >
-              <Plus className="w-4 h-4" /> AÑADIR HORA
-            </Button>
-          </div>
+          <TimeAdjustmentControls 
+            onAdd={() => handleAction(true)} 
+            onRemove={() => handleAction(false)}
+            disabled={pulseColor !== 'none'}
+          />
         </div>
       </Card>
     </section>
