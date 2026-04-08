@@ -33,6 +33,7 @@ interface WasherOfferDialogProps {
 /**
  * WasherOfferDialog - Protocolo de Negociación Instantánea Full-Screen.
  * Centraliza la acción en un único contenedor de flujo monetario con incremento de $500.
+ * Ajustado para evitar desbordamientos en pantallas móviles estrechas.
  */
 export function WasherOfferDialog({ 
   isOpen, 
@@ -100,11 +101,11 @@ export function WasherOfferDialog({
         </div>
 
         {/* CUERPO ÚNICO: EL CONTENEDOR DE NEGOCIACIÓN */}
-        <div className="flex-1 flex flex-col justify-center items-center bg-white rounded-t-[40px] mt-2 border-t-4 border-slate-950 px-6">
+        <div className="flex-1 flex flex-col justify-center items-center bg-white rounded-t-[40px] mt-2 border-t-4 border-slate-950 px-4 sm:px-6">
           <div className="w-full max-w-md space-y-12">
             
-            {/* CONTENEDOR MAESTRO DE COMPARACIÓN */}
-            <section className="relative p-8 rounded-[40px] bg-slate-900 overflow-hidden shadow-2xl border-b-8 border-slate-950 group/flow">
+            {/* CONTENEDOR MAESTRO DE COMPARACIÓN - PADDING AJUSTADO PARA MÓVIL */}
+            <section className="relative px-4 py-8 sm:p-8 rounded-[40px] bg-slate-900 overflow-hidden shadow-2xl border-b-8 border-slate-950 group/flow">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent opacity-50" />
               <div className="absolute -inset-[100%] bg-gradient-to-r from-transparent via-yellow-200/5 to-transparent skew-x-12 animate-shimmer pointer-events-none" />
               
@@ -114,36 +115,36 @@ export function WasherOfferDialog({
                 <Banknote className="w-8 h-8 text-primary animate-bounce [animation-duration:4s]" />
               </div>
 
-              <div className="relative z-10 flex items-center justify-between gap-4 mt-4">
+              <div className="relative z-10 flex items-center justify-between gap-2 sm:gap-4 mt-4">
                 {/* LADO IZQUIERDO: CLIENTE */}
                 <div className="text-center space-y-2 flex-1">
                   <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest leading-none">OFERTA CLIENTE</p>
-                  <div className="bg-white/5 rounded-2xl p-3 border border-white/5 backdrop-blur-sm">
-                    <span className="text-sm font-black text-slate-400 italic line-through opacity-50">{formattedOriginalPrice}</span>
+                  <div className="bg-white/5 rounded-2xl p-2.5 sm:p-3 border border-white/5 backdrop-blur-sm">
+                    <span className="text-xs sm:text-sm font-black text-slate-400 italic line-through opacity-50">{formattedOriginalPrice}</span>
                   </div>
                 </div>
 
                 <div className="flex flex-col items-center gap-1 shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30 shadow-[0_0_20px_rgba(234,179,8,0.3)]">
-                    {isSending ? <Loader2 className="w-6 h-6 text-yellow-500 animate-spin" /> : <Zap className="w-6 h-6 text-yellow-500 animate-pulse" />}
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-yellow-500/20 flex items-center justify-center border border-yellow-500/30 shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+                    {isSending ? <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-500 animate-spin" /> : <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-500 animate-pulse" />}
                   </div>
-                  <ArrowRightLeft className="w-4 h-4 text-slate-700 mt-1" />
+                  <ArrowRightLeft className="w-3 h-3 sm:w-4 sm:h-4 text-slate-700 mt-1" />
                 </div>
 
-                {/* LADO DERECHO: TU PROPUESTA + BOTÓN INCREMENTO */}
-                <div className="text-center space-y-2 flex-1">
+                {/* LADO DERECHO: TU PROPUESTA + BOTÓN INCREMENTO (PROPORCIÓN REAJUSTADA) */}
+                <div className="text-center space-y-2 flex-[1.2] min-w-0">
                   <p className="text-[7px] font-black text-yellow-500 uppercase tracking-widest leading-none">TU PROPUESTA</p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-yellow-500/10 rounded-2xl p-3 border border-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.1)]">
-                      <span className="text-lg font-black text-yellow-500 italic tracking-tighter">{currentOfferFormatted}</span>
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="flex-1 bg-yellow-500/10 rounded-2xl p-2.5 sm:p-3 border border-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.1)] min-w-0">
+                      <span className="text-sm sm:text-lg font-black text-yellow-500 italic tracking-tighter truncate block">{currentOfferFormatted}</span>
                     </div>
-                    {/* BOTÓN DE INCREMENTO INSTANTÁNEO (+500) */}
+                    {/* BOTÓN DE INCREMENTO INSTANTÁNEO (+500) - SHRINK PROTEGIDO */}
                     <button 
                       onClick={handleInstantIncrement}
                       disabled={isSending}
-                      className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 text-slate-950 flex items-center justify-center shadow-lg active:scale-90 transition-all shrink-0 border-b-2 border-yellow-800 disabled:opacity-50"
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 text-slate-950 flex items-center justify-center shadow-lg active:scale-90 transition-all shrink-0 border-b-2 border-yellow-800 disabled:opacity-50"
                     >
-                      <Plus className="w-5 h-5" />
+                      <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
                 </div>
