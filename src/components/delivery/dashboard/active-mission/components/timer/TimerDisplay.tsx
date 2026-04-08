@@ -1,3 +1,4 @@
+
 "use client";
 
 import { cn } from '@/lib/utils';
@@ -12,6 +13,7 @@ interface TimerDisplayProps {
 
 /**
  * TimerDisplay - Componente Atómico: El núcleo visual del tiempo.
+ * Se ha inyectado soporte para visualización de saldo negativo cuando el tiempo expira.
  */
 export function TimerDisplay({ hours, minutes, seconds, isExpired, pulseColor }: TimerDisplayProps) {
   return (
@@ -22,7 +24,7 @@ export function TimerDisplay({ hours, minutes, seconds, isExpired, pulseColor }:
         pulseColor === 'red' ? "text-red-400" : 
         isExpired ? "text-red-500" : "text-white"
       )}>
-        {hours}:{minutes < 10 ? `0${minutes}` : minutes}
+        {isExpired && "-"}{hours}:{minutes < 10 ? `0${minutes}` : minutes}
       </span>
       <span className={cn(
         "text-sm font-black uppercase tracking-widest self-end mb-1",

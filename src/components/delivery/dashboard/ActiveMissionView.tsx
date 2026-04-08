@@ -58,15 +58,19 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
     const durationHours = Number(mission.requestHours || 5);
     const expiryTime = addHours(deliveredAt, durationHours);
     const totalSeconds = durationHours * 3600;
-    const remainingSeconds = Math.max(0, differenceInSeconds(expiryTime, new Date()));
+    
+    // LÓGICA DE TIEMPO INFINITO (PERMITE NEGATIVOS)
+    const diffInSeconds = differenceInSeconds(expiryTime, new Date());
+    const isExpired = diffInSeconds < 0;
+    const absSeconds = Math.abs(diffInSeconds);
     
     return {
-      hours: Math.floor(remainingSeconds / 3600),
-      minutes: Math.floor((remainingSeconds % 3600) / 60),
-      seconds: remainingSeconds % 60,
-      isExpired: remainingSeconds <= 0,
+      hours: Math.floor(absSeconds / 3600),
+      minutes: Math.floor((absSeconds % 3600) / 60),
+      seconds: absSeconds % 60,
+      isExpired,
       expiryLabel: format(expiryTime, 'HH:mm'),
-      percentage: Math.min(100, (1 - (remainingSeconds / totalSeconds)) * 100),
+      percentage: Math.min(100, (1 - (diffInSeconds / totalSeconds)) * 100),
       dropOffTime: format(deliveredAt, 'HH:mm'),
       originalExpiry: format(expiryTime, 'HH:mm')
     };

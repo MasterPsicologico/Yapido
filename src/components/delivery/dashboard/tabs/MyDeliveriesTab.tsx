@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -84,8 +85,11 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
         const deliveredAt = order.deliveredAt?.toDate?.() || (order.deliveredAt?.seconds ? new Date(order.deliveredAt.seconds * 1000) : null);
         const durationHours = order.requestHours || 5;
         const expiryTime = deliveredAt ? addHours(deliveredAt, durationHours) : null;
-        const remaining = expiryTime ? Math.max(0, differenceInSeconds(expiryTime, now)) : 0;
-        const isExpired = expiryTime ? remaining <= 0 : false;
+        
+        // LÓGICA DE TIEMPO INFINITO (SIN MATH.MAX)
+        const remaining = expiryTime ? differenceInSeconds(expiryTime, now) : 0;
+        const isExpired = remaining < 0;
+        const absRemaining = Math.abs(remaining);
 
         const timeIn = deliveredAt ? format(deliveredAt, "HH:mm") : "--:--";
         const timeOut = expiryTime ? format(expiryTime, "HH:mm") : "--:--";
@@ -139,9 +143,9 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
                   <div className="scale-95 origin-top">
                     <MissionUsageCountdown 
                       progress={{
-                        hours: Math.floor(remaining / 3600),
-                        minutes: Math.floor((remaining % 3600) / 60),
-                        seconds: remaining % 60,
+                        hours: Math.floor(absRemaining / 3600),
+                        minutes: Math.floor((absRemaining % 3600) / 60),
+                        seconds: absRemaining % 60,
                         percentage: expiryTime ? Math.min(100, (1 - (remaining / (durationHours * 3600))) * 100) : 0,
                         expiryLabel: timeOut,
                         isExpired,
