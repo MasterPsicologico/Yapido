@@ -76,7 +76,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
     const orderRef = doc(firestore, 'orders', mission.id);
     const extraCharge = extra * 3500; 
 
-    // Bloqueo de seguridad para no quitar más horas de las permitidas
     if (extra < 0 && (mission.requestHours || 5) <= 1) {
       toast({ title: "Acción Denegada", description: "Mínimo 1 hora de servicio.", variant: "destructive" });
       return;
@@ -123,9 +122,12 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
 
           <MissionDeliveryCard 
             customerAddress={mission.customerAddress}
+            customerSector={mission.customerSector}
             customerName={mission.customerName}
             customerPhone={mission.customerPhone}
             customerPhoto={customerProfile?.photoURL}
+            totalPrice={mission.totalPrice || 0}
+            paymentMethod={mission.paymentMethod || 'cash'}
             onOpenMaps={() => onOpenMaps(mission.customerAddress)}
             onOpenChat={() => setIsMissionChatOpen(true)}
           />
