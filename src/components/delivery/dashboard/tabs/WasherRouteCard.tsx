@@ -19,6 +19,7 @@ import { RouteStats } from './route-card/components/RouteStats';
 import { RouteActions } from './route-card/components/RouteActions';
 import { RouteAcceptButton } from './route-card/components/RouteAcceptButton';
 import { WasherOfferDialog } from './route-card/components/WasherOfferDialog';
+import { RouteCountdown } from './route-card/components/RouteCountdown';
 
 interface WasherRouteCardProps {
   order: any;
@@ -42,8 +43,6 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
     
     try {
       const offersCol = collection(firestore, 'orders', order.id, 'offers');
-      
-      // EL TRATO SE LANZA A LA NUBE (NON-BLOCKING)
       addDocumentNonBlocking(offersCol, {
         storeId: order.storeId,
         storeName: order.storeName || 'Lava Express',
@@ -55,9 +54,6 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
         comment: comment,
         createdAt: serverTimestamp()
       });
-
-      // NO CERRAMOS EL DIÁLOGO AQUÍ para permitir múltiples incrementos rápidos
-      // El usuario cierra cuando esté satisfecho con su contraoferta final
     } catch (e) {
       toast({ title: "Error al enviar trato", variant: "destructive" });
     } finally {
@@ -81,12 +77,17 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
         <RouteHeader protocolId={order.id} />
 
         <div className="p-8 space-y-8">
-          <RoutePrice 
-            formattedPrice={formattedPrice} 
-            requestHours={order.requestHours} 
-            washerType={order.washerType} 
-            createdAt={order.createdAt}
-          />
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-end">
+              <RouteCountdown createdAt={order.createdAt} />
+            </div>
+            <RoutePrice 
+              formattedPrice={formattedPrice} 
+              requestHours={order.requestHours} 
+              washerType={order.washerType} 
+              createdAt={order.createdAt}
+            />
+          </div>
 
           <div className="bg-slate-50 p-7 rounded-[40px] border border-slate-100 flex flex-col gap-6 shadow-inner">
             <RouteIdentity 
@@ -117,7 +118,6 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
         </div>
       </CardContent>
 
-      {/* NUEVO DIÁLOGO DE TRATO FULL-SCREEN PREMIUM */}
       <WasherOfferDialog 
         isOpen={isOfferDialogOpen}
         onOpenChange={setIsOfferDialogOpen}
@@ -126,7 +126,6 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
         isSending={isSendingOffer}
       />
 
-      {/* DIÁLOGO DE CHAT DE NEGOCIACIÓN */}
       <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
         <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[500] [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">

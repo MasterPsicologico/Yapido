@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout/Navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
+import { Loader2, CheckCircle2, Zap, ArrowRight, Trash2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, setDocumentNonBlocking } from '@/firebase';
@@ -36,6 +36,13 @@ export default function DeliveryDashboardPage() {
   const [isReleasing, setIsReleasing] = useState(false);
   const [releaseLogs, setReleaseLogs] = useState<string[]>([]);
   const [isUploadingDashboard, setIsUploadingDashboard] = useState<'active' | 'inactive' | null>(null);
+  
+  // MOTOR DE TIEMPO REAL PARA EL RADAR (ACTUALIZACIÓN CADA SEGUNDO)
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!loadingProfile && profile?.role === 'repartidor' && profile?.hasSeenApproval === false && !isAdmin) {
@@ -63,13 +70,30 @@ export default function DeliveryDashboardPage() {
 
   const { data: rawAllOrders } = useCollection(allActiveOrdersQuery);
 
+  // FILTRADO DINÁMICO: Solo misiones de menos de 15 minutos
   const availableOrders = useMemo(() => {
     if (!rawAllOrders) return [];
-    return rawAllOrders.filter(order => 
-      ['pending', 'preparing', 'ready_for_pickup'].includes(order.status) &&
-      (!order.deliveryDriverId || order.deliveryDriverId === user?.uid)
-    ).sort((a, b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
-  }, [rawAllOrders, user?.uid]);
+    return rawAllOrders.filter(order => {
+      if (!['pending', 'preparing', 'ready_for_pickup'].includes(order.status)) return false;
+      if (order.deliveryDriverId && order.deliveryDriverId !== user?.uid) return false;
+      
+      const createdAt = order.createdAt?.toMillis?.() || (order.createdAt?.seconds * 1000) || 0;
+      const ageInSeconds = (now - createdAt) / 1000;
+      return ageInSeconds < 900; // 15 minutos = 900 segundos
+    }).sort((a, b) => (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0));
+  }, [rawAllOrders, user?.uid, now]);
+
+  // DETECTAR SI HAY MISIONES PARA RECICLAR (MÁS DE 15 MINUTOS)
+  const hasRecycledOrders = useMemo(() => {
+    if (!rawAllOrders) return false;
+    return rawAllOrders.some(order => {
+      if (!['pending', 'preparing', 'ready_for_pickup'].includes(order.status)) return false;
+      if (order.deliveryDriverId && order.deliveryDriverId !== user?.uid) return false;
+      const createdAt = order.createdAt?.toMillis?.() || (order.createdAt?.seconds * 1000) || 0;
+      const ageInSeconds = (now - createdAt) / 1000;
+      return ageInSeconds >= 900;
+    });
+  }, [rawAllOrders, now, user?.uid]);
 
   // CONSULTA DE ENTREGAS: Incluye 'completed' para el historial diario
   const myDeliveriesQuery = useMemoFirebase(() => {
@@ -250,14 +274,26 @@ export default function DeliveryDashboardPage() {
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mb-12 space-y-8">
               <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3 overflow-hidden">
                 <TabsTrigger value="available" className="rounded-full font-black text-[10px] data-[state=active]:bg-primary data-[state=active]:text-white uppercase truncate">Radar</TabsTrigger>
-                <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white uppercase relative truncate">
-                  En Curso
-                  {activeBadgeCount > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] font-black">{activeBadgeCount}</span>}
+                <TabsTrigger value="my-deliveries" className="rounded-full font-black text-[10px] data-[state=active]:bg-secondary data-[state=active]:text-white uppercase relative overflow-visible">
+                  <div className="flex items-center justify-center gap-2">
+                    <span>En Curso</span>
+                    {activeBadgeCount > 0 && (
+                      <span className="w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[9px] font-black shadow-lg animate-in zoom-in shrink-0">
+                        {activeBadgeCount}
+                      </span>
+                    )}
+                  </div>
                 </TabsTrigger>
                 <TabsTrigger value="earnings" className="rounded-full font-black text-[10px] data-[state=active]:bg-slate-900 data-[state=active]:text-white uppercase truncate">Balance</TabsTrigger>
               </TabsList>
               <TabsContent value="available">
-                <RoutesTab isOnline={isOnline} orders={availableOrders} onAccept={handleAcceptOrder} onGoOnline={() => setIsOnline(true)} />
+                <RoutesTab 
+                  isOnline={isOnline} 
+                  orders={availableOrders} 
+                  hasRecycled={hasRecycledOrders}
+                  onAccept={handleAcceptOrder} 
+                  onGoOnline={() => setIsOnline(true)} 
+                />
               </TabsContent>
               <TabsContent value="my-deliveries">
                 <MyDeliveriesTab rentals={sortedMyOrders} onUpdateStatus={handleUpdateMissionStatus} />
