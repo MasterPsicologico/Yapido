@@ -56,13 +56,8 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
         createdAt: serverTimestamp()
       });
 
-      toast({ 
-        title: "¡Trato Maestro Enviado!", 
-        description: "Tu oferta dorada está en el radar del cliente.",
-        className: "bg-slate-900 text-white border-none shadow-2xl"
-      });
-      
-      setIsOfferDialogOpen(false);
+      // NO CERRAMOS EL DIÁLOGO AQUÍ para permitir múltiples incrementos rápidos
+      // El usuario cierra cuando esté satisfecho con su contraoferta final
     } catch (e) {
       toast({ title: "Error al enviar trato", variant: "destructive" });
     } finally {
