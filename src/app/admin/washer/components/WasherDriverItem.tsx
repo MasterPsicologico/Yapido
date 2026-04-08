@@ -156,9 +156,9 @@ export function WasherDriverItem({ driverId, storeId, storeName, ownerId, onUnli
 
       {/* DIÁLOGO DE CHAT INTERNO (MODULAR) */}
       <Dialog open={!!internalChatOrder} onOpenChange={v => !v && setInternalChatOrder(null)}>
-        <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col z-[500]">
+        <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col z-[500] [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
-            <DialogTitle>Chat con Repartidor</DialogTitle>
+            <DialogTitle>Chat Interno</DialogTitle>
             <DialogDescription>Comunicación directa con tu flota.</DialogDescription>
           </DialogHeader>
           {internalChatOrder && (

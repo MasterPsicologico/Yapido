@@ -299,9 +299,9 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
 
       <Dialog open={!!internalChatOrder} onOpenChange={v => !v && setInternalChatOrder(null)}>
         <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col z-[700] [&>button:last-child]:hidden">
-          <DialogHeader className="p-6 border-b shrink-0 flex flex-row items-center justify-between">
-            <DialogTitle className="text-xl font-black italic uppercase tracking-tighter text-slate-900">Canal Seguro</DialogTitle>
-            <Button variant="ghost" size="icon" onClick={() => setInternalChatOrder(null)}><X className="w-6 h-6 text-slate-400" /></Button>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Canal Seguro</DialogTitle>
+            <DialogDescription>Comunicación directa y protegida.</DialogDescription>
           </DialogHeader>
           {internalChatOrder && (
             <div className="flex-1 min-h-0 w-full animate-in zoom-in duration-300">

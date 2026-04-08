@@ -353,10 +353,10 @@ export default function StorePage() {
       </main>
 
       <Dialog open={!!internalChatOrder} onOpenChange={v => !v && setInternalChatOrder(null)}>
-        <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col">
+        <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>Chat con la Tienda</DialogTitle>
-            <DialogDescription>Canal de comunicación seguro para consultas directas con el establecimiento.</DialogDescription>
+            <DialogDescription>Canal de comunicación seguro.</DialogDescription>
           </DialogHeader>
           {internalChatOrder && (
             <div className="flex-1 min-h-0 w-full animate-in zoom-in duration-300">
