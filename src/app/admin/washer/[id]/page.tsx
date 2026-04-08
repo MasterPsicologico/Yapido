@@ -115,12 +115,14 @@ export default function WasherAdminPage() {
           ))}
         </div>
 
+        {/* RADAR DE SOLICITUDES: REUBICADO QUIRÚRGICAMENTE BAJO EL MENÚ */}
+        <WasherLiveRadar storeId={id} storeName={store?.name || 'Tienda'} ownerId={store?.ownerId || ''} />
+
         {activeTab === 'active' && <WasherActiveRentals rentals={activeRentals} />}
         {activeTab === 'stats' && <WasherDashboard stats={stats} store={store} onOpenSettings={() => setIsSettingsOpen(true)} />}
         {activeTab === 'drivers' && <WasherDrivers store={store} />}
         {activeTab === 'orders' && <WasherOrders orders={history} router={router} />}
         
-        <WasherLiveRadar storeId={id} storeName={store?.name || 'Tienda'} ownerId={store?.ownerId || ''} />
       </main>
     </div>
   );
