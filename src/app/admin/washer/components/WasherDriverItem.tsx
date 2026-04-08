@@ -92,54 +92,54 @@ export function WasherDriverItem({ driverId, storeId, storeName, ownerId, onUnli
   }
 
   return (
-    <Card className="border-none rounded-[32px] p-4 bg-white shadow-sm hover:shadow-md transition-all ring-1 ring-black/[0.02] group">
-      <div className="flex items-center justify-between gap-4">
+    <Card className="border-none rounded-[32px] p-3 sm:p-4 bg-white shadow-sm hover:shadow-md transition-all ring-1 ring-black/[0.02] group overflow-hidden">
+      <div className="flex items-center justify-between gap-2 sm:gap-4">
         {/* LADO IZQUIERDO: AVATAR Y INFO (ESTILO WHATSAPP) */}
-        <div className="flex items-center gap-4 flex-1 min-w-0">
-          <Avatar className="w-14 h-14 border-2 border-slate-50 shadow-sm shrink-0">
+        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+          <Avatar className="w-11 h-11 sm:w-14 sm:h-14 border-2 border-slate-50 shadow-sm shrink-0">
             <AvatarImage src={driverProfile?.photoURL} className="object-cover" />
             <AvatarFallback className="bg-primary/10 text-primary font-black uppercase">
               {driverProfile?.displayName?.charAt(0) || 'R'}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-0.5">
-              <h4 className="text-sm font-black uppercase italic text-slate-900 truncate">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-0.5">
+              <h4 className="text-xs sm:text-sm font-black uppercase italic text-slate-900 truncate">
                 {driverProfile?.realFullName || driverProfile?.displayName || 'Cargando...'}
               </h4>
-              <Badge className="bg-green-50 text-green-600 border-none text-[7px] font-black uppercase px-2 py-0.5">VINCULADO</Badge>
+              <Badge className="w-fit bg-green-50 text-green-600 border-none text-[6px] sm:text-[7px] font-black uppercase px-1.5 sm:px-2 py-0.5">VINCULADO</Badge>
             </div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">
+            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">
               {driverProfile?.phoneNumber || 'Sin teléfono'}
             </p>
           </div>
         </div>
 
-        {/* ACCIONES DE CONTACTO RÁPIDO */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* ACCIONES DE CONTACTO RÁPIDO - REDIMENSIONADAS PARA EVITAR DESBORDAMIENTO */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <Button 
             onClick={handleOpenInternalChat} 
             disabled={isConnectingChat}
             size="icon" 
-            className="w-10 h-10 rounded-full bg-slate-900 text-white hover:bg-primary transition-all shadow-lg active:scale-95"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900 text-white hover:bg-primary transition-all shadow-lg active:scale-95"
           >
-            {isConnectingChat ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4 text-primary" />}
+            {isConnectingChat ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />}
           </Button>
           
           <Button 
             onClick={handleWhatsAppOpen}
             size="icon" 
-            className="w-10 h-10 rounded-full bg-[#25d366] text-white hover:bg-[#128c7e] transition-all shadow-lg active:scale-95"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#25d366] text-white hover:bg-[#128c7e] transition-all shadow-lg active:scale-95"
           >
-            <WhatsAppIcon className="w-4 h-4" />
+            <WhatsAppIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </Button>
 
           <a href={`tel:${driverProfile?.phoneNumber}`} className={!driverProfile?.phoneNumber ? "pointer-events-none" : ""}>
             <Button 
               size="icon" 
-              className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all shadow-sm active:scale-95"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all shadow-sm active:scale-95"
             >
-              <Phone className="w-4 h-4" />
+              <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </Button>
           </a>
 
@@ -147,9 +147,9 @@ export function WasherDriverItem({ driverId, storeId, storeName, ownerId, onUnli
             onClick={() => onUnlink(driverId)}
             variant="ghost" 
             size="icon"
-            className="w-10 h-10 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </Button>
         </div>
       </div>
