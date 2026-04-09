@@ -1,12 +1,14 @@
-
 "use client";
 
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Zap, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 
-export function WelcomeFeatureCards() {
+interface WelcomeFeatureCardsProps {
+  onAction: () => void;
+}
+
+export function WelcomeFeatureCards({ onAction }: WelcomeFeatureCardsProps) {
   return (
     <Card className="border-none shadow-[0_30px_100px_rgba(0,0,0,0.5)] rounded-[48px] bg-white overflow-hidden p-10 space-y-10 animate-in slide-in-from-bottom-10 duration-1000">
       <div className="space-y-8">
@@ -33,11 +35,12 @@ export function WelcomeFeatureCards() {
         </div>
       </div>
 
-      <Button asChild className="w-full h-20 rounded-[32px] bg-primary text-white font-black uppercase text-sm tracking-widest gap-3 border-b-[10px] border-blue-800 shadow-[0_20px_50px_rgba(59,130,246,0.3)] hover:translate-y-1 hover:border-b-[6px] active:translate-y-2 active:border-b-0 transition-all group">
-        <Link href="/delivery/register" className="flex items-center gap-3">
-          QUIERO SER REPARTIDOR 
-          <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
-        </Link>
+      <Button 
+        onClick={onAction}
+        className="w-full h-20 rounded-[32px] bg-primary text-white font-black uppercase text-sm tracking-widest gap-3 border-b-[10px] border-blue-800 shadow-[0_20px_50px_rgba(59,130,246,0.3)] hover:translate-y-1 hover:border-b-[6px] active:translate-y-2 active:border-b-0 transition-all group"
+      >
+        QUIERO SER REPARTIDOR 
+        <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
       </Button>
     </Card>
   );
