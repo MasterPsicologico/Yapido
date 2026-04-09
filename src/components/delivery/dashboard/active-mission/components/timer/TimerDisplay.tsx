@@ -13,13 +13,17 @@ interface TimerDisplayProps {
 
 /**
  * TimerDisplay - Componente Atómico: El núcleo visual del tiempo.
- * Ajustado para fondo blanco con tipografía Slate-900.
+ * AJUSTE CRÍTICO: Reducción de escala para evitar desbordamiento en tiempos largos.
  */
 export function TimerDisplay({ hours, minutes, seconds, isExpired, pulseColor }: TimerDisplayProps) {
+  // Ajuste dinámico de tamaño según la cantidad de dígitos en las horas
+  const isLargeTimer = hours >= 100;
+
   return (
-    <div className="flex flex-baseline gap-2">
+    <div className="flex items-baseline justify-center gap-1 sm:gap-2 w-full px-2 overflow-hidden">
       <span className={cn(
-        "text-7xl font-black italic tracking-tighter tabular-nums leading-none transition-colors duration-500",
+        "font-black italic tracking-tighter tabular-nums leading-none transition-colors duration-500",
+        isLargeTimer ? "text-5xl sm:text-6xl" : "text-6xl sm:text-7xl",
         pulseColor === 'green' ? "text-green-600" : 
         pulseColor === 'red' ? "text-red-600" : 
         isExpired ? "text-red-600" : "text-slate-900"
@@ -27,7 +31,7 @@ export function TimerDisplay({ hours, minutes, seconds, isExpired, pulseColor }:
         {isExpired && "-"}{hours}:{minutes < 10 ? `0${minutes}` : minutes}
       </span>
       <span className={cn(
-        "text-sm font-black uppercase tracking-widest self-end mb-1",
+        "text-[10px] sm:text-sm font-black uppercase tracking-widest self-end mb-1 shrink-0",
         isExpired ? "text-red-600" : "text-amber-600"
       )}>
         {seconds < 10 ? `0${seconds}` : seconds}s
