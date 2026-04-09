@@ -3,17 +3,13 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Navbar } from '@/components/layout/Navbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, CheckCircle2, Zap, ArrowRight, Trash2, RotateCcw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc, setDocumentNonBlocking } from '@/firebase';
+import { Loader2 } from 'lucide-react';
+import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, limit, or } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
-import Image from 'next/image';
 import { compressImage } from '@/lib/image-compression';
 
 import { WeeklyChallenge } from '@/components/delivery/weekly-challenge';
@@ -24,6 +20,9 @@ import { EarningsTab } from '@/components/delivery/dashboard/tabs/EarningsTab';
 import { MyDeliveriesTab } from '@/components/delivery/dashboard/tabs/MyDeliveriesTab';
 import { releaseOrder } from '@/ai/flows/release-order-flow';
 import { AgentProgressOverlay } from '@/components/agents/AgentProgressOverlay';
+
+// IMPORTACIÓN DE COMPONENTES ATÓMICOS DE BIENVENIDA
+import { WelcomeLanding } from '@/components/delivery/welcome/WelcomeLanding';
 
 export default function DeliveryDashboardPage() {
   const { user } = useUser();
@@ -197,7 +196,7 @@ export default function DeliveryDashboardPage() {
     try {
       const compressed = await compressImage(file, 1920, 1080, 0.85);
       const updateKey = target === 'active' ? 'bgActive' : 'bgInactive';
-      await setDocumentNonBlocking(dashboardConfigRef, { [updateKey]: compressed, updatedAt: serverTimestamp() }, { merge: true });
+      await updateDocumentNonBlocking(dashboardConfigRef, { [updateKey]: compressed, updatedAt: serverTimestamp() });
       toast({ title: "Fondo actualizado" });
     } finally {
       setIsUploadingDashboard(null);
@@ -206,39 +205,15 @@ export default function DeliveryDashboardPage() {
 
   if (loadingProfile) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
 
-  const isConfirmedRepartidor = profile?.role === 'repartidor' || isAdmin;
+  const isConfirmedRepartidor = profile?.role === 'repartidor';
 
   if (!isConfirmedRepartidor) {
     return (
-      <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-        <Navbar />
-        <main className="flex-1 w-full pb-20">
-          <div className="relative w-full aspect-[16/10] overflow-hidden shadow-xl">
-            {welcomeConfig?.backgroundImage ? (
-              <Image src={welcomeConfig.backgroundImage} alt="Portada" fill className="object-cover object-top" priority />
-            ) : (
-              <div className="absolute inset-0 bg-slate-900" />
-            )}
-          </div>
-          <div className="container mx-auto px-4 max-w-2xl -mt-6 relative z-20">
-            <Card className="border-none shadow-2xl rounded-[48px] bg-white overflow-hidden p-10 space-y-10">
-              <div className="space-y-8">
-                <div className="flex items-start gap-6">
-                  <div className="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center text-green-500 shrink-0 shadow-inner"><CheckCircle2 className="w-6 h-6" /></div>
-                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic"><span className="text-primary">Genera</span> Ganancias</h4><p className="text-xs text-slate-400 font-medium">Aumenta tus ingresos completando misiones.</p></div>
-                </div>
-                <div className="flex items-start gap-6">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0 shadow-inner"><Zap className="w-6 h-6" /></div>
-                  <div className="space-y-1"><h4 className="font-black text-lg uppercase italic">Control Absoluto</h4><p className="text-xs text-slate-400 font-medium">Tú decides tu horario y tu zona.</p></div>
-                </div>
-              </div>
-              <Button asChild className="w-full h-20 rounded-[32px] bg-primary text-white font-black uppercase text-sm tracking-widest gap-3 border-b-[10px] border-blue-800 shadow-xl active:translate-y-2 active:border-b-0 transition-all">
-                <Link href="/delivery/register">QUIERO SER REPARTIDOR <ArrowRight className="w-4 h-4" /></Link>
-              </Button>
-            </Card>
-          </div>
-        </main>
-      </div>
+      <WelcomeLanding 
+        isAdmin={isAdmin} 
+        config={welcomeConfig} 
+        onUpdateConfig={(data) => updateDocumentNonBlocking(welcomeConfigRef, { ...data, updatedAt: serverTimestamp() })} 
+      />
     );
   }
 
