@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -165,6 +164,14 @@ export default function OrdersManagementPage() {
         </main>
       ) : (
         <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl space-y-12">
+          {/* BOTÓN DE RETORNO QUIRÚRGICO AL PANEL DE CONTROL */}
+          <Link href="/admin/manage" className="group flex items-center gap-2 text-slate-400 font-bold hover:text-primary transition-colors w-fit">
+            <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+              <ArrowLeft className="w-4 h-4" />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest leading-none">Volver a Consola</span>
+          </Link>
+
           <div className="flex items-center gap-5">
             <div className="w-16 h-16 bg-primary rounded-[24px] flex items-center justify-center text-white shadow-xl"><StoreIcon className="w-8 h-8" /></div>
             <div><h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none text-slate-900">Panel Maestro</h1><p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2">Centro de Comando Digital</p></div>
