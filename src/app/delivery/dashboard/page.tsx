@@ -162,6 +162,7 @@ export default function DeliveryDashboardPage() {
     }
 
     if (newStatus === 'completed') {
+      updateData.completedAt = serverTimestamp();
       toast({ title: "Contrato Finalizado", className: "bg-green-600 text-white" });
     }
     

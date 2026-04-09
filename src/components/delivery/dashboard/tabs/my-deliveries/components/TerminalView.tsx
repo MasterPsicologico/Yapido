@@ -8,6 +8,7 @@ import { CheckCircle2, Timer } from 'lucide-react';
 import { MissionUsageCountdown } from '@/components/delivery/dashboard/active-mission/components/timer/MissionUsageCountdown';
 import { MyDeliveriesActions } from './MyDeliveriesActions';
 import { PickupNavDetails } from './PickupNavDetails';
+import { MissionLogTimeline } from './MissionLogTimeline';
 import { cn } from '@/lib/utils';
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -85,11 +86,20 @@ export function TerminalView({
             </div>
           )}
 
-          <div className="bg-white p-8 rounded-[40px] border border-slate-100 space-y-4 shadow-xl">
+          <div className="bg-white p-8 rounded-[40px] border border-slate-100 space-y-8 shadow-xl">
             <div className="flex items-start gap-4">
               <MapPin className="w-6 h-6 text-primary shrink-0 mt-1" />
-              <span className="text-lg font-black uppercase italic text-slate-900 tracking-tight leading-snug">{order.customerAddress}</span>
+              <div className="space-y-1">
+                <span className="text-lg font-black uppercase italic text-slate-900 tracking-tight leading-snug">{order.customerAddress}</span>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sector: {order.customerSector || 'Aguachica'}</p>
+              </div>
             </div>
+
+            {/* INTEGRACIÓN DE LÍNEA DE TIEMPO DETALLADA */}
+            <div className="pt-4 border-t border-slate-50">
+              <MissionLogTimeline order={order} />
+            </div>
+
             {isCompleted && (
               <div className="flex items-center gap-3 pt-4 border-t border-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">
                 <Zap className="w-4 h-4 text-primary" /> Valor Final: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice || 0)}
