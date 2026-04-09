@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -48,6 +47,18 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
     return eachDayOfInterval({ start, end });
   }, []);
 
+  // LÓGICA DE AUDITORÍA: Días con lavadoras que no se han traído (En uso)
+  const pendingDates = useMemo(() => {
+    return rentals
+      .filter(order => order.status === 'delivered')
+      .map(order => {
+        const ts = order.createdAt || order.deliveredAt;
+        const date = ts?.toDate?.() || (ts?.seconds ? new Date(ts.seconds * 1000) : null);
+        return date ? format(date, 'yyyy-MM-dd') : null;
+      })
+      .filter(Boolean) as string[];
+  }, [rentals]);
+
   const handleAdjustHours = (orderId: string, extra: number, currentHours: number) => {
     if (!firestore) return;
     if (extra < 0 && currentHours <= 1) {
@@ -84,6 +95,7 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
         monthDays={monthDays} 
         selectedDate={selectedDate} 
         onSelectDate={setSelectedDate} 
+        pendingDates={pendingDates}
       />
 
       <div className="grid gap-4">
