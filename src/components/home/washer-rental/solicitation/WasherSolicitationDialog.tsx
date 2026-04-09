@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -174,6 +173,11 @@ export function WasherSolicitationDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(v) => { if (orderStatus === 'idle') onOpenChange(v); }}>
       <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-[#0a0a0a] p-0 overflow-hidden flex flex-col z-[600] animate-in slide-in-from-bottom duration-500 [&>button:last-child]:hidden">
+        {/* FIX DE ACCESIBILIDAD: Título y Descripción para Lectores de Pantalla */}
+        <DialogHeader className="sr-only">
+          <DialogTitle>Nueva Solicitud Alquiler</DialogTitle>
+          <DialogDescription>Formulario de solicitud sincronizado.</DialogDescription>
+        </DialogHeader>
         
         <SolicitationHeader 
           isAdmin={isAdmin} 
