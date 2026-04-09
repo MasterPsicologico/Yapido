@@ -1,9 +1,9 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { ResponsiveHero } from './ResponsiveHero';
-import { WelcomeFeatureCards } from './WelcomeFeatureCards';
 import { AdminWelcomeControls } from './AdminWelcomeControls';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
@@ -12,10 +12,11 @@ import { doc, serverTimestamp } from 'firebase/firestore';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { useRouter } from 'next/navigation';
 
-// IMPORTACIÓN DE MÓDULOS DE REGISTRO (MUDANZA LÓGICA)
+// IMPORTACIÓN DE MÓDULOS DE REGISTRO
 import { TermsSection } from '@/components/delivery/register/terms';
 import { IdentitySection } from '@/components/delivery/register/identity';
 import { RegisterSubmit } from '@/components/delivery/register/submit';
+import { cn } from '@/lib/utils';
 
 interface WelcomeLandingProps {
   isAdmin: boolean;
@@ -24,8 +25,9 @@ interface WelcomeLandingProps {
 }
 
 /**
- * WelcomeLanding - Orquestador Maestro Unificado.
- * Ahora gestiona tanto la bienvenida como el registro instantáneo en una sola pieza.
+ * WelcomeLanding - Orquestador de Inmersión Total.
+ * La imagen ocupa el 100% del viewport. Sin scroll inicial.
+ * Al hacer clic en la imagen, se despliega el flujo de registro abajo.
  */
 export function WelcomeLanding({ isAdmin, config, onUpdateConfig }: WelcomeLandingProps) {
   const { user } = useUser();
@@ -39,7 +41,7 @@ export function WelcomeLanding({ isAdmin, config, onUpdateConfig }: WelcomeLandi
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Estados de Formulario (Sincronizados)
+  // Estados de Formulario
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTermsError, setShowTermsError] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -56,7 +58,9 @@ export function WelcomeLanding({ isAdmin, config, onUpdateConfig }: WelcomeLandi
   }, [profile]);
 
   const handleToggleForm = () => {
+    if (showForm) return;
     setShowForm(true);
+    // Pequeño delay para permitir que el DOM renderice el formulario antes del scroll
     setTimeout(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
@@ -119,7 +123,7 @@ export function WelcomeLanding({ isAdmin, config, onUpdateConfig }: WelcomeLandi
         updatedAt: serverTimestamp()
       });
       toast({ title: "¡Solicitud Enviada!", className: "bg-slate-900 text-white border-none" });
-      router.refresh(); // Sincronización de estado para ocultar landing
+      router.refresh();
     } catch (e) {
       toast({ title: "Error en el despliegue", variant: "destructive" });
     } finally {
@@ -130,20 +134,23 @@ export function WelcomeLanding({ isAdmin, config, onUpdateConfig }: WelcomeLandi
   const isFormReady = acceptedTerms && docFront && docBack && selfie && idNumber && vehicleType;
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-950 overflow-x-hidden selection:bg-primary selection:text-white">
+    <div className={cn(
+      "flex flex-col min-h-screen bg-slate-950 transition-all duration-700",
+      !showForm ? "h-screen overflow-hidden" : "overflow-x-hidden"
+    )}>
       <Navbar />
       
       <main className="flex-1 flex flex-col items-center relative">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black z-0" />
         
-        {/* COMPONENTE ATÓMICO: HERO RESPONSIVO INTERACTIVO */}
+        {/* HERO RESPONSIVO: Ocupa el 100% de la pantalla útil */}
         <ResponsiveHero 
           bgMobile={config?.bgMobile} 
           bgDesktop={config?.bgDesktop} 
           onAction={handleToggleForm}
         />
 
-        {/* COMPONENTE ATÓMICO: CONTROLES DE ADMINISTRADOR */}
+        {/* CONTROLES ADMIN */}
         {isAdmin && (
           <AdminWelcomeControls 
             isUploading={isUploading} 
@@ -151,53 +158,49 @@ export function WelcomeLanding({ isAdmin, config, onUpdateConfig }: WelcomeLandi
           />
         )}
 
-        {/* CONTENEDOR DE CONTENIDO DINÁMICO */}
-        <div className="container mx-auto px-4 max-w-2xl -mt-12 relative z-20 pb-20 space-y-12">
-          {!showForm ? (
-            <WelcomeFeatureCards onAction={handleToggleForm} />
-          ) : (
-            <div ref={formRef} className="animate-in slide-in-from-bottom-10 duration-1000 space-y-12">
-              <div className="text-center space-y-2">
-                <h3 className="text-3xl font-black italic uppercase tracking-tighter text-white">Registro de Flota</h3>
-                <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em]">Completa tu expediente maestro</p>
-              </div>
-
-              <TermsSection 
-                acceptedTerms={acceptedTerms}
-                onAcceptedChange={setAcceptedTerms}
-                showTermsError={showTermsError}
-              />
-
-              <IdentitySection 
-                isLocked={!acceptedTerms}
-                onLockedClick={() => {
-                  setShowTermsError(true);
-                  toast({ title: "Compromiso requerido", variant: "destructive" });
-                  setTimeout(() => setShowTermsError(false), 2000);
-                }}
-                fullName={fullName} setFullName={setFullName}
-                idNumber={idNumber} setIdNumber={setIdNumber}
-                vehicleType={vehicleType} setVehicleType={setVehicleType}
-                plate={plate} setPlate={setPlate}
-                docFront={docFront} docBack={docBack} selfie={selfie}
-                isCompressing={isCompressing}
-                onImageUpload={handleRegisterImageUpload}
-                setDocFront={setDocFront} setDocBack={setDocBack} setSelfie={setSelfie}
-              />
-
-              <RegisterSubmit 
-                loading={loading}
-                isReady={isFormReady}
-                onClick={handleFinalSubmit}
-              />
+        {/* CONTENEDOR DEL FORMULARIO: Aparece solo al hacer clic en la imagen */}
+        {showForm && (
+          <div ref={formRef} className="container mx-auto px-4 max-w-2xl relative z-20 py-20 space-y-12 animate-in slide-in-from-bottom-10 duration-1000">
+            <div className="text-center space-y-2">
+              <h3 className="text-3xl font-black italic uppercase tracking-tighter text-white">Registro de Flota</h3>
+              <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.3em]">Completa tu expediente maestro</p>
             </div>
-          )}
-        </div>
-      </main>
 
-      <footer className="py-10 text-center relative z-10 border-t border-white/5 bg-black/20">
-        <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.5em]">Vitriniando AI Central • Aguachica Élite</p>
-      </footer>
+            <TermsSection 
+              acceptedTerms={acceptedTerms}
+              onAcceptedChange={setAcceptedTerms}
+              showTermsError={showTermsError}
+            />
+
+            <IdentitySection 
+              isLocked={!acceptedTerms}
+              onLockedClick={() => {
+                setShowTermsError(true);
+                toast({ title: "Compromiso requerido", variant: "destructive" });
+                setTimeout(() => setShowTermsError(false), 2000);
+              }}
+              fullName={fullName} setFullName={setFullName}
+              idNumber={idNumber} setIdNumber={setIdNumber}
+              vehicleType={vehicleType} setVehicleType={setVehicleType}
+              plate={plate} setPlate={setPlate}
+              docFront={docFront} docBack={docBack} selfie={selfie}
+              isCompressing={isCompressing}
+              onImageUpload={handleRegisterImageUpload}
+              setDocFront={setDocFront} setDocBack={setDocBack} setSelfie={setSelfie}
+            />
+
+            <RegisterSubmit 
+              loading={loading}
+              isReady={isFormReady}
+              onClick={handleFinalSubmit}
+            />
+            
+            <footer className="py-10 text-center opacity-40">
+              <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.5em]">Vitriniando AI Central • Aguachica Digital</p>
+            </footer>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
