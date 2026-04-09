@@ -6,9 +6,10 @@ import { Zap, Moon, Camera, Store as StoreIcon, LayoutGrid, ChevronDown, Loader2
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+import { compressImage } from '@/lib/image-compression';
 
 interface WasherRentalCardProps {
   isAdmin: boolean;
@@ -38,12 +39,16 @@ export function WasherRentalCard({
   const firestore = useFirestore();
   const [localBanner, setLocalBanner] = useState<string | null>(null);
   
-  // LÓGICA DE REPOSICIONAMIENTO
+  // LÓGICA DE REPOSICIONAMIENTO CORREGIDA
   const [isAdjusting, setIsAdjusting] = useState(false);
   const [yPos, setYPos] = useState(bannerConfig?.yPos || 50);
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef(0);
   const startYPos = useRef(50);
+
+  // Estado para la carga del Splash
+  const [isUploadingSplash, setIsUploadingSplash] = useState(false);
+  const splashInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -68,8 +73,9 @@ export function WasherRentalCard({
   const handleDrag = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDragging) return;
     const currentY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    const delta = (currentY - startY.current) / 5; // Sensibilidad del arrastre
-    const newPos = Math.max(0, Math.min(100, startYPos.current - delta));
+    // Sensibilidad invertida para que el arrastre sea intuitivo (tirar hacia arriba sube la imagen)
+    const delta = (currentY - startY.current) / 4; 
+    const newPos = Math.max(0, Math.min(100, startYPos.current + delta));
     setYPos(newPos);
   };
 
@@ -85,29 +91,46 @@ export function WasherRentalCard({
     toast({ title: "Posición Guardada", className: "bg-green-600 text-white" });
   };
 
+  const handleSplashUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !isAdmin || !firestore) return;
+    setIsUploadingSplash(true);
+    try {
+      const compressed = await compressImage(file, 400, 400, 0.8);
+      const splashRef = doc(firestore, 'appConfig', 'splash');
+      await setDocumentNonBlocking(splashRef, { imageUrl: compressed, updatedAt: serverTimestamp() }, { merge: true });
+      toast({ title: "Splash Actualizado" });
+    } finally {
+      setIsUploadingSplash(false);
+    }
+  };
+
   return (
     <div 
-      onMouseDown={handleStartDrag}
       onMouseMove={handleDrag}
       onMouseUp={handleStopDrag}
-      onTouchStart={handleStartDrag}
+      onMouseLeave={handleStopDrag}
       onTouchMove={handleDrag}
       onTouchEnd={handleStopDrag}
-      onClick={() => !isAdjusting && onOpenSolicitation()}
       className={cn(
         "relative w-full min-h-[calc(100dvh-64px)] overflow-hidden flex flex-col items-center justify-start pt-32 px-6 text-center bg-[#050505] transition-all duration-500",
-        isAdjusting ? "cursor-ns-resize" : "cursor-pointer active:scale-[0.99]"
+        isAdjusting ? "cursor-ns-resize" : ""
       )}
     >
       {/* Fondo de Identidad */}
-      <div className="absolute inset-0 z-0 select-none">
+      <div 
+        onMouseDown={handleStartDrag}
+        onTouchStart={handleStartDrag}
+        onClick={() => !isAdjusting && onOpenSolicitation()}
+        className="absolute inset-0 z-0 select-none"
+      >
         {localBanner ? (
           <Image 
             src={localBanner} 
             alt="Portada" 
             fill 
             style={{ objectPosition: `center ${yPos}%` }}
-            className="object-cover transition-all duration-700 ease-out" 
+            className="object-cover transition-all duration-300 ease-out" 
             priority 
           />
         ) : (
@@ -116,12 +139,12 @@ export function WasherRentalCard({
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
       </div>
 
-      {/* Controles de Reposicionamiento (Admin) */}
+      {/* Controles de Administrador */}
       {isAdmin && (
         <div className="absolute top-4 left-4 z-[50] flex flex-col gap-3">
-          <input type="file" className="hidden" accept="image/*" onChange={onBannerUpload} />
+          <input type="file" className="hidden" accept="image/*" onChange={onBannerUpload} id="banner-input" />
           <button 
-            onClick={(e) => { e.stopPropagation(); (e.currentTarget.previousSibling as HTMLInputElement).click(); }} 
+            onClick={(e) => { e.stopPropagation(); document.getElementById('banner-input')?.click(); }} 
             disabled={isUploadingBanner} 
             className="w-12 h-12 rounded-[18px] bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-primary transition-all shadow-2xl"
           >
@@ -146,12 +169,25 @@ export function WasherRentalCard({
               <CheckCircle2 className="w-5 h-5" />
             </button>
           )}
+
+          {/* Control de Splash */}
+          <input type="file" ref={splashInputRef} className="hidden" accept="image/*" onChange={handleSplashUpload} />
+          <button 
+            onClick={(e) => { e.stopPropagation(); splashInputRef.current?.click(); }}
+            disabled={isUploadingSplash}
+            className="w-12 h-12 rounded-[18px] bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-blue-400 transition-all shadow-2xl"
+          >
+            {isUploadingSplash ? <Loader2 className="w-5 h-5 animate-spin text-blue-400" /> : <Zap className="w-5 h-5 fill-blue-400" />}
+          </button>
         </div>
       )}
 
       {/* Activador Central */}
       {!isAdjusting && (
-        <div className="relative z-10 flex flex-col items-center gap-8 mt-16 animate-in fade-in zoom-in duration-700">
+        <div 
+          onClick={() => onOpenSolicitation()}
+          className="relative z-10 flex flex-col items-center gap-8 mt-16 animate-in fade-in zoom-in duration-700 cursor-pointer group"
+        >
           <div className="relative group/cta">
             {isAnyStoreOpen && (
               <div className="absolute inset-0 rounded-full bg-red-500/40 [animation-duration:2000ms] animate-ping scale-125" />
@@ -170,7 +206,7 @@ export function WasherRentalCard({
         </div>
       )}
 
-      {/* BOTÓN DE CANDADO (MODO ENFOQUE - EXCLUSIVO ADMIN) */}
+      {/* BOTÓN DE CANDADO (Solo Admin) */}
       {isAdmin && !isAdjusting && (
         <button 
           onClick={(e) => { e.stopPropagation(); onToggleLock?.(); }}

@@ -13,16 +13,22 @@ import { collection, query, doc, orderBy } from 'firebase/firestore';
 import { ShoppingBag, Cpu, ArrowRight, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
+import Image from 'next/image';
 
 /**
  * Home - El Portal Unificado de Vitriniando.
- * Carga inmediata del servicio de lavadoras como página principal absoluta.
+ * Carga inmediata con Pantalla de Carga (Splash) minimalista controlada por Admin.
  */
 export default function Home() {
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
 
-  // EFECTO DE AUDIO PREMIUM DE INTRODUCCIÓN (CAMPANILLAS ÉLITE)
+  // FETCH: Configuración de la pantalla de carga (Splash)
+  const splashRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'splash'), [firestore]);
+  const { data: splashConfig } = useDoc(splashRef);
+
+  // EFECTO DE AUDIO PREMIUM DE INTRODUCCIÓN
   useEffect(() => {
     if (isUserLoading) {
       const introSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
@@ -31,7 +37,6 @@ export default function Home() {
     }
   }, [isUserLoading]);
 
-  // Si es repartidor y prefiere su modo, lo mandamos a su dashboard, de lo contrario se queda en lavadoras
   useEffect(() => {
     if (!isUserLoading && user) {
       const savedMode = localStorage.getItem('vitriniando_preferred_mode');
@@ -41,28 +46,34 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // Pantalla de carga dorada ultra-rápida
+  // PANTALLA DE CARGA ÉLITE (SPLASH) - REDISEÑADA POR MANDATO
   if (isUserLoading) return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050505] overflow-hidden">
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
-        <div className="absolute -inset-[100%] bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent skew-x-[-35deg] animate-[shimmer_5s_infinite_ease-in-out]" />
-      </div>
-      <div className="flex flex-col items-center gap-10 animate-in fade-in zoom-in duration-1000 relative z-10">
+    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-[#050505] overflow-hidden">
+      <div className="flex flex-col items-center gap-10 animate-in fade-in zoom-in duration-700 relative z-10">
         <div className="relative group">
-          <div className="absolute inset-0 rounded-[2.5rem] bg-yellow-500/20 animate-pulse [animation-duration:2000ms] blur-3xl" />
-          <div className="relative w-28 h-28 bg-gradient-to-br from-[#fef08a] via-[#eab308] to-[#a16207] rounded-[2.5rem] flex items-center justify-center shadow-[0_0_80px_rgba(234,179,8,0.4)] border-2 border-yellow-200/50 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/50 to-transparent animate-shimmer opacity-70" />
-            <ShoppingBag className="w-14 h-14 text-slate-950 drop-shadow-2xl relative z-10 transition-transform group-hover:scale-110" />
-            <Sparkles className="absolute top-4 right-4 w-6 h-6 text-white animate-pulse" />
+          {/* Aura de Carga */}
+          <div className="absolute inset-0 rounded-full bg-primary/20 animate-pulse [animation-duration:1500ms] blur-3xl scale-150" />
+          
+          {/* Círculo de Identidad Maestro */}
+          <div className="relative w-32 h-32 rounded-full border-4 border-primary/20 p-1 flex items-center justify-center bg-slate-900 shadow-[0_0_60px_rgba(59,130,246,0.3)] overflow-hidden">
+            {splashConfig?.imageUrl ? (
+              <Image 
+                src={splashConfig.imageUrl} 
+                alt="Loading" 
+                fill 
+                className="object-cover animate-in fade-in duration-500" 
+              />
+            ) : (
+              <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                <ShoppingBag className="w-10 h-10 text-primary/40 animate-pulse" />
+              </div>
+            )}
           </div>
         </div>
-        <div className="flex flex-col items-center gap-6 text-center">
-          <h2 className="text-4xl sm:text-5xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-[#fef08a] via-[#eab308] to-[#a16207] uppercase leading-none drop-shadow-[0_4px_20px_rgba(234,179,8,0.4)]">
-            Vitriniando
-          </h2>
-          <div className="h-1.5 w-48 bg-white/5 rounded-full overflow-hidden relative border border-white/5 shadow-inner">
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-800 via-yellow-400 to-yellow-800 animate-progress-loading shadow-[0_0_25px_rgba(234,179,8,0.7)]" />
-          </div>
+
+        {/* Barra de Progreso Minimalista */}
+        <div className="h-1 w-24 bg-white/5 rounded-full overflow-hidden relative border border-white/5">
+          <div className="absolute inset-0 bg-primary animate-progress-loading shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
         </div>
       </div>
     </div>
@@ -82,7 +93,6 @@ function AuthenticatedHome() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { isAdmin, profile } = useProfile();
-  const router = useRouter();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [openStore, setOpenStore] = useState(false);
@@ -93,8 +103,8 @@ function AuthenticatedHome() {
   const [base64Image, setBase64Image] = useState<string | null>(null);
 
   const lockRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_lock'), [firestore]);
-  const { data: lockData } = useDoc(lockRef);
-  const isWasherOnlyMode = lockData?.active === true;
+  const { data: dataLock } = useDoc(lockRef);
+  const isWasherOnlyMode = dataLock?.active === true;
 
   const catQ = useMemoFirebase(() => query(collection(firestore, 'mainCategories'), orderBy('createdAt', 'desc')), [firestore]);
   const { data: mainCategories, isLoading: loadingCategories } = useCollection(catQ);
@@ -104,19 +114,16 @@ function AuthenticatedHome() {
 
   const filteredData = useMemo(() => {
     if (!searchTerm.trim()) return { categories: mainCategories, stores: null };
-    
     const lowerSearch = searchTerm.toLowerCase();
     const matchedCategories = mainCategories?.filter(c => 
       c.name.toLowerCase().includes(lowerSearch) || 
       c.description.toLowerCase().includes(lowerSearch)
     );
-    
     const matchedStores = allStores?.filter(s => 
       s.name.toLowerCase().includes(lowerSearch) || 
       s.description?.toLowerCase().includes(lowerSearch) ||
       s.address?.toLowerCase().includes(lowerSearch)
     );
-
     return { categories: matchedCategories, stores: matchedStores };
   }, [searchTerm, mainCategories, allStores]);
 
@@ -166,7 +173,7 @@ function AuthenticatedHome() {
                   <div className="flex items-center gap-6">
                     <div className="w-20 h-20 bg-white/10 rounded-[32px] flex items-center justify-center backdrop-blur-xl border border-white/5 relative">
                       <Cpu className="w-10 h-10 text-primary animate-pulse" />
-                      <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400" />
+                      <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400 animate-pulse" />
                     </div>
                     <div className="space-y-1">
                       <h3 className="text-3xl sm:text-4xl font-black italic uppercase tracking-tighter leading-none">Ciudadela de Agentes</h3>
