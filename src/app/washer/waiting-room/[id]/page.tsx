@@ -9,12 +9,16 @@ import { useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNon
 import { doc, collection, query, orderBy, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 
-// IMPORTACIÓN DE MÓDULOS FRAGMENTADOS EN SU MÁXIMA EXPRESIÓN
+// IMPORTACIÓN DE MÓDULOS FRAGMENTADOS
 import { TimerHero } from './components/TimerHero';
 import { StatusIdentityCard } from './components/StatusIdentityCard';
 import { OffersRadarSection } from './components/OffersRadarSection';
 import { RetrySearchSection } from './components/RetrySearchSection';
 
+/**
+ * WasherWaitingRoom - Centro de Comando del Cliente.
+ * Monitorea en tiempo real la asignación de su pedido.
+ */
 export default function WasherWaitingRoom() {
   const params = useParams();
   const id = params?.id as string;
@@ -24,18 +28,18 @@ export default function WasherWaitingRoom() {
   
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
-  // Listener Maestro de la Orden
+  // LISTENER MAESTRO: La Orden
   const orderRef = useMemoFirebase(() => (!firestore || !id || !user) ? null : doc(firestore, 'orders', id), [firestore, id, user]);
   const { data: order, isLoading: loadingOrder } = useDoc(orderRef);
 
-  // Listener Maestro de Contraofertas
+  // LISTENER DE CONTRAOFERTAS (PARA NEGOCIACIÓN)
   const offersQuery = useMemoFirebase(() => {
     if (!firestore || !id || !user) return null;
     return query(collection(firestore, 'orders', id, 'offers'), orderBy('createdAt', 'desc'));
   }, [firestore, id, user]);
   const { data: offers } = useCollection(offersQuery);
 
-  // MOTOR DE TIEMPO SINCRONIZADO CON LA NUBE
+  // MOTOR DE CRONÓMETRO ÉLITE
   useEffect(() => {
     if (!order?.createdAt) return;
 
@@ -43,7 +47,7 @@ export default function WasherWaitingRoom() {
       const now = Date.now();
       const created = order.createdAt.toMillis?.() || (order.createdAt.seconds * 1000);
       const diffInSeconds = Math.floor((now - created) / 1000);
-      const remaining = Math.max(0, 300 - diffInSeconds); // 5 minutos (300s) de protocolo
+      const remaining = Math.max(0, 300 - diffInSeconds); // 5 MINUTOS DE PROTOCOLO
       
       setTimeLeft(remaining);
 
@@ -58,7 +62,7 @@ export default function WasherWaitingRoom() {
   const handleAcceptOffer = (offer: any) => {
     if (!firestore || !orderRef) return;
     
-    // ASIGNACIÓN MAESTRA Y PROTOCOLO DE CIERRE DE TRATO
+    // PROTOCOLO DE CIERRE DE TRATO: Vinculación de Tienda y Repartidor
     updateDocumentNonBlocking(orderRef, {
       status: 'shipped',
       deliveryDriverId: offer.driverId,
@@ -69,14 +73,13 @@ export default function WasherWaitingRoom() {
       acceptedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       participants: arrayUnion(offer.driverId, offer.storeOwnerId || 'SYSTEM'),
-      isLogisticsPublic: false // Bloqueo de radar público
+      isLogisticsPublic: false
     });
 
-    // Sincronización de Historial de Proveedores
+    // Actualizar historial del cliente
     if (user?.uid) {
       const userRef = doc(firestore, 'users', user.uid);
       updateDocumentNonBlocking(userRef, {
-        contractedStores: arrayUnion(offer.storeId),
         lastContractedStore: offer.storeId
       });
     }
@@ -93,7 +96,7 @@ export default function WasherWaitingRoom() {
     </div>
   );
 
-  const isAssigned = order?.status === 'shipped' || order?.status === 'delivered' || order?.status === 'at_destination';
+  const isAssigned = ['ready_for_pickup', 'at_store', 'delivered_to_driver', 'shipped', 'at_destination', 'delivered'].includes(order?.status);
   const minutes = timeLeft !== null ? Math.floor(timeLeft / 60) : 5;
   const seconds = timeLeft !== null ? timeLeft % 60 : 0;
 
@@ -103,7 +106,6 @@ export default function WasherWaitingRoom() {
       
       <main className="flex-1 container mx-auto px-4 py-10 max-w-2xl space-y-10 pb-32">
         
-        {/* MÓDULO 1: CRONÓMETRO ÉLITE */}
         <TimerHero 
           isAssigned={isAssigned} 
           timeLeft={timeLeft} 
@@ -111,14 +113,12 @@ export default function WasherWaitingRoom() {
           seconds={seconds} 
         />
 
-        {/* MÓDULO 2: TARJETA DE IDENTIDAD Y ESTADO */}
         <StatusIdentityCard 
           order={order} 
           isAssigned={isAssigned} 
           onGoToTracking={() => router.push('/admin/orders')} 
         />
 
-        {/* MÓDULO 3: RADAR DE CONTRAOFERTAS (SOLO SI NO ESTÁ ASIGNADO) */}
         {!isAssigned && (
           <OffersRadarSection 
             offers={offers} 
@@ -126,7 +126,6 @@ export default function WasherWaitingRoom() {
           />
         )}
 
-        {/* MÓDULO 4: PROTOCOLO DE REINTENTO (SI EL TIEMPO AGOTA) */}
         {timeLeft === 0 && !isAssigned && (
           <RetrySearchSection />
         )}

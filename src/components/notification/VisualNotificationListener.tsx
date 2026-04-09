@@ -20,7 +20,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-const SYNC_KEY = 'vitriniando_status_sync_v2'; // Versión actualizada del protocolo de sincronización
+const SYNC_KEY = 'vitriniando_status_sync_v2';
 
 const STATUS_CONTENT: Record<string, any> = {
   ready_for_pickup: {
@@ -62,7 +62,7 @@ const STATUS_CONTENT: Record<string, any> = {
 
 /**
  * VisualNotificationListener - El Especialista en Sincronía de Causa y Efecto.
- * Monitorea cambios de estado en tiempo real con filtrado de relevancia temporal.
+ * Interrumpe la navegación del cliente con una terminal inmersiva cuando cambia el estado.
  */
 export function VisualNotificationListener() {
   const { user } = useUser();
@@ -80,7 +80,6 @@ export function VisualNotificationListener() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      // 1. Capturar cambios válidos en esta actualización
       const validChanges = snapshot.docChanges()
         .filter(change => change.type === 'modified' || change.type === 'added')
         .map(change => ({ id: change.doc.id, ...change.doc.data() as any }))
@@ -88,14 +87,13 @@ export function VisualNotificationListener() {
 
       if (validChanges.length === 0) return;
 
-      // 2. ORDENAMIENTO POR RELEVANCIA: Solo nos interesa el evento más reciente
       const latestOrder = validChanges.sort((a, b) => {
         const tA = a.updatedAt?.toMillis?.() || 0;
         const tB = b.updatedAt?.toMillis?.() || 0;
         return tB - tA;
       })[0];
 
-      // 3. PROTOCOLO DE CAUSA Y EFECTO
+      // PROTOCOLO DE SINCRONÍA: Solo mostrar si el estado es nuevo para esta sesión
       const currentSync = JSON.parse(localStorage.getItem(SYNC_KEY) || '{}');
       const lastSeenStatus = currentSync[latestOrder.id];
 
@@ -103,7 +101,7 @@ export function VisualNotificationListener() {
         const now = Date.now();
         const updatedAt = latestOrder.updatedAt?.toMillis?.() || now;
         
-        // Solo notificar si el cambio ocurrió en los últimos 30 minutos (Evita spam de datos viejos)
+        // Evitar disparar alertas de registros antiguos (> 30 min)
         if (now - updatedAt < 1800000) {
           setActiveAlert(latestOrder);
         }
@@ -136,14 +134,14 @@ export function VisualNotificationListener() {
     <Dialog open={!!activeAlert} onOpenChange={(v) => !v && handleAcknowledge(false)}>
       <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-white p-0 overflow-hidden flex flex-col z-[1000] animate-in slide-in-from-bottom duration-500 [&>button:last-child]:hidden">
         <DialogHeader className="sr-only">
-          <DialogTitle>Estado del Pedido</DialogTitle>
-          <DialogDescription>Actualización operativa en tiempo real.</DialogDescription>
+          <DialogTitle>Estado de Misión</DialogTitle>
+          <DialogDescription>Terminal de Sincronización Real.</DialogDescription>
         </DialogHeader>
 
         <main className="flex-1 overflow-y-auto no-scrollbar">
-          <div className="min-h-full flex flex-col items-center justify-center p-8 text-center space-y-10 sm:space-y-12 py-12">
+          <div className="min-h-full flex flex-col items-center justify-center p-8 text-center space-y-12 py-12">
             
-            <div className="space-y-4 shrink-0">
+            <div className="space-y-4">
               <div className="flex items-center justify-center gap-3 text-primary">
                 <ShieldCheck className="w-4 h-4" />
                 <span className="text-[10px] font-black uppercase tracking-[0.4em]">Vitriniando AI Central</span>
@@ -151,7 +149,7 @@ export function VisualNotificationListener() {
               <div className="h-0.5 w-12 bg-primary/20 rounded-full mx-auto" />
             </div>
 
-            <div className="relative shrink-0">
+            <div className="relative">
               <div className={cn("absolute inset-0 rounded-[40px] animate-ping opacity-20", content?.bg.replace('bg-', 'bg-'))} />
               <div className={cn(
                 "relative w-32 h-32 rounded-[40px] flex items-center justify-center shadow-2xl border-b-8 transition-all duration-700",
@@ -162,16 +160,16 @@ export function VisualNotificationListener() {
               </div>
             </div>
 
-            <div className="space-y-4 max-w-sm shrink-0">
+            <div className="space-y-4 max-w-sm">
               <h2 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter leading-[0.9] text-slate-900">
                 {content?.title}
               </h2>
-              <p className="text-sm sm:text-base font-bold text-slate-400 uppercase tracking-tight leading-relaxed px-4">
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-tight leading-relaxed px-4">
                 {content?.desc}
               </p>
             </div>
 
-            <div className="w-full max-w-xs space-y-6 shrink-0">
+            <div className="w-full max-w-xs space-y-6">
               <Button 
                 onClick={() => handleAcknowledge(true)}
                 className="w-full h-24 rounded-[32px] bg-primary hover:bg-primary/90 text-white font-black text-xl uppercase italic tracking-widest gap-4 shadow-[0_20px_50px_rgba(59,130,246,0.3)] border-b-[10px] border-blue-800 active:border-b-0 active:translate-y-2 transition-all group"
@@ -189,7 +187,7 @@ export function VisualNotificationListener() {
           </div>
         </main>
 
-        <footer className="h-16 bg-slate-50 border-t flex items-center justify-center px-8 shrink-0 relative z-10">
+        <footer className="h-16 bg-slate-50 border-t flex items-center justify-center px-8 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.5em]">Sincronía Real Activa</span>

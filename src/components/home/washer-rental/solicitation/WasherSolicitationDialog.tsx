@@ -31,6 +31,10 @@ interface WasherSolicitationDialogProps {
 
 export type OrderSubmissionStatus = 'idle' | 'sending' | 'success' | 'timeout';
 
+/**
+ * WasherSolicitationDialog - Orquestador Maestro de Pedidos.
+ * Gestiona la entrada de datos y el protocolo de redirección a la Sala de Espera.
+ */
 export function WasherSolicitationDialog({
   isOpen,
   onOpenChange,
@@ -43,11 +47,9 @@ export function WasherSolicitationDialog({
 }: WasherSolicitationDialogProps) {
   const router = useRouter();
   
-  // Refs para Auto-Scroll Maestro
+  // Refs para Auto-Scroll Quirúrgico si hay errores
   const nameRef = useRef<HTMLDivElement>(null);
   const phoneRef = useRef<HTMLDivElement>(null);
-  const sectorRef = useRef<HTMLDivElement>(null);
-  const addressRef = useRef<HTMLDivElement>(null);
 
   // Estados de Formulario
   const [tempName, setTempName] = useState("");
@@ -57,7 +59,7 @@ export function WasherSolicitationDialog({
   const [requestHours, setRequestHours] = useState(5);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'digital'>('cash');
   
-  // Estado de Errores de Validación
+  // Estado de Errores
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
   // Detalles Técnicos
@@ -67,12 +69,13 @@ export function WasherSolicitationDialog({
   const [hasStairs, setHasStairs] = useState(false);
   const [stairCount, setStairCount] = useState(1);
 
-  // Estados de Proceso
+  // Estados de Proceso y Navegación
   const [orderStatus, setOrderStatus] = useState<OrderSubmissionStatus>('idle');
   const [submittedOrderId, setSubmittedOrderId] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
 
+  // Sincronización Inicial de Perfil
   useEffect(() => {
     if (profile && isOpen && orderStatus === 'idle') {
       setTempName(profile.displayName || "");
@@ -85,15 +88,17 @@ export function WasherSolicitationDialog({
     }
   }, [profile, isOpen, pricingConfig, orderStatus]);
 
+  // LÓGICA DE REDIRECCIÓN MAESTRA A SALA DE ESPERA
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (orderStatus === 'success' && submittedOrderId && redirectCountdown > 0) {
       timer = setTimeout(() => setRedirectCountdown(prev => prev - 1), 1000);
     } else if (orderStatus === 'success' && submittedOrderId && redirectCountdown === 0) {
+      onOpenChange(false);
       router.push(`/washer/waiting-room/${submittedOrderId}`);
     }
     return () => clearTimeout(timer);
-  }, [orderStatus, submittedOrderId, redirectCountdown, router]);
+  }, [orderStatus, submittedOrderId, redirectCountdown, router, onOpenChange]);
 
   const totalPrice = useMemo(() => {
     const config = pricingConfig || {};
@@ -123,37 +128,17 @@ export function WasherSolicitationDialog({
   };
 
   const handleFormSubmit = async () => {
-    // 1. Limpiar errores previos
     setFieldErrors({});
     const newErrors: Record<string, boolean> = {};
 
-    // 2. Validación Quirúrgica
     if (!tempName.trim()) newErrors.name = true;
     if (!tempPhone.trim()) newErrors.phone = true;
     if (!tempSector.trim()) newErrors.sector = true;
     if (!tempAddress.trim()) newErrors.address = true;
 
-    // 3. Ejecutar Redirección si hay errores
     if (Object.keys(newErrors).length > 0) {
       setFieldErrors(newErrors);
-      
-      let targetRef = null;
-      if (newErrors.name) targetRef = nameRef;
-      else if (newErrors.sector || newErrors.address) {
-        const el = document.getElementById(newErrors.sector ? 'field-sector' : 'field-address');
-        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      else if (newErrors.phone) targetRef = phoneRef;
-
-      if (targetRef?.current) {
-        targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-
-      toast({ 
-        title: "Campos Requeridos", 
-        description: "Completa la información marcada para continuar.", 
-        variant: "destructive" 
-      });
+      toast({ title: "Información Requerida", description: "Completa los campos marcados.", variant: "destructive" });
       return;
     }
 
@@ -182,17 +167,13 @@ export function WasherSolicitationDialog({
       }
     } catch (e) {
       setOrderStatus('idle');
-      toast({ title: "Error de red", description: "No se pudo conectar con el radar.", variant: "destructive" });
+      toast({ title: "Error en la nube", variant: "destructive" });
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(v) => { if (orderStatus === 'idle') onOpenChange(v); }}>
       <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-[#0a0a0a] p-0 overflow-hidden flex flex-col z-[600] animate-in slide-in-from-bottom duration-500 [&>button:last-child]:hidden">
-        <DialogHeader className="sr-only">
-          <DialogTitle>Nueva Solicitud Alquiler</DialogTitle>
-          <DialogDescription>Formulario de solicitud sincronizado.</DialogDescription>
-        </DialogHeader>
         
         <SolicitationHeader 
           isAdmin={isAdmin} 
@@ -204,24 +185,14 @@ export function WasherSolicitationDialog({
           <div className="max-w-md mx-auto py-8 px-6 space-y-10 pb-32">
             
             <div className={cn("space-y-6 transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-              <NameField 
-                ref={nameRef}
-                value={tempName} 
-                onChange={setTempName} 
-                hasError={fieldErrors.name}
-              />
+              <NameField ref={nameRef} value={tempName} onChange={setTempName} hasError={fieldErrors.name} />
               <AddressField 
                 address={tempAddress} onAddressChange={setTempAddress}
                 sector={tempSector} onSectorChange={setTempSector}
                 errorSector={fieldErrors.sector}
                 errorAddress={fieldErrors.address}
               />
-              <PhoneField 
-                ref={phoneRef}
-                value={tempPhone} 
-                onChange={setTempPhone} 
-                hasError={fieldErrors.phone}
-              />
+              <PhoneField ref={phoneRef} value={tempPhone} onChange={setTempPhone} hasError={fieldErrors.phone} />
             </div>
 
             <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
@@ -246,10 +217,7 @@ export function WasherSolicitationDialog({
             </div>
 
             <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-              <PaymentStrategySelector 
-                method={paymentMethod}
-                onChange={setPaymentMethod}
-              />
+              <PaymentStrategySelector method={paymentMethod} onChange={setPaymentMethod} />
             </div>
 
             {orderStatus === 'success' ? (
