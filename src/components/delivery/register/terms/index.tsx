@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from 'react';
@@ -44,7 +43,8 @@ export const TermsSection = React.forwardRef<HTMLDivElement, TermsSectionProps>(
                 checked={acceptedTerms} 
                 onCheckedChange={(v) => onAcceptedChange(!!v)} 
                 className={cn(
-                  "w-8 h-8 border-white/20 data-[state=checked]:bg-primary data-[state=checked]:text-white rounded-xl",
+                  "w-8 h-8 border-white/20 data-[state=checked]:bg-primary data-[state=checked]:text-white rounded-xl transition-all duration-500",
+                  !acceptedTerms && !showTermsError && "animate-neon-glow-primary",
                   showTermsError && "ring-4 ring-white/30 animate-pulse"
                 )} 
               />
