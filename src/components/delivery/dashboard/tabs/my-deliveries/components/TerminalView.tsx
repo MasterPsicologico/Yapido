@@ -100,11 +100,17 @@ export function TerminalView({
               <MissionLogTimeline order={order} />
             </div>
 
-            {isCompleted && (
-              <div className="flex items-center gap-3 pt-4 border-t border-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">
-                <Zap className="w-4 h-4 text-primary" /> Valor Final: {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(order.totalPrice || 0)}
+            <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+              <div className="flex items-center gap-3">
+                <Zap className="w-5 h-5 text-primary animate-pulse" />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">VALOR TOTAL RECAUDADO</span>
               </div>
-            )}
+              <span className="text-2xl font-black italic text-slate-900 tracking-tighter">
+                {new Intl.NumberFormat('es-CO', { 
+                  style: 'currency', currency: 'COP', maximumFractionDigits: 0 
+                }).format(order.totalPrice || 0)}
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

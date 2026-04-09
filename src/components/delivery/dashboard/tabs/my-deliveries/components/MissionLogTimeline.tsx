@@ -3,7 +3,7 @@
 
 import { format, addHours, differenceInMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CheckCircle2, Clock, MapPin, Star, User, History, Zap, Timer } from 'lucide-react';
+import { CheckCircle2, Clock, MapPin, Star, User, History, Zap, Timer, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TimelineEvent {
@@ -71,23 +71,38 @@ export function MissionLogTimeline({ order }: MissionLogTimelineProps) {
     });
   }
 
-  // EVENTO 4: RECOGIDA / FINALIZACIÓN
+  // EVENTO 4: RECOGIDA / FINALIZACIÓN CON AUDITORÍA DE PÉRDIDAS
   if (completedAt && deliveredAt) {
     const expectedExpiry = addHours(deliveredAt, order.requestHours || 5);
     const diff = differenceInMinutes(completedAt, expectedExpiry);
     
     let pickupStatus = "Recogida puntual";
-    if (diff > 30) pickupStatus = `Recogida con desfase (+${diff} min)`;
-    else if (diff > 5) pickupStatus = `Recogida con ligero retraso (+${diff} min)`;
+    let impactMessage = "";
+
+    if (diff > 5) {
+      const hoursLost = Math.floor(diff / 60);
+      const minsLost = diff % 60;
+      
+      // Cálculo del valor del tiempo perdido basado en el precio real del contrato
+      const hourlyRate = (order.totalPrice || 15000) / (order.requestHours || 5);
+      const moneyLost = Math.round((diff / 60) * hourlyRate);
+      
+      const formattedLost = new Intl.NumberFormat('es-CO', { 
+        style: 'currency', currency: 'COP', maximumFractionDigits: 0 
+      }).format(moneyLost);
+
+      pickupStatus = `Recogida con desfase (+${diff} min)`;
+      impactMessage = ` Se perdieron ${hoursLost > 0 ? `${hoursLost}h ` : ''}${minsLost}min, lo que equivale a ${formattedLost} en dinero potencial no percibido. De ahí la importancia de la optimización de rutas para maximizar la rentabilidad.`;
+    }
 
     events.push({
       id: 'completed',
       title: 'Servicio Finalizado',
-      message: `${pickupStatus}. El equipo fue retirado del domicilio del cliente.`,
+      message: `${pickupStatus}.${impactMessage} El equipo fue retirado del domicilio del cliente.`,
       time: format(completedAt, "HH:mm", { locale: es }),
-      icon: Zap,
+      icon: diff > 5 ? AlertCircle : Zap,
       status: 'past',
-      color: 'bg-slate-900 text-primary'
+      color: diff > 5 ? 'bg-red-100 text-red-600' : 'bg-slate-900 text-primary'
     });
   }
 
