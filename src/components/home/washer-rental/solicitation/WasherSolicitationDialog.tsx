@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -5,6 +6,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
+import { useUser, useAuth } from '@/firebase';
+import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
+import { Button } from '@/components/ui/button';
+import { LogIn, Sparkles, ShieldCheck } from 'lucide-react';
 
 // Importación de Componentes Atómicos
 import { SolicitationHeader } from './components/header/SolicitationHeader';
@@ -30,10 +35,6 @@ interface WasherSolicitationDialogProps {
 
 export type OrderSubmissionStatus = 'idle' | 'sending' | 'success' | 'timeout';
 
-/**
- * WasherSolicitationDialog - Orquestador Maestro de Pedidos.
- * Gestiona la entrada de datos y el protocolo de redirección a la Sala de Espera.
- */
 export function WasherSolicitationDialog({
   isOpen,
   onOpenChange,
@@ -45,36 +46,26 @@ export function WasherSolicitationDialog({
   onSubmitRequest
 }: WasherSolicitationDialogProps) {
   const router = useRouter();
+  const { user } = useUser();
+  const auth = useAuth();
   
-  // Refs para Auto-Scroll Quirúrgico si hay errores
-  const nameRef = useRef<HTMLDivElement>(null);
-  const phoneRef = useRef<HTMLDivElement>(null);
-
-  // Estados de Formulario
   const [tempName, setTempName] = useState("");
   const [tempAddress, setTempAddress] = useState("");
   const [tempSector, setTempSector] = useState("");
   const [tempPhone, setTempPhone] = useState("");
   const [requestHours, setRequestHours] = useState(5);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'digital'>('cash');
-  
-  // Estado de Errores
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
-
-  // Detalles Técnicos
   const [washerType, setWasherType] = useState<'automatica' | 'semiautomatica'>('automatica');
   const [floor, setFloor] = useState("1");
   const [hasElevator, setHasElevator] = useState(false);
   const [hasStairs, setHasStairs] = useState(false);
   const [stairCount, setStairCount] = useState(1);
-
-  // Estados de Proceso y Navegación
   const [orderStatus, setOrderStatus] = useState<OrderSubmissionStatus>('idle');
   const [submittedOrderId, setSubmittedOrderId] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
 
-  // Sincronización Inicial de Perfil
   useEffect(() => {
     if (profile && isOpen && orderStatus === 'idle') {
       setTempName(profile.displayName || "");
@@ -87,7 +78,6 @@ export function WasherSolicitationDialog({
     }
   }, [profile, isOpen, pricingConfig, orderStatus]);
 
-  // LÓGICA DE REDIRECCIÓN MAESTRA A SALA DE ESPERA
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (orderStatus === 'success' && submittedOrderId && redirectCountdown > 0) {
@@ -108,9 +98,7 @@ export function WasherSolicitationDialog({
     return (Number(requestHours) * rate) + stairsExtra + floorExtra;
   }, [requestHours, washerType, floor, hasElevator, hasStairs, stairCount, pricingConfig]);
 
-  const formattedPrice = new Intl.NumberFormat('es-CO', { 
-    style: 'currency', currency: 'COP', maximumFractionDigits: 0 
-  }).format(totalPrice);
+  const formattedPrice = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(totalPrice);
 
   const handleAdjustHours = (delta: number) => {
     if (orderStatus !== 'idle') return;
@@ -127,9 +115,13 @@ export function WasherSolicitationDialog({
   };
 
   const handleFormSubmit = async () => {
+    if (!user) {
+      setOrderStatus('idle');
+      return; // El renderizado manejará el estado de login
+    }
+
     setFieldErrors({});
     const newErrors: Record<string, boolean> = {};
-
     if (!tempName.trim()) newErrors.name = true;
     if (!tempPhone.trim()) newErrors.phone = true;
     if (!tempSector.trim()) newErrors.sector = true;
@@ -144,26 +136,14 @@ export function WasherSolicitationDialog({
     setOrderStatus('sending');
     try {
       const orderId = await onSubmitRequest({
-        customerName: tempName,
-        customerAddress: tempAddress,
-        customerSector: tempSector,
-        customerPhone: tempPhone,
-        requestHours,
-        totalPrice,
-        paymentMethod,
-        washerType,
-        floor,
-        hasElevator,
-        hasStairs,
-        stairCount
+        customerName: tempName, customerAddress: tempAddress, customerSector: tempSector,
+        customerPhone: tempPhone, requestHours, totalPrice, paymentMethod, washerType,
+        floor, hasElevator, hasStairs, stairCount
       });
-      
       if (orderId) {
         setSubmittedOrderId(orderId);
         setOrderStatus('success');
-      } else {
-        setOrderStatus('idle');
-      }
+      } else setOrderStatus('idle');
     } catch (e) {
       setOrderStatus('idle');
       toast({ title: "Error en la nube", variant: "destructive" });
@@ -173,67 +153,73 @@ export function WasherSolicitationDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(v) => { if (orderStatus === 'idle') onOpenChange(v); }}>
       <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-[#0a0a0a] p-0 overflow-hidden flex flex-col z-[600] animate-in slide-in-from-bottom duration-500 [&>button:last-child]:hidden">
-        {/* FIX DE ACCESIBILIDAD: Título y Descripción para Lectores de Pantalla */}
         <DialogHeader className="sr-only">
           <DialogTitle>Nueva Solicitud Alquiler</DialogTitle>
           <DialogDescription>Formulario de solicitud sincronizado.</DialogDescription>
         </DialogHeader>
         
-        <SolicitationHeader 
-          isAdmin={isAdmin} 
-          onOpenAdminSettings={onOpenAdminSettings} 
-          onClose={() => onOpenChange(false)} 
-        />
+        <SolicitationHeader isAdmin={isAdmin} onOpenAdminSettings={onOpenAdminSettings} onClose={() => onOpenChange(false)} />
 
         <div className="flex-1 overflow-y-auto no-scrollbar bg-white rounded-t-[40px] mt-2 border-t-4 border-slate-950">
           <div className="max-w-md mx-auto py-8 px-6 space-y-10 pb-32">
             
-            <div className={cn("space-y-6 transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-              <NameField ref={nameRef} value={tempName} onChange={setTempName} hasError={fieldErrors.name} />
-              <AddressField 
-                address={tempAddress} onAddressChange={setTempAddress}
-                sector={tempSector} onSectorChange={setTempSector}
-                errorSector={fieldErrors.sector}
-                errorAddress={fieldErrors.address}
-              />
-              <PhoneField ref={phoneRef} value={tempPhone} onChange={setTempPhone} hasError={fieldErrors.phone} />
-            </div>
-
-            <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-              <ServiceConfiguration 
-                isAdmin={isAdmin}
-                washerType={washerType} setWasherType={setWasherType}
-                floor={floor} setFloor={setFloor}
-                hasElevator={hasElevator} setHasElevator={setHasElevator}
-                hasStairs={hasStairs} setHasStairs={setHasStairs}
-                stairCount={stairCount} setStairCount={setStairCount}
-              />
-            </div>
-
-            <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-              <DurationManager 
-                requestHours={requestHours}
-                onAdjust={handleAdjustHours}
-                minHours={Number(pricingConfig?.minHours || 5)}
-                formattedPrice={formattedPrice}
-                flashEffect={flashEffect}
-              />
-            </div>
-
-            <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-              <PaymentStrategySelector method={paymentMethod} onChange={setPaymentMethod} />
-            </div>
-
-            {orderStatus === 'success' ? (
-              <SuccessProtocol countdown={redirectCountdown} />
+            {!user && orderStatus === 'idle' ? (
+              <div className="py-12 flex flex-col items-center text-center space-y-10 animate-in fade-in zoom-in duration-700">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/20 rounded-[40px] animate-ping" />
+                  <div className="relative w-24 h-24 bg-slate-900 rounded-[32px] flex items-center justify-center text-primary shadow-2xl border border-white/10">
+                    <ShieldCheck className="w-12 h-12" />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <h3 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Identidad Requerida</h3>
+                  <p className="text-slate-400 font-bold text-xs uppercase tracking-widest px-8">Inicia sesión de forma rápida y segura para formalizar tu solicitud.</p>
+                </div>
+                <Button 
+                  onClick={() => initiateGoogleSignIn(auth)}
+                  className="w-full h-20 rounded-[32px] bg-slate-900 text-white font-black text-lg gap-4 shadow-2xl active:scale-95 transition-all"
+                >
+                  <LogIn className="w-6 h-6 text-primary" /> ACCESO INSTANTÁNEO
+                </Button>
+                <div className="flex items-center justify-center gap-2 text-slate-300">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span className="text-[8px] font-black uppercase tracking-[0.4em]">Protección de Datos Activa</span>
+                </div>
+              </div>
             ) : (
-              <SubmitAction 
-                isSending={orderStatus === 'sending'}
-                isAnyStoreOpen={isAnyStoreOpen}
-                formattedPrice={formattedPrice}
-                paymentMethod={paymentMethod}
-                onSubmit={handleFormSubmit}
-              />
+              <>
+                <div className={cn("space-y-6 transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
+                  <NameField value={tempName} onChange={setTempName} hasError={fieldErrors.name} />
+                  <AddressField 
+                    address={tempAddress} onAddressChange={setTempAddress}
+                    sector={tempSector} onSectorChange={setTempSector}
+                    errorSector={fieldErrors.sector} errorAddress={fieldErrors.address}
+                  />
+                  <PhoneField value={tempPhone} onChange={setTempPhone} hasError={fieldErrors.phone} />
+                </div>
+
+                <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
+                  <ServiceConfiguration 
+                    isAdmin={isAdmin} washerType={washerType} setWasherType={setWasherType}
+                    floor={floor} setFloor={setFloor} hasElevator={hasElevator} setHasElevator={setHasElevator}
+                    hasStairs={hasStairs} setHasStairs={setHasStairs} stairCount={stairCount} setStairCount={setStairCount}
+                  />
+                </div>
+
+                <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
+                  <DurationManager requestHours={requestHours} onAdjust={handleAdjustHours} minHours={Number(pricingConfig?.minHours || 5)} formattedPrice={formattedPrice} flashEffect={flashEffect} />
+                </div>
+
+                <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
+                  <PaymentStrategySelector method={paymentMethod} onChange={setPaymentMethod} />
+                </div>
+
+                {orderStatus === 'success' ? (
+                  <SuccessProtocol countdown={redirectCountdown} />
+                ) : (
+                  <SubmitAction isSending={orderStatus === 'sending'} isAnyStoreOpen={isAnyStoreOpen} formattedPrice={formattedPrice} paymentMethod={paymentMethod} onSubmit={handleFormSubmit} />
+                )}
+              </>
             )}
             
           </div>

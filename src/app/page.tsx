@@ -7,17 +7,19 @@ import { Navbar } from '@/components/layout/Navbar';
 import { HomeActions } from '@/components/home/HomeActions';
 import { HomeCategorySection } from '@/components/home/HomeCategorySection';
 import { HomePromoBanner } from '@/components/home/HomePromoBanner';
-import { UnauthenticatedLanding } from '@/components/home/UnauthenticatedLanding';
-import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, doc, orderBy } from 'firebase/firestore';
 import { ShoppingBag, Cpu, ArrowRight, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
 
+/**
+ * Home - El Portal Unificado de Vitriniando.
+ * Carga inmediata del servicio de lavadoras como página principal absoluta.
+ */
 export default function Home() {
   const { user, isUserLoading } = useUser();
-  const auth = useAuth();
   const router = useRouter();
 
   // EFECTO DE AUDIO PREMIUM DE INTRODUCCIÓN (CAMPANILLAS ÉLITE)
@@ -25,12 +27,11 @@ export default function Home() {
     if (isUserLoading) {
       const introSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
       introSound.volume = 0.4;
-      introSound.play().catch(() => {
-        // Silenciamos si el navegador bloquea el autoplay sin interacción
-      });
+      introSound.play().catch(() => {});
     }
   }, [isUserLoading]);
 
+  // Si es repartidor y prefiere su modo, lo mandamos a su dashboard, de lo contrario se queda en lavadoras
   useEffect(() => {
     if (!isUserLoading && user) {
       const savedMode = localStorage.getItem('vitriniando_preferred_mode');
@@ -40,57 +41,25 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
+  // Pantalla de carga dorada ultra-rápida
   if (isUserLoading) return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050505] overflow-hidden">
-      {/* BARRIDO DORADO ATMOSFÉRICO (Reflejo de pantalla completa) */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
         <div className="absolute -inset-[100%] bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent skew-x-[-35deg] animate-[shimmer_5s_infinite_ease-in-out]" />
       </div>
-
       <div className="flex flex-col items-center gap-10 animate-in fade-in zoom-in duration-1000 relative z-10">
         <div className="relative group">
-          {/* Aura Dorada de Energía Pulsante (Iluminación del Contenedor) */}
           <div className="absolute inset-0 rounded-[2.5rem] bg-yellow-500/20 animate-pulse [animation-duration:2000ms] blur-3xl" />
-          <div className="absolute -inset-10 rounded-[3rem] bg-gradient-to-br from-yellow-400/10 via-transparent to-yellow-600/10 blur-2xl animate-pulse delay-500" />
-          
-          {/* Contenedor de Icono en Oro Maestro */}
           <div className="relative w-28 h-28 bg-gradient-to-br from-[#fef08a] via-[#eab308] to-[#a16207] rounded-[2.5rem] flex items-center justify-center shadow-[0_0_80px_rgba(234,179,8,0.4)] border-2 border-yellow-200/50 overflow-hidden">
-            {/* Rayo de luz interno dinámico */}
             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/50 to-transparent animate-shimmer opacity-70" />
-            
             <ShoppingBag className="w-14 h-14 text-slate-950 drop-shadow-2xl relative z-10 transition-transform group-hover:scale-110" />
-            
-            {/* Destellos Premium */}
             <Sparkles className="absolute top-4 right-4 w-6 h-6 text-white animate-pulse" />
-            <Sparkles className="absolute bottom-4 left-4 w-4 h-4 text-white/60 animate-pulse delay-300" />
           </div>
         </div>
-
         <div className="flex flex-col items-center gap-6 text-center">
-          <div className="space-y-3">
-            {/* Título en Gradiente Dorado con Reflejo */}
-            <h2 className="text-4xl sm:text-5xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-[#fef08a] via-[#eab308] to-[#a16207] uppercase leading-none drop-shadow-[0_4px_20px_rgba(234,179,8,0.4)]">
-              Vitriniando
-            </h2>
-            
-            <div className="flex flex-col items-center gap-3">
-              <p className="text-yellow-500/90 text-[11px] sm:text-xs font-black uppercase tracking-[0.3em] italic max-w-[250px] leading-relaxed drop-shadow-md">
-                Lo que necesitas a un clic de distancia
-              </p>
-              
-              <div className="flex items-center gap-1.5">
-                {[1, 2, 3].map(i => (
-                  <div 
-                    key={i} 
-                    className="w-1.5 h-1.5 rounded-full bg-yellow-500/40 animate-pulse" 
-                    style={{ animationDelay: `${i * 200}ms` }} 
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Barra de Progreso en Metal Líquido */}
+          <h2 className="text-4xl sm:text-5xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-[#fef08a] via-[#eab308] to-[#a16207] uppercase leading-none drop-shadow-[0_4px_20px_rgba(234,179,8,0.4)]">
+            Vitriniando
+          </h2>
           <div className="h-1.5 w-48 bg-white/5 rounded-full overflow-hidden relative border border-white/5 shadow-inner">
             <div className="absolute inset-0 bg-gradient-to-r from-yellow-800 via-yellow-400 to-yellow-800 animate-progress-loading shadow-[0_0_25px_rgba(234,179,8,0.7)]" />
           </div>
@@ -101,13 +70,9 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-      {user && <Navbar />}
+      <Navbar />
       <main className="flex-1 w-full overflow-x-hidden">
-        {user ? (
-          <AuthenticatedHome />
-        ) : (
-          <UnauthenticatedLanding auth={auth} isAdmin={false} user={null} />
-        )}
+        <AuthenticatedHome />
       </main>
     </div>
   );
