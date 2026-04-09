@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Loader2 } from 'lucide-react';
+import { Loader2, Zap, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavbarModeSwitcherProps {
@@ -11,16 +11,23 @@ interface NavbarModeSwitcherProps {
   onSwitch: () => void;
 }
 
+/**
+ * NavbarModeSwitcher - Terminal de Conmutación Elongada Premium.
+ * Rediseñado para ocupar el espacio del logo y ofrecer una estética de alta gama.
+ */
 export function NavbarModeSwitcher({ isDeliveryZone, isTransitioning, progress, onSwitch }: NavbarModeSwitcherProps) {
-  const targetLabel = isDeliveryZone ? "TIENDAS" : "DELIVERY";
-  const targetIcon = isDeliveryZone ? "T" : "D";
+  // El destino es lo opuesto a donde estamos
+  const targetLabel = isDeliveryZone ? "IR A VITRINAS" : "MODO DELIVERY";
+  const currentLabel = isDeliveryZone ? "DELIVERY" : "VITRINAS";
 
   return (
     <button 
       type="button"
       className={cn(
-        "relative flex items-center h-9 sm:h-10 rounded-full cursor-pointer transition-all duration-300 pr-1 sm:pr-4 pl-1 overflow-hidden min-w-[36px] sm:min-w-[120px] shadow-sm border-none outline-none group",
-        isDeliveryZone ? "bg-primary/10 hover:bg-primary/20" : "bg-secondary/10 hover:bg-secondary/20",
+        "relative flex items-center h-10 sm:h-11 rounded-2xl cursor-pointer transition-all duration-500 px-1 overflow-hidden min-w-[140px] sm:min-w-[160px] shadow-xl border-none outline-none group",
+        isDeliveryZone 
+          ? "bg-slate-900 border-b-2 border-primary/30" 
+          : "bg-gradient-to-br from-secondary to-[#00b5c5] border-b-2 border-white/20",
         isTransitioning && "pointer-events-none"
       )}
       onClick={(e) => {
@@ -28,34 +35,53 @@ export function NavbarModeSwitcher({ isDeliveryZone, isTransitioning, progress, 
         onSwitch();
       }}
     >
+      {/* CAPA DE PROGRESO DE CRISTAL (DURANTE TRANSICIÓN) */}
       {isTransitioning && (
         <div 
           className={cn(
-            "absolute inset-0 transition-all duration-100 ease-linear opacity-40", 
-            isDeliveryZone ? "bg-primary" : "bg-secondary"
+            "absolute inset-0 transition-all duration-100 ease-linear opacity-30 z-0", 
+            isDeliveryZone ? "bg-primary" : "bg-white"
           )}
           style={{ width: `${progress}%` }}
         />
       )}
-      
+
+      {/* ICONO IDENTITARIO */}
       <div className={cn(
-        "relative z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white font-black shadow-lg transition-all text-[10px] sm:text-xs",
-        isDeliveryZone ? "bg-primary" : "bg-secondary",
-        isTransitioning ? "scale-90" : "group-active:scale-90"
+        "relative z-10 w-8 h-8 rounded-xl flex items-center justify-center text-white shadow-2xl transition-all duration-500 shrink-0",
+        isDeliveryZone ? "bg-primary" : "bg-slate-900",
+        isTransitioning ? "scale-90 rotate-180" : "group-hover:scale-110 group-hover:rotate-12"
       )}>
         {isTransitioning ? (
-          <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : isDeliveryZone ? (
+          <Zap className="w-4 h-4 fill-white animate-pulse" />
         ) : (
-          <span className="animate-in zoom-in duration-300">{targetIcon}</span>
+          <Store className="w-4 h-4" />
         )}
       </div>
       
-      <span className={cn(
-        "relative z-10 ml-1.5 sm:ml-2 text-[10px] font-black uppercase tracking-widest transition-colors hidden sm:inline",
-        isDeliveryZone ? "text-primary" : "text-secondary"
-      )}>
-        {targetLabel}
-      </span>
+      {/* TEXTO ELONGADO TÁCTICO */}
+      <div className="relative z-10 flex flex-col items-start ml-3 text-left">
+        <span className={cn(
+          "text-[7px] font-black uppercase tracking-[0.3em] leading-none opacity-50 mb-0.5",
+          isDeliveryZone ? "text-primary" : "text-white"
+        )}>
+          {isTransitioning ? "SINCRONIZANDO" : "MODO ACTIVO"}
+        </span>
+        <span className={cn(
+          "text-[10px] font-black uppercase tracking-widest transition-all italic leading-none",
+          isDeliveryZone ? "text-white" : "text-slate-950",
+          isTransitioning && "animate-pulse"
+        )}>
+          {isTransitioning ? targetLabel : currentLabel}
+        </span>
+      </div>
+
+      {/* Brillo Premium de Barrido */}
+      <div className="absolute inset-0 z-20 pointer-events-none opacity-20">
+        <div className="absolute -inset-[100%] bg-gradient-to-r from-transparent via-white to-transparent skew-x-[-35deg] animate-[shimmer_4s_infinite_ease-in-out]" />
+      </div>
     </button>
   );
 }
