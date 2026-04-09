@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -14,26 +15,90 @@ interface WasherDashboardProps {
   onOpenSettings: () => void;
 }
 
+/**
+ * CustomTooltip - Terminal de Información Financiera.
+ * Diseñado para entregar datos críticos de forma instantánea y profesional.
+ */
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const formattedMonto = new Intl.NumberFormat('es-CO', { 
+      style: 'currency', 
+      currency: 'COP', 
+      maximumFractionDigits: 0 
+    }).format(data.monto);
+
+    return (
+      <div className="bg-slate-900 text-white p-5 rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/10 animate-in zoom-in duration-200 min-w-[180px]">
+        <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary italic">{label}</p>
+          <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+        </div>
+        
+        <div className="space-y-3">
+          <div className="space-y-0.5">
+            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none">Ingresos Brutos</p>
+            <p className="text-2xl font-black italic tracking-tighter text-white leading-none">
+              {formattedMonto}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 bg-white/5 p-2.5 rounded-xl border border-white/5">
+            <Zap className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+            <div>
+              <p className="text-[7px] font-black text-slate-400 uppercase leading-none">Equipos en uso</p>
+              <p className="text-sm font-black text-white italic">{data.cantidad} Lavadoras</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-white/5">
+          <div className="flex items-start gap-2">
+            <TrendingUp className={cn("w-3 h-3 mt-0.5", data.monto > 200000 ? "text-green-400" : "text-primary")} />
+            <p className="text-[9px] font-bold text-slate-400 leading-tight uppercase italic tracking-tight">
+              {data.monto > 250000 ? "¡Día de Alta Demanda! Flota al límite." : data.monto > 150000 ? "Rendimiento óptimo del sistema." : "Flujo estable de operaciones."}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 export function WasherDashboard({ stats, store, onOpenSettings }: WasherDashboardProps) {
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('weekly');
   const currencyFormatter = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
   const hasHours = store?.openTime && store?.closeTime;
   const isOpen = checkIsBusinessOpen(store?.openTime, store?.closeTime);
 
-  // Datos simulados para el cuaderno digital (Se conectarían a flows reales)
   const chartData = useMemo(() => {
     if (period === 'daily') return [
-      { name: '08:00', monto: 15000 }, { name: '12:00', monto: 45000 }, { name: '16:00', monto: 30000 }, { name: '20:00', monto: 60000 }
+      { name: '08:00', monto: 15000, cantidad: 1 }, 
+      { name: '12:00', monto: 45000, cantidad: 3 }, 
+      { name: '16:00', monto: 30000, cantidad: 2 }, 
+      { name: '20:00', monto: 60000, cantidad: 4 }
     ];
     if (period === 'monthly') return [
-      { name: 'Sem 1', monto: 450000 }, { name: 'Sem 2', monto: 620000 }, { name: 'Sem 3', monto: 510000 }, { name: 'Sem 4', monto: 800000 }
+      { name: 'Sem 1', monto: 450000, cantidad: 22 }, 
+      { name: 'Sem 2', monto: 620000, cantidad: 31 }, 
+      { name: 'Sem 3', monto: 510000, cantidad: 25 }, 
+      { name: 'Sem 4', monto: 800000, cantidad: 40 }
     ];
     if (period === 'yearly') return [
-      { name: 'Ene', monto: 2500000 }, { name: 'Feb', monto: 3100000 }, { name: 'Mar', monto: 2800000 }, { name: 'Abr', monto: 4200000 }
+      { name: 'Ene', monto: 2500000, cantidad: 125 }, 
+      { name: 'Feb', monto: 3100000, cantidad: 155 }, 
+      { name: 'Mar', monto: 2800000, cantidad: 140 }, 
+      { name: 'Abr', monto: 4200000, cantidad: 210 }
     ];
     return stats.dailyEarnings?.length > 0 ? stats.dailyEarnings : [
-      { name: 'LUN', monto: 85000 }, { name: 'MAR', monto: 120000 }, { name: 'MIE', monto: 95000 }, 
-      { name: 'JUE', monto: 150000 }, { name: 'VIE', monto: 210000 }, { name: 'SAB', monto: 320000 }, { name: 'DOM', monto: 280000 }
+      { name: 'LUN', monto: 85000, cantidad: 4 }, 
+      { name: 'MAR', monto: 120000, cantidad: 6 }, 
+      { name: 'MIE', monto: 95000, cantidad: 5 }, 
+      { name: 'JUE', monto: 150000, cantidad: 7 }, 
+      { name: 'VIE', monto: 210000, cantidad: 10 }, 
+      { name: 'SAB', monto: 320000, cantidad: 16 }, 
+      { name: 'DOM', monto: 280000, cantidad: 14 }
     ];
   }, [period, stats.dailyEarnings]);
 
@@ -107,15 +172,25 @@ export function WasherDashboard({ stats, store, onOpenSettings }: WasherDashboar
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }} />
+              <XAxis 
+                dataKey="name" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }} 
+              />
+              <YAxis 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 9, fontWeight: 900, fill: '#94a3b8' }}
+                tickFormatter={(val) => `$${val/1000}k`}
+              />
               <Tooltip 
-                cursor={{ fill: '#f8fafc' }} 
-                contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', fontWeight: 'bold' }}
+                content={<CustomTooltip />}
+                cursor={{ fill: '#f8fafc', radius: 10 }}
               />
               <Bar dataKey="monto" radius={[10, 10, 0, 0]}>
                 {chartData.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={entry.monto > 0 ? '#3b82f6' : '#f1f5f9'} />
+                  <Cell key={`cell-${index}`} fill={entry.monto > 0 ? 'hsl(var(--primary))' : '#f1f5f9'} />
                 ))}
               </Bar>
             </BarChart>
