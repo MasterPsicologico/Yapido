@@ -41,6 +41,9 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // DETECCIÓN DE LADO OPERATIVO (DUEÑO O REPARTIDOR)
+  const isBusinessSide = user?.uid === orderData?.storeOwnerId || user?.uid === orderData?.deliveryDriverId;
+
   useEffect(() => {
     if (orderId) {
       window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId } }));
@@ -156,10 +159,12 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
                 </div>
                 <div className="space-y-2 px-8">
                   <h3 className="text-2xl font-black italic uppercase tracking-tighter text-slate-900 leading-tight">
-                    ¿Necesitas ayuda?
+                    {isBusinessSide ? "¿QUIERES HABLAR?" : "¿Necesitas ayuda?"}
                   </h3>
                   <p className="text-slate-400 font-black text-[10px] uppercase tracking-[0.3em] italic leading-relaxed">
-                    Pregunta lo que quieras, <br /> estamos en línea para ti
+                    {isBusinessSide 
+                      ? "¿Necesitas preguntarle algo al cliente? \n Inicia la conversación aquí" 
+                      : "Pregunta lo que quieras, \n estamos en línea para ti"}
                   </p>
                 </div>
                 <div className="h-0.5 w-8 bg-primary/20 rounded-full" />
