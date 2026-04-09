@@ -1,7 +1,8 @@
+
 "use client";
 
 import Link from 'next/link';
-import { UserCircle, LogOut, LayoutGrid, Waves, BookOpen } from 'lucide-react';
+import { UserCircle, LogOut, Waves, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
@@ -22,7 +23,6 @@ interface NavbarUserMenuProps {
 export function NavbarUserMenu({ user, profile, canAccessManage, onLogout }: NavbarUserMenuProps) {
   const firestore = useFirestore();
 
-  // BUSCADOR AUTOMÁTICO DE VITRINA DE LAVADORAS (CUADERNO DIGITAL)
   const washerStoreQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return query(
@@ -34,17 +34,17 @@ export function NavbarUserMenu({ user, profile, canAccessManage, onLogout }: Nav
   }, [firestore, user?.uid]);
 
   const { data: ownedWasherStores } = useCollection(washerStoreQuery);
-  
-  // Determinamos el ID de la lavadora: o es del repartidor (vinculado) o es del dueño (propio)
   const washerStoreId = profile?.linkedStoreId || ownedWasherStores?.[0]?.id;
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-full p-0 shrink-0 border-2 border-white shadow-md hover:border-primary/20 transition-all bg-white">
+        <Button variant="ghost" className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-full p-0 shrink-0 border-2 border-white shadow-md hover:border-primary/20 transition-all bg-white overflow-hidden">
           <Avatar className="h-full w-full">
-            <AvatarImage src={profile?.photoURL || user.photoURL || ''} />
-            <AvatarFallback className="font-black text-[10px] bg-slate-100 text-primary">U</AvatarFallback>
+            <AvatarImage src={profile?.photoURL || user.photoURL || ''} className="object-cover" />
+            <AvatarFallback className="font-black text-[10px] bg-slate-100 text-primary uppercase">
+              {user.displayName?.charAt(0) || 'U'}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </PopoverTrigger>
@@ -57,7 +57,6 @@ export function NavbarUserMenu({ user, profile, canAccessManage, onLogout }: Nav
         <div className="h-px bg-slate-50 mx-2" />
         
         <div className="p-1 space-y-1">
-          {/* ENLACE MAESTRO: MI CUADERNO DE LAVADORAS DIGITAL (INTELIGENTE) */}
           {washerStoreId && (
             <Link 
               href={`/admin/washer/${washerStoreId}`} 

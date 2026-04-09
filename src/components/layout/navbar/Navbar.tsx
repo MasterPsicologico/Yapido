@@ -2,7 +2,6 @@
 "use client";
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -48,16 +47,12 @@ export function Navbar() {
       if (currentProgress >= 100) {
         clearInterval(interval);
         
-        // Determinamos la ruta de destino
         const nextMode = isDeliveryZone ? 'stores' : 'delivery';
         const nextPath = isDeliveryZone ? '/' : '/delivery/dashboard';
         
         localStorage.setItem(MODE_KEY, nextMode);
-        
-        // Redirección inmediata
         router.push(nextPath);
         
-        // Delay para reset visual
         setTimeout(() => {
           setIsTransitioning(false);
           setProgress(0);
@@ -73,11 +68,11 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-2xl border-b border-slate-100">
-      <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2 max-w-7xl">
+    <nav className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-2xl border-b border-slate-100">
+      <div className="container mx-auto px-2 sm:px-6 h-16 flex items-center justify-between gap-1 sm:gap-2 max-w-7xl">
         
-        {/* Lado Izquierdo: Sidebar y Conmutador Elongado */}
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+        {/* Lado Izquierdo: Compacto */}
+        <div className="flex items-center gap-1 sm:gap-3 shrink-0">
           <NavbarSidebar 
             user={user} profile={profile} canAccessManage={canAccessManage} 
             isRepartidor={isRepartidor} onLogin={handleLogin} onLogout={handleLogout} 
@@ -93,11 +88,11 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Lado Derecho: Acciones y Usuario */}
-        <div className="flex items-center gap-1.5 sm:gap-3 ml-auto">
+        {/* Lado Derecho: Acciones agrupadas y Perfil Protegido */}
+        <div className="flex items-center gap-1 sm:gap-3 ml-auto">
           {!isUserLoading && user && (
             <>
-              <div className="flex items-center bg-slate-50/80 rounded-full px-1 py-1 gap-0.5 border border-slate-100 backdrop-blur-sm shadow-inner">
+              <div className="flex items-center bg-slate-50/80 rounded-full px-0.5 sm:px-1 py-1 gap-0 border border-slate-100 backdrop-blur-sm shadow-inner shrink">
                 <CartCenter />
                 <FavoritesCenter />
                 <ActivityCenter />
@@ -110,8 +105,8 @@ export function Navbar() {
           )}
 
           {!isUserLoading && !user && (
-            <Button onClick={handleLogin} variant="default" className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-4 sm:px-6 font-black shadow-lg shadow-secondary/20 h-10 text-[10px] uppercase tracking-widest">
-              <User className="w-4 h-4" /> <span>Ingresar</span>
+            <Button onClick={handleLogin} variant="default" className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-4 font-black shadow-lg shadow-secondary/20 h-9 text-[10px] uppercase tracking-widest">
+              <User className="w-4 h-4" /> <span className="hidden xs:inline">Ingresar</span>
             </Button>
           )}
         </div>
