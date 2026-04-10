@@ -32,7 +32,6 @@ export function ResponsiveHero({ bgMobile, bgDesktop, onAction }: ResponsiveHero
           className="object-cover object-center" 
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
       </div>
 
       {/* VERSIÓN MÓVIL */}
@@ -44,7 +43,6 @@ export function ResponsiveHero({ bgMobile, bgDesktop, onAction }: ResponsiveHero
           className="object-cover object-center" 
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
       </div>
     </div>
   );
