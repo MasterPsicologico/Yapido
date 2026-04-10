@@ -17,25 +17,12 @@ import Image from 'next/image';
 
 /**
  * Home - El Portal Unificado de Vitriniando.
- * Carga inmediata con Pantalla de Carga (Splash) minimalista controlada por Admin.
+ * CARGA INSTANTÁNEA: Se ha eliminado el splash por mandato superior.
  */
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-
-  // FETCH: Configuración de la pantalla de carga (Splash)
-  const splashRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'splash'), [firestore]);
-  const { data: splashConfig } = useDoc(splashRef);
-
-  // EFECTO DE AUDIO PREMIUM DE INTRODUCCIÓN
-  useEffect(() => {
-    if (isUserLoading) {
-      const introSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
-      introSound.volume = 0.4;
-      introSound.play().catch(() => {});
-    }
-  }, [isUserLoading]);
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -45,39 +32,6 @@ export default function Home() {
       }
     }
   }, [user, isUserLoading, router]);
-
-  // PANTALLA DE CARGA ÉLITE (SPLASH) - REDISEÑADA POR MANDATO
-  if (isUserLoading) return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-[#050505] overflow-hidden">
-      <div className="flex flex-col items-center gap-10 animate-in fade-in zoom-in duration-700 relative z-10">
-        <div className="relative group">
-          {/* Aura de Carga */}
-          <div className="absolute inset-0 rounded-full bg-primary/20 animate-pulse [animation-duration:1500ms] blur-3xl scale-150" />
-          
-          {/* Círculo de Identidad Maestro */}
-          <div className="relative w-32 h-32 rounded-full border-4 border-primary/20 p-1 flex items-center justify-center bg-slate-900 shadow-[0_0_60px_rgba(59,130,246,0.3)] overflow-hidden">
-            {splashConfig?.imageUrl ? (
-              <Image 
-                src={splashConfig.imageUrl} 
-                alt="Loading" 
-                fill 
-                className="object-cover animate-in fade-in duration-500" 
-              />
-            ) : (
-              <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                <ShoppingBag className="w-10 h-10 text-primary/40 animate-pulse" />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Barra de Progreso Minimalista */}
-        <div className="h-1 w-24 bg-white/5 rounded-full overflow-hidden relative border border-white/5">
-          <div className="absolute inset-0 bg-primary animate-progress-loading shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">

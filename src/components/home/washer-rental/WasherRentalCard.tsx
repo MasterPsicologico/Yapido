@@ -39,16 +39,12 @@ export function WasherRentalCard({
   const firestore = useFirestore();
   const [localBanner, setLocalBanner] = useState<string | null>(null);
   
-  // LÓGICA DE REPOSICIONAMIENTO CORREGIDA
+  // MOTOR DE ARRASTRE BLINDADO
   const [isAdjusting, setIsAdjusting] = useState(false);
   const [yPos, setYPos] = useState(bannerConfig?.yPos || 50);
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef(0);
   const startYPos = useRef(50);
-
-  // Estado para la carga del Splash
-  const [isUploadingSplash, setIsUploadingSplash] = useState(false);
-  const splashInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -63,24 +59,38 @@ export function WasherRentalCard({
     if (bannerConfig?.yPos !== undefined) setYPos(bannerConfig.yPos);
   }, [bannerConfig, localBanner]);
 
+  // MANEJO DE EVENTOS GLOBALES PARA EL ARRASTRE
+  useEffect(() => {
+    const onMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDragging) return;
+      const currentY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
+      // Sensibilidad ajustada para control milimétrico
+      const delta = (currentY - startY.current) / 4; 
+      setYPos(Math.max(0, Math.min(100, startYPos.current + delta)));
+    };
+
+    const onUp = () => setIsDragging(false);
+
+    if (isDragging) {
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+      window.addEventListener('touchmove', onMove, { passive: false });
+      window.addEventListener('touchend', onUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+    };
+  }, [isDragging]);
+
   const handleStartDrag = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isAdjusting) return;
     setIsDragging(true);
     startY.current = 'touches' in e ? e.touches[0].clientY : e.clientY;
     startYPos.current = yPos;
-  };
-
-  const handleDrag = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDragging) return;
-    const currentY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    // Sensibilidad invertida para que el arrastre sea intuitivo (tirar hacia arriba sube la imagen)
-    const delta = (currentY - startY.current) / 4; 
-    const newPos = Math.max(0, Math.min(100, startYPos.current + delta));
-    setYPos(newPos);
-  };
-
-  const handleStopDrag = () => {
-    setIsDragging(false);
   };
 
   const savePosition = async () => {
@@ -91,33 +101,14 @@ export function WasherRentalCard({
     toast({ title: "Posición Guardada", className: "bg-green-600 text-white" });
   };
 
-  const handleSplashUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !isAdmin || !firestore) return;
-    setIsUploadingSplash(true);
-    try {
-      const compressed = await compressImage(file, 400, 400, 0.8);
-      const splashRef = doc(firestore, 'appConfig', 'splash');
-      await setDocumentNonBlocking(splashRef, { imageUrl: compressed, updatedAt: serverTimestamp() }, { merge: true });
-      toast({ title: "Splash Actualizado" });
-    } finally {
-      setIsUploadingSplash(false);
-    }
-  };
-
   return (
     <div 
-      onMouseMove={handleDrag}
-      onMouseUp={handleStopDrag}
-      onMouseLeave={handleStopDrag}
-      onTouchMove={handleDrag}
-      onTouchEnd={handleStopDrag}
       className={cn(
         "relative w-full min-h-[calc(100dvh-64px)] overflow-hidden flex flex-col items-center justify-start pt-32 px-6 text-center bg-[#050505] transition-all duration-500",
         isAdjusting ? "cursor-ns-resize" : ""
       )}
     >
-      {/* Fondo de Identidad */}
+      {/* Fondo de Identidad - Escucha activa de arrastre */}
       <div 
         onMouseDown={handleStartDrag}
         onTouchStart={handleStartDrag}
@@ -169,16 +160,6 @@ export function WasherRentalCard({
               <CheckCircle2 className="w-5 h-5" />
             </button>
           )}
-
-          {/* Control de Splash */}
-          <input type="file" ref={splashInputRef} className="hidden" accept="image/*" onChange={handleSplashUpload} />
-          <button 
-            onClick={(e) => { e.stopPropagation(); splashInputRef.current?.click(); }}
-            disabled={isUploadingSplash}
-            className="w-12 h-12 rounded-[18px] bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-blue-400 transition-all shadow-2xl"
-          >
-            {isUploadingSplash ? <Loader2 className="w-5 h-5 animate-spin text-blue-400" /> : <Zap className="w-5 h-5 fill-blue-400" />}
-          </button>
         </div>
       )}
 

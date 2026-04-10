@@ -14,7 +14,7 @@ interface SolicitationHeaderProps {
 
 /**
  * SolicitationHeader - Cabecera Flexible para evitar desbordamientos.
- * Ajuste: Estructura de min-height y padding dinámico.
+ * AJUSTE OBLIGATORIO: Margen superior de 7px inyectado quirúrgicamente.
  */
 export function SolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: SolicitationHeaderProps) {
   return (
@@ -27,16 +27,16 @@ export function SolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: So
         <AdminQuickSettings isAdmin={isAdmin} onOpen={onOpenAdminSettings} />
       </div>
 
-      {/* Título Dorado Maestro - Ajustado para evitar desbordamiento superior */}
-      <div className="flex-1 px-2 text-center relative z-10 flex flex-col justify-center items-center">
+      {/* Título Dorado Maestro - Con margen superior obligatorio de 7px */}
+      <div className="flex-1 px-2 text-center relative z-10 flex flex-col items-center pt-[7px]">
         <DialogHeader className="p-0 space-y-0 text-center items-center">
           <DialogTitle className={cn(
-            "font-black italic uppercase tracking-tighter leading-[0.9] text-lg sm:text-2xl",
+            "font-black italic uppercase tracking-tighter leading-[0.85] text-xl sm:text-2xl",
             "text-transparent bg-clip-text bg-gradient-to-b from-[#fef08a] via-[#eab308] to-[#a16207]",
             "drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
           )}>
-            SOLICITUD DE <br />
-            <span className="text-xl sm:text-2xl md:text-3xl">ALQUILER DE LAVADORA</span>
+            ALQUILER DE <br />
+            <span className="text-2xl sm:text-3xl md:text-4xl">LAVADORA</span>
           </DialogTitle>
           <DialogDescription className="text-yellow-500 font-black text-[7px] uppercase tracking-[0.4em] mt-1 opacity-60">
             SISTEMA ÉLITE • SINCRONIZADO
