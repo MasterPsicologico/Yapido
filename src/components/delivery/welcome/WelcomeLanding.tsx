@@ -26,8 +26,7 @@ interface WelcomeLandingProps {
 
 /**
  * WelcomeLanding - Orquestador de Inmersión Total.
- * La imagen ocupa el 100% del viewport. Sin scroll inicial.
- * Al hacer clic en la imagen, se despliega el flujo de registro abajo.
+ * Actualizado: El clic en la imagen ahora fuerza el scroll al formulario siempre.
  */
 export function WelcomeLanding({ isAdmin, config, onUpdateConfig }: WelcomeLandingProps) {
   const { user } = useUser();
@@ -58,9 +57,12 @@ export function WelcomeLanding({ isAdmin, config, onUpdateConfig }: WelcomeLandi
   }, [profile]);
 
   const handleToggleForm = () => {
-    if (showForm) return;
-    setShowForm(true);
-    // Pequeño delay para permitir que el DOM renderice el formulario antes del scroll
+    // Activar formulario si no lo está
+    if (!showForm) {
+      setShowForm(true);
+    }
+    
+    // Ejecutar scroll automático instantáneo
     setTimeout(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
@@ -143,7 +145,7 @@ export function WelcomeLanding({ isAdmin, config, onUpdateConfig }: WelcomeLandi
       <main className="flex-1 flex flex-col items-center relative">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black z-0" />
         
-        {/* HERO RESPONSIVO: Ocupa el 100% de la pantalla útil */}
+        {/* HERO RESPONSIVO: Sin overlays, dispara scroll al tocar */}
         <ResponsiveHero 
           bgMobile={config?.bgMobile} 
           bgDesktop={config?.bgDesktop} 
@@ -158,7 +160,7 @@ export function WelcomeLanding({ isAdmin, config, onUpdateConfig }: WelcomeLandi
           />
         )}
 
-        {/* CONTENEDOR DEL FORMULARIO: Aparece solo al hacer clic en la imagen */}
+        {/* CONTENEDOR DEL FORMULARIO */}
         {showForm && (
           <div ref={formRef} className="container mx-auto px-4 max-w-2xl relative z-20 py-20 space-y-12 animate-in slide-in-from-bottom-10 duration-1000">
             <div className="text-center space-y-2">
