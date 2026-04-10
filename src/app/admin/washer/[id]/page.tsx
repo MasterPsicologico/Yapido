@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -30,7 +31,7 @@ export default function WasherAdminPage() {
   const { user, profile, isAdmin, isLoading: profileLoading } = useProfile();
   const firestore = useFirestore();
   
-  const [activeTab, setActiveTab] = useState<'stats' | 'active' | 'drivers' | 'orders'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'active' | 'drivers' | 'orders'>('active');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const storeRef = useMemoFirebase(() => (!firestore || !id) ? null : doc(firestore, 'stores', id), [firestore, id]);
@@ -57,7 +58,7 @@ export default function WasherAdminPage() {
       collection(firestore, 'orders'),
       where('storeOwnerId', '==', user.uid),
       where('storeId', '==', id),
-      where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver', 'at_destination', 'delivered']),
+      where('status', 'in', ['shipped', 'at_store', 'delivered_to_driver', 'at_destination', 'delivered', 'picking_up', 'at_pickup']),
       orderBy('createdAt', 'desc')
     );
   }, [firestore, id, user?.uid]);
@@ -99,29 +100,39 @@ export default function WasherAdminPage() {
         {/* NAVEGACIÓN DE PESTAÑAS - CORREGIDO PARA MÓVIL */}
         <div className="flex gap-2 bg-white p-1.5 rounded-full shadow-sm border border-slate-100 w-full overflow-x-auto no-scrollbar whitespace-nowrap">
           {[
-            { id: 'stats', label: 'Dashboard' },
             { id: 'active', label: 'Alquileres Activos' },
+            { id: 'stats', label: 'Dashboard' },
             { id: 'drivers', label: 'Repartidores' },
             { id: 'orders', label: 'Historial' }
           ].map(tab => (
-            <Button 
+            <button 
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)} 
-              variant={activeTab === tab.id ? 'default' : 'ghost'} 
-              className="rounded-full h-10 text-[9px] font-black uppercase px-5 tracking-widest shrink-0"
+              className={cn(
+                "rounded-full h-10 text-[9px] font-black uppercase px-5 tracking-widest shrink-0 transition-all duration-300",
+                activeTab === tab.id 
+                  ? "bg-slate-900 text-white shadow-lg shadow-slate-200 scale-105" 
+                  : "bg-transparent text-slate-400 hover:bg-slate-50"
+              )}
             >
               {tab.label}
-            </Button>
+            </button>
           ))}
         </div>
 
-        {/* RADAR DE SOLICITUDES: REUBICADO QUIRÚRGICAMENTE BAJO EL MENÚ */}
-        <WasherLiveRadar storeId={id} storeName={store?.name || 'Tienda'} ownerId={store?.ownerId || ''} />
+        {/* CONTENIDO DINÁMICO: AHORA EN LA CIMA POR MANDATO SUPERIOR */}
+        <div className="space-y-12 min-h-[400px]">
+          {activeTab === 'active' && <WasherActiveRentals rentals={activeRentals} />}
+          {activeTab === 'stats' && <WasherDashboard stats={stats} store={store} onOpenSettings={() => setIsSettingsOpen(true)} />}
+          {activeTab === 'drivers' && <WasherDrivers store={store} />}
+          {activeTab === 'orders' && <WasherOrders orders={history} router={router} />}
+        </div>
 
-        {activeTab === 'active' && <WasherActiveRentals rentals={activeRentals} />}
-        {activeTab === 'stats' && <WasherDashboard stats={stats} store={store} onOpenSettings={() => setIsSettingsOpen(true)} />}
-        {activeTab === 'drivers' && <WasherDrivers store={store} />}
-        {activeTab === 'orders' && <WasherOrders orders={history} router={router} />}
+        {/* SEPARADOR ESTRATÉGICO */}
+        <div className="h-px bg-slate-100 w-full" />
+
+        {/* RADAR DE SOLICITUDES: REUBICADO QUIRÚRGICAMENTE EN LA BASE */}
+        <WasherLiveRadar storeId={id} storeName={store?.name || 'Tienda'} ownerId={store?.ownerId || ''} />
         
       </main>
     </div>
