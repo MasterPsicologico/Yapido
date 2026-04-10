@@ -40,10 +40,10 @@ export function WasherRentalCard({
   const [localBanner, setLocalBanner] = useState<string | null>(null);
   
   const [isAdjusting, setIsAdjusting] = useState(false);
-  const [yPos, setYPos] = useState(bannerConfig?.yPos || 50);
+  const [yPos, setYPos] = useState(bannerConfig?.yPos ?? 0);
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef(0);
-  const startYPos = useRef(50);
+  const startYPos = useRef(0);
 
   useEffect(() => {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -55,22 +55,35 @@ export function WasherRentalCard({
       setLocalBanner(bannerConfig.backgroundImage);
       localStorage.setItem(CACHE_KEY, bannerConfig.backgroundImage);
     }
-    if (bannerConfig?.yPos !== undefined) setYPos(bannerConfig.yPos);
-  }, [bannerConfig, localBanner]);
+    if (bannerConfig?.yPos !== undefined && !isDragging) {
+      setYPos(bannerConfig.yPos);
+    }
+  }, [bannerConfig, localBanner, isDragging]);
 
   useEffect(() => {
     const onMove = (e: MouseEvent | TouchEvent) => {
       if (!isDragging) return;
+      
+      // Bloquear scroll de la página durante el ajuste
+      if (e.cancelable) e.preventDefault();
+
       const currentY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
-      // Sensibilidad aumentada para un ajuste más rápido y preciso
-      const delta = (currentY - startY.current) / 2; 
-      setYPos(Math.max(0, Math.min(100, startYPos.current + delta)));
+      
+      // MOVIMIENTO INVERSO PARA SENTIDO NATURAL: 
+      // Si muevo el dedo ABAJO (deltaY +), quiero que el yPos BAJE (hacia 0%)
+      const deltaY = currentY - startY.current;
+      const sensitivity = 0.15; // Ajuste fino para control total
+      
+      const nextY = startYPos.current - (deltaY * sensitivity);
+      setYPos(Math.max(0, Math.min(100, nextY)));
     };
 
-    const onUp = () => setIsDragging(false);
+    const onUp = () => {
+      if (isDragging) setIsDragging(false);
+    };
 
     if (isDragging) {
-      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mousemove', onMove, { passive: false });
       window.addEventListener('mouseup', onUp);
       window.addEventListener('touchmove', onMove, { passive: false });
       window.addEventListener('touchend', onUp);
@@ -96,7 +109,7 @@ export function WasherRentalCard({
     const bannerRef = doc(firestore, 'appConfig', 'washer_banner');
     updateDocumentNonBlocking(bannerRef, { yPos, updatedAt: serverTimestamp() });
     setIsAdjusting(false);
-    toast({ title: "Posición Guardada", className: "bg-green-600 text-white" });
+    toast({ title: "Encuadre Guardado", className: "bg-green-600 text-white" });
   };
 
   return (
@@ -106,20 +119,24 @@ export function WasherRentalCard({
         isAdjusting ? "cursor-ns-resize" : ""
       )}
     >
-      {/* El contenedor de la imagen de fondo ahora empieza 7px abajo para evitar el desbordamiento solicitado */}
+      {/* IMAGEN DE PORTADA: Ocupa todo el espacio sin líneas negras */}
       <div 
         onMouseDown={handleStartDrag}
         onTouchStart={handleStartDrag}
         onClick={() => !isAdjusting && onOpenSolicitation()}
-        className="absolute top-[7px] inset-x-0 bottom-0 z-0 select-none"
+        className="absolute inset-0 z-0 select-none touch-none"
       >
         {localBanner ? (
           <Image 
             src={localBanner} 
             alt="Portada" 
             fill 
-            style={{ objectPosition: `center ${yPos}%` }}
-            className="object-cover transition-all duration-300 ease-out" 
+            style={{ 
+              objectPosition: `center ${yPos}%`,
+              // El filtro sutil ayuda a separar la imagen de la Navbar
+              filter: isAdjusting ? 'brightness(1.2)' : 'none' 
+            }}
+            className="object-cover transition-transform duration-100 ease-out" 
             priority 
           />
         ) : (
@@ -143,7 +160,7 @@ export function WasherRentalCard({
             onClick={(e) => { e.stopPropagation(); setIsAdjusting(!isAdjusting); }} 
             className={cn(
               "w-12 h-12 rounded-[18px] backdrop-blur-xl border flex items-center justify-center transition-all shadow-2xl",
-              isAdjusting ? "bg-primary text-white border-white" : "bg-white/10 text-white/60 border-white/20 hover:text-yellow-500"
+              isAdjusting ? "bg-primary text-white border-white animate-pulse" : "bg-white/10 text-white/60 border-white/20 hover:text-yellow-500"
             )}
           >
             <MoveVertical className="w-5 h-5" />
