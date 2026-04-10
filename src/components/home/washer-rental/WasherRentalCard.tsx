@@ -129,19 +129,55 @@ export function WasherRentalCard({
     startYPos.current = yPos;
   };
 
-  // PROTOCOLO DE PRESIÓN LARGA PARA BOTÓN
+  // PROTOCOLO DE PRESIÓN LARGA BLINDADO (5 SEGUNDOS + ANTI-SCROLL)
   const handleBtnStart = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isAdmin || isAdjusting || isMovingBtn) return;
     
+    // Capturar punto inicial para detectar si el usuario está haciendo scroll
+    const touch = 'touches' in e ? e.touches[0] : e;
+    const startX = touch.clientX;
+    const startYPress = touch.clientY;
+    
     setOriginalBtnPos({ ...btnPos });
     
+    const cancelLongPress = () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+      window.removeEventListener('mousemove', onMoveCheck);
+      window.removeEventListener('mouseup', cancelLongPress);
+      window.removeEventListener('touchmove', onMoveCheck);
+      window.removeEventListener('touchend', cancelLongPress);
+    };
+
+    const onMoveCheck = (moveEvent: MouseEvent | TouchEvent) => {
+      const moveTouch = 'touches' in moveEvent ? moveEvent.touches[0] : (moveEvent as MouseEvent);
+      const dist = Math.sqrt(Math.pow(moveTouch.clientX - startX, 2) + Math.pow(moveTouch.clientY - startYPress, 2));
+      
+      // Si el dedo se mueve más de 15px durante la espera, asumimos que no es una intención de mover el botón
+      if (dist > 15) {
+        cancelLongPress();
+      }
+    };
+
+    window.addEventListener('mousemove', onMoveCheck);
+    window.addEventListener('mouseup', cancelLongPress);
+    window.addEventListener('touchmove', onMoveCheck);
+    window.addEventListener('touchend', cancelLongPress);
+
     longPressTimer.current = setTimeout(() => {
+      cancelLongPress(); // Limpiar chequeos
       setIsMovingBtn(true);
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        navigator.vibrate(100);
+        navigator.vibrate(150); // Confirmación háptica superior
       }
-      toast({ title: "Modo Mover Activado", description: "Ubica el botón y confirma." });
-    }, 3000);
+      toast({ 
+        title: "⚙️ Mando de Interfaz Activo", 
+        description: "El botón ha sido liberado. Arrástralo y usa los controles para fijar su nueva posición.",
+        className: "bg-slate-900 text-white border-primary"
+      });
+    }, 5000); // 5 SEGUNDOS DE SEGURIDAD ABSOLUTA
   };
 
   const handleSaveBackground = async () => {
