@@ -14,7 +14,7 @@ interface SolicitationHeaderProps {
 
 /**
  * SolicitationHeader - Cabecera Flexible para evitar desbordamientos.
- * AJUSTE OBLIGATORIO: Margen superior de 7px inyectado quirúrgicamente.
+ * AJUSTE OBLIGATORIO: Margen superior de 7px inyectado quirúrgicamente para visibilidad total.
  */
 export function SolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: SolicitationHeaderProps) {
   return (
@@ -27,7 +27,7 @@ export function SolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: So
         <AdminQuickSettings isAdmin={isAdmin} onOpen={onOpenAdminSettings} />
       </div>
 
-      {/* Título Dorado Maestro - Con margen superior obligatorio de 7px */}
+      {/* Título Dorado Maestro - Con margen superior obligatorio de 7px para leer "ALQUILER DE" */}
       <div className="flex-1 px-2 text-center relative z-10 flex flex-col items-center pt-[7px]">
         <DialogHeader className="p-0 space-y-0 text-center items-center">
           <DialogTitle className={cn(

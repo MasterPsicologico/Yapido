@@ -6,7 +6,7 @@ import { Zap, Moon, Camera, Store as StoreIcon, LayoutGrid, ChevronDown, Loader2
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { useFirestore, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
@@ -39,7 +39,6 @@ export function WasherRentalCard({
   const firestore = useFirestore();
   const [localBanner, setLocalBanner] = useState<string | null>(null);
   
-  // MOTOR DE ARRASTRE BLINDADO
   const [isAdjusting, setIsAdjusting] = useState(false);
   const [yPos, setYPos] = useState(bannerConfig?.yPos || 50);
   const [isDragging, setIsDragging] = useState(false);
@@ -59,13 +58,12 @@ export function WasherRentalCard({
     if (bannerConfig?.yPos !== undefined) setYPos(bannerConfig.yPos);
   }, [bannerConfig, localBanner]);
 
-  // MANEJO DE EVENTOS GLOBALES PARA EL ARRASTRE
   useEffect(() => {
     const onMove = (e: MouseEvent | TouchEvent) => {
       if (!isDragging) return;
       const currentY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
-      // Sensibilidad ajustada para control milimétrico
-      const delta = (currentY - startY.current) / 4; 
+      // Sensibilidad aumentada para un ajuste más rápido y preciso
+      const delta = (currentY - startY.current) / 2; 
       setYPos(Math.max(0, Math.min(100, startYPos.current + delta)));
     };
 
@@ -108,12 +106,12 @@ export function WasherRentalCard({
         isAdjusting ? "cursor-ns-resize" : ""
       )}
     >
-      {/* Fondo de Identidad - Escucha activa de arrastre */}
+      {/* El contenedor de la imagen de fondo ahora empieza 7px abajo para evitar el desbordamiento solicitado */}
       <div 
         onMouseDown={handleStartDrag}
         onTouchStart={handleStartDrag}
         onClick={() => !isAdjusting && onOpenSolicitation()}
-        className="absolute inset-0 z-0 select-none"
+        className="absolute top-[7px] inset-x-0 bottom-0 z-0 select-none"
       >
         {localBanner ? (
           <Image 
@@ -130,7 +128,6 @@ export function WasherRentalCard({
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
       </div>
 
-      {/* Controles de Administrador */}
       {isAdmin && (
         <div className="absolute top-4 left-4 z-[50] flex flex-col gap-3">
           <input type="file" className="hidden" accept="image/*" onChange={onBannerUpload} id="banner-input" />
@@ -163,7 +160,6 @@ export function WasherRentalCard({
         </div>
       )}
 
-      {/* Activador Central */}
       {!isAdjusting && (
         <div 
           onClick={() => onOpenSolicitation()}
@@ -187,7 +183,6 @@ export function WasherRentalCard({
         </div>
       )}
 
-      {/* BOTÓN DE CANDADO (Solo Admin) */}
       {isAdmin && !isAdjusting && (
         <button 
           onClick={(e) => { e.stopPropagation(); onToggleLock?.(); }}
