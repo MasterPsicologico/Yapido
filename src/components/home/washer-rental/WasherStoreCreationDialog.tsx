@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -7,7 +6,6 @@ import { Store as StoreIcon, X, Loader2, Zap, MapPinned, Box, Sparkles, CheckCir
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from '@/lib/utils';
 
 interface WasherStoreCreationDialogProps {
@@ -77,7 +75,7 @@ export function WasherStoreCreationDialog({
                 </div>
               </div>
 
-              {/* SECCIÓN 2: INVENTARIO ESPECIALIZADO (LO QUE PIDIÓ EL JEFE) */}
+              {/* SECCIÓN 2: INVENTARIO ESPECIALIZADO */}
               <div className="bg-white p-8 rounded-[40px] shadow-xl ring-1 ring-black/[0.02] space-y-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -mr-12 -mt-12" />
                 
@@ -103,7 +101,6 @@ export function WasherStoreCreationDialog({
                       )}
                     >
                       <div className="flex items-center gap-4">
-                        <Checkbox checked={hasAuto} className="hidden" />
                         <span className="font-black text-sm uppercase italic tracking-tighter">Lavadoras Automáticas</span>
                       </div>
                       {hasAuto && <CheckCircle2 className="w-5 h-5 text-primary animate-in zoom-in" />}
@@ -119,7 +116,6 @@ export function WasherStoreCreationDialog({
                       )}
                     >
                       <div className="flex items-center gap-4">
-                        <Checkbox checked={hasSemi} className="hidden" />
                         <span className="font-black text-sm uppercase italic tracking-tighter">Lavadoras Semiautomáticas</span>
                       </div>
                       {hasSemi && <CheckCircle2 className="w-5 h-5 text-primary animate-in zoom-in" />}
