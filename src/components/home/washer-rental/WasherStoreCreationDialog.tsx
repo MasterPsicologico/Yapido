@@ -45,7 +45,12 @@ export function WasherStoreCreationDialog({
               <p className="text-green-500/60 text-[9px] font-black uppercase tracking-[0.3em] mt-1">Registro de Negocio Élite</p>
             </div>
           </div>
-          <button onClick={() => onOpenChange(false)} className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-all active:scale-90"><X className="w-6 h-6" /></button>
+          <button 
+            onClick={() => onOpenChange(false)} 
+            className="relative z-10 w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-all active:scale-90"
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar p-6 bg-[#f8fafc]">
