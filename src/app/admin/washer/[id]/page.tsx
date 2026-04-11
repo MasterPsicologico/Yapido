@@ -97,7 +97,7 @@ export default function WasherAdminPage() {
           </div>
         </div>
 
-        {/* NAVEGACIÓN DE PESTAÑAS - CORREGIDO PARA MÓVIL */}
+        {/* NAVEGACIÓN DE PESTAÑAS */}
         <div className="flex gap-2 bg-white p-1.5 rounded-full shadow-sm border border-slate-100 w-full overflow-x-auto no-scrollbar whitespace-nowrap">
           {[
             { id: 'active', label: 'Alquileres Activos' },
@@ -120,7 +120,7 @@ export default function WasherAdminPage() {
           ))}
         </div>
 
-        {/* CONTENIDO DINÁMICO: AHORA EN LA CIMA POR MANDATO SUPERIOR */}
+        {/* CONTENIDO DINÁMICO */}
         <div className="space-y-12 min-h-[400px]">
           {activeTab === 'active' && <WasherActiveRentals rentals={activeRentals} />}
           {activeTab === 'stats' && <WasherDashboard stats={stats} store={store} onOpenSettings={() => setIsSettingsOpen(true)} />}
@@ -128,11 +128,15 @@ export default function WasherAdminPage() {
           {activeTab === 'orders' && <WasherOrders orders={history} router={router} />}
         </div>
 
-        {/* SEPARADOR ESTRATÉGICO */}
         <div className="h-px bg-slate-100 w-full" />
 
-        {/* RADAR DE SOLICITUDES: REUBICADO QUIRÚRGICAMENTE EN LA BASE */}
-        <WasherLiveRadar storeId={id} storeName={store?.name || 'Tienda'} ownerId={store?.ownerId || ''} />
+        {/* RADAR DE SOLICITUDES: AHORA RECIBE EL OBJETO STORE PARA FILTRADO TÉCNICO */}
+        <WasherLiveRadar 
+          storeId={id} 
+          storeName={store?.name || 'Tienda'} 
+          ownerId={store?.ownerId || ''} 
+          storeData={store} 
+        />
         
       </main>
     </div>

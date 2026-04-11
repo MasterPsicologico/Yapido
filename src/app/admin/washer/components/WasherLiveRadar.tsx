@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useMemo } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useUser } from '@/firebase';
 import { collection, query, where, doc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,9 +15,7 @@ import {
   AlertTriangle, 
   Zap, 
   CheckCircle2, 
-  MessageCircle,
-  Phone,
-  Wallet
+  ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -25,13 +24,14 @@ interface WasherLiveRadarProps {
   storeId: string;
   storeName: string;
   ownerId: string;
+  storeData?: any; // Recibimos la data de la tienda para el filtrado inteligente
 }
 
-export function WasherLiveRadar({ storeId, storeName, ownerId }: WasherLiveRadarProps) {
+export function WasherLiveRadar({ storeId, storeName, ownerId, storeData }: WasherLiveRadarProps) {
   const firestore = useFirestore();
   const { user } = useUser();
 
-  // Radar: Busca pedidos pendientes que sean públicos (Alineado con reglas de seguridad)
+  // Radar: Busca pedidos pendientes que sean públicos
   const radarQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
@@ -41,14 +41,31 @@ export function WasherLiveRadar({ storeId, storeName, ownerId }: WasherLiveRadar
     );
   }, [firestore]);
 
-  const { data: requests, isLoading } = useCollection(radarQuery);
+  const { data: rawRequests, isLoading } = useCollection(radarQuery);
+
+  // FILTRADO INTELIGENTE (CEREBRO DEL RADAR)
+  const filteredRequests = useMemo(() => {
+    if (!rawRequests || !storeData) return [];
+
+    return rawRequests.filter(req => {
+      const type = req.washerType; // 'automatica' o 'semiautomatica'
+      
+      // REGLA DE FILTRADO TÉCNICO:
+      // Solo mostramos si la tienda tiene el tipo de lavadora que el cliente pide.
+      if (type === 'automatica' && storeData.hasAutomatic === false) return false;
+      if (type === 'semiautomatica' && storeData.hasSemiautomatic === false) return false;
+      
+      // TODO: Aquí se podría filtrar por barrios de cobertura si quisiéramos ser más estrictos
+      return true;
+    });
+  }, [rawRequests, storeData]);
 
   const handleAcceptOrder = (order: any) => {
     if (!firestore || !user) return;
     
     const orderRef = doc(firestore, 'orders', order.id);
     
-    // ACEPTACIÓN MAESTRA: Se vincula la tienda y se pone en espera de repartidor
+    // ACEPTACIÓN MAESTRA
     updateDocumentNonBlocking(orderRef, {
       status: 'ready_for_pickup', 
       storeId: storeId,
@@ -57,12 +74,12 @@ export function WasherLiveRadar({ storeId, storeName, ownerId }: WasherLiveRadar
       acceptedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       participants: arrayUnion(ownerId),
-      isLogisticsPublic: false // Sacar del radar público de otros negocios
+      isLogisticsPublic: false 
     });
 
     toast({ 
       title: "¡Misión Aceptada!", 
-      description: "El pedido ha sido despachado a tu flota de repartidores.",
+      description: "El pedido ha sido despachado a tu flota.",
       className: "bg-green-600 text-white border-none"
     });
   };
@@ -77,16 +94,21 @@ export function WasherLiveRadar({ storeId, storeName, ownerId }: WasherLiveRadar
             <Radar className="w-5 h-5 text-primary animate-pulse" />
             <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping" />
           </div>
-          <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 italic">Radar de Solicitudes ({requests?.length || 0})</h3>
+          <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 italic">
+            Radar de Solicitudes ({filteredRequests.length})
+          </h3>
         </div>
-        <Badge className="bg-green-50 text-green-600 border-none font-black text-[8px] px-3 animate-pulse">VIVO</Badge>
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-3.5 h-3.5 text-green-500" />
+          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Sincronización Técnica Activa</span>
+        </div>
       </div>
 
       <div className="grid gap-6">
-        {requests && requests.length > 0 ? requests.map((req) => (
+        {filteredRequests.length > 0 ? filteredRequests.map((req) => (
           <Card key={req.id} className="border-none rounded-[40px] bg-white shadow-xl overflow-hidden ring-1 ring-black/[0.03] animate-in slide-in-from-right-4 duration-500 group">
             <div className="bg-slate-900 px-8 py-2 flex items-center justify-between">
-              <span className="text-[8px] font-black text-primary uppercase tracking-[0.3em]">NUEVA SOLICITUD EN AGUACHICA</span>
+              <span className="text-[8px] font-black text-primary uppercase tracking-[0.3em]">NUEVA RUTA COMPATIBLE</span>
               <span className="text-[8px] font-bold text-white/30 uppercase tracking-widest">#{req.id.slice(-6).toUpperCase()}</span>
             </div>
             
@@ -119,7 +141,9 @@ export function WasherLiveRadar({ storeId, storeName, ownerId }: WasherLiveRadar
                 </div>
                 <div className="space-y-1">
                   <p className="text-[7px] font-black text-slate-400 uppercase">Equipo</p>
-                  <span className="text-xs font-black italic uppercase text-slate-700">{req.washerType || 'Auto'}</span>
+                  <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black uppercase h-5">
+                    {req.washerType || 'Auto'}
+                  </Badge>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[7px] font-black text-slate-400 uppercase">Piso</p>
@@ -147,7 +171,7 @@ export function WasherLiveRadar({ storeId, storeName, ownerId }: WasherLiveRadar
         )) : (
           <div className="text-center py-20 bg-white rounded-[48px] border-2 border-dashed border-slate-100">
             <Radar className="w-12 h-12 mx-auto text-slate-100 mb-4 animate-spin-slow" />
-            <p className="text-slate-300 font-black uppercase tracking-widest italic text-xs">Radar en silencio... Esperando pedidos</p>
+            <p className="text-slate-300 font-black uppercase tracking-widest italic text-xs">Sin solicitudes compatibles para tu inventario</p>
           </div>
         )}
       </div>
