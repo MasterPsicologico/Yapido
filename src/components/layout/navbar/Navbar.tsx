@@ -34,6 +34,9 @@ export function Navbar() {
   const isRepartidor = profile?.role === 'repartidor';
   const canAccessManage = isOwner || isAdmin || profile?.role === 'dueño';
 
+  // LÓGICA DE ACCESO MAESTRA: Solo admin o repartidores vinculados ven el switcher
+  const showModeSwitcher = isAdmin || (isRepartidor && profile?.linkedStoreId);
+
   const handleModeSwitch = () => {
     if (isTransitioning) return;
     
@@ -78,7 +81,7 @@ export function Navbar() {
             isRepartidor={isRepartidor} onLogin={handleLogin} onLogout={handleLogout} 
           />
           
-          {!isUserLoading && user && (
+          {!isUserLoading && user && showModeSwitcher && (
             <NavbarModeSwitcher 
               isDeliveryZone={isDeliveryZone} 
               isTransitioning={isTransitioning} 
