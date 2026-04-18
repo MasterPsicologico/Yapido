@@ -18,14 +18,9 @@ export function SidebarNavigation({ user, canAccessManage, isRepartidor, isAdmin
     { href: "/about", label: "Sobre Nosotros", icon: Info, color: "bg-cyan-50 text-cyan-500" },
   ];
 
-  const adminLinks = [
-    { href: "/admin/orders", label: "Gestionar Pedidos", icon: ClipboardList, color: "bg-orange-50 text-orange-500" },
-    ...(canAccessManage ? [{ href: "/admin/manage", label: "Consola de Mando", icon: Waves, color: "bg-primary/10 text-primary animate-pulse" }] : []),
-    ...(isAdmin ? [{ href: "/admin/fleet", label: "Verificación de Flota", icon: ShieldCheck, color: "bg-green-50 text-green-600" }] : []),
-  ];
-
   return (
     <nav className="flex flex-col gap-1.5 py-4 pb-10">
+      {/* SECCIÓN ESTÁNDAR */}
       {links.map((link) => (
         <SheetClose key={link.href} asChild>
           <Link href={link.href} className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
@@ -37,32 +32,57 @@ export function SidebarNavigation({ user, canAccessManage, isRepartidor, isAdmin
         </SheetClose>
       ))}
 
-      {user && adminLinks.map((link) => (
-        <SheetClose key={link.href} asChild>
-          <Link href={link.href} className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${link.color} group-hover:bg-primary group-hover:text-white transition-colors`}>
-              <link.icon className="w-5 h-5" />
-            </div>
-            <span className="font-bold text-slate-700 group-hover:text-slate-900">{link.label}</span>
-          </Link>
-        </SheetClose>
-      ))}
-
-      {/* TERMINAL DE ESTRATEGIA: ESTRICTAMENTE EXCLUSIVA PARA EL ADMINISTRADOR PRINCIPAL */}
-      {isAdmin && (
-        <div className="mt-8 pt-8 border-t border-slate-100 space-y-4">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-4">Inteligencia de Mando</p>
+      {/* SECCIÓN DE GESTIÓN OPERATIVA */}
+      {user && (
+        <div className="mt-4 pt-4 border-t border-slate-50 space-y-1.5">
+          {/* 1. GESTIONAR PEDIDOS */}
           <SheetClose asChild>
-            <Link href="/admin/business-plan" className="flex items-center gap-4 px-4 py-4 rounded-3xl bg-slate-900 text-white shadow-2xl hover:bg-black transition-all group border-b-4 border-primary/20">
-              <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                <Briefcase className="w-5 h-5" />
+            <Link href="/admin/orders" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-orange-50 text-orange-500 group-hover:bg-primary group-hover:text-white transition-colors">
+                <ClipboardList className="w-5 h-5" />
               </div>
-              <div className="flex flex-col">
-                <span className="font-black italic uppercase tracking-tighter text-sm">Mi Plan de Negocios</span>
-                <span className="text-[8px] font-bold text-primary uppercase tracking-widest">Protocolo Millonario</span>
-              </div>
+              <span className="font-bold text-slate-700 group-hover:text-slate-900">Gestionar Pedidos</span>
             </Link>
           </SheetClose>
+
+          {/* 2. PLAN DE NEGOCIOS (SOLO ADMIN - DEBAJO DE PEDIDOS) */}
+          {isAdmin && (
+            <SheetClose asChild>
+              <Link href="/admin/business-plan" className="flex items-center gap-4 px-4 py-4 rounded-3xl bg-slate-900 text-white shadow-2xl hover:bg-black transition-all group border-b-4 border-primary/20 animate-in fade-in zoom-in duration-500 my-2">
+                <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                  <Briefcase className="w-5 h-5" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-black italic uppercase tracking-tighter text-sm leading-none">Plan de Negocios</span>
+                  <span className="text-[7px] font-bold text-primary uppercase tracking-[0.3em] mt-1">PROTOCOLO ELITE</span>
+                </div>
+              </Link>
+            </SheetClose>
+          )}
+
+          {/* 3. CONSOLA DE MANDO (DUEÑOS O ADMIN) */}
+          {canAccessManage && (
+            <SheetClose asChild>
+              <Link href="/admin/manage" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary animate-pulse group-hover:bg-primary group-hover:text-white transition-colors">
+                  <Waves className="w-5 h-5" />
+                </div>
+                <span className="font-bold text-slate-700 group-hover:text-slate-900">Consola de Mando</span>
+              </Link>
+            </SheetClose>
+          )}
+
+          {/* 4. VERIFICACIÓN DE FLOTA (SOLO ADMIN) */}
+          {isAdmin && (
+            <SheetClose asChild>
+              <Link href="/admin/fleet" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-green-50 text-green-600 group-hover:bg-primary group-hover:text-white transition-colors">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <span className="font-bold text-slate-700 group-hover:text-slate-900">Verificación de Flota</span>
+              </Link>
+            </SheetClose>
+          )}
         </div>
       )}
     </nav>
