@@ -12,21 +12,21 @@ import { toast } from '@/hooks/use-toast';
 
 /** 
  * Maneja los errores comunes de Firebase Auth de forma centralizada.
- * Inyecta diagnósticos visuales para el administrador.
+ * Inyecta diagnósticos visuales para el administrador en tiempo real.
  */
 function handleAuthError(error: any) {
   if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-by-user') {
     return;
   }
 
-  // DIAGNÓSTICO MAESTRO: Detecta si el dominio no está autorizado
+  // DIAGNÓSTICO MAESTRO: Detecta si el dominio no está autorizado y lanza el aviso rojo
   if (error.code === 'auth/unauthorized-domain') {
     const domain = window.location.hostname;
     toast({
       title: "🚨 DOMINIO NO AUTORIZADO",
       description: `Copia esto en tu Firebase: ${domain}`,
       variant: "destructive",
-      duration: 15000, // Tiempo extra para que alcances a copiarlo
+      duration: 15000,
     });
     console.error("Firebase requiere que autorices este dominio:", domain);
     return;
@@ -65,19 +65,19 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 
 /** 
  * Inicia sesión con Google.
- * Detecta automáticamente si el entorno requiere redirección para evitar bloqueos de popup.
+ * Protocolo de Redirección para entornos de IA y PC para evitar bloqueos.
  */
 export function initiateGoogleSignIn(authInstance: Auth): void {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
 
-  // Lógica de detección de entorno de Cloud IDE (AI Studio / Firebase Studio)
+  // Detección de entorno de Cloud IDE (AI Studio / Firebase Studio)
   const isCloudIDE = window.location.hostname.includes('googleusercontent.com') || 
                     window.location.hostname.includes('web.app') ||
                     window.location.port !== '';
 
   if (isCloudIDE) {
-    // La redirección es más robusta en PC/IDE para evitar que la ventana se quede "pegada"
+    // La redirección es infalible en PC para que no se quede "pegada" la ventana
     signInWithRedirect(authInstance, provider).catch(handleAuthError);
   } else {
     signInWithPopup(authInstance, provider).catch(handleAuthError);
