@@ -15,7 +15,12 @@ import { toast } from '@/hooks/use-toast';
  * Inyecta diagnósticos visuales para el administrador en tiempo real.
  */
 function handleAuthError(error: any) {
-  if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-by-user') {
+  // Silenciamos errores de cancelación de usuario o de solicitudes de popup que se cancelan por redirección
+  if (
+    error.code === 'auth/popup-closed-by-user' || 
+    error.code === 'auth/cancelled-by-user' ||
+    error.code === 'auth/cancelled-popup-request'
+  ) {
     return;
   }
 
@@ -72,12 +77,14 @@ export function initiateGoogleSignIn(authInstance: Auth): void {
   provider.setCustomParameters({ prompt: 'select_account' });
 
   // Detección de entorno de Cloud IDE (AI Studio / Firebase Studio)
+  // Añadimos google.com para asegurar la redirección en la consola de Firebase
   const isCloudIDE = window.location.hostname.includes('googleusercontent.com') || 
                     window.location.hostname.includes('web.app') ||
+                    window.location.hostname.includes('google.com') ||
                     window.location.port !== '';
 
   if (isCloudIDE) {
-    // La redirección es infalible en PC para que no se quede "pegada" la ventana
+    // La redirección es infalible en entornos protegidos o móviles
     signInWithRedirect(authInstance, provider).catch(handleAuthError);
   } else {
     signInWithPopup(authInstance, provider).catch(handleAuthError);
