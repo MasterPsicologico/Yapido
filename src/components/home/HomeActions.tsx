@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -87,10 +86,8 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
     }
     
     try {
-      // 1. Obtener ID instantáneo para el radar
       const orderRef = doc(collection(firestore, 'orders'));
       
-      // 2. Actualizar perfil de forma asíncrona - SINCRONIZACIÓN PERMANENTE DE BARRIO
       updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { 
         displayName: data.customerName, 
         address: data.customerAddress, 
@@ -99,14 +96,13 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
         updatedAt: serverTimestamp() 
       });
 
-      // 3. Crear el pedido con la nueva arquitectura de privacidad
       setDocumentNonBlocking(orderRef, {
         id: orderRef.id,
         customerId: user.uid,
         customerName: data.customerName,
         customerPhone: data.customerPhone, 
-        customerAddress: data.customerAddress, // PRIVADO
-        customerSector: data.customerSector,   // PÚBLICO
+        customerAddress: data.customerAddress, 
+        customerSector: data.customerSector,   
         type: 'WASHER_RENTAL_REQUEST',
         status: 'pending', 
         requestHours: data.requestHours,
@@ -169,14 +165,17 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
     }
   };
 
-  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'mobile' | 'pc') => {
     const file = e.target.files?.[0];
     if (!file || !isAdmin) return;
     setIsUploadingBanner(true);
     try {
-      const compressed = await compressImage(file, 1920, 1080, 0.8);
-      setDocumentNonBlocking(bannerConfigRef, { backgroundImage: compressed, updatedAt: serverTimestamp() }, { merge: true });
-      toast({ title: "Portada actualizada" });
+      const compressed = await compressImage(file, target === 'mobile' ? 1200 : 1920, target === 'mobile' ? 1600 : 1080, 0.85);
+      const updateKey = target === 'mobile' ? 'backgroundImage' : 'backgroundImageDesktop';
+      await setDocumentNonBlocking(bannerConfigRef, { [updateKey]: compressed, updatedAt: serverTimestamp() }, { merge: true });
+      toast({ title: `Portada ${target === 'mobile' ? 'Móvil' : 'PC'} actualizada` });
+    } catch (error) {
+      toast({ title: "Error al subir", variant: "destructive" });
     } finally {
       setIsUploadingBanner(false);
     }
