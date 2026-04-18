@@ -6,16 +6,46 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
 } from 'firebase/auth';
+import { toast } from '@/hooks/use-toast';
 
 /** 
  * Maneja los errores comunes de Firebase Auth de forma centralizada.
+ * Inyecta diagnósticos visuales para el administrador.
  */
 function handleAuthError(error: any) {
   if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-by-user') {
     return;
   }
+
+  // DIAGNÓSTICO MAESTRO: Detecta si el dominio no está autorizado
+  if (error.code === 'auth/unauthorized-domain') {
+    const domain = window.location.hostname;
+    toast({
+      title: "🚨 DOMINIO NO AUTORIZADO",
+      description: `Copia esto en tu Firebase: ${domain}`,
+      variant: "destructive",
+      duration: 15000, // Tiempo extra para que alcances a copiarlo
+    });
+    console.error("Firebase requiere que autorices este dominio:", domain);
+    return;
+  }
+
+  if (error.code === 'auth/popup-blocked') {
+    toast({
+      title: "Popup Bloqueado",
+      description: "Tu navegador bloqueó la ventana. Intentaremos redirigirte...",
+    });
+    return;
+  }
+
   console.warn("Error de autenticación:", error.code, error.message);
+  toast({
+    title: "Error de Acceso",
+    description: error.message,
+    variant: "destructive",
+  });
 }
 
 /** Initiate anonymous sign-in (non-blocking). */
@@ -34,11 +64,22 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 }
 
 /** 
- * Inicia sesión con Google mediante ventana emergente (Popup).
- * Este método es más fiable en entornos de desarrollo y evita errores 403 de redirección.
+ * Inicia sesión con Google.
+ * Detecta automáticamente si el entorno requiere redirección para evitar bloqueos de popup.
  */
 export function initiateGoogleSignIn(authInstance: Auth): void {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-  signInWithPopup(authInstance, provider).catch(handleAuthError);
+
+  // Lógica de detección de entorno de Cloud IDE (AI Studio / Firebase Studio)
+  const isCloudIDE = window.location.hostname.includes('googleusercontent.com') || 
+                    window.location.hostname.includes('web.app') ||
+                    window.location.port !== '';
+
+  if (isCloudIDE) {
+    // La redirección es más robusta en PC/IDE para evitar que la ventana se quede "pegada"
+    signInWithRedirect(authInstance, provider).catch(handleAuthError);
+  } else {
+    signInWithPopup(authInstance, provider).catch(handleAuthError);
+  }
 }
