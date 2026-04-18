@@ -1,38 +1,30 @@
-
 "use client";
 
 import { Navbar } from '@/components/layout/Navbar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { 
-  TrendingUp, 
-  Target, 
-  Users, 
   Zap, 
   ShieldCheck, 
-  DollarSign, 
   MapPin, 
-  ArrowRight,
-  ChevronRight,
-  Star,
+  CheckCircle2,
   Clock,
-  Rocket
+  Rocket,
+  Target
 } from 'lucide-react';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { cn } from '@/lib/utils';
 
 export default function BusinessPlanPage() {
-  const { isAdmin, isLoading } = useProfile();
+  const { isOwner, isLoading } = useProfile();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAdmin) router.push('/');
-  }, [isAdmin, isLoading, router]);
+    if (!isLoading && !isOwner) router.push('/');
+  }, [isOwner, isLoading, router]);
 
-  if (isLoading || !isAdmin) return null;
+  if (isLoading || !isOwner) return null;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">

@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -49,8 +48,8 @@ export function SidebarNavigation({ user, canAccessManage, isRepartidor, isAdmin
         </SheetClose>
       ))}
 
-      {/* TERMINAL DE ESTRATEGIA: SOLO PARA EL ADMINISTRADOR SUPREMO */}
-      {isAdmin && (
+      {/* TERMINAL DE ESTRATEGIA: VISIBLE PARA DUEÑOS Y ADMINS */}
+      {canAccessManage && (
         <div className="mt-8 pt-8 border-t border-slate-100 space-y-4">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-4">Estrategia Maestra</p>
           <SheetClose asChild>
