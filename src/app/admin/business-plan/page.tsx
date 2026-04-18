@@ -17,14 +17,15 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function BusinessPlanPage() {
-  const { isOwner, isLoading } = useProfile();
+  const { isAdmin, isLoading } = useProfile();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isOwner) router.push('/');
-  }, [isOwner, isLoading, router]);
+    // RESTRICCIÓN ABSOLUTA: Solo el Administrador Principal tiene acceso
+    if (!isLoading && !isAdmin) router.push('/');
+  }, [isAdmin, isLoading, router]);
 
-  if (isLoading || !isOwner) return null;
+  if (isLoading || !isAdmin) return null;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">

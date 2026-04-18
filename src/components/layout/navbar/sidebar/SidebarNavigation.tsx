@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Home as HomeIcon, UserCircle, Info, ClipboardList, Store, Truck, ShieldCheck, Waves, Briefcase } from 'lucide-react';
+import { Home as HomeIcon, UserCircle, Info, ClipboardList, ShieldCheck, Waves, Briefcase } from 'lucide-react';
 import { SheetClose } from "@/components/ui/sheet";
 
 interface SidebarNavigationProps {
@@ -48,10 +48,10 @@ export function SidebarNavigation({ user, canAccessManage, isRepartidor, isAdmin
         </SheetClose>
       ))}
 
-      {/* TERMINAL DE ESTRATEGIA: VISIBLE PARA DUEÑOS Y ADMINS */}
-      {canAccessManage && (
+      {/* TERMINAL DE ESTRATEGIA: ESTRICTAMENTE EXCLUSIVA PARA EL ADMINISTRADOR PRINCIPAL */}
+      {isAdmin && (
         <div className="mt-8 pt-8 border-t border-slate-100 space-y-4">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-4">Estrategia Maestra</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] px-4">Inteligencia de Mando</p>
           <SheetClose asChild>
             <Link href="/admin/business-plan" className="flex items-center gap-4 px-4 py-4 rounded-3xl bg-slate-900 text-white shadow-2xl hover:bg-black transition-all group border-b-4 border-primary/20">
               <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
