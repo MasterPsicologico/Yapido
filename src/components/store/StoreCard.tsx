@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -206,10 +207,12 @@ export function StoreCard({ store }: { store: any }) {
             <MapPin className="w-4 h-4 text-primary" />
             <span className="text-[12px] font-black uppercase tracking-[0.1em] truncate">{store.address || 'Aguachica'}</span>
           </div>
-          {isWasherRental && (
+          
+          {/* LÓGICA DE AUDITORÍA VISUAL: Eliminar redundancia. Solo mostrar info de apertura si está cerrada */}
+          {isWasherRental && !isOpen && hasHours && (
             <div className="flex flex-col items-end gap-1">
-              <Badge className={cn("border-none text-white font-black text-[10px] px-4 py-2 uppercase tracking-tighter shadow-lg", (isOpen && hasHours) ? "bg-secondary" : "bg-slate-600")}>
-                {(isOpen && hasHours) ? "ALQUILER ACTIVO" : "FUERA DE HORARIO"}
+              <Badge className="border-none text-white font-black text-[10px] px-4 py-2 uppercase tracking-tighter shadow-lg bg-red-600/40 backdrop-blur-md border border-white/10">
+                ABRE A LAS {store.openTime}
               </Badge>
             </div>
           )}
