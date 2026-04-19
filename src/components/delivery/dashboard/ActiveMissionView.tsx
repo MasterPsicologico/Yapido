@@ -127,6 +127,15 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             />
           )}
 
+          {/* DETALLES DE OPERACIÓN PRIORIZADOS: AHORA APARECEN DE PRIMERO TRAS EL CRONÓMETRO */}
+          <MissionTechSpecs 
+            floor={mission.floor}
+            hasStairs={mission.hasStairs}
+            stairCount={mission.stairCount}
+            washerType={mission.washerType}
+            totalPrice={mission.totalPrice}
+          />
+
           <MissionIdentity 
             missionId={mission.id} 
             requestHours={mission.requestHours} 
@@ -152,14 +161,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             onUpdateStatus={mission.status === 'at_destination' ? handleInitialInstallClick : onUpdateStatus}
             onStartCamera={() => {}}
             evidencePhoto={null}
-          />
-
-          <MissionTechSpecs 
-            floor={mission.floor}
-            hasStairs={mission.hasStairs}
-            stairCount={mission.stairCount}
-            washerType={mission.washerType}
-            totalPrice={mission.totalPrice}
           />
         </div>
       </main>
