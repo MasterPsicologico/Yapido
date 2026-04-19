@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -81,7 +82,7 @@ export default function WasherAdminPage() {
       
       <main className="flex-1 container mx-auto px-4 py-10 max-w-5xl space-y-12 pb-32">
         <div className="flex flex-col gap-8 mb-4">
-          <Button variant="ghost" onClick={() => router.push('/admin/manage')} className="w-fit gap-2 text-slate-400 font-bold hover:text-primary p-0 h-auto hover:bg-transparent">
+          <Button variant="ghost" onClick={() => router.back()} className="w-fit gap-2 text-slate-400 font-bold hover:text-primary p-0 h-auto hover:bg-transparent">
             <ArrowLeft className="w-4 h-4" /> <span className="text-[10px] font-black uppercase tracking-widest">Panel Central</span>
           </Button>
           
