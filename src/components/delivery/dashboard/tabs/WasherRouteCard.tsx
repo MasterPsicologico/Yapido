@@ -35,7 +35,6 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isSendingOffer, setIsSendingOffer] = useState(false);
 
-  // DETERMINACIÓN DE PERMISO DE NEGOCIACIÓN
   const canNegotiate = isAdmin || profile?.role === 'dueño';
 
   const formattedPrice = new Intl.NumberFormat('es-CO', { 
@@ -79,7 +78,7 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
   return (
     <Card className="border-none rounded-[48px] shadow-[0_30px_100px_-20px_rgba(0,0,0,0.15)] bg-white overflow-hidden ring-1 ring-black/[0.03] group hover:shadow-2xl transition-all duration-700">
       <CardContent className="p-0">
-        <RouteHeader protocolId={order.id} />
+        <RouteHeader protocolId={order.id} isDirectRequest={order.isDirectRequest} />
 
         <div className="p-8 space-y-8">
           <div className="flex flex-col gap-4">

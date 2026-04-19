@@ -9,7 +9,6 @@ import {
   ChevronRight, 
   Zap, 
   Award, 
-  Star, 
   Clock, 
   Sparkles, 
   TrendingUp, 
@@ -23,13 +22,15 @@ import {
   Target,
   Settings,
   Moon,
-  AlertCircle
+  AlertCircle,
+  MessageCircle,
+  ZapIcon
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useFirestore, updateDocumentNonBlocking, useUser } from '@/firebase';
+import { useFirestore, updateDocumentNonBlocking, useUser, addDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { doc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, arrayUnion, arrayRemove, collection, query, where, getDocs, serverTimestamp, addDoc } from 'firebase/firestore';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,18 +41,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { checkIsBusinessOpen } from '@/components/home/HomeActions';
-
-const STATUS_MAP = {
-  verified: { label: "Vitrina Verificada", icon: ShieldCheck, color: "text-primary", bg: "bg-primary/5", border: "border-primary/10" },
-  new: { label: "Tienda Nueva", icon: Sparkles, color: "text-green-600", bg: "bg-green-50", border: "border-green-100" },
-  rising: { label: "En Tendencia", icon: TrendingUp, color: "text-orange-500", bg: "bg-orange-50", border: "border-orange-100" },
-  pro: { label: "Negocio Pro", icon: Award, color: "text-secondary", bg: "bg-secondary/5", border: "border-secondary/10" },
-  top_seller: { label: "Vendedor Estrella", icon: Medal, color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" },
-  fast_delivery: { label: "Entrega Flash", icon: Zap, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
-  eco_friendly: { label: "Eco Amigable", icon: Leaf, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
-  exclusive: { label: "Selección Exclusive", icon: Crown, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" },
-  local_hero: { label: "Orgullo Local", icon: Heart, color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-100" },
-};
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { OrderChat } from '@/components/chat/OrderChat';
 
 const VALUE_BADGES_CONFIG = {
   express: { label: "Envío Express", icon: Zap, color: "text-blue-600", category: 'logistics' },
@@ -63,7 +54,6 @@ const VALUE_BADGES_CONFIG = {
   hero: { label: "Orgullo Local", icon: Heart, color: "text-rose-600", category: 'community' },
 };
 
-type StatusKey = keyof typeof STATUS_MAP;
 type BadgeKey = keyof typeof VALUE_BADGES_CONFIG;
 
 export function StoreCard({ store }: { store: any }) {
@@ -71,6 +61,8 @@ export function StoreCard({ store }: { store: any }) {
   const { isAdmin, profile } = useProfile();
   const { user } = useUser();
   const [localImage, setLocalImage] = useState<string | null>(null);
+  const [internalChatOrder, setInternalChatOrder] = useState<any | null>(null);
+  const [isOpeningChat, setIsOpeningChat] = useState(false);
   
   const CACHE_KEY = `vitriniando_store_img_${store.id}`;
 
@@ -88,14 +80,10 @@ export function StoreCard({ store }: { store: any }) {
 
   const isFavorite = profile?.favoriteStores?.includes(store.id);
   const isOwner = user?.uid === store.ownerId;
-  const isWasherRental = store.mainCategoryId === 'category-washer' || store.type === 'washer_rental' || store.name?.toLowerCase().includes('lavadora');
+  const isWasherRental = store.mainCategoryId === 'category-washer' || store.type === 'washer_rental';
 
   const hasHours = !!(store.openTime && store.closeTime);
   const isOpen = checkIsBusinessOpen(store.openTime, store.closeTime);
-
-  const currentStatusKey = (store.verificationStatus as StatusKey) || 'verified';
-  const statusInfo = STATUS_MAP[currentStatusKey] || STATUS_MAP.verified;
-  const StatusIcon = statusInfo.icon;
 
   const activeBadgeIds: BadgeKey[] = store.activeBadgeIds || [];
   
@@ -108,49 +96,73 @@ export function StoreCard({ store }: { store: any }) {
     else updateDocumentNonBlocking(userRef, { favoriteStores: arrayUnion(store.id) });
   };
 
-  const handleAddBadge = (badgeKey: BadgeKey) => {
-    if (!firestore) return;
-    const newBadges = [...activeBadgeIds, badgeKey].slice(-4);
-    updateDocumentNonBlocking(doc(firestore, 'stores', store.id), { activeBadgeIds: newBadges });
-  };
+  const handleOpenInternalChat = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user || !store || !firestore) {
+      toast({ title: "Inicia sesión", description: "Para contactar con el negocio.", variant: "destructive" });
+      return;
+    }
 
-  const handleClosedClick = (e: React.MouseEvent) => {
-    if (!isOwner && !isAdmin) {
-      if (!hasHours) {
-        e.preventDefault();
-        e.stopPropagation();
-        toast({ 
-          title: "Configuración Pendiente", 
-          description: "Esta vitrina no tiene horario establecido y no recibe pedidos.",
-          variant: "destructive"
-        });
-        return;
+    setIsOpeningChat(true);
+    try {
+      const q = query(
+        collection(firestore, 'orders'),
+        where('customerId', '==', user.uid),
+        where('storeId', '==', store.id),
+        where('status', '==', 'inquiry')
+      );
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        setInternalChatOrder({ id: snap.docs[0].id, ...snap.docs[0].data() });
+      } else {
+        const inquiryData = {
+          customerId: user.uid,
+          customerName: user.displayName || 'Cliente',
+          customerPhone: user.phoneNumber || '',
+          storeId: store.id,
+          storeName: store.name,
+          storeOwnerId: store.ownerId,
+          participants: [user.uid, store.ownerId],
+          status: 'inquiry',
+          productName: 'Consulta Instantánea',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          isLogisticsPublic: false
+        };
+        const docRef = await addDoc(collection(firestore, 'orders'), inquiryData);
+        setInternalChatOrder({ id: docRef.id, ...inquiryData });
       }
-      if (!isOpen) {
-        e.preventDefault();
-        e.stopPropagation();
-        toast({ 
-          title: "Negocio Cerrado", 
-          description: `Esta vitrina abre a las ${store.openTime || '08:00'}.`,
-          variant: "destructive"
-        });
-      }
+    } catch (e) {
+      toast({ title: "Error al conectar chat", variant: "destructive" });
+    } finally {
+      setIsOpeningChat(false);
     }
   };
 
-  const QUADRANTS = [
-    { id: 'product', label: 'ESTADO', color: 'bg-emerald-50/60', border: 'border-emerald-100', icon: Package, textColor: 'text-emerald-600', accent: 'bg-emerald-500' },
-    { id: 'community', label: 'VALOR', color: 'bg-purple-50/60', border: 'border-purple-100', icon: Heart, textColor: 'text-purple-600', accent: 'bg-purple-500' },
-  ];
+  const handleDirectRequest = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Disparar evento global para abrir el diálogo de solicitud con esta tienda prefijada
+    window.dispatchEvent(new CustomEvent('open-direct-solicitation', { 
+      detail: { 
+        storeId: store.id, 
+        storeName: store.name, 
+        ownerId: store.ownerId 
+      } 
+    }));
+  };
 
   const displayImage = localImage || store.imageUrl || 'https://picsum.photos/seed/store/800/600';
 
   return (
     <Card className={cn(
-      "group flex flex-col h-full border-none rounded-[48px] shadow-[0_15px_50px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_30px_80px_-15px_rgba(0,0,0,0.12)] transition-all duration-700 bg-white overflow-hidden relative",
+      "group flex flex-col h-full border-none rounded-[48px] shadow-xl hover:shadow-2xl transition-all duration-700 bg-white overflow-hidden relative",
       isWasherRental && "ring-4 ring-primary/5",
       (!isOpen || !hasHours) && !isOwner && !isAdmin && "grayscale opacity-80"
     )}>
+      {/* Botón de Gestión para Dueños */}
       {isWasherRental && isOwner && (
         <Link 
           href={`/admin/washer/${store.id}`}
@@ -164,118 +176,96 @@ export function StoreCard({ store }: { store: any }) {
         </Link>
       )}
 
-      <div className="block relative aspect-[16/11] w-full overflow-hidden bg-slate-50">
-        <Link 
-          href={`/stores/${store.id}`} 
-          onClick={handleClosedClick}
-        >
-          <Image
-            src={displayImage}
-            alt={store.name}
-            fill
-            className="object-cover transition-transform duration-1000 ease-out group-hover:scale-110"
-          />
+      {/* Imagen Principal */}
+      <div className="block relative aspect-[16/10] w-full overflow-hidden bg-slate-50">
+        <Link href={`/stores/${store.id}`} onClick={(e) => (!isOpen && !isOwner && !isAdmin) && e.preventDefault()}>
+          <Image src={displayImage} alt={store.name} fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
         </Link>
         
-        <div className="absolute top-6 left-6 flex flex-col gap-2 z-20">
-          {!hasHours ? (
-            <div className="flex items-center gap-1.5 bg-red-600/90 text-white backdrop-blur-md px-3 py-1.5 rounded-full border border-red-400 shadow-xl">
-              <AlertCircle className="w-3.5 h-3.5" />
-              <span className="text-[9px] font-black uppercase tracking-widest">HORARIO REQUERIDO</span>
-            </div>
-          ) : (
-            <div className={cn(
-              "flex items-center gap-1.5 backdrop-blur-md px-3 py-1.5 rounded-full border shadow-xl",
-              isOpen ? "bg-green-500/90 text-white border-green-400" : "bg-slate-800/90 text-slate-300 border-slate-600"
-            )}>
-              {isOpen ? <Zap className="w-3.5 h-3.5 fill-white animate-pulse" /> : <Moon className="w-3.5 h-3.5" />}
-              <span className="text-[9px] font-black uppercase tracking-widest">{isOpen ? "TIENDA ACTIVA" : "TIENDA CERRADA"}</span>
-            </div>
-          )}
-        </div>
-
         <div className="absolute top-6 right-6 z-20">
           <Button onClick={handleToggleFavorite} variant="ghost" size="icon" className={cn("rounded-full h-12 w-12 backdrop-blur-xl border border-white/20 shadow-2xl transition-all active:scale-75", isFavorite ? "bg-rose-500 text-white border-none" : "bg-white/20 text-white hover:bg-white/40")}>
             <Heart className={cn("w-6 h-6 transition-transform", isFavorite && "fill-current scale-110")} />
           </Button>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/30 to-transparent z-10 pointer-events-none" />
-
-        <div className="absolute bottom-8 left-8 right-8 z-20 text-white flex items-center justify-between gap-4 pointer-events-none">
-          <div className="flex items-center gap-2.5 opacity-90 max-w-[70%]">
-            <MapPin className="w-4 h-4 text-primary" />
-            <span className="text-[12px] font-black uppercase tracking-[0.1em] truncate">{store.address || 'Aguachica'}</span>
-          </div>
-          
-          {/* LÓGICA DE AUDITORÍA VISUAL: Eliminar redundancia. Solo mostrar info de apertura si está cerrada */}
-          {isWasherRental && !isOpen && hasHours && (
-            <div className="flex flex-col items-end gap-1">
-              <Badge className="border-none text-white font-black text-[10px] px-4 py-2 uppercase tracking-tighter shadow-lg bg-red-600/40 backdrop-blur-md border border-white/10">
-                ABRE A LAS {store.openTime}
-              </Badge>
-            </div>
-          )}
-        </div>
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none" />
       </div>
 
       <CardContent className="p-8 flex flex-col flex-1 space-y-6 bg-white">
-        <div className="space-y-2">
+        <div className="space-y-1">
           <h3 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none group-hover:text-primary transition-colors">
             {store.name}
           </h3>
-          {store.description && (
-            <p className="text-[13px] text-slate-500 leading-[1.5] font-medium italic pl-3 border-l-4 border-primary/10">
-              "{store.description}"
-            </p>
-          )}
+          <p className="text-xs text-slate-400 font-medium italic line-clamp-1 opacity-70">
+            {store.description || "Vitrina local verificada"}
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 relative">
-          {QUADRANTS.map((quad) => {
-            const activeBadge = activeBadgeIds.map(id => ({ id, ...VALUE_BADGES_CONFIG[id] })).find(b => b.category === quad.id);
-            return (
-              <div key={quad.id} className={cn("relative p-4 rounded-[24px] border flex flex-col items-center justify-center text-center gap-2 min-h-[85px] overflow-hidden", quad.color, quad.border, !activeBadge && "opacity-40")}>
-                <div className={cn("relative z-10 w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center", quad.textColor)}>
-                  {activeBadge ? <activeBadge.icon className="w-4 h-4" /> : <quad.icon className="w-4 h-4 opacity-30" />}
-                </div>
-                <div className="relative z-10 flex flex-col gap-0.5">
-                  <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40">{quad.label}</span>
-                  <span className={cn("text-[9px] font-black uppercase tracking-widest italic leading-none", quad.textColor)}>
-                    {activeBadge ? activeBadge.label : 'PENDIENTE'}
-                  </span>
-                </div>
-                {isAdmin && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="icon" className="absolute top-0 right-0 h-5 w-5 rounded-full bg-white/50 text-slate-400 border-none"><Plus className="w-2.5 h-2.5" /></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="w-56 rounded-[24px] p-2 shadow-2xl border-none bg-white z-[100]">
-                      {(Object.keys(VALUE_BADGES_CONFIG) as BadgeKey[]).filter(k => VALUE_BADGES_CONFIG[k].category === quad.id).map(k => (
-                        <DropdownMenuItem key={k} onClick={() => handleAddBadge(k)} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                          <span className="text-[11px] font-bold uppercase">{VALUE_BADGES_CONFIG[k].label}</span>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-2 pt-2">
-          <div className={cn("flex items-center justify-between w-full py-3.5 px-6 rounded-[28px] border bg-slate-50/50 shadow-sm", statusInfo.border)}>
-            <div className="flex items-center gap-4">
-              <div className={cn("w-9 h-9 rounded-full flex items-center justify-center bg-white shadow-sm", statusInfo.color)}>
-                <StatusIcon className="w-5 h-5" />
-              </div>
-              <span className={cn("text-[11px] font-black uppercase tracking-[0.12em] italic", statusInfo.color)}>{statusInfo.label}</span>
+        {/* CONTENEDOR UNIFICADO DE CONTROL LOGÍSTICO */}
+        <div className="bg-[#f8fafc] p-6 rounded-[36px] border border-slate-100 space-y-5 shadow-inner">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2.5">
+              <MapPin className="w-4 h-4 text-primary" />
+              <span className="text-xs font-black uppercase tracking-tight text-slate-900 truncate">{store.address || 'Aguachica, Cesar'}</span>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300" />
+            
+            {/* Estatus de Apertura (Justo debajo de la dirección) */}
+            <div className="flex items-center gap-2 ml-1">
+              <div className={cn("w-2 h-2 rounded-full", isOpen ? "bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-red-500")} />
+              <span className={cn("text-[9px] font-black uppercase tracking-widest", isOpen ? "text-green-600" : "text-red-500")}>
+                {isOpen ? "TIENDA ACTIVA" : "TIENDA CERRADA"}
+              </span>
+              {!isOpen && hasHours && (
+                <span className="text-[8px] font-bold text-slate-400 uppercase italic">/ Abre {store.openTime}</span>
+              )}
+            </div>
+          </div>
+
+          {/* BOTONES DE ACCIÓN INSTANTÁNEA */}
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <Button 
+              onClick={handleOpenInternalChat}
+              disabled={isOpeningChat}
+              className="h-14 rounded-2xl bg-white border-2 border-slate-100 hover:border-primary/20 text-slate-900 shadow-sm transition-all flex flex-col items-center justify-center gap-1 group/chat active:scale-95"
+            >
+              {isOpeningChat ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <MessageCircle className="w-5 h-5 text-primary group-hover/chat:scale-110 transition-transform" />}
+              <span className="text-[8px] font-black uppercase tracking-widest leading-none">Contactar</span>
+            </Button>
+
+            <Button 
+              onClick={handleDirectRequest}
+              className="h-14 rounded-2xl bg-slate-900 text-white shadow-xl hover:bg-primary transition-all flex flex-col items-center justify-center gap-1 group/req active:scale-95 border-b-4 border-black"
+            >
+              <ZapIcon className="w-5 h-5 text-yellow-400 group-req:animate-pulse" />
+              <span className="text-[8px] font-black uppercase tracking-widest leading-none">Solicitud Directa</span>
+            </Button>
           </div>
         </div>
+
+        <div className="flex items-center justify-between pt-2">
+           <div className="flex items-center gap-2 text-slate-300">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span className="text-[8px] font-black uppercase tracking-[0.3em]">Kernel v1.0.4</span>
+           </div>
+           <Link href={`/stores/${store.id}`} className="text-primary font-black text-[10px] uppercase tracking-widest flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              Ver Catálogo <ChevronRight className="w-3 h-3" />
+           </Link>
+        </div>
       </CardContent>
+
+      <Dialog open={!!internalChatOrder} onOpenChange={v => !v && setInternalChatOrder(null)}>
+        <DialogContent className="p-0 border-none bg-white shadow-none max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 sm:p-4 md:p-8 flex flex-col z-[1000] [&>button:last-child]:hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Chat con la Tienda</DialogTitle>
+            <DialogDescription>Canal de comunicación seguro.</DialogDescription>
+          </DialogHeader>
+          {internalChatOrder && (
+            <div className="flex-1 min-h-0 w-full animate-in zoom-in duration-300">
+              <OrderChat orderId={internalChatOrder.id} orderData={internalChatOrder} onClose={() => setInternalChatOrder(null)} />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

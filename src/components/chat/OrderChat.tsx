@@ -13,7 +13,10 @@ import {
   X, 
   Loader2, 
   MessageCircle, 
-  Maximize2
+  Maximize2,
+  Zap,
+  CheckCircle2,
+  ArrowRight
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { compressImage } from '@/lib/image-compression';
@@ -21,6 +24,7 @@ import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 interface OrderChatProps {
   orderId: string;
@@ -31,18 +35,20 @@ interface OrderChatProps {
 export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   const { user } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
   const [text, setText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // DETECCIÓN DE LADO OPERATIVO (DUEÑO O REPARTIDOR)
   const isBusinessSide = user?.uid === orderData?.storeOwnerId || user?.uid === orderData?.deliveryDriverId;
+  const isWashInquiry = orderData?.status === 'inquiry';
 
   useEffect(() => {
     if (orderId) {
@@ -86,6 +92,35 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
       toast({ title: "Error al enviar", variant: "destructive" });
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleQuickRequest = async () => {
+    if (!user || !firestore || !orderData) return;
+    setIsConverting(true);
+    try {
+      const orderRef = doc(firestore, 'orders', orderId);
+      // Transformamos la consulta en pedido directo
+      updateDocumentNonBlocking(orderRef, {
+        status: 'pending',
+        isLogisticsPublic: false, // Es trato directo con esta tienda
+        isDirectRequest: true,
+        updatedAt: serverTimestamp(),
+        requestHours: 5, // Default
+        totalPrice: 15000, // Placeholder
+      });
+
+      toast({ title: "¡Solicitud Formalizada!", className: "bg-green-600 text-white" });
+      
+      // Redirección inmediata al panel de administración temporal
+      setTimeout(() => {
+        router.push(`/washer/waiting-room/${orderId}`);
+        if (onClose) onClose();
+      }, 1000);
+    } catch (e) {
+      toast({ title: "Error al procesar", variant: "destructive" });
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -148,26 +183,40 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
 
       <div className="relative overflow-hidden bg-slate-50 min-h-0 flex-1">
         <ScrollArea className="h-full w-full">
-          <div className="p-6 space-y-6 min-h-full flex flex-col justify-center">
-            {(!loadingMessages && (!messages || messages.length === 0)) ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 py-20 animate-in fade-in zoom-in duration-700">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-primary/20 rounded-[32px] animate-ping [animation-duration:3s]" />
-                  <div className="relative w-20 h-20 bg-white rounded-[32px] shadow-2xl flex items-center justify-center border border-slate-100 ring-8 ring-slate-50/50">
-                    <MessageCircle className="w-10 h-10 text-primary animate-pulse" />
+          <div className="p-6 space-y-6 min-h-full flex flex-col">
+            
+            {/* SOLICITUD RÁPIDA (SOLO PARA CLIENTES EN INQUIRY) */}
+            {isWashInquiry && !isBusinessSide && (
+              <div className="bg-slate-900 text-white p-6 rounded-[32px] shadow-2xl mb-8 animate-in slide-in-from-top-4 duration-700 relative overflow-hidden border-b-4 border-primary/40">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
+                <div className="flex flex-col items-center text-center space-y-4 relative z-10">
+                  <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center border border-primary/20">
+                    <Zap className="w-6 h-6 text-primary animate-pulse" />
                   </div>
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-black italic uppercase tracking-tighter leading-none">¿Quieres la lavadora ahora?</h3>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Confirma el servicio y despacharemos de inmediato.</p>
+                  </div>
+                  <Button 
+                    onClick={handleQuickRequest}
+                    disabled={isConverting}
+                    className="w-full h-12 rounded-2xl bg-primary text-white font-black uppercase text-[10px] tracking-widest gap-2 shadow-xl hover:scale-105 active:scale-95 transition-all"
+                  >
+                    {isConverting ? <Loader2 className="animate-spin w-4 h-4" /> : <><CheckCircle2 className="w-4 h-4" /> SÍ, SOLICITAR SERVICIO</>}
+                  </Button>
                 </div>
-                <div className="space-y-2 px-8">
-                  <h3 className="text-2xl font-black italic uppercase tracking-tighter text-slate-900 leading-tight">
-                    {isBusinessSide ? "¿QUIERES HABLAR?" : "¿Necesitas ayuda?"}
-                  </h3>
-                  <p className="text-slate-400 font-black text-[10px] uppercase tracking-[0.3em] italic leading-relaxed">
-                    {isBusinessSide 
-                      ? "¿Necesitas preguntarle algo al cliente? \n Inicia la conversación aquí" 
-                      : "Pregunta lo que quieras, \n estamos en línea para ti"}
-                  </p>
+              </div>
+            )}
+
+            {(!loadingMessages && (!messages || messages.length === 0)) ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 py-20">
+                <div className="w-20 h-20 bg-white rounded-[32px] shadow-lg flex items-center justify-center border border-slate-100">
+                  <MessageCircle className="w-10 h-10 text-primary animate-pulse" />
                 </div>
-                <div className="h-0.5 w-8 bg-primary/20 rounded-full" />
+                <div className="space-y-1">
+                  <h3 className="text-xl font-black italic uppercase tracking-tighter text-slate-900">Inicia el trato</h3>
+                  <p className="text-slate-400 font-black text-[9px] uppercase tracking-[0.3em]">Habla directamente con el responsable.</p>
+                </div>
               </div>
             ) : (
               <div className="space-y-6 w-full">

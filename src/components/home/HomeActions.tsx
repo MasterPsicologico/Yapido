@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { collection, serverTimestamp, doc, query, where } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -53,6 +54,18 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
   const [showAdminPricing, setShowAdminPricing] = useState(false);
   const [isSendingRequest, setIsSendingRequest] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [directStoreData, setDirectStoreData] = useState<{id: string, name: string, ownerId: string} | null>(null);
+
+  // Escuchar evento de Solicitud Directa desde StoreCard
+  useEffect(() => {
+    const handleDirect = (e: any) => {
+      const { storeId, storeName, ownerId } = e.detail;
+      setDirectStoreData({ id: storeId, name: storeName, ownerId });
+      setOpenWasher(true);
+    };
+    window.addEventListener('open-direct-solicitation' as any, handleDirect);
+    return () => window.removeEventListener('open-direct-solicitation' as any, handleDirect);
+  }, []);
 
   const lockRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_lock'), [firestore]);
   const { data: lockData } = useDoc(lockRef);
@@ -96,7 +109,12 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
         updatedAt: serverTimestamp() 
       });
 
-      setDocumentNonBlocking(orderRef, {
+      const isDirect = !!directStoreData;
+      const participants = [user.uid];
+      if (isDirect) participants.push(directStoreData!.ownerId);
+      else participants.push('ADMIN_WASHER_POOL');
+
+      await setDocumentNonBlocking(orderRef, {
         id: orderRef.id,
         customerId: user.uid,
         customerName: data.customerName,
@@ -115,8 +133,12 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
         stairCount: data.stairCount,
         createdAt: serverTimestamp(), 
         updatedAt: serverTimestamp(),
-        participants: [user.uid, 'ADMIN_WASHER_POOL'], 
-        isLogisticsPublic: true,
+        participants: participants, 
+        isLogisticsPublic: !isDirect,
+        isDirectRequest: isDirect,
+        storeId: isDirect ? directStoreData!.id : null,
+        storeName: isDirect ? directStoreData!.name : null,
+        storeOwnerId: isDirect ? directStoreData!.ownerId : null,
         productName: `Alquiler ${data.washerType === 'automatica' ? 'Auto' : 'Semi'} (${data.requestHours}h)`,
       }, { merge: true });
 
@@ -186,11 +208,11 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
       <WasherRentalCard 
         isAdmin={isAdmin} bannerConfig={bannerConfig} isAnyStoreOpen={isAnyStoreOpen}
         isUploadingBanner={isUploadingBanner} isLocked={lockData?.active === true}
-        onToggleLock={handleToggleLock} onOpenSolicitation={() => setOpenWasher(true)}
+        onToggleLock={handleToggleLock} onOpenSolicitation={() => { setDirectStoreData(null); setOpenWasher(true); }}
         onOpenStoreCreation={() => setOpenAddWasherStore(true)} onBannerUpload={handleBannerUpload}
       />
       <WasherSolicitationDialog 
-        isOpen={openWasher} onOpenChange={setOpenWasher} isAdmin={isAdmin}
+        isOpen={openWasher} onOpenChange={(v) => { if(!v) setDirectStoreData(null); setOpenWasher(v); }} isAdmin={isAdmin}
         profile={profile} pricingConfig={pricingConfig} isAnyStoreOpen={isAnyStoreOpen}
         onOpenAdminSettings={() => setShowAdminPricing(true)} onSubmitRequest={handleWasherRequest}
       />
