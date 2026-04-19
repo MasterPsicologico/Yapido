@@ -71,13 +71,13 @@ export default function AdminAgentsPage() {
             <span className="text-[10px] font-black uppercase tracking-widest leading-none">Volver al Marketplace</span>
           </Link>
           
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-slate-900 rounded-[32px] flex items-center justify-center text-white shadow-2xl shadow-slate-200 border border-white/5">
-              <Cpu className="w-10 h-10 text-primary" />
+          <div className="flex items-center gap-4 sm:gap-6">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-900 rounded-[24px] sm:rounded-[32px] flex items-center justify-center text-white shadow-2xl shadow-slate-200 border border-white/5 shrink-0">
+              <Cpu className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
             </div>
-            <div className="space-y-1">
-              <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900">Control de Especialistas</h1>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-1">Sincronización Total • Vitriniando AI</p>
+            <div className="space-y-1 min-w-0">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900 break-words">Control de Especialistas</h1>
+              <p className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] sm:tracking-[0.4em] ml-0.5 sm:ml-1">Sincronización Total • Vitriniando AI</p>
             </div>
           </div>
         </div>
