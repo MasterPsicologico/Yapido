@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -189,7 +188,7 @@ export function StoreCard({ store }: { store: any }) {
               isOpen ? "bg-green-500/90 text-white border-green-400" : "bg-slate-800/90 text-slate-300 border-slate-600"
             )}>
               {isOpen ? <Zap className="w-3.5 h-3.5 fill-white animate-pulse" /> : <Moon className="w-3.5 h-3.5" />}
-              <span className="text-[9px] font-black uppercase tracking-widest">{isOpen ? "VITRINA ACTIVA" : "CERRADO"}</span>
+              <span className="text-[9px] font-black uppercase tracking-widest">{isOpen ? "TIENDA ACTIVA" : "TIENDA CERRADA"}</span>
             </div>
           )}
         </div>
