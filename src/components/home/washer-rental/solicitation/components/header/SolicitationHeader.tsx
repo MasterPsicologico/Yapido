@@ -1,4 +1,3 @@
-
 "use client";
 
 import { X } from 'lucide-react';
@@ -13,33 +12,40 @@ interface SolicitationHeaderProps {
 }
 
 /**
- * SolicitationHeader - Cabecera Flexible para evitar desbordamientos.
- * AJUSTE OBLIGATORIO: Margen superior de 7px inyectado quirúrgicamente para visibilidad total.
+ * SolicitationHeader - Terminal de Identidad y Mando de Solicitudes.
+ * ACTUALIZACIÓN: Textos de seguridad y estética de mando industrial con forma especial.
  */
 export function SolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: SolicitationHeaderProps) {
   return (
-    <div className="min-h-[120px] bg-[#050505] flex items-center justify-between px-6 shrink-0 relative overflow-hidden border-b border-yellow-500/10 z-10 py-4">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 animate-pulse [animation-duration:4s]" />
-      <div className="absolute -inset-[100%] bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 animate-shimmer pointer-events-none opacity-30" />
+    <div className="min-h-[140px] bg-[#050505] flex items-center justify-between px-6 shrink-0 relative overflow-hidden border-b border-yellow-500/20 z-10 py-6">
+      {/* CAPA ATMOSFÉRICA DORADA */}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 animate-pulse [animation-duration:6s]" />
+      
+      {/* DETALLES GEOMÉTRICOS "FORMA ESPECIAL" */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[70%] h-px bg-gradient-to-r from-transparent via-yellow-500 to-transparent opacity-50 shadow-[0_0_20px_rgba(234,179,8,0.8)]" />
+      <div className="absolute top-0 left-1/4 w-px h-full bg-white/5 -skew-x-12" />
+      <div className="absolute top-0 right-1/4 w-px h-full bg-white/5 skew-x-12" />
 
       {/* Mando de Administrador (Ondas) */}
       <div className="relative z-10 shrink-0">
         <AdminQuickSettings isAdmin={isAdmin} onOpen={onOpenAdminSettings} />
       </div>
 
-      {/* Título Dorado Maestro - Con margen superior obligatorio de 7px para leer "ALQUILER DE" */}
-      <div className="flex-1 px-2 text-center relative z-10 flex flex-col items-center pt-[7px]">
+      {/* Título Dorado Actualizado: FORMULARIO DE SOLICITUD */}
+      <div className="flex-1 px-2 text-center relative z-10 flex flex-col items-center">
         <DialogHeader className="p-0 space-y-0 text-center items-center">
           <DialogTitle className={cn(
-            "font-black italic uppercase tracking-tighter leading-[0.85] text-xl sm:text-2xl",
+            "font-black italic uppercase tracking-tighter leading-[0.9] text-base sm:text-lg",
             "text-transparent bg-clip-text bg-gradient-to-b from-[#fef08a] via-[#eab308] to-[#a16207]",
-            "drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+            "drop-shadow-[0_4px_12px_rgba(0,0,0,1)]"
           )}>
-            ALQUILER DE <br />
-            <span className="text-2xl sm:text-3xl md:text-4xl">LAVADORA</span>
+            FORMULARIO DE <br />
+            <span className="text-2xl sm:text-3xl md:text-4xl block mt-0.5">SOLICITUD</span>
           </DialogTitle>
-          <DialogDescription className="text-yellow-500 font-black text-[7px] uppercase tracking-[0.4em] mt-1 opacity-60">
-            SISTEMA ÉLITE • SINCRONIZADO
+          <DialogDescription className="text-yellow-500/80 font-black text-[7px] sm:text-[8px] uppercase tracking-[0.3em] sm:tracking-[0.4em] mt-3 italic flex items-center justify-center gap-2 sm:gap-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse shadow-[0_0_8px_rgba(234,179,8,1)] shrink-0" />
+            <span className="whitespace-nowrap">SERVICIO SEGURO Y CONFIABLE</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse shadow-[0_0_8px_rgba(234,179,8,1)] shrink-0" />
           </DialogDescription>
         </DialogHeader>
       </div>
@@ -48,9 +54,9 @@ export function SolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: So
       <div className="relative z-10 shrink-0">
         <button 
           onClick={onClose} 
-          className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-2xl flex items-center justify-center text-white border border-white/20 hover:bg-red-500 transition-all active:scale-90 shadow-2xl group"
+          className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-3xl flex items-center justify-center text-white/40 border border-white/10 hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/40 transition-all active:scale-90 shadow-2xl group"
         >
-          <X className="w-5 h-5 group-hover:rotate-90" />
+          <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
         </button>
       </div>
     </div>
