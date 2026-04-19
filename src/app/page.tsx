@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -57,18 +57,29 @@ function HomeContent({ user, isUserLoading }: { user: any, isUserLoading: boolea
   const [isCompressing, setIsCompressing] = useState(false);
   const [base64Image, setBase64Image] = useState<string | null>(null);
 
+  // LISTENER DE BLOQUEO MAESTRO
   const lockRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'washer_lock'), [firestore]);
-  const { data: dataLock } = useDoc(lockRef);
-  const isWasherOnlyMode = dataLock?.active === true;
+  const { data: dataLock, isLoading: isLoadingLock } = useDoc(lockRef);
+  
+  // PROTOCOLO HARD-LOCK: Asumir bloqueado si carga o si active es true.
+  // No hay excepciones. Si está bloqueado, está bloqueado para todos.
+  const isLocked = isLoadingLock || dataLock?.active !== false;
 
-  const catQ = useMemoFirebase(() => query(collection(firestore, 'mainCategories'), orderBy('createdAt', 'desc')), [firestore]);
+  // CONSULTAS CONDICIONALES: No consumen recursos si el candado está cerrado
+  const catQ = useMemoFirebase(() => 
+    isLocked ? null : query(collection(firestore, 'mainCategories'), orderBy('createdAt', 'desc')), 
+    [firestore, isLocked]
+  );
   const { data: mainCategories, isLoading: loadingCategories } = useCollection(catQ);
 
-  const allStoresQ = useMemoFirebase(() => query(collection(firestore, 'stores')), [firestore]);
+  const allStoresQ = useMemoFirebase(() => 
+    isLocked ? null : query(collection(firestore, 'stores')), 
+    [firestore, isLocked]
+  );
   const { data: allStores } = useCollection(allStoresQ);
 
   const filteredData = useMemo(() => {
-    if (!searchTerm.trim()) return { categories: mainCategories, stores: null };
+    if (isLocked || !searchTerm.trim()) return { categories: mainCategories, stores: null };
     const lowerSearch = searchTerm.toLowerCase();
     const matchedCategories = mainCategories?.filter(c => 
       c.name.toLowerCase().includes(lowerSearch) || 
@@ -80,7 +91,7 @@ function HomeContent({ user, isUserLoading }: { user: any, isUserLoading: boolea
       s.address?.toLowerCase().includes(lowerSearch)
     );
     return { categories: matchedCategories, stores: matchedStores };
-  }, [searchTerm, mainCategories, allStores]);
+  }, [searchTerm, mainCategories, allStores, isLocked]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -130,8 +141,11 @@ function HomeContent({ user, isUserLoading }: { user: any, isUserLoading: boolea
   }
 
   return (
-    <div className="w-full flex flex-col items-center">
-      <div className="w-full">
+    <div className={cn(
+      "w-full flex flex-col items-center",
+      isLocked && "h-[calc(100dvh-64px)] overflow-hidden"
+    )}>
+      <div className={cn("w-full transition-all duration-700", isLocked ? "h-full" : "h-auto")}>
         <HomeActions 
           isAdmin={isAdmin}
           profile={profile}
@@ -151,8 +165,8 @@ function HomeContent({ user, isUserLoading }: { user: any, isUserLoading: boolea
         />
       </div>
 
-      {/* Solo mostramos la exploración si no está bloqueada por el Admin o si es el Admin mismo */}
-      {(!isWasherOnlyMode || isAdmin) && (
+      {/* BLOQUEO DURO: No queda rastro del Marketplace si el candado está cerrado */}
+      {!isLocked && (
         <div className="w-full max-w-7xl space-y-12 pb-20 animate-in fade-in duration-1000">
           {isAdmin && (
             <section className="px-4 sm:px-8 mt-12">
