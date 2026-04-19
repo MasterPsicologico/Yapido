@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldCheck, MessageCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, serverTimestamp, doc, arrayUnion } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { OrderChat } from '@/components/chat/OrderChat';
@@ -29,16 +30,20 @@ interface WasherRouteCardProps {
 export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
   const firestore = useFirestore();
   const { user } = useUser();
+  const { isAdmin, profile } = useProfile();
   const [isOfferDialogOpen, setIsOfferDialogOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isSendingOffer, setIsSendingOffer] = useState(false);
+
+  // DETERMINACIÓN DE PERMISO DE NEGOCIACIÓN
+  const canNegotiate = isAdmin || profile?.role === 'dueño';
 
   const formattedPrice = new Intl.NumberFormat('es-CO', { 
     style: 'currency', currency: 'COP', maximumFractionDigits: 0 
   }).format(order.totalPrice || 0);
 
   const handleSendOffer = async (price: number, comment: string) => {
-    if (!firestore || !user || !price) return;
+    if (!firestore || !user || !price || !canNegotiate) return;
     setIsSendingOffer(true);
     
     try {
@@ -107,6 +112,7 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
             onOpenChat={handleOpenChat} 
             onOpenOffer={() => setIsOfferDialogOpen(true)}
             isUnlocked={false}
+            canNegotiate={canNegotiate}
           />
 
           <RouteAcceptButton onAccept={onAccept} />

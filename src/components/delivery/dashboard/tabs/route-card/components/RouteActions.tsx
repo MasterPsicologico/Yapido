@@ -3,6 +3,7 @@
 
 import { Lock, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
@@ -18,7 +19,8 @@ interface RouteActionsProps {
   customerAddress: string;
   onOpenChat: () => void;
   onOpenOffer: () => void;
-  isUnlocked?: boolean; // Control de revelación post-aceptación
+  isUnlocked?: boolean;
+  canNegotiate?: boolean;
 }
 
 export function RouteActions({ 
@@ -29,7 +31,8 @@ export function RouteActions({
   customerAddress, 
   onOpenChat, 
   onOpenOffer,
-  isUnlocked = false 
+  isUnlocked = false,
+  canNegotiate = false
 }: RouteActionsProps) {
   
   const handleWhatsApp = () => {
@@ -42,7 +45,7 @@ export function RouteActions({
 
   if (!isUnlocked) {
     return (
-      <div className="grid grid-cols-2 gap-3">
+      <div className={cn("grid gap-3", canNegotiate ? "grid-cols-2" : "grid-cols-1")}>
         {/* BOTÓN DE ESTADO BLOQUEADO: CONTACTOS */}
         <div className="flex items-center gap-3 px-6 h-12 rounded-xl bg-slate-50 border border-slate-100 opacity-60">
           <Lock className="w-4 h-4 text-slate-300" />
@@ -51,20 +54,22 @@ export function RouteActions({
           </span>
         </div>
 
-        {/* BOTÓN DE CONTRAOFERTA (PERMITIDO SIEMPRE) */}
-        <Button 
-          onClick={onOpenOffer} 
-          variant="outline" 
-          className="w-full h-12 rounded-xl border-primary/20 text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95"
-        >
-          ENVIAR TRATO
-        </Button>
+        {/* BOTÓN DE CONTRAOFERTA (SOLO PARA DUEÑOS/ADMIN) */}
+        {canNegotiate && (
+          <Button 
+            onClick={onOpenOffer} 
+            variant="outline" 
+            className="w-full h-12 rounded-xl border-primary/20 text-primary hover:bg-primary/5 font-black text-[10px] uppercase tracking-widest shadow-sm transition-all active:scale-95"
+          >
+            ENVIAR TRATO
+          </Button>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className={cn("grid gap-2", canNegotiate ? "grid-cols-3" : "grid-cols-2")}>
       <Button 
         onClick={onOpenChat} 
         variant="ghost" 
@@ -80,13 +85,15 @@ export function RouteActions({
         <WhatsAppIcon className="w-4 h-4" /> WHATSAPP
       </Button>
 
-      <Button 
-        onClick={onOpenOffer} 
-        variant="outline" 
-        className="h-12 rounded-xl border-slate-200 text-slate-600 font-black text-[9px] uppercase tracking-widest"
-      >
-        TRATO
-      </Button>
+      {canNegotiate && (
+        <Button 
+          onClick={onOpenOffer} 
+          variant="outline" 
+          className="h-12 rounded-xl border-slate-200 text-slate-600 font-black text-[9px] uppercase tracking-widest"
+        >
+          TRATO
+        </Button>
+      )}
     </div>
   );
 }
