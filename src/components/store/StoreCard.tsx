@@ -24,37 +24,19 @@ import {
   Moon,
   AlertCircle,
   MessageCircle,
-  ZapIcon
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useFirestore, updateDocumentNonBlocking, useUser, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, updateDocumentNonBlocking, useUser } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { doc, arrayUnion, arrayRemove, collection, query, where, getDocs, serverTimestamp, addDoc } from 'firebase/firestore';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { checkIsBusinessOpen } from '@/components/home/HomeActions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { OrderChat } from '@/components/chat/OrderChat';
-
-const VALUE_BADGES_CONFIG = {
-  express: { label: "Envío Express", icon: Zap, color: "text-blue-600", category: 'logistics' },
-  flash: { label: "Entrega Flash", icon: Target, color: "text-blue-600", category: 'logistics' },
-  top: { label: "Top Choice", icon: Medal, color: "text-amber-600", category: 'trust' },
-  exclusive: { label: "Exclusivo", icon: Crown, color: "text-purple-600", category: 'community' },
-  stock: { label: "Stock Vivo", icon: Package, color: "text-emerald-600", category: 'product' },
-  eco: { label: "Eco Friendly", icon: Leaf, color: "text-emerald-600", category: 'product' },
-  hero: { label: "Orgullo Local", icon: Heart, color: "text-rose-600", category: 'community' },
-};
-
-type BadgeKey = keyof typeof VALUE_BADGES_CONFIG;
 
 export function StoreCard({ store }: { store: any }) {
   const firestore = useFirestore();
@@ -84,8 +66,6 @@ export function StoreCard({ store }: { store: any }) {
 
   const hasHours = !!(store.openTime && store.closeTime);
   const isOpen = checkIsBusinessOpen(store.openTime, store.closeTime);
-
-  const activeBadgeIds: BadgeKey[] = store.activeBadgeIds || [];
   
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -144,7 +124,6 @@ export function StoreCard({ store }: { store: any }) {
   const handleDirectRequest = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Disparar evento global para abrir el diálogo de solicitud con esta tienda prefijada
     window.dispatchEvent(new CustomEvent('open-direct-solicitation', { 
       detail: { 
         storeId: store.id, 
@@ -162,7 +141,6 @@ export function StoreCard({ store }: { store: any }) {
       isWasherRental && "ring-4 ring-primary/5",
       (!isOpen || !hasHours) && !isOwner && !isAdmin && "grayscale opacity-80"
     )}>
-      {/* Botón de Gestión para Dueños */}
       {isWasherRental && isOwner && (
         <Link 
           href={`/admin/washer/${store.id}`}
@@ -176,7 +154,6 @@ export function StoreCard({ store }: { store: any }) {
         </Link>
       )}
 
-      {/* Imagen Principal */}
       <div className="block relative aspect-[16/10] w-full overflow-hidden bg-slate-50">
         <Link href={`/stores/${store.id}`} onClick={(e) => (!isOpen && !isOwner && !isAdmin) && e.preventDefault()}>
           <Image src={displayImage} alt={store.name} fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
@@ -201,7 +178,6 @@ export function StoreCard({ store }: { store: any }) {
           </p>
         </div>
 
-        {/* CONTENEDOR UNIFICADO DE CONTROL LOGÍSTICO */}
         <div className="bg-[#f8fafc] p-6 rounded-[36px] border border-slate-100 space-y-5 shadow-inner">
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2.5">
@@ -209,7 +185,6 @@ export function StoreCard({ store }: { store: any }) {
               <span className="text-xs font-black uppercase tracking-tight text-slate-900 truncate">{store.address || 'Aguachica, Cesar'}</span>
             </div>
             
-            {/* Estatus de Apertura (Justo debajo de la dirección) */}
             <div className="flex items-center gap-2 ml-1">
               <div className={cn("w-2 h-2 rounded-full", isOpen ? "bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" : "bg-red-500")} />
               <span className={cn("text-[9px] font-black uppercase tracking-widest", isOpen ? "text-green-600" : "text-red-500")}>
@@ -221,7 +196,6 @@ export function StoreCard({ store }: { store: any }) {
             </div>
           </div>
 
-          {/* BOTONES DE ACCIÓN INSTANTÁNEA */}
           <div className="grid grid-cols-2 gap-3 pt-2">
             <Button 
               onClick={handleOpenInternalChat}
@@ -236,7 +210,7 @@ export function StoreCard({ store }: { store: any }) {
               onClick={handleDirectRequest}
               className="h-14 rounded-2xl bg-slate-900 text-white shadow-xl hover:bg-primary transition-all flex flex-col items-center justify-center gap-1 group/req active:scale-95 border-b-4 border-black"
             >
-              <ZapIcon className="w-5 h-5 text-yellow-400 group-req:animate-pulse" />
+              <Zap className="w-5 h-5 text-yellow-400 group-req:animate-pulse" />
               <span className="text-[8px] font-black uppercase tracking-widest leading-none">Solicitud Directa</span>
             </Button>
           </div>
