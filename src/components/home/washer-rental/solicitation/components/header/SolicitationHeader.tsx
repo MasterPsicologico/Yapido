@@ -14,7 +14,7 @@ interface SolicitationHeaderProps {
 
 /**
  * SolicitationHeader - Terminal de Identidad y Mando de Solicitudes.
- * ACTUALIZACIÓN: Refinamiento de interlineado (leading-tight) para evitar cortes tras reducción de escala.
+ * ACTUALIZACIÓN: Aumento de escala tipográfica y blindaje anti-recorte para itálicas.
  */
 export function SolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: SolicitationHeaderProps) {
   return (
@@ -33,17 +33,17 @@ export function SolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: So
       </div>
 
       {/* Título Dorado Corregido: FORMULARIO DE SOLICITUD */}
-      <div className="flex-1 px-4 text-center relative z-10 flex flex-col items-center">
+      <div className="flex-1 px-1 text-center relative z-10 flex flex-col items-center">
         <DialogHeader className="p-0 space-y-0 text-center items-center w-full">
           <DialogTitle className={cn(
-            "font-black italic uppercase tracking-tighter leading-tight text-xs sm:text-base",
+            "font-black italic uppercase tracking-tighter leading-tight text-sm sm:text-lg pr-4",
             "text-transparent bg-clip-text bg-gradient-to-b from-[#fef08a] via-[#eab308] to-[#a16207]",
             "drop-shadow-[0_4px_12px_rgba(0,0,0,1)]"
           )}>
             FORMULARIO DE <br />
-            <span className="text-xl sm:text-2xl md:text-3xl block mt-1 leading-tight">SOLICITUD</span>
+            <span className="text-2xl sm:text-3xl md:text-4xl block mt-1 leading-tight pr-2">SOLICITUD</span>
           </DialogTitle>
-          <DialogDescription className="text-yellow-500/80 font-black text-[7px] sm:text-[8px] uppercase tracking-[0.3em] sm:tracking-[0.4em] mt-4 italic flex items-center justify-center gap-2 sm:gap-3">
+          <DialogDescription className="text-yellow-500/80 font-black text-[7px] sm:text-[8px] uppercase tracking-[0.3em] sm:tracking-[0.4em] mt-4 italic flex items-center justify-center gap-2 sm:gap-3 pr-2">
             <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse shadow-[0_0_8px_rgba(234,179,8,1)] shrink-0" />
             <span className="whitespace-nowrap">SERVICIO SEGURO Y CONFIABLE</span>
             <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse shadow-[0_0_8px_rgba(234,179,8,1)] shrink-0" />
