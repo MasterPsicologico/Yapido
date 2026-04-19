@@ -117,7 +117,7 @@ export function WasherSolicitationDialog({
   const handleFormSubmit = async () => {
     if (!user) {
       setOrderStatus('idle');
-      return; // El renderizado manejará el estado de login
+      return;
     }
 
     setFieldErrors({});
@@ -166,24 +166,46 @@ export function WasherSolicitationDialog({
             {!user && orderStatus === 'idle' ? (
               <div className="py-12 flex flex-col items-center text-center space-y-10 animate-in fade-in zoom-in duration-700">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-primary/20 rounded-[40px] animate-ping" />
-                  <div className="relative w-24 h-24 bg-slate-900 rounded-[32px] flex items-center justify-center text-primary shadow-2xl border border-white/10">
-                    <ShieldCheck className="w-12 h-12" />
+                  {/* Artefacto de Seguridad Soberana (Dorado) */}
+                  <div className="absolute inset-0 bg-yellow-500/20 rounded-[45px] animate-ping [animation-duration:3s]" />
+                  
+                  {/* Anillos Orbitales de Datos */}
+                  <div className="absolute -inset-4 border border-yellow-500/20 rounded-full animate-[spin_12s_linear_infinite] opacity-30" />
+                  <div className="absolute -inset-4 border-t-2 border-yellow-600/60 rounded-full animate-[spin_4s_linear_infinite]" />
+                  
+                  {/* Chasis de Oro Obsidiana */}
+                  <div className="relative w-28 h-28 bg-slate-950 rounded-[38px] flex items-center justify-center shadow-[0_0_60px_rgba(234,179,8,0.25)] border border-yellow-600/30 overflow-hidden group">
+                    {/* Brillo de Metal Líquido */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-yellow-400/10 to-transparent -skew-x-12 animate-shimmer" />
+                    
+                    {/* Icono de Seguridad Suprema */}
+                    <div className="relative z-10 transition-transform duration-500 group-hover:scale-110">
+                      <ShieldCheck className="w-14 h-14 text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,1)]" />
+                      <Sparkles className="absolute -top-3 -right-3 w-7 h-7 text-yellow-300 animate-pulse" />
+                    </div>
+
+                    {/* Micro-sensores de Proceso */}
+                    <div className="absolute top-2 right-8 w-1 h-1 bg-yellow-400 rounded-full animate-pulse" />
+                    <div className="absolute bottom-6 left-5 w-1 h-1 bg-yellow-600 rounded-full animate-pulse" />
                   </div>
                 </div>
+                
                 <div className="space-y-3">
                   <h3 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Identidad Requerida</h3>
-                  <p className="text-slate-400 font-bold text-xs uppercase tracking-widest px-8">Inicia sesión de forma rápida y segura para formalizar tu solicitud.</p>
+                  <p className="text-slate-400 font-bold text-xs uppercase tracking-widest px-8 leading-relaxed">Inicia sesión de forma rápida y segura para formalizar tu solicitud.</p>
                 </div>
                 <Button 
                   onClick={() => initiateGoogleSignIn(auth)}
-                  className="w-full h-20 rounded-[32px] bg-slate-900 text-white font-black text-lg gap-4 shadow-2xl active:scale-95 transition-all"
+                  className="w-full h-20 rounded-[32px] bg-slate-900 text-white font-black text-lg gap-4 shadow-2xl active:scale-95 transition-all border-b-8 border-black"
                 >
                   <LogIn className="w-6 h-6 text-primary" /> ACCESO INSTANTÁNEO
                 </Button>
-                <div className="flex items-center justify-center gap-2 text-slate-300">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <span className="text-[8px] font-black uppercase tracking-[0.4em]">Protección de Datos Activa</span>
+                <div className="flex flex-col items-center gap-3">
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <ShieldCheck className="w-4 h-4 text-primary" />
+                    <span className="text-[8px] font-black uppercase tracking-[0.4em]">Protección de Datos Activa</span>
+                  </div>
+                  <div className="h-0.5 w-10 bg-slate-100 rounded-full" />
                 </div>
               </div>
             ) : (
