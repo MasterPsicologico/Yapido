@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -10,14 +9,14 @@ import { HomePromoBanner } from '@/components/home/HomePromoBanner';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, doc, orderBy } from 'firebase/firestore';
-import { ShoppingBag, Cpu, ArrowRight, Sparkles } from 'lucide-react';
+import { Cpu, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
-import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 /**
  * Home - El Portal Unificado de Vitriniando.
- * CARGA INSTANTÁNEA: Se ha eliminado el splash por mandato superior.
+ * DISEÑO ADAPTATIVO: Embudo puro para invitados, panel completo para registrados.
  */
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -33,19 +32,22 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
+  // Si no hay Navbar para invitados, el fondo debe ser oscuro para fundirse con la imagen
   return (
-    <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-      <Navbar />
-      <main className="flex-1 w-full overflow-x-hidden">
-        <AuthenticatedHome />
+    <div className={cn(
+      "flex flex-col w-full transition-colors duration-700",
+      user ? "min-h-screen bg-[#f8fafc]" : "h-[100dvh] bg-[#050505] overflow-hidden"
+    )}>
+      {user && <Navbar />}
+      <main className="flex-1 w-full overflow-x-hidden relative">
+        <HomeContent user={user} isUserLoading={isUserLoading} />
       </main>
     </div>
   );
 }
 
-function AuthenticatedHome() {
+function HomeContent({ user, isUserLoading }: { user: any, isUserLoading: boolean }) {
   const firestore = useFirestore();
-  const { user } = useUser();
   const { isAdmin, profile } = useProfile();
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -95,6 +97,40 @@ function AuthenticatedHome() {
     }
   };
 
+  // MODO EMBUDO: Si no hay usuario, solo mostramos HomeActions (que contiene la imagen Full Screen)
+  if (!user && !isUserLoading) {
+    return (
+      <div className="h-full w-full">
+        <HomeActions 
+          isAdmin={false}
+          profile={null}
+          openCategory={false} 
+          setOpenCategory={() => {}} 
+          openStore={false} 
+          setOpenStore={() => {}}
+          editingCategory={null} 
+          mainCategories={null} 
+          base64Image={null} 
+          setBase64Image={() => {}}
+          isRegistering={false} 
+          isCompressing={false} 
+          onImageUpload={() => {}} 
+          onCategorySubmit={() => {}} 
+          onStoreSubmit={() => {}}
+        />
+      </div>
+    );
+  }
+
+  // Mientras carga el usuario, mostramos un estado neutro elegante
+  if (isUserLoading) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-[#050505]">
+        <Loader2 className="w-10 h-10 animate-spin text-primary/40" />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full flex flex-col items-center">
       <div className="w-full">
@@ -117,33 +153,34 @@ function AuthenticatedHome() {
         />
       </div>
 
-      <div className="w-full max-w-7xl space-y-12 pb-20">
-        {isAdmin && !isWasherOnlyMode && (
-          <section className="px-4 sm:px-8 mt-12 animate-in fade-in duration-500">
-            <Link href="/admin/agents">
-              <Card className="border-none rounded-[40px] bg-slate-900 text-white overflow-hidden shadow-2xl group hover:scale-[1.01] transition-all duration-500 cursor-pointer relative">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/20 transition-colors" />
-                <CardContent className="p-10 flex flex-col sm:flex-row items-center justify-between gap-8">
-                  <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 bg-white/10 rounded-[32px] flex items-center justify-center backdrop-blur-xl border border-white/5 relative">
-                      <Cpu className="w-10 h-10 text-primary animate-pulse" />
-                      <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400 animate-pulse" />
+      {/* Solo mostramos la exploración si no está bloqueada por el Admin o si es el Admin mismo */}
+      {(!isWasherOnlyMode || isAdmin) && (
+        <div className="w-full max-w-7xl space-y-12 pb-20 animate-in fade-in duration-1000">
+          {isAdmin && (
+            <section className="px-4 sm:px-8 mt-12">
+              <Link href="/admin/agents">
+                <Card className="border-none rounded-[40px] bg-slate-900 text-white overflow-hidden shadow-2xl group hover:scale-[1.01] transition-all duration-500 cursor-pointer relative">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/20 transition-colors" />
+                  <CardContent className="p-10 flex flex-col sm:flex-row items-center justify-between gap-8">
+                    <div className="flex items-center gap-6">
+                      <div className="w-20 h-20 bg-white/10 rounded-[32px] flex items-center justify-center backdrop-blur-xl border border-white/5 relative">
+                        <Cpu className="w-10 h-10 text-primary animate-pulse" />
+                        <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400 animate-pulse" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-3xl sm:text-4xl font-black italic uppercase tracking-tighter leading-none">Ciudadela de Agentes</h3>
+                        <p className="text-primary/60 text-[10px] font-black uppercase tracking-[0.4em] ml-1">Administración de IA Centralizada</p>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <h3 className="text-3xl sm:text-4xl font-black italic uppercase tracking-tighter leading-none">Ciudadela de Agentes</h3>
-                      <p className="text-primary/60 text-[10px] font-black uppercase tracking-[0.4em] ml-1">Administración de IA Centralizada</p>
+                    <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                      <ArrowRight className="w-6 h-6" />
                     </div>
-                  </div>
-                  <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-                    <ArrowRight className="w-6 h-6" />
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          </section>
-        )}
+                  </CardContent>
+                </Card>
+              </Link>
+            </section>
+          )}
 
-        <div className={isWasherOnlyMode ? "hidden md:block" : "block"}>
           <HomeCategorySection 
             isAdmin={isAdmin} 
             categories={filteredData.categories} 
@@ -161,7 +198,7 @@ function AuthenticatedHome() {
             </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

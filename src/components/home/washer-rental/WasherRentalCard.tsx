@@ -5,7 +5,7 @@ import { Zap, Moon, Camera, Store as StoreIcon, LayoutGrid, ChevronDown, Loader2
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { useFirestore } from '@/firebase';
+import { useUser } from '@/firebase';
 
 interface WasherRentalCardProps {
   isAdmin: boolean;
@@ -33,6 +33,7 @@ export function WasherRentalCard({
   onOpenStoreCreation,
   onBannerUpload
 }: WasherRentalCardProps) {
+  const { user } = useUser();
   const [localMobile, setLocalMobile] = useState<string | null>(null);
   const [localDesktop, setLocalDesktop] = useState<string | null>(null);
   
@@ -111,38 +112,36 @@ export function WasherRentalCard({
 
   const handleBtnStart = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isAdmin || isMovingBtn) return;
-    const touch = 'touches' in e ? e.touches[0] : e;
-    const startX = touch.clientX;
-    const startYPress = touch.clientY;
     setOriginalBtnPos({ ...btnPos });
     
-    const cancelLongPress = () => {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-      }
-    };
-
     longPressTimer.current = setTimeout(() => {
       setIsMovingBtn(true);
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(150);
     }, 5000);
   };
 
+  const handleBtnEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
   return (
     <div 
       ref={containerRef}
       className={cn(
-        "relative w-full min-h-[calc(100dvh-64px)] overflow-hidden flex flex-col items-center justify-start bg-[#050505] transition-all duration-500",
+        "relative w-full overflow-hidden flex flex-col items-center justify-start bg-[#050505] transition-all duration-700",
+        user ? "h-[calc(100dvh-64px)]" : "h-[100dvh]",
         isMovingBtn ? "cursor-move" : ""
       )}
     >
-      {/* IMAGEN DE PORTADA RESPONSIVA */}
+      {/* IMAGEN DE PORTADA RESPONSIVA - AJUSTADA AL TOP PARA VISIBILIDAD DE TEXTO */}
       <div className="absolute inset-0 z-0 select-none touch-none">
         {/* VERSIÓN MÓVIL */}
         <div className="sm:hidden relative w-full h-full">
           {localMobile ? (
-            <Image src={localMobile} alt="Portada Móvil" fill className="object-cover" priority />
+            <Image src={localMobile} alt="Portada Móvil" fill className="object-cover object-top" priority />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black" />
           )}
@@ -151,21 +150,20 @@ export function WasherRentalCard({
         {/* VERSIÓN DESKTOP */}
         <div className="hidden sm:block relative w-full h-full">
           {localDesktop ? (
-            <Image src={localDesktop} alt="Portada PC" fill className="object-cover" priority />
+            <Image src={localDesktop} alt="Portada PC" fill className="object-cover object-top" priority />
           ) : localMobile ? (
-            <Image src={localMobile} alt="Portada Fallback" fill className="object-cover" priority />
+            <Image src={localMobile} alt="Portada Fallback" fill className="object-cover object-top" priority />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-black" />
           )}
         </div>
         
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
       </div>
 
       {/* CONTROLES ADMIN PORTADA DUAL */}
       {isAdmin && !isMovingBtn && (
         <div className="absolute top-4 left-4 z-[50] flex flex-col gap-3 animate-in slide-in-from-left-4 duration-500">
-          {/* CARGA MÓVIL */}
           <div className="group relative">
             <input type="file" ref={mobileInputRef} className="hidden" accept="image/*" onChange={(e) => onBannerUpload(e, 'mobile')} />
             <button 
@@ -175,10 +173,7 @@ export function WasherRentalCard({
             >
               {isUploadingBanner ? <Loader2 className="w-5 h-5 animate-spin" /> : <Smartphone className="w-5 h-5" />}
             </button>
-            <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1 bg-slate-900 text-white text-[7px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/5 pointer-events-none">PORTADA MÓVIL</span>
           </div>
-
-          {/* CARGA PC */}
           <div className="group relative">
             <input type="file" ref={desktopInputRef} className="hidden" accept="image/*" onChange={(e) => onBannerUpload(e, 'pc')} />
             <button 
@@ -188,7 +183,6 @@ export function WasherRentalCard({
             >
               {isUploadingBanner ? <Loader2 className="w-5 h-5 animate-spin" /> : <Monitor className="w-5 h-5" />}
             </button>
-            <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1 bg-slate-900 text-white text-[7px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/5 pointer-events-none">PORTADA PC</span>
           </div>
         </div>
       )}
@@ -202,7 +196,10 @@ export function WasherRentalCard({
           transform: 'translate(-50%, -50%)' 
         }}
         onMouseDown={handleBtnStart}
+        onMouseUp={handleBtnEnd}
+        onMouseLeave={handleBtnEnd}
         onTouchStart={handleBtnStart}
+        onTouchEnd={handleBtnEnd}
         className={cn(
           "z-20 flex flex-col items-center gap-2 transition-transform duration-300",
           isMovingBtn ? "scale-110" : "animate-in fade-in zoom-in duration-700"
@@ -239,19 +236,23 @@ export function WasherRentalCard({
         </button>
       )}
 
-      {!isMovingBtn && (
-        <button onClick={onOpenStoreCreation} className="absolute top-4 right-4 z-[40] w-12 h-12 rounded-[18px] bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-green-500 transition-all shadow-2xl active:scale-95 group/store">
-          <StoreIcon className="w-6 h-6 group-hover/store:scale-110 transition-transform" />
-        </button>
-      )}
-
-      {!isMovingBtn && (
+      {/* BOTONES DE ESQUINA: SOLO PARA USUARIOS REGISTRADOS */}
+      {user && !isMovingBtn && (
         <>
+          <button onClick={onOpenStoreCreation} className="absolute top-4 right-4 z-[40] w-12 h-12 rounded-[18px] bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-green-500 transition-all shadow-2xl active:scale-95 group/store">
+            <StoreIcon className="w-6 h-6 group-hover/store:scale-110 transition-transform" />
+          </button>
+
           <Link href="/categories/category-washer" className="absolute bottom-6 right-6 z-[40] w-12 h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.6)] hover:bg-primary transition-all group/dir active:scale-90">
             <LayoutGrid className="w-6 h-6" />
           </Link>
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-30 animate-bounce"><ChevronDown className="w-6 h-6 text-white" /></div>
         </>
+      )}
+
+      {!isMovingBtn && (
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-30 animate-bounce">
+          <ChevronDown className="w-6 h-6 text-white" />
+        </div>
       )}
     </div>
   );
