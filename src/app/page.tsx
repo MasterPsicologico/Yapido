@@ -16,11 +16,10 @@ import { cn } from '@/lib/utils';
 
 /**
  * Home - El Portal Unificado de Vitriniando.
- * DISEÑO ADAPTATIVO: Embudo puro para invitados, panel completo para registrados.
+ * DISEÑO ADAPTATIVO: Embudo puro para invitados (sin Navbar), panel completo para registrados.
  */
 export default function Home() {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
 
   useEffect(() => {
@@ -32,7 +31,7 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // Si no hay Navbar para invitados, el fondo debe ser oscuro para fundirse con la imagen
+  // Si no está autenticado, NO renderizamos Navbar ni permitimos scroll
   return (
     <div className={cn(
       "flex flex-col w-full transition-colors duration-700",
@@ -97,7 +96,7 @@ function HomeContent({ user, isUserLoading }: { user: any, isUserLoading: boolea
     }
   };
 
-  // MODO EMBUDO: Si no hay usuario, solo mostramos HomeActions (que contiene la imagen Full Screen)
+  // MODO EMBUDO (INVITADOS): Solo HomeActions en pantalla completa
   if (!user && !isUserLoading) {
     return (
       <div className="h-full w-full">
@@ -122,7 +121,6 @@ function HomeContent({ user, isUserLoading }: { user: any, isUserLoading: boolea
     );
   }
 
-  // Mientras carga el usuario, mostramos un estado neutro elegante
   if (isUserLoading) {
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-[#050505]">

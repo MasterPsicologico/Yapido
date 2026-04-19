@@ -37,7 +37,6 @@ export function WasherRentalCard({
   const [localMobile, setLocalMobile] = useState<string | null>(null);
   const [localDesktop, setLocalDesktop] = useState<string | null>(null);
   
-  // ESTADOS DEL BOTÓN (MAESTRO)
   const [isMovingBtn, setIsMovingBtn] = useState(false);
   const [btnPos, setBtnPos] = useState({ x: bannerConfig?.btnX ?? 50, y: bannerConfig?.btnY ?? 40 });
   const [originalBtnPos, setOriginalBtnPos] = useState({ x: 50, y: 40 });
@@ -68,7 +67,6 @@ export function WasherRentalCard({
     }
   }, [bannerConfig, localMobile, localDesktop, isMovingBtn]);
 
-  // MOTOR DE MOVIMIENTO DE BOTÓN CTA
   useEffect(() => {
     const onMove = (e: MouseEvent | TouchEvent) => {
       if (!isMovingBtn) return;
@@ -136,9 +134,7 @@ export function WasherRentalCard({
         isMovingBtn ? "cursor-move" : ""
       )}
     >
-      {/* IMAGEN DE PORTADA RESPONSIVA - AJUSTADA AL TOP PARA VISIBILIDAD DE TEXTO */}
       <div className="absolute inset-0 z-0 select-none touch-none">
-        {/* VERSIÓN MÓVIL */}
         <div className="sm:hidden relative w-full h-full">
           {localMobile ? (
             <Image src={localMobile} alt="Portada Móvil" fill className="object-cover object-top" priority />
@@ -147,7 +143,6 @@ export function WasherRentalCard({
           )}
         </div>
         
-        {/* VERSIÓN DESKTOP */}
         <div className="hidden sm:block relative w-full h-full">
           {localDesktop ? (
             <Image src={localDesktop} alt="Portada PC" fill className="object-cover object-top" priority />
@@ -161,7 +156,6 @@ export function WasherRentalCard({
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
       </div>
 
-      {/* CONTROLES ADMIN PORTADA DUAL */}
       {isAdmin && !isMovingBtn && (
         <div className="absolute top-4 left-4 z-[50] flex flex-col gap-3 animate-in slide-in-from-left-4 duration-500">
           <div className="group relative">
@@ -187,7 +181,6 @@ export function WasherRentalCard({
         </div>
       )}
 
-      {/* BOTÓN "SOLICITAR AHORA" DINÁMICO */}
       <div 
         style={{ 
           position: 'absolute', 
@@ -229,14 +222,12 @@ export function WasherRentalCard({
         </div>
       </div>
 
-      {/* CONTROLES ADMIN INFERIORES */}
       {isAdmin && !isMovingBtn && (
         <button onClick={onToggleLock} className={cn("absolute bottom-6 left-6 z-[50] w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 shadow-2xl active:scale-90 border-2 backdrop-blur-xl", isLocked ? "bg-slate-900 text-primary border-primary" : "bg-white/10 text-white/40 border-white/10 hover:bg-white/20")}>
           {isLocked ? <Lock className="w-6 h-6 animate-pulse" /> : <Unlock className="w-6 h-6" />}
         </button>
       )}
 
-      {/* BOTONES DE ESQUINA: SOLO PARA USUARIOS REGISTRADOS */}
       {user && !isMovingBtn && (
         <>
           <button onClick={onOpenStoreCreation} className="absolute top-4 right-4 z-[40] w-12 h-12 rounded-[18px] bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white/60 hover:text-green-500 transition-all shadow-2xl active:scale-95 group/store">
