@@ -166,27 +166,27 @@ export function WasherSolicitationDialog({
             {!user && orderStatus === 'idle' ? (
               <div className="py-12 flex flex-col items-center text-center space-y-10 animate-in fade-in zoom-in duration-700">
                 <div className="relative">
-                  {/* Artefacto de Seguridad Soberana (Dorado) */}
-                  <div className="absolute inset-0 bg-yellow-500/20 rounded-[45px] animate-ping [animation-duration:3s]" />
+                  {/* Artefacto de Seguridad Soberana (Dorado) - Tamaño Reducido a la Mitad */}
+                  <div className="absolute inset-0 bg-yellow-500/20 rounded-[22px] animate-ping [animation-duration:3s]" />
                   
                   {/* Anillos Orbitales de Datos */}
-                  <div className="absolute -inset-4 border border-yellow-500/20 rounded-full animate-[spin_12s_linear_infinite] opacity-30" />
-                  <div className="absolute -inset-4 border-t-2 border-yellow-600/60 rounded-full animate-[spin_4s_linear_infinite]" />
+                  <div className="absolute -inset-2 border border-yellow-500/20 rounded-full animate-[spin_12s_linear_infinite] opacity-30" />
+                  <div className="absolute -inset-2 border-t-2 border-yellow-600/60 rounded-full animate-[spin_4s_linear_infinite]" />
                   
-                  {/* Chasis de Oro Obsidiana */}
-                  <div className="relative w-28 h-28 bg-slate-950 rounded-[38px] flex items-center justify-center shadow-[0_0_60px_rgba(234,179,8,0.25)] border border-yellow-600/30 overflow-hidden group">
+                  {/* Chasis de Oro Obsidiana (Miniaturizado) */}
+                  <div className="relative w-14 h-14 bg-slate-950 rounded-[19px] flex items-center justify-center shadow-[0_0_30px_rgba(234,179,8,0.25)] border border-yellow-600/30 overflow-hidden group">
                     {/* Brillo de Metal Líquido */}
                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-yellow-400/10 to-transparent -skew-x-12 animate-shimmer" />
                     
                     {/* Icono de Seguridad Suprema */}
                     <div className="relative z-10 transition-transform duration-500 group-hover:scale-110">
-                      <ShieldCheck className="w-14 h-14 text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,1)]" />
-                      <Sparkles className="absolute -top-3 -right-3 w-7 h-7 text-yellow-300 animate-pulse" />
+                      <ShieldCheck className="w-7 h-7 text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,1)]" />
+                      <Sparkles className="absolute -top-1.5 -right-1.5 w-4 h-4 text-yellow-300 animate-pulse" />
                     </div>
 
                     {/* Micro-sensores de Proceso */}
-                    <div className="absolute top-2 right-8 w-1 h-1 bg-yellow-400 rounded-full animate-pulse" />
-                    <div className="absolute bottom-6 left-5 w-1 h-1 bg-yellow-600 rounded-full animate-pulse" />
+                    <div className="absolute top-1 right-4 w-0.5 h-0.5 bg-yellow-400 rounded-full animate-pulse" />
+                    <div className="absolute bottom-3 left-2.5 w-0.5 h-0.5 bg-yellow-600 rounded-full animate-pulse" />
                   </div>
                 </div>
                 
