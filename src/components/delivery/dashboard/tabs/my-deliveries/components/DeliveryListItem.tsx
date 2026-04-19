@@ -35,14 +35,16 @@ export function DeliveryListItem({ order, isCompleted, isExpired, timeIn, onClic
             {isCompleted ? <CheckCircle2 className="w-6 h-6 animate-in zoom-in" /> : <Timer className={cn("w-6 h-6", isExpired && "animate-bounce")} />}
           </div>
           <div className="min-w-0 flex-1">
-            <h4 className="text-lg font-black uppercase italic tracking-tighter leading-none truncate text-slate-900">{order.customerName}</h4>
+            <h4 className="text-lg font-black uppercase italic tracking-tighter leading-tight text-slate-900 break-words pr-2">
+              {order.customerName}
+            </h4>
             <div className="flex items-center gap-2 mt-1.5">
               <Clock className="w-3 h-3 text-slate-300" /><span className="text-[9px] font-black uppercase text-slate-400">Inicio: {timeIn}</span>
               {isCompleted && <Badge className="bg-green-500 text-white border-none text-[8px] font-black uppercase px-2 h-5 ml-2">FINALIZADO</Badge>}
             </div>
           </div>
         </div>
-        <ChevronDown className="text-slate-300" />
+        <ChevronDown className="text-slate-300 shrink-0" />
       </CardContent>
     </Card>
   );

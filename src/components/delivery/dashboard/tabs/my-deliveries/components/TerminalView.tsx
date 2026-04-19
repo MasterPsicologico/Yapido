@@ -49,7 +49,9 @@ export function TerminalView({
               {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : <Timer className="w-6 h-6" />}
             </div>
             <div className="min-w-0">
-              <h4 className="text-xl font-black uppercase italic tracking-tighter text-slate-900 leading-none truncate max-w-[180px]">{order.customerName}</h4>
+              <h4 className="text-xl font-black uppercase italic tracking-tighter text-slate-900 leading-tight break-words pr-4">
+                {order.customerName}
+              </h4>
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Terminal de Mando</p>
             </div>
          </div>
@@ -57,7 +59,7 @@ export function TerminalView({
            variant="ghost" 
            size="icon" 
            onClick={onClose}
-           className="h-12 w-12 rounded-full bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-90"
+           className="h-12 w-12 rounded-full bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-90 shrink-0"
          >
            <X className="w-6 h-6 stroke-[3]" />
          </Button>
