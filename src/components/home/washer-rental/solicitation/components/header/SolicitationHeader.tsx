@@ -1,3 +1,4 @@
+
 "use client";
 
 import { X } from 'lucide-react';
@@ -13,11 +14,11 @@ interface SolicitationHeaderProps {
 
 /**
  * SolicitationHeader - Terminal de Identidad y Mando de Solicitudes.
- * ACTUALIZACIÓN: Textos de seguridad y estética de mando industrial con forma especial.
+ * ACTUALIZACIÓN: Expansión de chasis para evitar recortes de texto.
  */
 export function SolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: SolicitationHeaderProps) {
   return (
-    <div className="min-h-[140px] bg-[#050505] flex items-center justify-between px-6 shrink-0 relative overflow-hidden border-b border-yellow-500/20 z-10 py-6">
+    <div className="min-h-[140px] bg-[#050505] flex items-center justify-between px-4 shrink-0 relative overflow-hidden border-b border-yellow-500/20 z-10 py-6">
       {/* CAPA ATMOSFÉRICA DORADA */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 animate-pulse [animation-duration:6s]" />
       
@@ -32,7 +33,7 @@ export function SolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: So
       </div>
 
       {/* Título Dorado Actualizado: FORMULARIO DE SOLICITUD */}
-      <div className="flex-1 px-2 text-center relative z-10 flex flex-col items-center">
+      <div className="flex-1 px-0 text-center relative z-10 flex flex-col items-center">
         <DialogHeader className="p-0 space-y-0 text-center items-center">
           <DialogTitle className={cn(
             "font-black italic uppercase tracking-tighter leading-[0.9] text-base sm:text-lg",
