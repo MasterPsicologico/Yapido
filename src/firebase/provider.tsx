@@ -4,7 +4,7 @@
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useRef } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { Auth, User, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
+import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from './non-blocking-updates';
 
@@ -59,9 +59,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   useEffect(() => {
     if (!auth) return;
-
-    // Solo procesamos el resultado del redireccionamiento una vez.
-    getRedirectResult(auth).catch(() => {});
 
     const unsubscribe = onAuthStateChanged(
       auth,

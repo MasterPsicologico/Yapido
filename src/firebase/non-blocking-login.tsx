@@ -6,7 +6,6 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
 } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
 
@@ -40,7 +39,7 @@ function handleAuthError(error: any) {
   if (error.code === 'auth/popup-blocked') {
     toast({
       title: "Popup Bloqueado",
-      description: "Tu navegador bloqueó la ventana. Intentaremos redirigirte...",
+      description: "Tu navegador bloqueó la ventana. Intenta de nuevo.",
     });
     return;
   }
@@ -70,23 +69,12 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 
 /** 
  * Inicia sesión con Google.
- * Protocolo de Redirección para entornos de IA y PC para evitar bloqueos.
+ * Usa signInWithPopup universalmente — funciona en web, navegadores móviles y APK nativa.
+ * Se eliminó signInWithRedirect porque causa "missing initial state" en WebViews (Capacitor).
  */
 export function initiateGoogleSignIn(authInstance: Auth): void {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
 
-  // Detección de entorno de Cloud IDE (AI Studio / Firebase Studio)
-  // Añadimos google.com para asegurar la redirección en la consola de Firebase
-  const isCloudIDE = window.location.hostname.includes('googleusercontent.com') || 
-                    window.location.hostname.includes('web.app') ||
-                    window.location.hostname.includes('google.com') ||
-                    window.location.port !== '';
-
-  if (isCloudIDE) {
-    // La redirección es infalible en entornos protegidos o móviles
-    signInWithRedirect(authInstance, provider).catch(handleAuthError);
-  } else {
-    signInWithPopup(authInstance, provider).catch(handleAuthError);
-  }
+  signInWithPopup(authInstance, provider).catch(handleAuthError);
 }
