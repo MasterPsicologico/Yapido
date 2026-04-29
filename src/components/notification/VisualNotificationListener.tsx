@@ -20,6 +20,9 @@ import {
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
+// Constante de audio
+const ALERT_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
+
 const SYNC_KEY = 'vitriniando_status_sync_v2';
 
 const STATUS_CONTENT: Record<string, any> = {
@@ -80,30 +83,40 @@ export function VisualNotificationListener() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const validChanges = snapshot.docChanges()
-        .filter(change => change.type === 'modified' || change.type === 'added')
-        .map(change => ({ id: change.doc.id, ...change.doc.data() as any }))
-        .filter(order => order.customerId === user.uid && STATUS_CONTENT[order.status]);
-
-      if (validChanges.length === 0) return;
-
-      const latestOrder = validChanges.sort((a, b) => {
-        const tA = a.updatedAt?.toMillis?.() || 0;
-        const tB = b.updatedAt?.toMillis?.() || 0;
-        return tB - tA;
-      })[0];
-
-      // PROTOCOLO DE SINCRONÍA: Solo mostrar si el estado es nuevo para esta sesión
       const currentSync = JSON.parse(localStorage.getItem(SYNC_KEY) || '{}');
-      const lastSeenStatus = currentSync[latestOrder.id];
+      
+      const targetOrders = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() as any }))
+        // Incluimos tanto al cliente como al dueño de la tienda para que ambos vean las alertas
+        .filter(order => (order.customerId === user.uid || order.storeOwnerId === user.uid) && STATUS_CONTENT[order.status])
+        .filter(order => order.status !== currentSync[order.id]) // Filtramos los que ya hemos visto
+        .sort((a, b) => {
+          const tA = a.updatedAt?.toMillis?.() || (a.updatedAt?.seconds * 1000) || 0;
+          const tB = b.updatedAt?.toMillis?.() || (b.updatedAt?.seconds * 1000) || 0;
+          return tB - tA;
+        });
 
-      if (latestOrder.status !== lastSeenStatus) {
-        const now = Date.now();
-        const updatedAt = latestOrder.updatedAt?.toMillis?.() || now;
+      if (targetOrders.length === 0) return;
+
+      const latestOrder = targetOrders[0];
+      const now = Date.now();
+      const updatedAt = latestOrder.updatedAt?.toMillis?.() || (latestOrder.updatedAt?.seconds * 1000) || now;
+
+      // Evitar disparar alertas de registros antiguos (> 30 min)
+      // Usamos Math.abs para protegernos de relojes de sistema desincronizados
+      if (Math.abs(now - updatedAt) < 1800000) {
+        setActiveAlert(latestOrder);
         
-        // Evitar disparar alertas de registros antiguos (> 30 min)
-        if (now - updatedAt < 1800000) {
-          setActiveAlert(latestOrder);
+        // Disparar feedback inmersivo (Sonido y Vibración)
+        try {
+          if ('vibrate' in navigator) {
+            navigator.vibrate([200, 100, 200, 100, 400]); // Patrón llamativo
+          }
+          const audio = new Audio(ALERT_SOUND);
+          audio.volume = 0.8;
+          audio.play().catch(e => console.warn("Audio autoplay blocked", e));
+        } catch (e) {
+          console.error("Error reproduciendo feedback", e);
         }
       }
     });
@@ -123,7 +136,7 @@ export function VisualNotificationListener() {
 
     if (goToOrder) {
       window.dispatchEvent(new CustomEvent('order-attended', { detail: { orderId: alertId } }));
-      router.push(`/admin/orders#${alertId}`);
+      window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId: alertId } }));
     }
   };
 
@@ -142,44 +155,46 @@ export function VisualNotificationListener() {
           <div className="min-h-full flex flex-col items-center justify-center p-8 text-center space-y-12 py-12">
             
             <div className="space-y-4">
-              <div className="flex items-center justify-center gap-3 text-primary">
+              <div className="flex items-center justify-center gap-3 text-primary animate-in fade-in slide-in-from-top-4 duration-700 delay-150">
                 <ShieldCheck className="w-4 h-4" />
                 <span className="text-[10px] font-black uppercase tracking-[0.4em]">Vitriniando AI Central</span>
               </div>
-              <div className="h-0.5 w-12 bg-primary/20 rounded-full mx-auto" />
+              <div className="h-0.5 w-12 bg-primary/20 rounded-full mx-auto animate-in zoom-in duration-500 delay-300" />
             </div>
 
-            <div className="relative">
-              <div className={cn("absolute inset-0 rounded-[40px] animate-ping opacity-20", content?.bg.replace('bg-', 'bg-'))} />
+            <div className="relative group">
+              <div className={cn("absolute inset-0 rounded-[40px] animate-ping opacity-30", content?.bg.replace('bg-', 'bg-'))} />
+              <div className={cn("absolute -inset-4 rounded-[50px] opacity-20 blur-xl animate-pulse", content?.bg)} />
               <div className={cn(
-                "relative w-32 h-32 rounded-[40px] flex items-center justify-center shadow-2xl border-b-8 transition-all duration-700",
+                "relative w-36 h-36 sm:w-40 sm:h-40 rounded-[40px] flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.1)] border-b-8 transition-all duration-700 hover:scale-105 hover:-translate-y-2",
                 content?.bg, content?.color, "border-slate-200"
               )}>
-                <Icon className="w-16 h-16 animate-in zoom-in duration-500" />
-                <Sparkles className="absolute -top-3 -right-3 w-8 h-8 text-yellow-400 animate-pulse" />
+                <Icon className="w-16 h-16 sm:w-20 sm:h-20 animate-in zoom-in duration-700 spin-in-12" />
+                <Sparkles className="absolute -top-4 -right-4 w-10 h-10 text-yellow-400 animate-[spin_3s_linear_infinite]" />
               </div>
             </div>
 
-            <div className="space-y-4 max-w-sm">
-              <h2 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter leading-[0.9] text-slate-900">
+            <div className="space-y-6 max-w-md animate-in slide-in-from-bottom-8 fade-in duration-700 delay-300">
+              <h2 className="text-4xl sm:text-6xl font-black italic uppercase tracking-tighter leading-[0.9] text-slate-900 drop-shadow-sm">
                 {content?.title}
               </h2>
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-tight leading-relaxed px-4">
+              <p className="text-sm sm:text-base font-bold text-slate-500 uppercase tracking-tight leading-relaxed px-4">
                 {content?.desc}
               </p>
             </div>
 
-            <div className="w-full max-w-xs space-y-6">
+            <div className="w-full max-w-sm space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500">
               <Button 
                 onClick={() => handleAcknowledge(true)}
-                className="w-full h-24 rounded-[32px] bg-primary hover:bg-primary/90 text-white font-black text-xl uppercase italic tracking-widest gap-4 shadow-[0_20px_50px_rgba(59,130,246,0.3)] border-b-[10px] border-blue-800 active:border-b-0 active:translate-y-2 transition-all group"
+                className="w-full h-20 sm:h-24 rounded-[32px] sm:rounded-[36px] bg-primary hover:bg-primary/90 text-white font-black text-xl sm:text-2xl uppercase italic tracking-widest gap-4 shadow-[0_20px_50px_rgba(59,130,246,0.4)] border-b-[8px] sm:border-b-[10px] border-blue-800 active:border-b-0 active:translate-y-2 transition-all group relative overflow-hidden"
               >
-                GESTIONAR AHORA <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                GESTIONAR AHORA <ArrowRight className="w-6 h-6 sm:w-8 sm:h-8 group-hover:translate-x-3 transition-transform" />
               </Button>
 
               <button 
                 onClick={() => handleAcknowledge(false)}
-                className="text-[10px] font-black text-slate-300 hover:text-slate-500 uppercase tracking-[0.3em] transition-colors"
+                className="text-[10px] sm:text-xs font-black text-slate-300 hover:text-slate-500 uppercase tracking-[0.3em] sm:tracking-[0.4em] transition-colors"
               >
                 CERRAR AVISO
               </button>

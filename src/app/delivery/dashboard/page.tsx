@@ -138,7 +138,7 @@ export default function DeliveryDashboardPage() {
     updateDocumentNonBlocking(orderRef, { 
       deliveryDriverId: user.uid, 
       deliveryDriverName: profile?.displayName || user.displayName || 'Repartidor', 
-      status: 'shipped', 
+      status: 'picking_up', 
       acceptedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       participants: arrayUnion(user.uid),

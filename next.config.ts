@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/__/auth/:path*',
+        destination: `https://studio-4796645076-6f375.firebaseapp.com/__/auth/:path*`,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

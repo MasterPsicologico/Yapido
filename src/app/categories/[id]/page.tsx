@@ -362,7 +362,7 @@ export default function CategoryPage() {
            </div>
            <span className="text-2xl font-black italic tracking-tighter">Vitriniando</span>
         </div>
-        <p className="text-slate-500 text-[10px] uppercase tracking-widest font-bold">Aguachica • Cesar • 2024</p>
+        <p className="text-slate-500 text-[10px] uppercase tracking-widest font-bold">Yapido • Colombia • 2024</p>
       </footer>
     </div>
   );

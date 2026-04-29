@@ -12,6 +12,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where } from 'firebase/firestore';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { ActivityTrigger } from './ActivityTrigger';
 import { ActivityItem } from './ActivityItem';
@@ -20,8 +21,10 @@ const SEEN_ORDERS_KEY = 'vitriniando_seen_activity_v1';
 
 export function ActivityCenter() {
   const { user } = useUser();
-  const { profile, isLoading: profileLoading } = useProfile();
+  const { profile, isRepartidor, isLoading: profileLoading } = useProfile();
   const firestore = useFirestore();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [seenIds, setSeenIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -64,6 +67,7 @@ export function ActivityCenter() {
     return rawOrders
       .filter(order => order.status !== 'delivered' && order.status !== 'cancelled')
       .sort((a, b) => {
+        // Orden cronológico: los más recientes arriba (orden de llegada)
         const timeA = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
         const timeB = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
         return timeB - timeA;
@@ -99,19 +103,23 @@ export function ActivityCenter() {
   }, [activities, seenIds]);
 
   const handleItemClick = (orderId: string) => {
-    window.dispatchEvent(new CustomEvent('order-attended', { detail: { orderId } }));
+    setOpen(false);
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('order-attended', { detail: { orderId } }));
+      window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId } }));
+    }, 150);
   };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <ActivityTrigger count={unreadCount} />
       </PopoverTrigger>
       <PopoverContent className="w-80 p-2 rounded-[28px] shadow-2xl border-none bg-white mt-2 z-[1000]" align="center">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-black italic uppercase tracking-tighter text-slate-900">Actividad Viva</span>
-            <Badge variant="secondary" className="rounded-full text-[10px] font-black bg-primary/10 text-primary border-none">{unreadCount}</Badge>
+            <span className="text-sm font-black uppercase tracking-tighter text-slate-900">Notificaciones</span>
+            <Badge variant="secondary" className="rounded-full text-[8px] sm:text-[9px] h-4 min-w-[16px] px-1 font-black bg-primary/10 text-primary border-none flex items-center justify-center">{unreadCount}</Badge>
           </div>
         </div>
         <div className="h-px bg-slate-50 mx-2" />

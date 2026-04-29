@@ -93,7 +93,7 @@ export function TerminalView({
               <MapPin className="w-6 h-6 text-primary shrink-0 mt-1" />
               <div className="space-y-1">
                 <span className="text-lg font-black uppercase italic text-slate-900 tracking-tight leading-snug">{order.customerAddress}</span>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sector: {order.customerSector || 'Aguachica'}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sector: {order.customerSector || order.cityName || 'Ciudad'}</p>
               </div>
             </div>
 

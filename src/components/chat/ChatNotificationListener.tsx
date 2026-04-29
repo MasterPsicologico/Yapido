@@ -167,7 +167,6 @@ export function ChatNotificationListener() {
           altText="Atender" 
           onClick={() => {
             window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId } }));
-            router.push(isRepartidor ? `/delivery/dashboard` : `/admin/orders#${orderId}`);
           }}
           className="bg-primary text-white hover:bg-primary/90 font-black rounded-full h-10 px-6 border-none"
         >

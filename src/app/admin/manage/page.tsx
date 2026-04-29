@@ -30,22 +30,21 @@ import { cn } from '@/lib/utils';
 
 export default function ManagePage() {
   const { user } = useUser();
-  const { profile, isLoading: loadingProfile, isAdmin } = useProfile();
+  const { profile, isLoading: loadingProfile, isOwner, isAdmin } = useProfile();
   const firestore = useFirestore();
   const router = useRouter();
 
-  // PROTECCIÓN DE ACCESO: Solo dueños o admins
-  useEffect(() => {
-    if (!loadingProfile && profile && profile.role !== 'dueño' && profile.role !== 'admin') {
-      router.push('/');
-    }
-  }, [profile, loadingProfile, router]);
-
-  // QUERY: Todos los negocios del usuario
+  // QUERY: Todos los negocios del usuario o todos si es admin
   const storesQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
+    
+    // Si es superadmin o admin, que vea todas las tiendas en la consola
+    if (isAdmin) {
+      return collection(firestore, 'stores');
+    }
+    
     return query(collection(firestore, 'stores'), where('ownerId', '==', user.uid));
-  }, [firestore, user?.uid]);
+  }, [firestore, user?.uid, isAdmin]);
 
   const { data: stores, isLoading: loadingStores } = useCollection(storesQuery);
 
@@ -96,7 +95,7 @@ export default function ManagePage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900">Consola Central</h1>
+                <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900">Consola de Mando</h1>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-1">Dueño de Negocio • {globalStats.totalBusinesses} ACTIVOS</p>
               </div>
             </div>

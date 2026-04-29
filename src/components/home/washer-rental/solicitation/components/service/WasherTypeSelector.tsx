@@ -15,9 +15,10 @@ interface WasherTypeSelectorProps {
   isAdmin: boolean;
   selectedType: 'automatica' | 'semiautomatica';
   onSelect: (v: 'automatica' | 'semiautomatica') => void;
+  availableMachineTypes?: { automatic: boolean; semiautomatic: boolean };
 }
 
-export function WasherTypeSelector({ isAdmin, selectedType, onSelect }: WasherTypeSelectorProps) {
+export function WasherTypeSelector({ isAdmin, selectedType, onSelect, availableMachineTypes }: WasherTypeSelectorProps) {
   const firestore = useFirestore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingType, setUploadingType] = useState<'automatica' | 'semiautomatica' | null>(null);
@@ -43,8 +44,15 @@ export function WasherTypeSelector({ isAdmin, selectedType, onSelect }: WasherTy
   return (
     <div className="space-y-6">
       <Label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-[0.2em]">Equipo Solicitado</Label>
-      <div className="grid grid-cols-2 gap-4">
-        {['automatica', 'semiautomatica'].map((type) => (
+      <div className={cn(
+        "grid gap-4", 
+        (!availableMachineTypes || (availableMachineTypes.automatic && availableMachineTypes.semiautomatic)) ? "grid-cols-2" : "grid-cols-1 max-w-[200px] mx-auto"
+      )}>
+        {['automatica', 'semiautomatica'].filter(t => {
+          if (!availableMachineTypes) return true;
+          if (t === 'automatica') return availableMachineTypes.automatic;
+          return availableMachineTypes.semiautomatic;
+        }).map((type) => (
           <div key={type} className="group/type relative space-y-4">
             <button
               onClick={() => onSelect(type as any)}

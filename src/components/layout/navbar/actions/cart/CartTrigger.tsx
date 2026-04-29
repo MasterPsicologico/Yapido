@@ -50,7 +50,7 @@ export const CartTrigger = React.forwardRef<HTMLButtonElement, CartTriggerProps>
       >
         <ShoppingCart className={cn("w-4 h-4 sm:w-4.5 sm:h-4.5", (totalItems > 0 && user) ? "text-primary" : "text-slate-400")} />
         {totalItems > 0 && user && (
-          <span className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[8px] sm:text-[9px] font-black w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+          <span className="absolute -top-1 -right-1 bg-primary text-white text-[7px] sm:text-[8px] font-black w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[5px] flex items-center justify-center border-[1.5px] border-white shadow-sm ring-1 ring-primary/20">
             {totalItems}
           </span>
         )}

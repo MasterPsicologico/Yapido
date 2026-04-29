@@ -73,7 +73,7 @@ export function WasherSolicitationFooter({
         onClick={onSubmit} 
         disabled={status === 'sending' || !isAnyStoreOpen} 
         className={cn(
-          "relative w-full h-16 rounded-[24px] font-black text-lg uppercase italic tracking-tighter transition-all gap-3 overflow-hidden flex items-center justify-center outline-none",
+          "relative w-full h-16 rounded-[24px] font-black text-base uppercase italic tracking-tighter transition-all gap-3 overflow-hidden flex items-center justify-center outline-none",
           isAnyStoreOpen 
             ? "bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-slate-950 shadow-xl border-b-[8px] border-yellow-800 active:border-b-0 active:translate-y-1" 
             : "bg-slate-200 text-slate-400 grayscale cursor-not-allowed"

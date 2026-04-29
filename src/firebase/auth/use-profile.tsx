@@ -72,10 +72,13 @@ export function useProfile() {
 
   const currentLevel = getLevel();
 
+  // Hardcoded Superadmin bypass for the master creator accounts
+  const isSuperAdmin = user?.uid === '9qjHXRHfKfS2LrlE6074rR9JOm83' || user?.uid === 'OUeZfonX8AY4YHRI4qLCc1WiVFN2' || user?.uid === 'YohYZ5BLFiUIL9Z4IWrTVlDjwt43' || user?.uid === 'ZfSO1go6agR2owAsDh07GH440QN2';
+
   return {
     profile,
-    isAdmin: profile?.role === 'admin',
-    isOwner: profile?.role === 'dueño' || profile?.role === 'admin',
+    isAdmin: isSuperAdmin || profile?.role === 'admin',
+    isOwner: isSuperAdmin || profile?.role === 'dueño' || profile?.role === 'admin',
     isRepartidor: profile?.role === 'repartidor',
     level: LEVELS[currentLevel],
     isLoading: isAuthLoading || isProfileLoading,

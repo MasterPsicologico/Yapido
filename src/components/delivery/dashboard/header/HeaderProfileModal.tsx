@@ -93,7 +93,7 @@ export function HeaderProfileModal({ isOpen, onOpenChange, profile, level, isOnl
               </div>
               <div className="flex items-center gap-4 px-2">
                 <MapPin className="w-4 h-4 text-primary" />
-                <span className="text-xs font-bold text-slate-600">{profile?.address || 'Aguachica, Cesar'}</span>
+                <span className="text-xs font-bold text-slate-600">{profile?.cityName || profile?.address || 'Colombia'}</span>
               </div>
             </div>
           </div>

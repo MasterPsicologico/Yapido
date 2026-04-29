@@ -5,11 +5,13 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
 import { VisualNotificationListener } from '@/components/notification/VisualNotificationListener';
+import { NativeNotificationListener } from '@/components/notification/NativeNotificationListener';
 import { CartProvider } from '@/context/CartContext';
+import { GlobalOrderChatModal } from '@/components/chat/GlobalOrderChatModal';
 
 export const metadata: Metadata = {
-  title: 'Vitriniando - Gestión de Tiendas y Delivery',
-  description: 'Explora tiendas locales y gestiona tus productos con Vitriniando.',
+  title: 'Yapido.click - Logística y Alquiler de Lavadoras',
+  description: 'Especialistas en alquiler, compraventa y mantenimiento de lavadoras en Colombia con Yapido.click.',
 };
 
 export default function RootLayout({
@@ -31,6 +33,9 @@ export default function RootLayout({
             <ChatNotificationListener />
             {/* El VisualNotificationListener gestiona los diálogos inmersivos de pantalla completa */}
             <VisualNotificationListener />
+            {/* Gestión de Alertas Nativas para APK (FCM) */}
+            <NativeNotificationListener />
+            <GlobalOrderChatModal />
             {children}
             <Toaster />
           </CartProvider>

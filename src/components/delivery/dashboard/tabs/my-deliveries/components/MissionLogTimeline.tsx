@@ -36,7 +36,7 @@ export function MissionLogTimeline({ order }: MissionLogTimelineProps) {
     events.push({
       id: 'creation',
       title: 'Misión Iniciada',
-      message: `${order.customerName} solicitó un alquiler de ${order.requestHours} horas en ${order.customerSector || 'Aguachica'}.`,
+      message: `${order.customerName} solicitó un alquiler de ${order.requestHours} horas en ${order.customerSector || order.cityName || 'la ciudad'}.`,
       time: format(createdAt, "HH:mm", { locale: es }),
       icon: History,
       status: 'past',

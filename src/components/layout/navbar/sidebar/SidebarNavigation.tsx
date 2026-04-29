@@ -1,8 +1,9 @@
 "use client";
 
 import Link from 'next/link';
-import { Home as HomeIcon, UserCircle, Info, ClipboardList, ShieldCheck, Waves, Briefcase } from 'lucide-react';
+import { Home as HomeIcon, UserCircle, Info, ClipboardList, ShieldCheck, Waves, Briefcase, MapPinned } from 'lucide-react';
 import { SheetClose } from "@/components/ui/sheet";
+import { useRouter } from 'next/navigation';
 
 interface SidebarNavigationProps {
   user: any;
@@ -12,6 +13,7 @@ interface SidebarNavigationProps {
 }
 
 export function SidebarNavigation({ user, canAccessManage, isRepartidor, isAdmin }: SidebarNavigationProps) {
+  const router = useRouter();
   const links = [
     { href: "/", label: "Inicio", icon: HomeIcon, color: "bg-blue-50 text-blue-500" },
     { href: "/profile", label: "Mi Perfil", icon: UserCircle, color: "bg-indigo-50 text-indigo-500" },
@@ -80,6 +82,18 @@ export function SidebarNavigation({ user, canAccessManage, isRepartidor, isAdmin
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <span className="font-bold text-slate-700 group-hover:text-slate-900">Verificación de Flota</span>
+              </Link>
+            </SheetClose>
+          )}
+
+          {/* 5. GESTIÓN GEOGRÁFICA (SOLO ADMIN) */}
+          {isAdmin && (
+            <SheetClose asChild>
+              <Link href="/admin/geography" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-teal-50 text-teal-600 group-hover:bg-primary group-hover:text-white transition-colors">
+                  <MapPinned className="w-5 h-5" />
+                </div>
+                <span className="font-bold text-slate-700 group-hover:text-slate-900">Gestión Geográfica</span>
               </Link>
             </SheetClose>
           )}

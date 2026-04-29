@@ -198,7 +198,7 @@ export function WelcomeLanding({ isAdmin, config, onUpdateConfig }: WelcomeLandi
             />
             
             <footer className="py-10 text-center opacity-40">
-              <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.5em]">Vitriniando AI Central • Aguachica Digital</p>
+              <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.5em]">Vitriniando AI Central • Yapido</p>
             </footer>
           </div>
         )}

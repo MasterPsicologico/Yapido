@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState } from 'react';
 import { Heart, Store as StoreIcon, Package } from 'lucide-react';
 import {
   Popover,
@@ -15,7 +16,9 @@ import { Badge } from '@/components/ui/badge';
 import { FavoritesTrigger } from './FavoritesTrigger';
 import { FavoritesItem } from './FavoritesItem';
 
+import { toast } from '@/hooks/use-toast';
 export function FavoritesCenter() {
+  const [open, setOpen] = useState(false);
   const { user } = useUser();
   const { profile } = useProfile();
   const firestore = useFirestore();
@@ -38,49 +41,95 @@ export function FavoritesCenter() {
 
   const totalCount = favoriteStoreIds.length + favoriteProductIds.length;
 
+  const handleFavoriteClick = (type: 'store' | 'product', id: string, name: string) => {
+    setOpen(false);
+    toast({
+      title: "Próximamente",
+      description: `La vista detallada de ${name} estará disponible pronto.`,
+      className: "bg-slate-900 text-white"
+    });
+  };
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <FavoritesTrigger totalCount={totalCount} />
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-2 rounded-[28px] shadow-2xl border-none bg-white mt-2 z-[1000]" align="center">
-        <div className="px-4 py-3">
+      <PopoverContent className="w-[340px] sm:w-[380px] p-0 rounded-[32px] shadow-2xl border border-slate-100/50 bg-white/95 backdrop-blur-xl mt-2 z-[1000] overflow-hidden" align="center">
+        <div className="px-5 py-4 bg-gradient-to-br from-slate-50/50 to-white">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-black italic uppercase tracking-tighter text-slate-900">Mis Favoritos</span>
-            <Badge className="bg-rose-50 text-rose-600 rounded-full text-[10px] font-black border-none">{totalCount}</Badge>
+            <span className="text-sm font-black uppercase tracking-tighter text-slate-900 flex items-center gap-2">
+              <Heart className="w-4 h-4 text-rose-500" />
+              Colección Favorita
+            </span>
+            <Badge className="bg-rose-100 text-rose-600 rounded-full px-2 py-0.5 text-[10px] font-black border-none shadow-sm">{totalCount} ítems</Badge>
           </div>
         </div>
-        <div className="h-px bg-slate-50 mx-2" />
-        <div className="max-h-[400px] overflow-y-auto p-1 space-y-4 no-scrollbar">
+        <div className="h-px bg-slate-100" />
+        <div className="max-h-[450px] overflow-y-auto p-3 space-y-5 no-scrollbar">
           {totalCount === 0 ? (
-            <div className="py-12 text-center">
-              <Heart className="w-16 h-16 bg-slate-50 rounded-full p-4 mx-auto mb-4 text-slate-200" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Aún no tienes favoritos</p>
+            <div className="py-16 text-center animate-in fade-in zoom-in duration-500">
+              <div className="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
+                <Heart className="w-10 h-10 text-rose-200" />
+              </div>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-1">Aún no hay favoritos</h3>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Guarda lo que más te guste</p>
             </div>
           ) : (
-            <>
+            <div className="space-y-8">
               {stores && stores.length > 0 && (
-                <div className="space-y-2">
-                  <div className="px-3 flex items-center gap-2 text-slate-300">
-                    <StoreIcon className="w-3 h-3" /><span className="text-[9px] font-black uppercase tracking-widest">Tiendas</span>
+                <div className="space-y-4 animate-in slide-in-from-bottom-2 fade-in duration-500 delay-100">
+                  <div className="px-1 flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center shadow-inner ring-1 ring-orange-100/50">
+                      <StoreIcon className="w-3.5 h-3.5 text-orange-600" />
+                    </div>
+                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-700">Tiendas Favoritas</span>
                   </div>
-                  {stores.map(s => <FavoritesItem key={s.id} id={s.id} name={s.name} subLabel={s.address || 'Local'} imageUrl={s.imageUrl || 'https://picsum.photos/seed/store/200'} href={`/stores/${s.id}`} />)}
+                  <div className="grid grid-cols-2 gap-3 px-1">
+                    {stores.map(s => (
+                      <FavoritesItem 
+                        key={s.id} 
+                        id={s.id} 
+                        name={s.name} 
+                        subLabel={s.address || 'Local'} 
+                        imageUrl={s.imageUrl || 'https://picsum.photos/seed/store/200'} 
+                        onClick={() => handleFavoriteClick('store', s.id, s.name)} 
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
               {products && products.length > 0 && (
-                <div className="space-y-2">
-                  <div className="px-3 flex items-center gap-2 text-slate-300">
-                    <Package className="w-3 h-3" /><span className="text-[9px] font-black uppercase tracking-widest">Productos</span>
+                <div className="space-y-4 animate-in slide-in-from-bottom-2 fade-in duration-500 delay-200">
+                  <div className="px-1 flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center shadow-inner ring-1 ring-blue-100/50">
+                      <Package className="w-3.5 h-3.5 text-blue-600" />
+                    </div>
+                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-700">Productos Favoritos</span>
                   </div>
-                  {products.map(p => <FavoritesItem key={p.id} id={p.id} name={p.name} subLabel="" price={p.price} imageUrl={p.imageUrl || 'https://picsum.photos/seed/product/200'} href={`/products/${p.id}`} />)}
+                  <div className="grid grid-cols-2 gap-3 px-1">
+                    {products.map(p => (
+                      <FavoritesItem 
+                        key={p.id} 
+                        id={p.id} 
+                        name={p.name} 
+                        subLabel="" 
+                        price={p.price} 
+                        imageUrl={p.imageUrl || 'https://picsum.photos/seed/product/200'} 
+                        onClick={() => handleFavoriteClick('product', p.id, p.name)} 
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
-        <div className="h-px bg-slate-50 mx-2 mt-2" />
-        <div className="p-1">
-          <Link href="/profile" className="flex items-center justify-center h-10 rounded-xl hover:bg-rose-50 text-[10px] font-black uppercase tracking-[0.2em] text-rose-500">Gestionar todo el historial</Link>
+        <div className="h-px bg-slate-100" />
+        <div className="p-3 bg-slate-50/50">
+          <Link href="/profile" className="flex items-center justify-center w-full h-12 rounded-xl bg-white hover:bg-rose-50 border border-slate-100 hover:border-rose-100 hover:shadow-md text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-rose-600 transition-all duration-300">
+            Gestionar Colección
+          </Link>
         </div>
       </PopoverContent>
     </Popover>

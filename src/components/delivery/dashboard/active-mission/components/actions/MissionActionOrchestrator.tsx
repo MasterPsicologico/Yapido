@@ -28,7 +28,17 @@ export function MissionActionOrchestrator({
 
   return (
     <section className="space-y-4">
-      {/* PASO 1: EN CAMINO AL CLIENTE */}
+      {/* PASO 1: COMENZAR A LLEVARLA (Transición de picking_up a shipped) */}
+      {status === 'picking_up' && (
+        <Button 
+          onClick={() => onUpdateStatus('shipped')} 
+          className="w-full h-20 rounded-[32px] bg-orange-500 hover:bg-orange-600 text-white font-black text-xl uppercase italic gap-4 shadow-[0_20px_50px_rgba(249,115,22,0.4)] active:scale-95 transition-all border-b-[8px] border-orange-700 active:border-b-0"
+        >
+          <Navigation className="w-7 h-7" /> COMENZAR A LLEVARLA
+        </Button>
+      )}
+
+      {/* PASO 2: EN CAMINO AL CLIENTE */}
       {isEnRoute && (
         <Button 
           onClick={() => onUpdateStatus('at_destination')} 

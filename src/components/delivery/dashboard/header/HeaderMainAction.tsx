@@ -10,10 +10,18 @@ interface HeaderMainActionProps {
 }
 
 export function HeaderMainAction({ isOnline, onToggleOnline }: HeaderMainActionProps) {
+  const handleToggle = () => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      // Patrón de vibración más fuerte y notorio
+      navigator.vibrate([200, 100, 200]);
+    }
+    onToggleOnline();
+  };
+
   return (
     <div className="w-full max-w-xs animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200">
       <Button 
-        onClick={onToggleOnline} 
+        onClick={handleToggle} 
         className={cn(
           "w-full h-[60px] rounded-[32px] font-black text-base uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 border-b-[6px]",
           isOnline 

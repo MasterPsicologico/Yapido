@@ -6,8 +6,11 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithCredential,
 } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 /** 
  * Maneja los errores comunes de Firebase Auth de forma centralizada.
@@ -69,12 +72,39 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 
 /** 
  * Inicia sesión con Google.
- * Usa signInWithPopup universalmente — funciona en web, navegadores móviles y APK nativa.
- * Se eliminó signInWithRedirect porque causa "missing initial state" en WebViews (Capacitor).
+ * Usa Autenticación Nativa en dispositivos móviles (Capacitor) para evitar errores de WebView.
+ * Usa signInWithPopup en navegadores web para una experiencia fluida.
  */
-export function initiateGoogleSignIn(authInstance: Auth): void {
+export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
+  // 1. Detectar si estamos en plataforma nativa (iOS/Android APK)
+  if (Capacitor.isNativePlatform()) {
+    try {
+      // Iniciar sesión nativa con el plugin de Capacitor
+      const result = await FirebaseAuthentication.signInWithGoogle();
+      
+      if (!result.credential?.idToken) {
+        throw new Error("No se recibió el token de autenticación nativa.");
+      }
+
+      // Vincular la credencial nativa con la instancia de Firebase JS SDK
+      const credential = GoogleAuthProvider.credential(result.credential.idToken);
+      return signInWithCredential(authInstance, credential);
+    } catch (error: any) {
+      // Manejar cancelaciones del usuario de forma silenciosa
+      if (error.message?.includes('cancel') || error.code === 'CANCELLED') {
+        throw error;
+      }
+      handleAuthError(error);
+      throw error;
+    }
+  }
+
+  // 2. Comportamiento para Navegador Web (PC/Móvil)
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
 
-  signInWithPopup(authInstance, provider).catch(handleAuthError);
+  return signInWithPopup(authInstance, provider).catch((error) => {
+    handleAuthError(error);
+    throw error;
+  });
 }

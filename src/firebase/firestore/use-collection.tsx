@@ -61,9 +61,12 @@ export function useCollection<T = any>(
     setIsLoading(true);
     setError(null);
 
+    let unsubscribed = false;
+
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
+        if (unsubscribed) return;
         const results: ResultItemType[] = [];
         for (const doc of snapshot.docs) {
           results.push({ ...(doc.data() as T), id: doc.id });
@@ -73,6 +76,7 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
+        if (unsubscribed) return;
         const auth = getAuth();
         const isAuthPresent = !!auth.currentUser;
 
@@ -101,7 +105,12 @@ export function useCollection<T = any>(
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      if (!unsubscribed) {
+        unsubscribed = true;
+        unsubscribe();
+      }
+    };
   }, [memoizedTargetRefOrQuery]); 
 
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {

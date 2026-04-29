@@ -8,6 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { CitySelector } from './solicitation/components/identity/CitySelector';
+import { ZoneSelector } from './solicitation/components/identity/ZoneSelector';
+import { useCityConfig } from '@/hooks/use-city-config';
 
 interface WasherStoreCreationDialogProps {
   isOpen: boolean;
@@ -30,13 +33,29 @@ export function WasherStoreCreationDialog({
 }: WasherStoreCreationDialogProps) {
   const [hasAuto, setHasAuto] = useState(true);
   const [hasSemi, setHasSemi] = useState(false);
+  const [selectedCityId, setSelectedCityId] = useState("");
+  const [selectedZoneId, setSelectedZoneId] = useState("");
+
+  const { cityConfig, activeCities, activeZones, hasMultipleZones } = useCityConfig({
+    overrideCityId: selectedCityId || undefined,
+    overrideZoneId: selectedZoneId || undefined,
+    profile,
+  });
+
+  // Pre-fill from profile when opening
+  useState(() => {
+    if (profile) {
+      if (profile.cityId) setSelectedCityId(profile.cityId);
+      if (profile.zoneId) setSelectedZoneId(profile.zoneId);
+    }
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-[#fffdfa] p-0 overflow-hidden flex flex-col z-[650] animate-in slide-in-from-bottom duration-500 [&>button:last-child]:hidden">
         <DialogHeader className="sr-only">
-          <DialogTitle>Inscribir Alquiler Élite</DialogTitle>
-          <DialogDescription>Terminal de registro para flotas logísticas de alta gama en tema Oro.</DialogDescription>
+          <DialogTitle>Inscribir Negocio Élite</DialogTitle>
+          <DialogDescription>Terminal de registro para comercios asociados a Yapido.</DialogDescription>
         </DialogHeader>
         
         {/* HEADER DORADO SUPREMO */}
@@ -49,9 +68,9 @@ export function WasherStoreCreationDialog({
               <StoreIcon className="w-7 h-7 text-yellow-500 animate-pulse" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-white font-black uppercase italic tracking-tighter text-2xl leading-none">Mi Alquiler</h3>
+              <h3 className="text-white font-black uppercase italic tracking-tighter text-2xl leading-none">Mi Negocio</h3>
               <p className="text-yellow-500/60 text-[9px] font-black uppercase tracking-[0.4em] flex items-center gap-2">
-                <ShieldCheck className="w-2.5 h-2.5" /> PROTOCOLO DE ORO ACTIVO
+                <ShieldCheck className="w-2.5 h-2.5" /> COMERCIO VERIFICADO
               </p>
             </div>
           </div>
@@ -71,13 +90,13 @@ export function WasherStoreCreationDialog({
             {/* TÍTULO DE IMPACTO ÉLITE */}
             <div className="text-center space-y-4 animate-in fade-in slide-in-from-top-4 duration-700">
               <div className="inline-block px-4 py-1 bg-yellow-500/10 rounded-full border border-yellow-500/20 mb-2">
-                <span className="text-[8px] font-black text-yellow-700 uppercase tracking-[0.4em]">Inscripción de Propietario</span>
+                <span className="text-[8px] font-black text-yellow-700 uppercase tracking-[0.4em]">Inscripción de Negocio</span>
               </div>
               <h2 className="text-5xl font-black italic uppercase tracking-tighter text-slate-900 leading-[0.85] drop-shadow-sm">
-                LANZAR MI <br /> <span className="text-yellow-600">VITRINA</span>
+                INSCRIBIR MI <br /> <span className="text-yellow-600">NEGOCIO</span>
               </h2>
               <div className="flex flex-col items-center gap-2 pt-2">
-                 <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Transforma tu inventario en una potencia digital</p>
+                 <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Únete a la plataforma multinegocios líder</p>
                  <div className="h-0.5 w-12 bg-yellow-500/30 rounded-full" />
               </div>
             </div>
@@ -93,11 +112,11 @@ export function WasherStoreCreationDialog({
                 
                 <div className="grid gap-6">
                   <div className="space-y-3 group">
-                    <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-widest group-focus-within:text-yellow-600 transition-colors">Nombre de la Vitrina</Label>
+                    <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-widest group-focus-within:text-yellow-600 transition-colors">Nombre del Negocio</Label>
                     <div className="relative">
                        <Input 
                         name="name" 
-                        placeholder="Ej: Lavadoras El Morrocoy" 
+                        placeholder="Ej: Tienda Central, Servicios Rápidos..." 
                         className="h-16 rounded-[24px] bg-white border-2 border-slate-100 text-slate-900 font-black text-lg px-8 focus:border-yellow-500/50 focus:ring-4 focus:ring-yellow-500/5 transition-all shadow-sm placeholder:text-slate-300" 
                         required 
                       />
@@ -121,23 +140,75 @@ export function WasherStoreCreationDialog({
                 </div>
               </div>
 
-              {/* SECCIÓN 2: HARDWARE ÉLITE (ORO Y BLANCO) */}
+              {/* SECCIÓN GEOGRÁFICA (ZONIFICACIÓN) */}
+              <div className="space-y-8 animate-in slide-in-from-left-4 duration-700 delay-150">
+                <div className="flex items-center gap-3 ml-2">
+                  <div className="w-2 h-2 rounded-full bg-slate-900 shadow-[0_0_10px_rgba(0,0,0,0.3)]" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Radio de Operación</span>
+                </div>
+
+                <div className="space-y-6">
+                  <CitySelector 
+                    selectedCityId={selectedCityId} 
+                    onCityChange={setSelectedCityId} 
+                    activeCities={activeCities}
+                  />
+                  {hasMultipleZones && (
+                    <ZoneSelector
+                      zones={activeZones}
+                      cityConfig={cityConfig}
+                      selectedZoneId={selectedZoneId}
+                      onZoneChange={setSelectedZoneId}
+                    />
+                  )}
+                  
+                  <input type="hidden" name="cityId" value={selectedCityId} />
+                  <input type="hidden" name="cityName" value={cityConfig?.name || ''} />
+                  <input type="hidden" name="zoneId" value={hasMultipleZones ? selectedZoneId : ''} />
+                  <input type="hidden" name="zoneName" value={hasMultipleZones ? (activeZones.find(z => z.id === selectedZoneId)?.name || '') : ''} />
+                  
+                  <div className="space-y-3 group">
+                    <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-widest group-focus-within:text-yellow-600 transition-colors">Barrios de Cobertura Específica</Label>
+                    <div className="relative">
+                      <textarea 
+                        name="coverageSectors" 
+                        placeholder="Ej: El Centro, Oasis, San Roque..." 
+                        className="w-full min-h-[120px] p-6 rounded-[32px] bg-white border-2 border-slate-100 text-slate-800 font-bold text-sm focus:border-yellow-500/50 focus:ring-4 focus:ring-yellow-500/5 outline-none resize-none transition-all placeholder:text-slate-200 shadow-sm"
+                        required
+                      />
+                      <MapPinned className="absolute right-6 bottom-6 w-5 h-5 text-yellow-600/20" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3 group">
+                    <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-widest group-focus-within:text-yellow-600 transition-colors">Dirección Principal</Label>
+                    <Input 
+                      name="address" 
+                      placeholder="Ej: Calle 5 # 10-20" 
+                      className="h-16 rounded-[24px] bg-white border-2 border-slate-100 text-slate-800 font-bold px-8 focus:border-yellow-500/50 focus:ring-4 focus:ring-yellow-500/5 transition-all shadow-sm placeholder:text-slate-200" 
+                      required 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECCIÓN 2: CONFIGURACIÓN INICIAL (ORO Y BLANCO) */}
               <div className="relative p-8 rounded-[48px] bg-white border-2 border-yellow-500/10 shadow-2xl space-y-10 overflow-hidden group/fleet animate-in slide-in-from-right-4 duration-700 delay-200">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover/fleet:bg-yellow-500/10 transition-colors duration-1000" />
                 
                 <div className="flex items-center gap-4 relative z-10">
                   <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 flex items-center justify-center text-yellow-600 shadow-inner border border-yellow-500/20">
-                    <Zap className="w-6 h-6 fill-current" />
+                    <Settings className="w-6 h-6" />
                   </div>
                   <div className="space-y-0.5">
-                    <h3 className="font-black text-sm uppercase tracking-widest italic text-slate-900">Configuración de Flota</h3>
-                    <p className="text-[8px] font-black text-yellow-600 uppercase tracking-[0.2em]">Inventario Técnico</p>
+                    <h3 className="font-black text-sm uppercase tracking-widest italic text-slate-900">Configuración de Servicios</h3>
+                    <p className="text-[8px] font-black text-yellow-600 uppercase tracking-[0.2em]">Disponibilidad Inicial</p>
                   </div>
                 </div>
 
                 <div className="grid gap-4 relative z-10">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center px-4 leading-relaxed">
-                    Marca los equipos disponibles en tu bodega:
+                    Si ofreces equipos principales, marca tus disponibilidades actuales:
                   </p>
                   
                   <div className="grid grid-cols-1 gap-4">
@@ -181,7 +252,7 @@ export function WasherStoreCreationDialog({
 
                 <div className="space-y-3 relative z-10 pt-4 border-t border-slate-100">
                   <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 flex items-center gap-2">
-                    <Box className="w-3.5 h-3.5 text-yellow-600" /> Unidades Totales Disponibles
+                    <Box className="w-3.5 h-3.5 text-yellow-600" /> Capacidad Total (Unidades)
                   </Label>
                   <Input 
                     name="totalUnits" 
@@ -193,38 +264,7 @@ export function WasherStoreCreationDialog({
                 </div>
               </div>
 
-              {/* SECCIÓN 3: LOGÍSTICA (LIGERA) */}
-              <div className="space-y-8 animate-in slide-in-from-left-4 duration-700 delay-300">
-                <div className="flex items-center gap-3 ml-2">
-                  <div className="w-2 h-2 rounded-full bg-slate-900 shadow-[0_0_10px_rgba(0,0,0,0.3)]" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Radio de Operación</span>
-                </div>
 
-                <div className="space-y-6">
-                  <div className="space-y-3 group">
-                    <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-widest group-focus-within:text-yellow-600 transition-colors">Barrios de Cobertura</Label>
-                    <div className="relative">
-                      <textarea 
-                        name="coverageSectors" 
-                        placeholder="Ej: El Centro, Oasis, San Roque..." 
-                        className="w-full min-h-[120px] p-6 rounded-[32px] bg-white border-2 border-slate-100 text-slate-800 font-bold text-sm focus:border-yellow-500/50 focus:ring-4 focus:ring-yellow-500/5 outline-none resize-none transition-all placeholder:text-slate-200 shadow-sm"
-                        required
-                      />
-                      <MapPinned className="absolute right-6 bottom-6 w-5 h-5 text-yellow-600/20" />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3 group">
-                    <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-widest group-focus-within:text-yellow-600 transition-colors">Dirección de Bodega</Label>
-                    <Input 
-                      name="address" 
-                      placeholder="Ej: Calle 5 # 10-20" 
-                      className="h-16 rounded-[24px] bg-white border-2 border-slate-100 text-slate-800 font-bold px-8 focus:border-yellow-500/50 focus:ring-4 focus:ring-yellow-500/5 transition-all shadow-sm placeholder:text-slate-200" 
-                      required 
-                    />
-                  </div>
-                </div>
-              </div>
 
               {/* SECCIÓN 4: TERMINAL HORARIA (IVORY STYLE) */}
               <div className="grid grid-cols-2 gap-4 p-8 rounded-[40px] bg-white border-2 border-yellow-500/10 shadow-xl relative overflow-hidden animate-in zoom-in duration-700 delay-400">
@@ -287,7 +327,7 @@ export function WasherStoreCreationDialog({
                 <div className="flex flex-col items-center gap-3">
                   <div className="flex items-center gap-3 opacity-30">
                     <div className="w-1.5 h-1.5 rounded-full bg-yellow-600 animate-ping" />
-                    <p className="text-[9px] font-black uppercase tracking-[0.5em] text-slate-400">Vitriniando AI Central • Kernel v1.0.4</p>
+                    <p className="text-[9px] font-black uppercase tracking-[0.5em] text-slate-400">Yapido Business Core • Kernel v2.0</p>
                   </div>
                   <div className="h-0.5 w-24 bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
                 </div>
@@ -300,7 +340,7 @@ export function WasherStoreCreationDialog({
         <div className="h-10 bg-white border-t border-yellow-500/10 flex items-center justify-center px-8 shrink-0">
           <div className="flex items-center gap-3">
              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-             <span className="text-[7px] font-black text-slate-300 uppercase tracking-[0.4em]">SISTEMA DE SEGURIDAD MORROCOYERA ACTIVO</span>
+             <span className="text-[7px] font-black text-slate-300 uppercase tracking-[0.4em]">SISTEMA DE REGISTRO SEGURO ACTIVO</span>
           </div>
         </div>
       </DialogContent>

@@ -91,7 +91,7 @@ export default function FleetAdminPage() {
             <ShieldCheck className="w-10 h-10 text-primary" />
           </div>
           <div>
-            <h1 className="text-5xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Verificación de Flota</h1>
+            <h1 className="text-2xl sm:text-4xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Verificación de Flota</h1>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2">Control de Personal • {requests?.length || 0} PENDIENTES</p>
           </div>
         </div>
@@ -156,10 +156,10 @@ export default function FleetAdminPage() {
 
                   {/* Acciones Maestras */}
                   <div className="flex flex-col sm:flex-row items-center gap-4 pt-6 border-t border-dashed">
-                    <Button onClick={() => handleApprove(req.id)} className="w-full h-16 rounded-[24px] bg-green-500 hover:bg-green-600 text-white font-black uppercase text-lg tracking-widest gap-3 shadow-xl shadow-green-100">
+                    <Button onClick={() => handleApprove(req.id)} className="w-full h-16 rounded-[24px] bg-green-500 hover:bg-green-600 text-white font-black uppercase text-sm sm:text-lg tracking-widest gap-3 shadow-xl shadow-green-100">
                       <CheckCircle2 className="w-6 h-6" /> APROBAR ACCESO
                     </Button>
-                    <Button onClick={() => handleReject(req.id)} variant="ghost" className="w-full sm:w-auto h-16 px-10 rounded-[24px] text-red-500 font-black uppercase text-xs tracking-widest hover:bg-red-50">
+                    <Button onClick={() => handleReject(req.id)} variant="ghost" className="w-full sm:w-auto h-16 px-10 rounded-[24px] text-red-500 font-black uppercase text-[10px] sm:text-xs tracking-widest hover:bg-red-50">
                       <X className="w-4 h-4" /> RECHAZAR SOLICITUD
                     </Button>
                   </div>

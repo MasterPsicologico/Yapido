@@ -118,7 +118,7 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
           
           <div className="flex items-center justify-center gap-2 opacity-30 group-hover:opacity-60 transition-opacity">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span className="text-[8px] font-black uppercase tracking-[0.4em]">Protocolo de Seguridad Aguachica Digital</span>
+            <span className="text-[8px] font-black uppercase tracking-[0.4em]">Protocolo de Seguridad Yapido</span>
           </div>
         </div>
       </CardContent>

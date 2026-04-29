@@ -195,7 +195,7 @@ function HomeContent({ user, isUserLoading }: { user: any, isUserLoading: boolea
 
           <HomeCategorySection 
             isAdmin={isAdmin} 
-            categories={filteredData.categories} 
+            categories={filteredData.categories || null} 
             isLoading={loadingCategories} 
             onEdit={(c) => { 
               setEditingCategory(c); 

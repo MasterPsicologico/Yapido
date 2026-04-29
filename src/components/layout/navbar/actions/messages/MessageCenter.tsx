@@ -9,8 +9,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where } from 'firebase/firestore';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { MessageTrigger } from './MessageTrigger';
 import { MessageItem } from './MessageItem';
@@ -19,7 +21,10 @@ const SEEN_ORDERS_KEY = 'vitriniando_seen_orders_v1';
 
 export function MessageCenter() {
   const { user } = useUser();
+  const { profile, isRepartidor } = useProfile();
   const firestore = useFirestore();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [unreadSessionOrders, setUnreadSessionOrders] = useState<[string, string][]>([]);
   const [seenIds, setSeenIds] = useState<string[]>([]);
 
@@ -69,6 +74,7 @@ export function MessageCenter() {
     return rawOrders
       .filter(o => o.status !== 'delivered' && o.status !== 'cancelled')
       .sort((a, b) => {
+        // Orden cronológico: los más recientes arriba
         const timeA = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
         const timeB = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
         return timeB - timeA;
@@ -76,7 +82,7 @@ export function MessageCenter() {
       .map(o => ({ 
         id: o.id, 
         name: o.productName || 'Chat de Pedido',
-        timestamp: o.updatedAt || o.createdAt 
+        timestamp: o.createdAt 
       }));
   }, [rawOrders]);
 
@@ -87,11 +93,14 @@ export function MessageCenter() {
   }, [unreadSessionOrders, activeChats, seenIds]);
 
   const handleItemClick = (orderId: string) => {
-    window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId } }));
+    setOpen(false);
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId } }));
+    }, 150);
   };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <MessageTrigger count={unreadCount} hasUnread={unreadSessionOrders.length > 0} />
       </PopoverTrigger>
@@ -99,7 +108,7 @@ export function MessageCenter() {
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-black italic uppercase tracking-tighter text-slate-900">Chats Activos</span>
-            <Badge className="bg-secondary text-white rounded-full text-[10px] font-black border-none">{unreadCount}</Badge>
+            <Badge className="bg-secondary text-white rounded-full text-[8px] sm:text-[9px] h-4 min-w-[16px] px-1 font-black border-none flex items-center justify-center">{unreadCount}</Badge>
           </div>
         </div>
         <div className="h-px bg-slate-50 mx-2" />

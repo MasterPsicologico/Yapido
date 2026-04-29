@@ -47,7 +47,18 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
     }
   }, [appConfig?.coverImageUrl, localCoverImage]);
 
-  const handleLogin = () => initiateGoogleSignIn(auth);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const handleLogin = async () => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
+    try {
+      await initiateGoogleSignIn(auth);
+    } catch (error) {
+      // Error already handled in non-blocking-login
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -104,14 +115,18 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
       {/* Acceso Superior Derecho Minimalista (Evita obstrucción) */}
       {!user && !isEditor && (
         <div 
-          onClick={handleLogin}
-          className="absolute top-6 right-6 z-30 flex items-center gap-3 cursor-pointer group"
+          onClick={!isLoggingIn ? handleLogin : undefined}
+          className={`absolute top-6 right-6 z-30 flex items-center gap-3 cursor-pointer group ${isLoggingIn ? 'opacity-50 pointer-events-none' : ''}`}
         >
           <span className="text-white/40 group-hover:text-white/90 transition-colors text-[11px] font-black uppercase tracking-[0.3em] italic">
-            INGRESAR
+            {isLoggingIn ? 'AUTENTICANDO...' : 'INGRESAR'}
           </span>
           <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-2xl group-hover:bg-white/20 transition-all">
-            <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white" />
+            {isLoggingIn ? (
+              <Loader2 className="w-4 h-4 text-white/60 animate-spin" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white" />
+            )}
           </div>
         </div>
       )}

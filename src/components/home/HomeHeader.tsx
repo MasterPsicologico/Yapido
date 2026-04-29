@@ -10,9 +10,10 @@ interface HomeHeaderProps {
   isAdmin?: boolean;
   onImageUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isUploading?: boolean;
+  cityName?: string;
 }
 
-export function HomeHeader({ bgImage, isAdmin, onImageUpload, isUploading }: HomeHeaderProps) {
+export function HomeHeader({ bgImage, isAdmin, onImageUpload, isUploading, cityName = 'Yapido' }: HomeHeaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -22,7 +23,7 @@ export function HomeHeader({ bgImage, isAdmin, onImageUpload, isUploading }: Hom
         {bgImage ? (
           <Image 
             src={bgImage} 
-            alt="Cabecera Aguachica" 
+            alt={`Cabecera ${cityName}`} 
             fill 
             className="object-cover opacity-70 group-hover/header:scale-105 transition-transform duration-[3000ms] ease-out" 
             priority
@@ -59,7 +60,7 @@ export function HomeHeader({ bgImage, isAdmin, onImageUpload, isUploading }: Hom
       <div className="relative z-10 space-y-4 w-full flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-1000">
         <div className="space-y-2">
           <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tighter leading-none uppercase italic drop-shadow-[0_5px_15px_rgba(0,0,0,0.5)]">
-            Aguachica
+            {cityName}
           </h1>
           <div className="inline-block px-6 py-1 bg-primary/20 backdrop-blur-2xl rounded-xl border border-primary/30 transform -rotate-2 shadow-[0_0_30px_rgba(59,130,246,0.3)]">
             <span className="text-2xl sm:text-4xl font-black text-primary uppercase italic tracking-widest drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]">

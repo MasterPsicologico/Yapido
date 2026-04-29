@@ -50,7 +50,7 @@ export const FavoritesTrigger = React.forwardRef<HTMLButtonElement, FavoritesTri
       >
         <Heart className={cn("w-4 h-4 sm:w-4.5 sm:h-4.5 transition-all", (totalCount > 0 && user) ? "text-rose-500 fill-rose-500" : "text-slate-400")} />
         {totalCount > 0 && user && (
-          <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[7px] sm:text-[8px] font-black w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in">
+          <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[7px] sm:text-[8px] font-black w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[5px] flex items-center justify-center border-[1.5px] border-white shadow-sm ring-1 ring-rose-500/20 animate-in zoom-in">
             {totalCount}
           </span>
         )}

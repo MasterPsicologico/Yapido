@@ -7,6 +7,7 @@ import { HeaderUserInfo } from './header/HeaderUserInfo';
 import { HeaderMainAction } from './header/HeaderMainAction';
 import { HeaderProfileModal } from './header/HeaderProfileModal';
 import { cn } from '@/lib/utils';
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 
 interface DashboardHeaderProps {
   profile: any;
@@ -39,20 +40,34 @@ export function DashboardHeader({
       return;
     }
 
+    const triggerHaptics = async (type: 'on' | 'off') => {
+      try {
+        if (type === 'on') {
+          await Haptics.notification({ type: NotificationType.Success });
+          setTimeout(() => Haptics.impact({ style: ImpactStyle.Heavy }), 200);
+        } else {
+          await Haptics.notification({ type: NotificationType.Error });
+        }
+      } catch (err) {
+        // Fallback for web or if Haptics is not available
+        if (typeof window !== 'undefined' && navigator.vibrate) {
+          if (type === 'on') {
+            navigator.vibrate([100, 50, 100, 50, 100]);
+          } else {
+            navigator.vibrate(400);
+          }
+        }
+      }
+    };
+
     if (isOnline) {
       // SECUENCIA DE ENCENDIDO (VERDE)
       setAnimStatus('on');
-      if (typeof window !== 'undefined' && navigator.vibrate) {
-        // Vibración triple (3 veces)
-        navigator.vibrate([100, 50, 100, 50, 100]);
-      }
+      triggerHaptics('on');
     } else {
       // SECUENCIA DE APAGADO (ROJO)
       setAnimStatus('off');
-      if (typeof window !== 'undefined' && navigator.vibrate) {
-        // Vibración larga única
-        navigator.vibrate(400);
-      }
+      triggerHaptics('off');
     }
 
     // Reset de animación visual después de 2 segundos

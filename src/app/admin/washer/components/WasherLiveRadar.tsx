@@ -24,22 +24,32 @@ interface WasherLiveRadarProps {
   storeId: string;
   storeName: string;
   ownerId: string;
-  storeData?: any; // Recibimos la data de la tienda para el filtrado inteligente
+  storeData?: any;
+  storeCityId?: string;
 }
 
-export function WasherLiveRadar({ storeId, storeName, ownerId, storeData }: WasherLiveRadarProps) {
+export function WasherLiveRadar({ storeId, storeName, ownerId, storeData, storeCityId }: WasherLiveRadarProps) {
   const firestore = useFirestore();
   const { user } = useUser();
 
-  // Radar: Busca pedidos pendientes que sean públicos
+  // Radar: Busca pedidos pendientes que sean públicos, filtrados por ciudad
   const radarQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    // Si la tienda tiene ciudad, filtrar por ella; si no, mostrar todas
+    if (storeCityId) {
+      return query(
+        collection(firestore, 'orders'),
+        where('isLogisticsPublic', '==', true),
+        where('status', '==', 'pending'),
+        where('cityId', '==', storeCityId)
+      );
+    }
     return query(
       collection(firestore, 'orders'),
       where('isLogisticsPublic', '==', true),
       where('status', '==', 'pending')
     );
-  }, [firestore]);
+  }, [firestore, storeCityId]);
 
   const { data: rawRequests, isLoading } = useCollection(radarQuery);
 
@@ -120,6 +130,7 @@ export function WasherLiveRadar({ storeId, storeName, ownerId, storeData }: Wash
                   </h4>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     <MapPin className="w-3 h-3 text-primary" /> {req.customerSector || 'Sector por definir'}
+                    {req.cityName && <span className="text-slate-300 ml-1">• {req.cityName}</span>}
                   </p>
                 </div>
                 <div className="text-right">

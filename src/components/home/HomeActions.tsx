@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp, doc, query, where } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, query, where, limit, orderBy } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { compressImage } from '@/lib/image-compression';
@@ -64,6 +64,16 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
       setOpenWasher(true);
     };
     window.addEventListener('open-direct-solicitation' as any, handleDirect);
+    
+    // Auto-Reapertura después de Redirección Login Google (Memoria Evolutiva del Flujo)
+    if (typeof window !== 'undefined') {
+      const keepOpen = localStorage.getItem('keep_solicitation_open');
+      if (keepOpen === 'true') {
+        localStorage.removeItem('keep_solicitation_open');
+        setTimeout(() => setOpenWasher(true), 800); // 800ms delay enables user context to hydrate securely before showing
+      }
+    }
+
     return () => window.removeEventListener('open-direct-solicitation' as any, handleDirect);
   }, []);
 
@@ -83,7 +93,17 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
   ), [firestore]);
   const { data: washerStores } = useCollection(washerStoresQuery);
 
-  const isAnyStoreOpen = washerStores?.some(s => checkIsBusinessOpen(s.openTime, s.closeTime)) || false;
+  const activeStoresCount = washerStores?.filter(s => checkIsBusinessOpen(s.openTime, s.closeTime)).length || 0;
+  const isAnyStoreOpen = activeStoresCount > 0;
+
+  // Consulta de pedidos recientes para Social Proof
+  const recentOrdersQuery = useMemoFirebase(() => query(
+    collection(firestore, 'orders'),
+    where('type', '==', 'WASHER_RENTAL_REQUEST'),
+    orderBy('createdAt', 'desc'),
+    limit(15)
+  ), [firestore]);
+  const { data: recentOrders } = useCollection(recentOrdersQuery);
 
   const handleToggleLock = async () => {
     if (!isAdmin || !firestore) return;
@@ -106,12 +126,38 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
         address: data.customerAddress, 
         sector: data.customerSector,
         phoneNumber: data.customerPhone, 
+        cityId: data.cityId || null,
+        cityName: data.cityName || null,
+        zoneId: data.zoneId || null,
         updatedAt: serverTimestamp() 
       });
 
-      const isDirect = !!directStoreData;
+      let finalDirectStoreData = directStoreData;
+
+      // RUTEO INTELIGENTE: Si la solicitud no es directa, buscamos si hay una única tienda elegible en la zona/ciudad
+      if (!finalDirectStoreData && washerStores) {
+        const eligibleStores = washerStores.filter(store => {
+          if (!checkIsBusinessOpen(store.openTime, store.closeTime)) return false;
+          if (data.zoneId && store.zoneId && store.zoneId !== data.zoneId) return false;
+          if (data.cityId && store.cityId && store.cityId !== data.cityId) return false;
+          if (data.washerType === 'automatica' && !store.hasAutomatic) return false;
+          if (data.washerType === 'semiautomatica' && !store.hasSemiautomatic) return false;
+          return true;
+        });
+
+        // Si solo hay una tienda que cumpla las condiciones, ruteo directo
+        if (eligibleStores.length === 1) {
+          finalDirectStoreData = {
+            id: eligibleStores[0].id,
+            name: eligibleStores[0].name,
+            ownerId: eligibleStores[0].ownerId
+          };
+        }
+      }
+
+      const isDirectFinal = !!finalDirectStoreData;
       const participants = [user.uid];
-      if (isDirect) participants.push(directStoreData!.ownerId);
+      if (isDirectFinal) participants.push(finalDirectStoreData!.ownerId);
       else participants.push('ADMIN_WASHER_POOL');
 
       await setDocumentNonBlocking(orderRef, {
@@ -120,7 +166,11 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
         customerName: data.customerName,
         customerPhone: data.customerPhone, 
         customerAddress: data.customerAddress, 
-        customerSector: data.customerSector,   
+        customerSector: data.customerSector,
+        cityId: data.cityId || null,
+        cityName: data.cityName || null,
+        zoneId: data.zoneId || null,
+        zoneName: data.zoneName || null,
         type: 'WASHER_RENTAL_REQUEST',
         status: 'pending', 
         requestHours: data.requestHours,
@@ -134,11 +184,11 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
         createdAt: serverTimestamp(), 
         updatedAt: serverTimestamp(),
         participants: participants, 
-        isLogisticsPublic: !isDirect,
-        isDirectRequest: isDirect,
-        storeId: isDirect ? directStoreData!.id : null,
-        storeName: isDirect ? directStoreData!.name : null,
-        storeOwnerId: isDirect ? directStoreData!.ownerId : null,
+        isLogisticsPublic: !isDirectFinal,
+        isDirectRequest: isDirectFinal,
+        storeId: isDirectFinal ? finalDirectStoreData!.id : null,
+        storeName: isDirectFinal ? finalDirectStoreData!.name : null,
+        storeOwnerId: isDirectFinal ? finalDirectStoreData!.ownerId : null,
         productName: `Alquiler ${data.washerType === 'automatica' ? 'Auto' : 'Semi'} (${data.requestHours}h)`,
       }, { merge: true });
 
@@ -172,6 +222,10 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
       await setDocumentNonBlocking(storeRef, {
         id: storeRef.id, ownerId: user.uid, name: fd.get('name'), phoneNumber: fd.get('phone'), 
         address: fd.get('address'), openTime: fd.get('openTime'), closeTime: fd.get('closeTime'),
+        cityId: fd.get('cityId') || null, cityName: fd.get('cityName') || null,
+        zoneId: fd.get('zoneId') || null, zoneName: fd.get('zoneName') || null,
+        hasAutomatic: fd.get('hasAutomatic') === 'true',
+        hasSemiautomatic: fd.get('hasSemiautomatic') === 'true',
         mainCategoryId: 'category-washer', type: 'washer_rental', status: 'active', createdAt: serverTimestamp(),
         imageUrl: `https://picsum.photos/seed/${storeRef.id}/800/600`, driverCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
         privateDrivers: []
@@ -207,6 +261,7 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
     <div className="flex flex-col w-full">
       <WasherRentalCard 
         isAdmin={isAdmin} bannerConfig={bannerConfig} isAnyStoreOpen={isAnyStoreOpen}
+        activeStoresCount={activeStoresCount} recentOrders={recentOrders || []} userRole={profile?.role || 'cliente'}
         isUploadingBanner={isUploadingBanner} isLocked={lockData?.active === true}
         onToggleLock={handleToggleLock} onOpenSolicitation={() => { setDirectStoreData(null); setOpenWasher(true); }}
         onOpenStoreCreation={() => setOpenAddWasherStore(true)} onBannerUpload={handleBannerUpload}
@@ -214,6 +269,7 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
       <WasherSolicitationDialog 
         isOpen={openWasher} onOpenChange={(v) => { if(!v) setDirectStoreData(null); setOpenWasher(v); }} isAdmin={isAdmin}
         profile={profile} pricingConfig={pricingConfig} isAnyStoreOpen={isAnyStoreOpen}
+        activeStores={washerStores || []}
         onOpenAdminSettings={() => setShowAdminPricing(true)} onSubmitRequest={handleWasherRequest}
       />
       <WasherAdminPricingDialog isOpen={showAdminPricing} onOpenChange={setShowAdminPricing} pricingConfig={pricingConfig} onUpdatePricing={handleUpdatePricing} />

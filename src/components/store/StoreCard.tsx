@@ -182,7 +182,7 @@ export function StoreCard({ store }: { store: any }) {
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2.5">
               <MapPin className="w-4 h-4 text-primary" />
-              <span className="text-xs font-black uppercase tracking-tight text-slate-900 truncate">{store.address || 'Aguachica, Cesar'}</span>
+              <span className="text-xs font-black uppercase tracking-tight text-slate-900 truncate">{store.address || store.cityName || 'Colombia'}</span>
             </div>
             
             <div className="flex items-center gap-2 ml-1">

@@ -158,7 +158,7 @@ export default function DeliveryApprovedPage() {
 
       {/* Footer Minimalista */}
       <footer className="p-8 text-center relative z-10">
-        <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.5em]">Vitriniando AI Central • Aguachica Digital</p>
+        <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.5em]">Vitriniando AI Central • Yapido</p>
       </footer>
     </div>
   );

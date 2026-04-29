@@ -18,6 +18,7 @@ interface ServiceConfigurationProps {
   setHasStairs: (v: boolean) => void;
   stairCount: number;
   setStairCount: (v: number) => void;
+  availableMachineTypes?: { automatic: boolean; semiautomatic: boolean };
 }
 
 /**
@@ -25,7 +26,7 @@ interface ServiceConfigurationProps {
  */
 export function ServiceConfiguration({
   isAdmin, washerType, setWasherType, floor, setFloor, hasElevator, setHasElevator, 
-  hasStairs, setHasStairs, stairCount, setStairCount
+  hasStairs, setHasStairs, stairCount, setStairCount, availableMachineTypes
 }: ServiceConfigurationProps) {
   return (
     <div className={cn(
@@ -46,7 +47,7 @@ export function ServiceConfiguration({
       </div>
 
       <div className="relative z-10 space-y-10">
-        <WasherTypeSelector isAdmin={isAdmin} selectedType={washerType} onSelect={setWasherType} />
+        <WasherTypeSelector isAdmin={isAdmin} selectedType={washerType} onSelect={setWasherType} availableMachineTypes={availableMachineTypes} />
         
         <AccessibilityInputs 
           floor={floor} setFloor={setFloor} 

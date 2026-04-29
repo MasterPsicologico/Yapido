@@ -30,7 +30,7 @@ export function StoreContactContainer({ address, phoneNumber, onOpenChat, onOpen
               <MapPin className="w-5 h-5 text-slate-700" />
           </div>
           <span className="text-slate-600 text-sm font-bold leading-tight">
-              {address || 'Aguachica, Cesar'}
+              {address || 'Colombia'}
           </span>
       </div>
 

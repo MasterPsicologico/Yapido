@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { User } from 'lucide-react';
+import { User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
@@ -64,7 +64,18 @@ export function Navbar() {
     }, 30);
   };
 
-  const handleLogin = () => initiateGoogleSignIn(auth);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const handleLogin = async () => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
+    try {
+      await initiateGoogleSignIn(auth);
+    } catch (error) {
+      // Handled in auth utility
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
   const handleLogout = () => {
     localStorage.removeItem(MODE_KEY);
     auth.signOut();
@@ -108,8 +119,18 @@ export function Navbar() {
           )}
 
           {!isUserLoading && !user && (
-            <Button onClick={handleLogin} variant="default" className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-4 font-black shadow-lg shadow-secondary/20 h-9 text-[10px] uppercase tracking-widest">
-              <User className="w-4 h-4" /> <span className="hidden xs:inline">Ingresar</span>
+            <Button 
+              onClick={handleLogin} 
+              disabled={isLoggingIn}
+              variant="default" 
+              className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-4 font-black shadow-lg shadow-secondary/20 h-9 text-[10px] uppercase tracking-widest min-w-[100px]"
+            >
+              {isLoggingIn ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <User className="w-4 h-4" />
+              )}
+              <span className="hidden xs:inline">{isLoggingIn ? 'Entrando...' : 'Ingresar'}</span>
             </Button>
           )}
         </div>
