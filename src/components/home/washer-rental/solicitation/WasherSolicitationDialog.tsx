@@ -8,8 +8,9 @@ import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useUser, useAuth } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
-import { LogIn, Sparkles, ShieldCheck } from 'lucide-react';
+import { LogIn, Sparkles, ShieldCheck, ChevronDown, ChevronUp, User, Store, Bike } from 'lucide-react';
 
 // Importación de Componentes Atómicos
 import { SolicitationHeader } from './components/header/SolicitationHeader';
@@ -73,6 +74,8 @@ export function WasherSolicitationDialog({
   const [submittedOrderId, setSubmittedOrderId] = useState<string | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
+  const [isPersonalDataCollapsed, setIsPersonalDataCollapsed] = useState(false);
+  const prevIsCompleteRef = useRef(false);
 
   // CEREBRO GEOGRÁFICO: Carga la configuración de la ciudad y zona seleccionada
   const { cityConfig, activeCities, activeCitiesLoading, activeZones, hasMultipleZones, resolvedPricing } = useCityConfig({
@@ -116,6 +119,39 @@ export function WasherSolicitationDialog({
     }
   }, [availableMachineTypes, washerType]);
 
+  const isPersonalDataComplete = useMemo(() => {
+    return Boolean(
+      tempName.trim() && 
+      selectedCityId && 
+      (!hasMultipleZones || selectedZoneId) && 
+      tempAddress.trim() && 
+      tempPhone.trim()
+    );
+  }, [tempName, selectedCityId, selectedZoneId, tempAddress, tempPhone, hasMultipleZones]);
+
+  useEffect(() => {
+    if (isPersonalDataComplete && !prevIsCompleteRef.current) {
+      const timer = setTimeout(() => {
+        setIsPersonalDataCollapsed(true);
+        if (user?.uid) {
+          setDocumentNonBlocking(`users/${user.uid}`, {
+            displayName: tempName,
+            address: tempAddress,
+            sector: tempSector,
+            phoneNumber: tempPhone,
+            cityId: selectedCityId,
+            zoneId: hasMultipleZones ? selectedZoneId : null,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+        }
+      }, 800);
+      prevIsCompleteRef.current = true;
+      return () => clearTimeout(timer);
+    } else if (!isPersonalDataComplete) {
+      prevIsCompleteRef.current = false;
+    }
+  }, [isPersonalDataComplete, user, tempName, tempAddress, tempSector, tempPhone, selectedCityId, selectedZoneId, hasMultipleZones]);
+
   useEffect(() => {
     if (profile && isOpen && orderStatus === 'idle') {
       setTempName(profile.displayName || "");
@@ -124,6 +160,20 @@ export function WasherSolicitationDialog({
       setTempPhone(profile.phoneNumber || "");
       if (profile.cityId) setSelectedCityId(profile.cityId);
       if (profile.zoneId) setSelectedZoneId(profile.zoneId);
+
+      const isComplete = Boolean(
+        (profile.displayName || "").trim() && 
+        profile.cityId && 
+        (profile.address || "").trim() && 
+        (profile.phoneNumber || "").trim()
+      );
+      if (isComplete) {
+        setIsPersonalDataCollapsed(true);
+        prevIsCompleteRef.current = true;
+      } else {
+        setIsPersonalDataCollapsed(false);
+        prevIsCompleteRef.current = false;
+      }
     }
   }, [profile, isOpen, orderStatus]);
 
@@ -185,6 +235,11 @@ export function WasherSolicitationDialog({
 
     if (Object.keys(newErrors).length > 0) {
       setFieldErrors(newErrors);
+      
+      if (newErrors.name || newErrors.phone || newErrors.city || newErrors.zone || newErrors.address) {
+        setIsPersonalDataCollapsed(false);
+      }
+      
       toast({ title: "Información Requerida", description: "Completa los campos marcados.", variant: "destructive" });
       return;
     }
@@ -276,30 +331,86 @@ export function WasherSolicitationDialog({
               </div>
             ) : (
               <>
-                <div className={cn("space-y-6 transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-                  <NameField value={tempName} onChange={setTempName} hasError={fieldErrors.name} />
-                  <CitySelector 
-                    selectedCityId={selectedCityId} 
-                    onCityChange={setSelectedCityId} 
-                    activeCities={activeCities}
-                    hasError={fieldErrors.city} 
-                  />
-                  {hasMultipleZones && (
-                    <ZoneSelector
-                      zones={activeZones}
-                      cityConfig={cityConfig}
-                      selectedZoneId={selectedZoneId}
-                      onZoneChange={setSelectedZoneId}
-                      error={fieldErrors.zone}
+                {!isPersonalDataCollapsed ? (
+                  <div className={cn("space-y-6 transition-all duration-500 relative", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
+                    {isPersonalDataComplete && (
+                      <div className="flex justify-end mb-[-10px] relative z-10">
+                        <button 
+                          onClick={() => setIsPersonalDataCollapsed(true)}
+                          className="text-[10px] font-black text-primary flex items-center gap-1 bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-full transition-colors"
+                        >
+                          OCULTAR DATOS <ChevronUp className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                    <NameField value={tempName} onChange={setTempName} hasError={fieldErrors.name} />
+                    <CitySelector 
+                      selectedCityId={selectedCityId} 
+                      onCityChange={setSelectedCityId} 
+                      activeCities={activeCities}
+                      hasError={fieldErrors.city} 
                     />
-                  )}
-                  <AddressField 
-                    address={tempAddress} onAddressChange={setTempAddress}
-                    sector={tempSector} onSectorChange={setTempSector}
-                    errorSector={fieldErrors.sector} errorAddress={fieldErrors.address}
-                  />
-                  <PhoneField value={tempPhone} onChange={setTempPhone} hasError={fieldErrors.phone} />
-                </div>
+                    {hasMultipleZones && (
+                      <ZoneSelector
+                        zones={activeZones}
+                        cityConfig={cityConfig}
+                        selectedZoneId={selectedZoneId}
+                        onZoneChange={setSelectedZoneId}
+                        error={fieldErrors.zone}
+                      />
+                    )}
+                    <AddressField 
+                      address={tempAddress} onAddressChange={setTempAddress}
+                      sector={tempSector} onSectorChange={setTempSector}
+                      errorSector={fieldErrors.sector} errorAddress={fieldErrors.address}
+                    />
+                    <PhoneField value={tempPhone} onChange={setTempPhone} hasError={fieldErrors.phone} />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div 
+                      onClick={() => setIsPersonalDataCollapsed(false)}
+                      className="bg-slate-50/80 border-2 border-dashed border-slate-200 rounded-[24px] p-4 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm group-hover:scale-110 transition-transform">
+                          <ShieldCheck className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-widest">Datos Personales</h4>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tempName.split(' ')[0]} • Listo</p>
+                        </div>
+                      </div>
+                      <div className="text-[10px] font-black text-primary flex items-center gap-1 bg-white border border-slate-100 shadow-sm px-3 py-2 rounded-full group-hover:bg-primary/5 transition-colors">
+                        EDITAR <ChevronDown className="w-3 h-3" />
+                      </div>
+                    </div>
+                    
+                    {/* Menú de Navegación Rápida Sutil */}
+                    <div className="flex items-center justify-center gap-6 px-4 py-1.5 bg-slate-50/50 rounded-full border border-slate-100/50 w-fit mx-auto shadow-[0_2px_10px_rgba(0,0,0,0.02)] backdrop-blur-sm">
+                      <button 
+                        onClick={() => { onOpenChange(false); router.push('/profile'); }}
+                        className="text-[9px] font-black text-slate-400 hover:text-slate-700 flex items-center gap-1.5 transition-all hover:scale-105"
+                      >
+                        <User className="w-3 h-3" /> PERFIL
+                      </button>
+                      <div className="w-1 h-1 rounded-full bg-slate-300" />
+                      <button 
+                        onClick={() => { onOpenChange(false); router.push('/business'); }}
+                        className="text-[9px] font-black text-slate-400 hover:text-slate-700 flex items-center gap-1.5 transition-all hover:scale-105"
+                      >
+                        <Store className="w-3 h-3" /> NEGOCIO
+                      </button>
+                      <div className="w-1 h-1 rounded-full bg-slate-300" />
+                      <button 
+                        onClick={() => { onOpenChange(false); router.push('/delivery'); }}
+                        className="text-[9px] font-black text-slate-400 hover:text-slate-700 flex items-center gap-1.5 transition-all hover:scale-105"
+                      >
+                        <Bike className="w-3 h-3" /> DELIVERY
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
                   <ServiceConfiguration 
