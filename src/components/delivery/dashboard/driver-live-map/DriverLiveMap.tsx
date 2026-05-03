@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { 
   X, Navigation, Clock, MapPin, Home, Phone, User, DollarSign, 
-  ChevronUp, ChevronDown, Package, ArrowRight, Play, Loader2
+  ChevronUp, ChevronDown, Package, ArrowRight, Play, Loader2, Navigation2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,12 +50,6 @@ interface DriverLiveMapProps {
   onOpenChat?: () => void;
 }
 
-declare global {
-  interface Window {
-    google?: typeof google;
-  }
-}
-
 interface RouteInfo {
   duration: number;
   distance: number;
@@ -72,10 +68,10 @@ export function DriverLiveMap({
   onOpenMaps,
   onOpenChat,
 }: DriverLiveMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
-  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<{ [key: string]: mapboxgl.Marker }>({});
+  const routeLayerRef = useRef<string | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
   const [mapError, setMapError] = useState(false);
@@ -85,11 +81,11 @@ export function DriverLiveMap({
   const [isCardExpanded, setIsCardExpanded] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   
-  const pickupLocation = order.storeLocation || getCoordinatesFromAddress(order.storeAddress);
-  const deliveryLocation = order.customerLocation || getCoordinatesFromAddress(order.customerAddress);
+  const pickupLocation = order.storeLocation;
+  const deliveryLocation = order.customerLocation;
   
   const cityConfig = getFallbackCityConfig(DEFAULT_CITY_ID);
-  const defaultCenter = cityConfig.mapCenter;
+  const defaultCenter: [number, number] = [cityConfig.mapCenter.lng, cityConfig.mapCenter.lat];
 
   const { startTracking, stopTracking } = useDriverLocation({ enabled: isActive });
 
@@ -128,195 +124,121 @@ export function DriverLiveMap({
   }, [isActive, fetchDriverLocation]);
 
   useEffect(() => {
-    if (!mapRef.current || !order) return;
+    if (!mapContainer.current || !order) return;
     
     const initMap = async () => {
       setIsLoading(true);
       setMapError(false);
       
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-      if (!apiKey) {
+      const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+      if (!mapboxToken) {
         setMapError(true);
         setIsLoading(false);
         return;
       }
       
-      if (!window.google?.maps) {
-        if (!document.getElementById("google-maps-script")) {
-          await new Promise<void>((resolve, reject) => {
-            const script = document.createElement("script");
-            script.id = "google-maps-script";
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=3&libraries=marker,geometry`;
-            script.async = true;
-            script.defer = true;
-            script.onload = () => resolve();
-            script.onerror = () => reject();
-            document.head.appendChild(script);
-          }).catch(() => {
-            setMapError(true);
-            setIsLoading(false);
-          });
-        }
-        
-        await new Promise<void>((resolve) => {
-          if (window.google?.maps) { resolve(); return; }
-          const check = setInterval(() => {
-            if (window.google?.maps) {
-              clearInterval(check);
-              resolve();
-            }
-          }, 100);
-          setTimeout(() => { clearInterval(check); resolve(); }, 5000);
-        });
+      mapboxgl.accessToken = mapboxToken;
+      
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
       }
       
-      if (!window.google?.maps || !mapRef.current) {
-        setMapError(true);
-        setIsLoading(false);
-        return;
-      }
-      
-      const map = new window.google.maps.Map(mapRef.current, {
-        center: new window.google.maps.LatLng(defaultCenter.lat, defaultCenter.lng),
+      const map = new mapboxgl.Map({
+        container: mapContainer.current as HTMLElement,
+        style: "mapbox://styles/mapbox/navigation-day-v1",
+        center: defaultCenter,
         zoom: 14,
-        disableDefaultUI: false,
-        zoomControl: true,
-        fullscreenControl: true,
-        mapTypeControl: false,
-        streetViewControl: false,
-        draggable: true,
-        scrollwheel: true,
+        attributionControl: true,
       });
       
-      mapInstanceRef.current = map;
-      directionsServiceRef.current = new window.google.maps.DirectionsService();
-      directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
-        map,
-        suppressMarkers: true,
-        polylineOptions: {
-          strokeColor: "#6a4ff9",
-          strokeOpacity: 0.8,
-          strokeWeight: 5,
-        },
-        preserveViewport: false,
+      map.addControl(new mapboxgl.NavigationControl(), "top-right");
+      map.addControl(new mapboxgl.FullscreenControl(), "top-right");
+      
+      map.on("load", () => {
+        setIsMapReady(true);
+        setIsLoading(false);
       });
       
-      setIsMapReady(true);
-      setIsLoading(false);
+      map.on("error", () => {
+        setMapError(true);
+        setIsLoading(false);
+      });
+      
+      mapRef.current = map;
     };
     
     initMap();
     
     return () => {
-      mapInstanceRef.current = null;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
   }, [order.id]);
 
+  const isPickingUp = order.status === "picking_up" || order.status === "at_store";
+
   const updateMarkers = useCallback(() => {
-    if (!mapInstanceRef.current || !isMapReady || !window.google?.maps) return;
+    if (!mapRef.current || !isMapReady) return;
     
-    const map = mapInstanceRef.current;
-    const markers: google.maps.Marker[] = [];
+    const map = mapRef.current;
     
-    if (pickupLocation) {
-      const pickupMarker = new window.google.maps.Marker({
-        position: new window.google.maps.LatLng(pickupLocation.lat, pickupLocation.lng),
-        map,
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 14,
-          fillColor: "#3b82f6",
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 3,
-        },
-        title: "Punto de recogida",
-      });
-      markers.push(pickupMarker);
+    if (pickupLocation && !markersRef.current.pickup) {
+      const el = document.createElement("div");
+      el.className = "marker-pickup";
+      el.innerHTML = `<svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24c0-8.837-7.163-16-16-16z" fill="#3b82f6"/>
+        <circle cx="16" cy="16" r="8" fill="white"/>
+      </svg>`;
+      
+      markersRef.current.pickup = new mapboxgl.Marker({ element: el })
+        .setLngLat([pickupLocation.lng, pickupLocation.lat])
+        .setPopup(new mapboxgl.Popup({ offset: 25 }).setText("Punto de recogida"))
+        .addTo(map);
     }
     
-    if (deliveryLocation) {
-      const deliveryMarker = new window.google.maps.Marker({
-        position: new window.google.maps.LatLng(deliveryLocation.lat, deliveryLocation.lng),
-        map,
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 14,
-          fillColor: "#22c55e",
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 3,
-        },
-        title: "Punto de entrega",
-      });
-      markers.push(deliveryMarker);
+    if (deliveryLocation && !markersRef.current.delivery) {
+      const el = document.createElement("div");
+      el.className = "marker-delivery";
+      el.innerHTML = `<svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24c0-8.837-7.163-16-16-16z" fill="#22c55e"/>
+        <circle cx="16" cy="16" r="8" fill="white"/>
+      </svg>`;
+      
+      markersRef.current.delivery = new mapboxgl.Marker({ element: el })
+        .setLngLat([deliveryLocation.lng, deliveryLocation.lat])
+        .setPopup(new mapboxgl.Popup({ offset: 25 }).setText("Punto de entrega"))
+        .addTo(map);
     }
     
     if (driverLocation && isActive) {
-      const driverMarker = new window.google.maps.Marker({
-        position: new window.google.maps.LatLng(driverLocation.lat, driverLocation.lng),
-        map,
-        icon: {
-          path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
-          fillColor: "#6a4ff9",
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 2,
-          scale: 1.5,
-          anchor: new window.google.maps.Point(12, 24),
-        },
-        title: "Tu ubicación",
-        zIndex: 1000,
+      if (markersRef.current.driver) {
+        markersRef.current.driver.setLngLat([driverLocation.lng, driverLocation.lat]);
+      } else {
+        const el = document.createElement("div");
+        el.className = "marker-driver";
+        el.innerHTML = `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#6a4ff9"/>
+        </svg>`;
+        
+        markersRef.current.driver = new mapboxgl.Marker({ element: el })
+          .setLngLat([driverLocation.lng, driverLocation.lat])
+          .addTo(map);
+      }
+      
+      map.flyTo({
+        center: [driverLocation.lng, driverLocation.lat],
+        zoom: 15,
+        essential: true
       });
-      markers.push(driverMarker);
-      
-      map.setCenter(new window.google.maps.LatLng(driverLocation.lat, driverLocation.lng));
     }
-    
-    if (pickupLocation && deliveryLocation) {
-      const origin = isActive && driverLocation 
-        ? new window.google.maps.LatLng(driverLocation.lat, driverLocation.lng)
-        : new window.google.maps.LatLng(pickupLocation.lat, pickupLocation.lng);
-      
-      const destination = new window.google.maps.LatLng(deliveryLocation.lat, deliveryLocation.lng);
-      const waypoints = isActive && driverLocation 
-        ? [{ location: new window.google.maps.LatLng(pickupLocation.lat, pickupLocation.lng), stopover: true }]
-        : [];
-      
-      directionsServiceRef.current?.route(
-        {
-          origin,
-          destination,
-          waypoints,
-          travelMode: window.google.maps.TravelMode.DRIVING,
-          optimizeWaypoints: true,
-        },
-        (result, status) => {
-          if (status === "OK" && result) {
-            directionsRendererRef.current?.setDirections(result);
-            const leg = result.routes[0]?.legs[0];
-            if (leg) {
-              setCurrentRoute({
-                duration: leg.duration?.value || 0,
-                distance: leg.distance?.value || 0,
-                durationText: leg.duration?.text || "?",
-                distanceText: leg.distance?.text || "?",
-              });
-            }
-          }
-        }
-      );
-    }
-    
-    return () => {
-      markers.forEach(m => m.setMap(null));
-    };
   }, [pickupLocation, deliveryLocation, driverLocation, isActive, isMapReady]);
 
   useEffect(() => {
     if (isMapReady) {
-      const cleanup = updateMarkers();
-      return () => cleanup?.();
+      updateMarkers();
     }
   }, [isMapReady, updateMarkers]);
 
@@ -326,15 +248,127 @@ export function DriverLiveMap({
     }
   }, [driverLocation, isMapReady, updateMarkers]);
 
+  const fetchAndDrawRoute = useCallback(async () => {
+    if (!mapRef.current || !isMapReady || !deliveryLocation) return;
+    
+    const origin = isActive && driverLocation 
+      ? [driverLocation.lng, driverLocation.lat] as [number, number]
+      : pickupLocation 
+        ? [pickupLocation.lng, pickupLocation.lat] as [number, number]
+        : null;
+    
+    if (!origin) return;
+    
+    const destination = [deliveryLocation.lng, deliveryLocation.lat] as [number, number];
+    
+    const routeColor = isPickingUp ? "#6a4ff9" : "#3b82f6";
+    
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?geometries=geojson&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
+      );
+      const data = await response.json();
+      
+      if (data.routes && data.routes[0]) {
+        const route = data.routes[0];
+        const duration = route.duration;
+        const distance = route.distance;
+        
+        const hours = Math.floor(duration / 3600);
+        const minutes = Math.floor((duration % 3600) / 60);
+        const durationText = hours > 0 ? `${hours}h ${minutes}min` : `${Math.round(duration / 60)} min`;
+        
+        const distanceKm = (distance / 1000).toFixed(1);
+        const distanceText = `${distanceKm} km`;
+        
+        setCurrentRoute({
+          duration,
+          distance,
+          durationText,
+          distanceText,
+        });
+        
+        const geojson: GeoJSON.Feature<GeoJSON.LineString> = {
+          type: "Feature",
+          properties: {},
+          geometry: route.geometry
+        };
+        
+        if (mapRef.current?.getSource("route")) {
+          (mapRef.current.getSource("route") as mapboxgl.GeoJSONSource).setData(geojson);
+        } else {
+          mapRef.current?.addSource("route", {
+            type: "geojson",
+            data: geojson
+          });
+          
+          mapRef.current?.addLayer({
+            id: "route",
+            type: "line",
+            source: "route",
+            layout: {
+              "line-join": "round",
+              "line-cap": "round"
+            },
+            paint: {
+              "line-color": routeColor,
+              "line-width": 6,
+              "line-opacity": 0.9
+            }
+          });
+        }
+        
+        const bounds = new mapboxgl.LngLatBounds(
+          [Math.min(origin[0], destination[0]), Math.min(origin[1], destination[1])],
+          [Math.max(origin[0], destination[0]), Math.max(origin[1], destination[1])]
+        );
+        mapRef.current?.fitBounds(bounds, { padding: 80 });
+      }
+    } catch (err) {
+      console.error("Error fetching route:", err);
+    }
+  }, [pickupLocation, deliveryLocation, driverLocation, isActive, isMapReady, isPickingUp]);
+
+  useEffect(() => {
+    if (isActive && driverLocation && isMapReady) {
+      fetchAndDrawRoute();
+    }
+  }, [isActive, driverLocation, isMapReady, fetchAndDrawRoute]);
+
+  useEffect(() => {
+    if (isActive && driverLocation) {
+      const interval = setInterval(() => {
+        fetchAndDrawRoute();
+      }, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isActive, driverLocation, fetchAndDrawRoute]);
+
   const handleStartOrder = async () => {
     setIsStarting(true);
+    
     await new Promise(resolve => setTimeout(resolve, 500));
+    
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setDriverLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          timestamp: Date.now(),
+          heading: pos.coords.heading || undefined,
+          speed: pos.coords.speed || undefined,
+        });
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     onStartTracking();
     setIsStarting(false);
     toast({ title: "Ruta iniciada", description: "Seguimiento en tiempo real activado", className: "bg-green-600 text-white" });
   };
-
-  const isPickingUp = order.status === "picking_up" || order.status === "at_store";
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(price);
@@ -377,7 +411,7 @@ export function DriverLiveMap({
       </div>
 
       <div className="flex-1 relative">
-        <div ref={mapRef} className="absolute inset-0 w-full h-full" />
+        <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
         
         {isLoading && (
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-10">
@@ -400,7 +434,7 @@ export function DriverLiveMap({
           <motion.div 
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="absolute top-4 left-4 right-4 z-10"
+            className="absolute top-4 left-4 right-4 z-10 flex flex-col gap-2"
           >
             <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl p-3 flex items-center justify-between border border-white/10 shadow-xl">
               <div className="flex items-center gap-2">
@@ -423,6 +457,22 @@ export function DriverLiveMap({
                 </div>
               </div>
             </div>
+            <Button
+              onClick={() => {
+                if (!deliveryLocation || !driverLocation) return;
+                const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${deliveryLocation.lat},${deliveryLocation.lng}&travelmode=driving`;
+                window.open(navUrl, "_blank");
+              }}
+              className={cn(
+                "w-full h-11 rounded-xl font-black text-xs uppercase tracking-widest gap-2",
+                isPickingUp 
+                  ? "bg-blue-500 hover:bg-blue-600 text-white" 
+                  : "bg-blue-500 hover:bg-blue-600 text-white"
+              )}
+            >
+              <Navigation2 className="w-5 h-5" />
+              Abrir Navegador GPS
+            </Button>
           </motion.div>
         )}
 
@@ -648,10 +698,4 @@ export function DriverLiveMap({
       </motion.div>
     </motion.div>
   );
-}
-
-function getCoordinatesFromAddress(address: string): { lat: number; lng: number } | null {
-  const DEFAULT_CITY_CENTER = { lat: 6.247, lng: -75.565 };
-  if (!address) return DEFAULT_CITY_CENTER;
-  return null;
 }

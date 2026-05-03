@@ -1,10 +1,11 @@
 
 "use client";
 
-import { MapPinned, Navigation, Phone, MessageCircle, Wallet, CreditCard, Settings2, ArrowUpCircle, Loader2, Zap, Clock } from 'lucide-react';
+import { MapPinned, Navigation, Phone, MessageCircle, Wallet, CreditCard, Settings2, ArrowUpCircle, Loader2, Zap, Clock, ChevronDown } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
 interface MissionDeliveryCardProps {
@@ -90,8 +91,8 @@ export function MissionDeliveryCard({
               </h2>
               <div className="flex items-center gap-2">
                 <div className="h-1.5 w-1.5 rounded-full bg-slate-300 shrink-0" />
-                <p className="text-base sm:text-lg font-black text-slate-900 leading-tight uppercase italic tracking-tighter truncate">
-                  <span className="text-slate-400">BARRIO:</span> {customerSector || 'No especificado'}
+                <p className="text-xs sm:text-sm font-black text-slate-900 leading-tight uppercase italic tracking-tighter truncate">
+                  <span className="text-slate-400">barrio:</span> {customerSector || 'No especificado'}
                 </p>
               </div>
             </div>
@@ -138,60 +139,65 @@ export function MissionDeliveryCard({
             </div>
           </div>
 
-          {/* DETALLES DE OPERACIÓN REDISEÑADO */}
-          <div className="bg-slate-900 rounded-[24px] p-4 sm:p-5 relative overflow-hidden shadow-[inset_0_2px_15px_rgba(0,0,0,0.4)]">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full blur-[40px] pointer-events-none" />
+          {/* DETALLES DE OPERACIÓN - COLAPSABLE CON FONDO BLANCO */}
+          <Collapsible className="rounded-[24px] bg-white border border-slate-200 overflow-hidden" defaultOpen={false}>
+            <CollapsibleTrigger className="w-full px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+              <div className="flex items-center gap-2">
+                <Settings2 className="w-4 h-4 text-slate-600" />
+                <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.25em]">Detalles Técnicos</span>
+              </div>
+              <ChevronDown className="w-4 h-4 text-slate-400 transition-transform CollapsibleTrigger[data-state='open']:rotate-180" />
+            </CollapsibleTrigger>
             
-            <div className="flex items-center gap-2 mb-4 relative z-10">
-              <Settings2 className="w-4 h-4 text-primary" />
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Detalles Técnicos</span>
-            </div>
+            <CollapsibleContent>
+              <div className="px-5 pb-5 border-t border-slate-100">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-4">
+                  <div className="bg-slate-50 hover:bg-slate-100 transition-colors rounded-2xl p-3 sm:p-4 flex flex-col justify-center border border-slate-200 group">
+                    <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Nivel / Piso</p>
+                    <div className="flex items-center gap-2">
+                      <ArrowUpCircle className="w-4 h-4 text-slate-600 group-hover:text-slate-900 transition-colors" />
+                      <p className="text-xs sm:text-sm font-black italic text-slate-800 truncate">Piso {floor || '1'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-slate-50 hover:bg-slate-100 transition-colors rounded-2xl p-3 sm:p-4 flex flex-col justify-center border border-slate-200 group">
+                    <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Dificultad</p>
+                    <div className="flex items-center gap-2">
+                      {hasStairs ? (
+                        <>
+                          <Loader2 className="w-4 h-4 text-orange-500 animate-spin" />
+                          <span className="text-xs sm:text-sm font-black italic text-orange-600 truncate">{stairCount} Escalas</span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                          </div>
+                          <span className="text-xs sm:text-sm font-black italic text-green-600 truncate">Sin Escalas</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 relative z-10">
-              <div className="bg-white/5 hover:bg-white/10 transition-colors rounded-2xl p-3 sm:p-4 flex flex-col justify-center border border-white/5 backdrop-blur-sm group">
-                <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Nivel / Piso</p>
-                <div className="flex items-center gap-2">
-                  <ArrowUpCircle className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
-                  <p className="text-xs sm:text-sm font-black italic text-white truncate">Piso {floor || '1'}</p>
-                </div>
-              </div>
-              
-              <div className="bg-white/5 hover:bg-white/10 transition-colors rounded-2xl p-3 sm:p-4 flex flex-col justify-center border border-white/5 backdrop-blur-sm group">
-                <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Dificultad</p>
-                <div className="flex items-center gap-2">
-                  {hasStairs ? (
-                    <>
-                      <Loader2 className="w-4 h-4 text-orange-400 animate-spin" />
-                      <span className="text-xs sm:text-sm font-black italic text-orange-400 truncate">{stairCount} Escalas</span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-4 h-4 rounded-full bg-green-400/20 flex items-center justify-center shrink-0">
-                        <div className="w-2 h-2 rounded-full bg-green-400" />
-                      </div>
-                      <span className="text-xs sm:text-sm font-black italic text-green-400 truncate">Sin Escalas</span>
-                    </>
-                  )}
-                </div>
-              </div>
+                  <div className="bg-slate-50 hover:bg-slate-100 transition-colors rounded-2xl p-3 sm:p-4 flex flex-col justify-center border border-slate-200 group">
+                    <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Tipo Equipo</p>
+                    <div className="flex items-center gap-2">
+                      <Settings2 className="w-4 h-4 text-blue-500 group-hover:rotate-90 transition-transform duration-500" />
+                      <p className="text-xs sm:text-sm font-black italic text-blue-600 truncate">{washerType || 'Automática'}</p>
+                    </div>
+                  </div>
 
-              <div className="bg-white/5 hover:bg-white/10 transition-colors rounded-2xl p-3 sm:p-4 flex flex-col justify-center border border-white/5 backdrop-blur-sm group">
-                <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Tipo Equipo</p>
-                <div className="flex items-center gap-2">
-                  <Settings2 className="w-4 h-4 text-blue-400 group-hover:rotate-90 transition-transform duration-500" />
-                  <p className="text-xs sm:text-sm font-black italic text-blue-400 truncate">{washerType || 'Automática'}</p>
+                  <div className="bg-primary/10 hover:bg-primary/20 transition-colors rounded-2xl p-3 sm:p-4 flex flex-col justify-center border border-primary/20 group">
+                    <p className="text-[8px] sm:text-[9px] font-bold text-primary/80 uppercase tracking-widest mb-1.5">Total Cobro</p>
+                    <div className="flex items-center gap-2">
+                      <Wallet className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+                      <p className="text-xs sm:text-sm font-black italic text-primary truncate">{formattedPrice}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              <div className="bg-primary/10 hover:bg-primary/20 transition-colors rounded-2xl p-3 sm:p-4 flex flex-col justify-center border border-primary/20 backdrop-blur-sm group">
-                <p className="text-[8px] sm:text-[9px] font-bold text-primary/80 uppercase tracking-widest mb-1.5">Total Cobro</p>
-                <div className="flex items-center gap-2">
-                  <Wallet className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-                  <p className="text-xs sm:text-sm font-black italic text-primary truncate">{formattedPrice}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       </Card>
     </section>
