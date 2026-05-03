@@ -28,6 +28,7 @@ import { useEffect, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { LogisticsPanel } from '@/components/agents/logistica/LogisticsPanel';
 
 const AGENT_FUNCTIONS: Record<string, string[]> = {
   soporte: ["Auditoría de Rutas", "Gestión de Tickets", "Mediación Tienda-Driver", "Protocolos de Emergencia"],
@@ -48,6 +49,13 @@ export default function AgentDetailPage() {
   useEffect(() => {
     if (!profileLoading && !isAdmin) router.push('/');
   }, [isAdmin, profileLoading, router]);
+
+  // Si es el agente de logística, renderizar panel especializado
+  if (id === 'logistica') {
+    if (profileLoading) return null;
+    if (!isAdmin) return null;
+    return <LogisticsPanel />;
+  }
 
   // QUERY DE INCIDENTES PARA EL AGENTE DE SOPORTE
   const incidentsQuery = useMemoFirebase(() => {
@@ -194,7 +202,7 @@ export default function AgentDetailPage() {
       <div className="h-12 bg-white border-t flex items-center justify-center px-8 shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Vitriniando AI Central • Kernel v1.0.4</span>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Yapido AI Central • Kernel v2.0</span>
         </div>
       </div>
     </div>

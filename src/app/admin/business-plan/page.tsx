@@ -39,7 +39,7 @@ export default function BusinessPlanPage() {
               <Target className="w-10 h-10 text-primary animate-pulse" />
             </div>
             <div className="space-y-1">
-              <h1 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900">Plan de Imperio</h1>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900 break-words">Plan de Imperio</h1>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-1">Vitriniando: Medellín & Aguachica 2024</p>
             </div>
           </div>

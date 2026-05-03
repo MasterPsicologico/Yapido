@@ -34,7 +34,16 @@ service cloud.firestore {
 
     match /stores/{storeId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      // Crear: cualquier usuario autenticado puede registrar un negocio
+      allow create: if isSignedIn();
+      // Actualizar: el dueño de la tienda o un admin puede modificarla
+      // (incluye el soft-delete: cambiar status a 'trashed')
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.ownerId
+      );
+      // Eliminar permanentemente: solo admin o el sistema (via Firebase Admin SDK)
+      allow delete: if isAdmin();
 
       match /categories/{catId} {
         allow read: if true;

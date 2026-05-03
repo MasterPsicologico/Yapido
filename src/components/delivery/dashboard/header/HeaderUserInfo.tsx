@@ -21,7 +21,7 @@ export function HeaderUserInfo({ isOnline, profile, level, onOpenInfo }: HeaderU
     >
       {isOnline && (
         <div className="space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] group-hover/info:scale-105 transition-transform">
+          <h1 className="text-xl sm:text-2xl font-black italic uppercase tracking-tighter leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] group-hover/info:scale-105 transition-transform">
             {profile?.displayName || 'Repartidor'}
           </h1>
           <div className="flex justify-center">

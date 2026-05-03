@@ -43,21 +43,24 @@ export function MissionUsageCountdown({ progress, onAddHours, onRemoveHour }: Mi
   };
 
   return (
-    <section className="animate-in zoom-in duration-500">
+    <section className="animate-in zoom-in duration-500 p-2 sm:p-4">
       <Card className={cn(
-        "border-none rounded-[48px] p-8 shadow-2xl relative overflow-hidden ring-8 transition-all duration-700 bg-white text-slate-900",
+        "border-none rounded-[40px] p-6 sm:p-8 shadow-2xl relative overflow-visible ring-4 sm:ring-8 transition-all duration-700 bg-white text-slate-900",
         pulseColor === 'green' ? "ring-green-500/20" : 
         pulseColor === 'red' ? "ring-red-500/20" :
         progress.isExpired ? "ring-red-500/10 animate-pulse-red-glow" : "ring-amber-500/10"
       )}>
-        <div className={cn(
-          "absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl -mr-24 -mt-24 transition-colors duration-1000",
-          pulseColor === 'green' ? "bg-green-500/5" :
-          pulseColor === 'red' ? "bg-red-500/5" :
-          progress.isExpired ? "bg-red-500/5" : "bg-amber-500/5"
-        )} />
+        {/* Inner background container for clipping without affecting outer glow */}
+        <div className="absolute inset-0 overflow-hidden rounded-[40px] pointer-events-none">
+          <div className={cn(
+            "absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl -mr-24 -mt-24 transition-colors duration-1000",
+            pulseColor === 'green' ? "bg-green-500/5" :
+            pulseColor === 'red' ? "bg-red-500/5" :
+            progress.isExpired ? "bg-red-500/5" : "bg-amber-500/5"
+          )} />
+        </div>
         
-        <div className="relative z-10 flex flex-col items-center text-center space-y-6">
+        <div className="relative z-10 flex flex-col items-center text-center space-y-5">
           <div className="flex flex-col items-center gap-2">
             {progress.isExpired ? (
               <div className="flex items-center gap-2 bg-red-600 px-4 py-1.5 rounded-full animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.3)]">

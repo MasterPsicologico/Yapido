@@ -186,10 +186,10 @@ export function VisualNotificationListener() {
             <div className="w-full max-w-sm space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500">
               <Button 
                 onClick={() => handleAcknowledge(true)}
-                className="w-full h-20 sm:h-24 rounded-[32px] sm:rounded-[36px] bg-primary hover:bg-primary/90 text-white font-black text-xl sm:text-2xl uppercase italic tracking-widest gap-4 shadow-[0_20px_50px_rgba(59,130,246,0.4)] border-b-[8px] sm:border-b-[10px] border-blue-800 active:border-b-0 active:translate-y-2 transition-all group relative overflow-hidden"
+                className="w-full h-16 sm:h-20 rounded-[28px] sm:rounded-[32px] bg-primary hover:bg-primary/90 text-white font-black text-xs sm:text-base uppercase italic tracking-wider gap-2 sm:gap-3 shadow-[0_20px_50px_rgba(59,130,246,0.4)] border-b-[6px] sm:border-b-[8px] border-blue-800 active:border-b-0 active:translate-y-2 transition-all group relative overflow-hidden truncate px-4"
               >
                 <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                GESTIONAR AHORA <ArrowRight className="w-6 h-6 sm:w-8 sm:h-8 group-hover:translate-x-3 transition-transform" />
+                <span className="truncate">GESTIONAR AHORA</span> <ArrowRight className="w-4 h-4 sm:w-6 sm:h-6 shrink-0 group-hover:translate-x-3 transition-transform" />
               </Button>
 
               <button 

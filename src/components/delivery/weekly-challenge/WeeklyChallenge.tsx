@@ -11,16 +11,18 @@ import { startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
 
 interface WeeklyChallengeProps {
   orders: any[] | null;
+  commissionRate?: number;
+  isAdmin?: boolean;
 }
 
 /**
  * WeeklyChallenge - Orquestador Maestro de Rendimiento.
  * Calcula las métricas globales de la semana para distribuirlas a los componentes atómicos.
  */
-export function WeeklyChallenge({ orders }: WeeklyChallengeProps) {
+export function WeeklyChallenge({ orders, commissionRate = 0.20, isAdmin = false }: WeeklyChallengeProps) {
   // CÁLCULO DE MÉTRICAS REALES DE LA SEMANA
   const metrics = useMemo(() => {
-    if (!orders) return { avgRating: 5.0, weeklyEarnings: 0 };
+    if (!orders) return { avgRating: 5.0, weeklyEarnings: 0, weeklyBusinessRevenue: 0 };
 
     const start = startOfWeek(new Date(), { weekStartsOn: 1 });
     const end = endOfWeek(new Date(), { weekStartsOn: 1 });
@@ -35,23 +37,26 @@ export function WeeklyChallenge({ orders }: WeeklyChallengeProps) {
     const totalStars = weeklyOrders.reduce((acc, curr) => acc + (curr.driverRatingByCustomer || 5), 0);
     const avgRating = weeklyOrders.length > 0 ? (totalStars / weeklyOrders.length) : 5.0;
     
-    const weeklyEarnings = weeklyOrders.reduce((acc, curr) => acc + (curr.totalPrice || 0), 0);
+    const weeklyBusinessRevenue = weeklyOrders.reduce((acc, curr) => acc + (curr.totalPrice || 0), 0);
+    const weeklyEarnings = Math.round(weeklyBusinessRevenue * commissionRate);
 
     return {
       avgRating: Number(avgRating.toFixed(1)),
-      weeklyEarnings
+      weeklyEarnings,
+      weeklyBusinessRevenue
     };
-  }, [orders]);
+  }, [orders, commissionRate]);
 
   return (
     <Card className="border-none rounded-[40px] shadow-2xl bg-white overflow-hidden ring-1 ring-black/[0.03]">
       <ChallengeHeader />
       <CardContent className="p-8 pt-4 space-y-6">
-        <ChallengeChart orders={orders} />
+        <ChallengeChart orders={orders} commissionRate={commissionRate} isAdmin={isAdmin} />
         <ChallengeCycle />
         <ChallengeStats 
           avgRating={metrics.avgRating} 
-          weeklyEarnings={metrics.weeklyEarnings} 
+          weeklyEarnings={metrics.weeklyEarnings}
+          commissionRate={commissionRate}
         />
       </CardContent>
     </Card>

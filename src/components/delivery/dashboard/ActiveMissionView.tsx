@@ -14,10 +14,8 @@ import { toast } from '@/hooks/use-toast';
 
 // COMPONENTES ATÓMICOS
 import { MissionHeader } from './active-mission/components/header/MissionHeader';
-import { MissionIdentity } from './active-mission/components/identity/MissionIdentity';
 import { MissionDeliveryCard } from './active-mission/components/delivery/MissionDeliveryCard';
 import { MissionUsageCountdown } from './active-mission/components/timer/MissionUsageCountdown';
-import { MissionTechSpecs } from './active-mission/components/specs/MissionTechSpecs';
 import { MissionActionOrchestrator } from './active-mission/components/actions/MissionActionOrchestrator';
 import { MissionStatusFooter } from './active-mission/components/footer/MissionStatusFooter';
 
@@ -27,9 +25,10 @@ interface ActiveMissionViewProps {
   onUpdateStatus: (status: string, metadata?: any) => void;
   onRelease: (reason: string) => void;
   onOpenMaps: (address: string) => void;
+  onOpenLiveMap?: () => void;
 }
 
-export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, onRelease, onOpenMaps }: ActiveMissionViewProps) {
+export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, onRelease, onOpenMaps, onOpenLiveMap }: ActiveMissionViewProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMissionChatOpen, setIsMissionChatOpen] = useState(false);
   const [isReleaseDialogOpen, setIsReleaseDialogOpen] = useState(false);
@@ -109,6 +108,7 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
     <div className="flex flex-col h-[calc(100dvh-64px)] animate-in slide-in-from-bottom duration-500 overflow-hidden relative z-[40]">
       <MissionHeader 
         onReleaseOpen={() => setIsReleaseDialogOpen(true)}
+        onOpenLiveMap={onOpenLiveMap}
         status={mission.status}
         isWithDriver={true}
         isInUse={isInUse}
@@ -127,20 +127,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             />
           )}
 
-          {/* DETALLES DE OPERACIÓN PRIORIZADOS: AHORA APARECEN DE PRIMERO TRAS EL CRONÓMETRO */}
-          <MissionTechSpecs 
-            floor={mission.floor}
-            hasStairs={mission.hasStairs}
-            stairCount={mission.stairCount}
-            washerType={mission.washerType}
-            totalPrice={mission.totalPrice}
-          />
-
-          <MissionIdentity 
-            missionId={mission.id} 
-            requestHours={mission.requestHours} 
-          />
-
           <MissionDeliveryCard 
             customerAddress={mission.customerAddress}
             customerSector={mission.customerSector}
@@ -151,6 +137,12 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             paymentMethod={mission.paymentMethod || 'cash'}
             onOpenMaps={() => onOpenMaps(mission.customerAddress)}
             onOpenChat={() => setIsMissionChatOpen(true)}
+            missionId={mission.id}
+            requestHours={mission.requestHours}
+            floor={mission.floor}
+            hasStairs={mission.hasStairs}
+            stairCount={mission.stairCount}
+            washerType={mission.washerType}
           />
 
           <MissionActionOrchestrator 
@@ -167,31 +159,35 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
 
       {/* DIÁLOGO DE CONFIRMACIÓN DE COBRO MAESTRO */}
       <Dialog open={isConfirmPaymentOpen} onOpenChange={setIsConfirmPaymentOpen}>
-        <DialogContent className="rounded-[40px] border-none shadow-2xl p-8 sm:max-w-[450px] bg-white z-[500]">
-          <DialogHeader className="items-center text-center space-y-4">
-            <div className="w-20 h-20 bg-green-50 rounded-[28px] flex items-center justify-center text-green-600 shadow-inner">
-              <DollarSign className="w-10 h-10 animate-pulse" />
+        <DialogContent className="w-[calc(100vw-32px)] sm:w-full max-w-[400px] rounded-[32px] border-none shadow-2xl p-6 md:p-8 bg-white z-[500] flex flex-col gap-0 mx-auto outline-none">
+          <DialogHeader className="items-center text-center space-y-4 pt-2">
+            <div className="w-16 h-16 bg-green-50 rounded-[24px] flex items-center justify-center text-green-600 shadow-inner">
+              <DollarSign className="w-8 h-8 animate-pulse" />
             </div>
-            <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">
-              Confirmar Cobro
-            </DialogTitle>
-            <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]">
-              Auditoría de Liquidación Inmediata
-            </DialogDescription>
+            <div className="space-y-1.5">
+              <DialogTitle className="text-2xl md:text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">
+                Confirmar Cobro
+              </DialogTitle>
+              <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">
+                Auditoría de Liquidación Inmediata
+              </DialogDescription>
+            </div>
           </DialogHeader>
 
-          <div className="py-10 text-center space-y-6">
-            <p className="text-sm font-bold text-slate-500 uppercase tracking-tight">¿Has recibido el pago total del servicio?</p>
-            <div className="bg-slate-900 p-8 rounded-[32px] shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-primary/10 rounded-full blur-2xl" />
-              <p className="text-[9px] font-black text-primary uppercase tracking-[0.4em] mb-2">VALOR A RECAUDAR</p>
-              <h4 className="text-5xl font-black italic tracking-tighter text-white">
+          <div className="py-8 text-center space-y-6">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest px-4 leading-relaxed mx-auto max-w-[280px]">
+              ¿Has recibido el pago total del servicio?
+            </p>
+            <div className="bg-slate-900 p-6 md:p-8 rounded-[28px] shadow-2xl relative overflow-hidden w-full mx-auto">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+              <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-2 relative z-10">VALOR A RECAUDAR</p>
+              <h4 className="text-4xl font-black italic tracking-tighter text-white relative z-10">
                 {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(mission.totalPrice || 0)}
               </h4>
-              <div className="flex justify-center gap-2 mt-4">
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-full border border-white/10">
-                  {mission.paymentMethod === 'cash' ? <Wallet className="w-3 h-3 text-yellow-500" /> : <CreditCard className="w-3 h-3 text-blue-400" />}
-                  <span className="text-[8px] font-black uppercase text-white/60">
+              <div className="flex justify-center gap-2 mt-4 relative z-10">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 rounded-full border border-white/10 backdrop-blur-md">
+                  {mission.paymentMethod === 'cash' ? <Wallet className="w-3.5 h-3.5 text-yellow-500" /> : <CreditCard className="w-3.5 h-3.5 text-blue-400" />}
+                  <span className="text-[9px] font-black uppercase text-white/80 tracking-widest">
                     {mission.paymentMethod === 'cash' ? 'EFECTIVO' : 'DIGITAL'}
                   </span>
                 </div>
@@ -199,17 +195,17 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             </div>
           </div>
 
-          <DialogFooter className="flex flex-col gap-3 sm:flex-col">
+          <DialogFooter className="flex flex-col gap-3 sm:flex-col pb-2 w-full">
             <Button 
               onClick={handleFinalConfirmPayment}
-              className="w-full h-16 rounded-[24px] bg-green-500 hover:bg-green-600 text-white font-black text-lg uppercase italic tracking-widest gap-3 shadow-xl active:scale-95"
+              className="w-full h-14 rounded-[20px] bg-green-500 hover:bg-green-600 text-white font-black text-base md:text-lg uppercase italic tracking-widest gap-2 shadow-lg hover:shadow-xl transition-all active:scale-95"
             >
-              <CheckCircle2 className="w-6 h-6" /> SÍ, HE COBRADO
+              <CheckCircle2 className="w-5 h-5" /> SÍ, HE COBRADO
             </Button>
             <Button 
               variant="ghost" 
               onClick={() => setIsConfirmPaymentOpen(false)}
-              className="text-slate-400 font-black text-[10px] uppercase tracking-widest h-10 rounded-full"
+              className="text-slate-400 font-bold text-[10px] uppercase tracking-widest h-10 rounded-full hover:bg-slate-100 transition-colors w-full"
             >
               VOLVER Y REVISAR
             </Button>

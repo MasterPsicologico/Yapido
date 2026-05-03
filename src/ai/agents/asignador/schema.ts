@@ -33,6 +33,8 @@ export const AsignadorAgentInputSchema = z.object({
   customerLocation: z.object({ lat: z.number(), lng: z.number() }),
   orderValue: z.number(),
   priorityLevel: z.number().default(1),
+  isMultiOrder: z.boolean().default(false),
+  demandLevel: z.string().default('NORMAL'),
   currentState: AsignadorStateSchema.default('NEW_ORDER'),
   context: z.object({
     availableDrivers: z.array(DriverSchema).optional(),

@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from 'react';
@@ -6,12 +5,17 @@ import { MapPin, Sparkles, Navigation } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { SaveIndicator } from './SaveIndicator';
 
 interface AddressFieldProps {
   address: string;
   onAddressChange: (v: string) => void;
+  onAddressBlur?: () => void;
+  addressSaveStatus?: 'idle' | 'typing' | 'saved';
   sector: string;
   onSectorChange: (v: string) => void;
+  onSectorBlur?: () => void;
+  sectorSaveStatus?: 'idle' | 'typing' | 'saved';
   errorSector?: boolean;
   errorAddress?: boolean;
 }
@@ -19,8 +23,12 @@ interface AddressFieldProps {
 export function AddressField({ 
   address, 
   onAddressChange, 
+  onAddressBlur,
+  addressSaveStatus,
   sector, 
   onSectorChange,
+  onSectorBlur,
+  sectorSaveStatus,
   errorSector,
   errorAddress
 }: AddressFieldProps) {
@@ -50,8 +58,9 @@ export function AddressField({
           <Input 
             value={sector} 
             onChange={(e) => onSectorChange(e.target.value)} 
+            onBlur={onSectorBlur}
             className={cn(
-              "h-16 rounded-[24px] border-2 pl-16 pr-6 font-black text-slate-900 text-lg transition-all duration-500",
+              "h-16 rounded-[24px] border-2 pl-16 pr-14 font-black text-slate-900 text-lg transition-all duration-500",
               "bg-gradient-to-r from-yellow-50/50 to-white focus:bg-white placeholder:font-medium placeholder:text-slate-400/60",
               errorSector 
                 ? "border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]" 
@@ -59,6 +68,7 @@ export function AddressField({
             )}
             placeholder="Ej: Barrio El Centro o Sector Norte" 
           />
+          <SaveIndicator status={sectorSaveStatus} className="right-4" />
         </div>
       </div>
 
@@ -86,8 +96,9 @@ export function AddressField({
           <Input 
             value={address} 
             onChange={(e) => onAddressChange(e.target.value)} 
+            onBlur={onAddressBlur}
             className={cn(
-              "h-16 rounded-[24px] border-2 pl-16 pr-6 font-black text-slate-900 text-lg transition-all duration-500",
+              "h-16 rounded-[24px] border-2 pl-16 pr-14 font-black text-slate-900 text-lg transition-all duration-500",
               "bg-gradient-to-r from-yellow-50/50 to-white focus:bg-white placeholder:font-medium placeholder:text-slate-400/60",
               errorAddress 
                 ? "border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]" 
@@ -95,6 +106,7 @@ export function AddressField({
             )}
             placeholder="Calle 10 No 23-56" 
           />
+          <SaveIndicator status={addressSaveStatus} className="right-4" />
         </div>
       </div>
     </div>

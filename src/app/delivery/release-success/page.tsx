@@ -25,10 +25,10 @@ export default function ReleaseSuccessPage() {
           </p>
         </div>
 
-        <div className="grid gap-4 w-full max-w-xs">
-          <Button asChild className="h-16 rounded-[24px] bg-primary hover:bg-primary/90 text-white font-black text-lg uppercase tracking-widest gap-3 shadow-xl">
-            <Link href="/delivery/dashboard">
-              BUSCAR NUEVAS RUTAS <Truck className="w-6 h-6" />
+        <div className="grid gap-4 w-full max-w-[280px] mx-auto">
+          <Button asChild className="h-14 rounded-[24px] bg-primary hover:bg-primary/90 text-white font-black text-[10px] sm:text-xs uppercase tracking-widest gap-2 shadow-xl px-4">
+            <Link href="/delivery/dashboard" className="w-full flex items-center justify-center">
+              BUSCAR NUEVAS RUTAS <Truck className="w-4 h-4 ml-2" />
             </Link>
           </Button>
           

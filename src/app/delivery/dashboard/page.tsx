@@ -11,15 +11,19 @@ import { useProfile } from '@/firebase/auth/use-profile';
 import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, limit, or } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
+import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 
 import { WeeklyChallenge } from '@/components/delivery/weekly-challenge';
 import { DashboardHeader } from '@/components/delivery/dashboard/DashboardHeader';
+import { EconomyPanel } from '@/components/delivery/dashboard/economy/EconomyPanel';
 import { ActiveMissionView } from '@/components/delivery/dashboard/ActiveMissionView';
+import { DriverLiveMap } from '@/components/delivery/dashboard/driver-live-map/DriverLiveMap';
 import { RoutesTab } from '@/components/delivery/dashboard/tabs/RoutesTab';
 import { EarningsTab } from '@/components/delivery/dashboard/tabs/EarningsTab';
 import { MyDeliveriesTab } from '@/components/delivery/dashboard/tabs/MyDeliveriesTab';
 import { releaseOrder } from '@/ai/flows/release-order-flow';
 import { AgentProgressOverlay } from '@/components/agents/AgentProgressOverlay';
+import { FleetPanel } from '@/components/delivery/fleet/FleetPanel';
 
 // IMPORTACIÓN DE COMPONENTES ATÓMICOS DE BIENVENIDA
 import { WelcomeLanding } from '@/components/delivery/welcome/WelcomeLanding';
@@ -35,6 +39,9 @@ export default function DeliveryDashboardPage() {
   const [isReleasing, setIsReleasing] = useState(false);
   const [releaseLogs, setReleaseLogs] = useState<string[]>([]);
   const [isUploadingDashboard, setIsUploadingDashboard] = useState<'active' | 'inactive' | null>(null);
+  const [isFleetPanelOpen, setIsFleetPanelOpen] = useState(false);
+  const [showLiveMap, setShowLiveMap] = useState(false);
+  const [isTrackingActive, setIsTrackingActive] = useState(false);
   
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -53,6 +60,32 @@ export default function DeliveryDashboardPage() {
 
   const welcomeConfigRef = useMemoFirebase(() => doc(firestore, 'appConfig', 'delivery_welcome'), [firestore]);
   const { data: welcomeConfig } = useDoc(welcomeConfigRef);
+
+  // Leer configuración de comisión del store vinculado al repartidor
+  const linkedStoreRef = useMemoFirebase(() => 
+    (!firestore || !profile?.linkedStoreId) ? null : doc(firestore, 'stores', profile.linkedStoreId), 
+    [firestore, profile?.linkedStoreId]
+  );
+  const { data: linkedStoreData } = useDoc(linkedStoreRef);
+  const commissionRate = linkedStoreData?.commissionRate ?? 0.20;
+
+  // ─── FLEET: Query the store owned by this user ───
+  const ownedStoreQuery = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return query(collection(firestore, 'stores'), where('ownerId', '==', user.uid), limit(1));
+  }, [firestore, user?.uid]);
+  const { data: ownedStores } = useCollection(ownedStoreQuery);
+  const ownedStore = ownedStores?.[0] || null;
+
+  // Resolve driver profiles from privateDrivers array
+  const fleetDriverUids: string[] = ownedStore?.privateDrivers || [];
+  const fleetDriversQuery = useMemoFirebase(() => {
+    if (!firestore || fleetDriverUids.length === 0) return null;
+    // Firestore 'in' supports up to 30 items
+    return query(collection(firestore, 'users'), where('__name__', 'in', fleetDriverUids.slice(0, 30)));
+  }, [firestore, JSON.stringify(fleetDriverUids)]);
+  const { data: fleetDriverProfiles } = useCollection(fleetDriversQuery);
+  const fleetDrivers = fleetDriverProfiles || [];
 
   const allActiveOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid || !isOnline || loadingProfile) return null;
@@ -113,7 +146,7 @@ export default function DeliveryDashboardPage() {
   const activeMission = useMemo(() => 
     sortedMyOrders.find(o => 
       o.deliveryDriverId === user?.uid && 
-      ['shipped', 'at_destination', 'at_store', 'delivered_to_driver'].includes(o.status)
+      ['picking_up', 'shipped', 'at_destination', 'at_store', 'delivered_to_driver'].includes(o.status)
     ),
     [sortedMyOrders, user?.uid]
   );
@@ -125,6 +158,18 @@ export default function DeliveryDashboardPage() {
     ).length,
     [sortedMyOrders, user?.uid]
   );
+
+  const revenueToday = useMemo(() => {
+    if (!sortedMyOrders) return 0;
+    const start = startOfDay(new Date());
+    const end = endOfDay(new Date());
+    return sortedMyOrders.filter(o => {
+      const ts = o.completedAt || o.deliveredAt || o.createdAt;
+      const date = ts?.toDate?.() || (ts?.seconds ? new Date(ts.seconds * 1000) : null);
+      if (!date) return false;
+      return isWithinInterval(date, { start, end });
+    }).reduce((acc, curr) => acc + (curr.totalPrice || 0), 0);
+  }, [sortedMyOrders]);
 
   const customerRef = useMemoFirebase(() => 
     (!firestore || !activeMission?.customerId) ? null : doc(firestore, 'users', activeMission.customerId), 
@@ -168,12 +213,27 @@ export default function DeliveryDashboardPage() {
     updateDocumentNonBlocking(orderRef, updateData);
   };
 
+  const handleStartTracking = () => {
+    setIsTrackingActive(true);
+  };
+
+  const handleStopTracking = () => {
+    setIsTrackingActive(false);
+    toast({ title: "Ruta finalizada", description: "Seguimiento detenido" });
+  };
+
   const handleReleaseOrder = async (reason: string) => {
     if (!activeMission || !user || !firestore || !reason) return;
     const orderRef = doc(firestore, 'orders', activeMission.id);
     updateDocumentNonBlocking(orderRef, {
-      status: 'ready_for_pickup', deliveryDriverId: null, deliveryDriverName: null,
-      isLogisticsPublic: true, updatedAt: serverTimestamp(), participants: arrayRemove(user.uid)
+      status: 'ready_for_pickup',
+      deliveryDriverId: null,
+      deliveryDriverName: null,
+      isLogisticsPublic: false,
+      updatedAt: serverTimestamp(),
+      releasedBy: user.uid,
+      releasedAt: serverTimestamp(),
+      releaseReason: reason
     });
     setIsReleasing(true);
     setReleaseLogs(["Iniciando protocolo de liberación..."]);
@@ -222,13 +282,25 @@ export default function DeliveryDashboardPage() {
       <Navbar />
       <AgentProgressOverlay isOpen={isReleasing} logs={releaseLogs} onComplete={() => { setIsReleasing(false); router.replace('/delivery/release-success'); }} />
 
-      {activeMission ? (
+      {activeMission && showLiveMap ? (
+        <DriverLiveMap
+          order={activeMission}
+          customerProfile={customerProfile}
+          isActive={isTrackingActive}
+          onStartTracking={handleStartTracking}
+          onStopTracking={handleStopTracking}
+          onClose={() => setShowLiveMap(false)}
+          onUpdateStatus={handleUpdateMissionStatus}
+          onOpenMaps={(addr) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank')}
+        />
+      ) : activeMission ? (
         <ActiveMissionView 
           mission={activeMission} 
           customerProfile={customerProfile} 
           onUpdateStatus={handleUpdateMissionStatus} 
           onRelease={handleReleaseOrder} 
-          onOpenMaps={(addr) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank')} 
+          onOpenMaps={(addr) => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`, '_blank')}
+          onOpenLiveMap={() => setShowLiveMap(true)}
         />
       ) : (
         <div className="flex-1 overflow-y-auto no-scrollbar">
@@ -238,6 +310,7 @@ export default function DeliveryDashboardPage() {
             isAdmin={isAdmin} dashboardConfig={dashboardConfig} 
             onImageUpload={handleDashboardImageUpload} isUploading={isUploadingDashboard}
           />
+          <EconomyPanel activeCount={activeBadgeCount} revenueToday={revenueToday} orders={sortedMyOrders} commissionRate={commissionRate} isAdmin={isAdmin} />
           <main className="container mx-auto px-4 py-8 max-w-2xl">
             <Tabs defaultValue="available" value={activeTab} onValueChange={setActiveTab} className="mb-12 space-y-8">
               <TabsList className="bg-white border h-16 p-1 rounded-full shadow-sm w-full grid grid-cols-3 overflow-visible">
@@ -260,20 +333,31 @@ export default function DeliveryDashboardPage() {
                   orders={availableOrders} 
                   hasRecycled={hasRecycledOrders}
                   onAccept={handleAcceptOrder} 
-                  onGoOnline={() => setIsOnline(true)} 
+                  onGoOnline={() => setIsOnline(true)}
+                  ownedStore={ownedStore}
+                  fleetDrivers={fleetDrivers}
+                  onOpenFleetPanel={() => setIsFleetPanelOpen(true)}
                 />
               </TabsContent>
               <TabsContent value="my-deliveries">
                 <MyDeliveriesTab rentals={sortedMyOrders} onUpdateStatus={handleUpdateMissionStatus} />
               </TabsContent>
               <TabsContent value="earnings">
-                <EarningsTab balance={profile?.balance || 0} />
+                <EarningsTab balance={profile?.balance || 0} commissionRate={commissionRate} revenueToday={revenueToday} />
               </TabsContent>
             </Tabs>
-            <WeeklyChallenge orders={sortedMyOrders} />
           </main>
         </div>
       )}
+
+      {/* Fleet Management Panel Overlay */}
+      <FleetPanel
+        isOpen={isFleetPanelOpen}
+        onClose={() => setIsFleetPanelOpen(false)}
+        store={ownedStore}
+        drivers={fleetDrivers}
+        orders={rawAllOrders || []}
+      />
     </div>
   );
 }

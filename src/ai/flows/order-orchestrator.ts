@@ -85,7 +85,8 @@ const orchestrateOrderFlow = ai.defineFlow(
         driverLocation: { lat: 0, lng: 0 },
         storeLocation: { lat: 0, lng: 0 },
         customerLocation: { lat: 0, lng: 0 },
-        context: { weather: 'clear', trafficLevel: 1.0 }
+        currentState: 'CALCULATING_ROUTE',
+        context: { weather: 'clear' as const, trafficLevel: 1.0, isMultiOrder: false }
       });
 
       logs.push("Agente Precios: Ajustando tarifa dinámica por demanda...");
@@ -95,7 +96,11 @@ const orchestrateOrderFlow = ai.defineFlow(
         estimatedTimeMin: routingRes.estimatedTravelTimeMinutes,
         availableDrivers: 5,
         orderValue: input.totalPrice,
-        weather: 'clear'
+        weather: 'clear' as const,
+        demandLevel: 'normal',
+        trafficLevel: 1.0,
+        isRushHour: false,
+        isFrequentCustomer: false
       });
 
       // 4. AGENTE ASIGNADOR: Preparando matchmaking
@@ -105,7 +110,10 @@ const orchestrateOrderFlow = ai.defineFlow(
         storeLocation: { lat: 0, lng: 0 },
         customerLocation: { lat: 0, lng: 0 },
         orderValue: input.totalPrice,
-        currentState: 'SEARCHING_DRIVER'
+        currentState: 'SEARCHING_DRIVER',
+        isMultiOrder: false,
+        demandLevel: 'NORMAL',
+        priorityLevel: 1
       });
 
       // 5. AGENTE NOTIFICACIONES: SINCRONIZACIÓN REAL

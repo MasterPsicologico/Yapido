@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,11 +17,14 @@ import {
   Phone,
   FileText,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Settings2,
+  Save,
+  Percent
 } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useUser, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp, limit } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -30,9 +33,26 @@ import { cn } from '@/lib/utils';
 
 export default function FleetAdminPage() {
   const { isAdmin, isLoading: profileLoading } = useProfile();
+  const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [commissionInput, setCommissionInput] = useState<number>(20);
+  const [savingCommission, setSavingCommission] = useState(false);
+
+  // Leer store del admin para obtener commissionRate
+  const adminStoreQuery = useMemoFirebase(() => {
+    if (!firestore || !isAdmin || !user?.uid) return null;
+    return query(collection(firestore, 'stores'), where('ownerId', '==', user.uid), where('type', '==', 'washer_rental'), limit(1));
+  }, [firestore, isAdmin, user?.uid]);
+  const { data: adminStores } = useCollection(adminStoreQuery);
+  const adminStore = adminStores?.[0];
+
+  useEffect(() => {
+    if (adminStore?.commissionRate !== undefined) {
+      setCommissionInput(Math.round(adminStore.commissionRate * 100));
+    }
+  }, [adminStore?.commissionRate]);
 
   useEffect(() => {
     if (!profileLoading && !isAdmin) router.push('/');
@@ -91,10 +111,74 @@ export default function FleetAdminPage() {
             <ShieldCheck className="w-10 h-10 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-4xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Verificación de Flota</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black italic uppercase tracking-tighter text-slate-900 leading-none break-words">Verificación de Flota</h1>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2">Control de Personal • {requests?.length || 0} PENDIENTES</p>
           </div>
         </div>
+
+        {/* SECCIÓN: Configuración de Comisión */}
+        {adminStore && (
+          <Card className="border-none rounded-[32px] shadow-sm bg-white overflow-hidden ring-1 ring-black/[0.03] mb-10">
+            <CardContent className="p-8">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                  <Settings2 className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black italic uppercase tracking-tighter text-slate-900">Comisión de Repartidores</h2>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Porcentaje que gana cada repartidor por entrega</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6">
+                <div className="flex-1 w-full space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-slate-600 uppercase tracking-widest">Porcentaje</label>
+                    <div className="flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-full">
+                      <span className="text-2xl font-black text-emerald-600 tracking-tighter">{commissionInput}</span>
+                      <Percent className="w-4 h-4 text-emerald-400" />
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={100}
+                    value={commissionInput}
+                    onChange={(e) => setCommissionInput(Number(e.target.value))}
+                    className="w-full h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-emerald-500 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-500 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:appearance-none"
+                  />
+                  <div className="flex justify-between text-[8px] font-bold text-slate-300 uppercase tracking-widest">
+                    <span>1%</span>
+                    <span>50%</span>
+                    <span>100%</span>
+                  </div>
+                </div>
+
+                <Button
+                  disabled={savingCommission}
+                  onClick={async () => {
+                    if (!firestore || !adminStore) return;
+                    setSavingCommission(true);
+                    try {
+                      const storeRef = doc(firestore, 'stores', adminStore.id);
+                      updateDocumentNonBlocking(storeRef, {
+                        commissionRate: commissionInput / 100,
+                        updatedAt: serverTimestamp()
+                      });
+                      toast({ title: `Comisión actualizada a ${commissionInput}%`, className: 'bg-emerald-600 text-white' });
+                    } finally {
+                      setSavingCommission(false);
+                    }
+                  }}
+                  className="h-14 px-8 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black uppercase text-xs tracking-widest gap-2 shadow-xl shadow-emerald-100 shrink-0"
+                >
+                  {savingCommission ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Guardar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {loadingRequests ? (
           <div className="flex justify-center py-20"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>

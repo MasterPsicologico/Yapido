@@ -8,6 +8,7 @@ import { VisualNotificationListener } from '@/components/notification/VisualNoti
 import { NativeNotificationListener } from '@/components/notification/NativeNotificationListener';
 import { CartProvider } from '@/context/CartContext';
 import { GlobalOrderChatModal } from '@/components/chat/GlobalOrderChatModal';
+import { AutoRatingTrigger } from '@/components/rating/AutoRatingTrigger';
 
 export const metadata: Metadata = {
   title: 'Yapido.click - Logística y Alquiler de Lavadoras',
@@ -36,6 +37,7 @@ export default function RootLayout({
             {/* Gestión de Alertas Nativas para APK (FCM) */}
             <NativeNotificationListener />
             <GlobalOrderChatModal />
+            <AutoRatingTrigger />
             {children}
             <Toaster />
           </CartProvider>

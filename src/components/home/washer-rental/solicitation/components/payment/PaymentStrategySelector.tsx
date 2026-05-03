@@ -21,7 +21,7 @@ export function PaymentStrategySelector({ method, onChange }: PaymentStrategySel
             "relative flex flex-col items-center gap-3 p-6 rounded-[32px] border-2 transition-all duration-500 overflow-hidden", 
             method === 'cash' 
               ? "border-slate-900 bg-slate-900 text-white shadow-2xl scale-[1.02]" 
-              : "border-slate-100 bg-slate-50 text-slate-400 hover:border-yellow-500/30"
+              : "border-slate-200 bg-white text-slate-500 shadow-sm hover:border-slate-300 hover:bg-slate-50"
           )}
         >
           {method === 'cash' && (

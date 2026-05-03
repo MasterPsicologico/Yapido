@@ -23,7 +23,7 @@ export function TimerDisplay({ hours, minutes, seconds, isExpired, pulseColor }:
     <div className="flex items-baseline justify-center gap-1 sm:gap-2 w-full px-2 overflow-hidden">
       <span className={cn(
         "font-black italic tracking-tighter tabular-nums leading-none transition-colors duration-500",
-        isLargeTimer ? "text-5xl sm:text-6xl" : "text-6xl sm:text-7xl",
+        isLargeTimer ? "text-4xl sm:text-5xl" : "text-5xl sm:text-6xl",
         pulseColor === 'green' ? "text-green-600" : 
         pulseColor === 'red' ? "text-red-600" : 
         isExpired ? "text-red-600" : "text-slate-900"

@@ -31,11 +31,12 @@ import {
   Award,
   BarChart3,
   Activity,
-  Archive
+  Archive,
+  Trash2
 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { format, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -47,6 +48,9 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { FleetMap } from '@/components/delivery/fleet/FleetMap';
+import { useFleetLiveLocations } from '@/hooks/use-fleet-live-locations';
+import { Map as MapIcon } from 'lucide-react';
 
 const STATUS_CONFIG: Record<string, {label: string, color: string, bg: string, border: string, icon: any}> = {
   inquiry: { label: "CONSULTA", color: "text-cyan-500", bg: "bg-cyan-50", border: "border-cyan-100", icon: MessageCircle },
@@ -69,6 +73,7 @@ export default function OrdersManagementPage() {
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [showMyPurchases, setShowMyPurchases] = useState(false);
+  const [showFleetMap, setShowFleetMap] = useState(false);
 
   // EFECTO DE NAVEGACIÓN DIRECTA
   useEffect(() => {
@@ -97,10 +102,15 @@ export default function OrdersManagementPage() {
   }, [firestore, user?.uid]);
   const { data: rawOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
 
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'system_admin';
+
   const myStoresQuery = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
+    if (isAdmin) {
+      return query(collection(firestore, 'stores'));
+    }
     return query(collection(firestore, 'stores'), where('ownerId', '==', user.uid));
-  }, [firestore, user?.uid]);
+  }, [firestore, user?.uid, isAdmin]);
   const { data: myStores, isLoading: storesLoading } = useCollection(myStoresQuery);
 
   const contractedStoreIds = profile?.contractedStores || [];
@@ -109,6 +119,8 @@ export default function OrdersManagementPage() {
     return query(collection(firestore, 'stores'), where('id', 'in', contractedStoreIds.slice(0, 10)));
   }, [firestore, contractedStoreIds]);
   const { data: trustedStores } = useCollection(trustedStoresQuery);
+
+  const { drivers, isLive } = useFleetLiveLocations({ storeId: selectedStoreId || undefined });
 
   const storeSummaries = useMemo(() => {
     if (!myStores || !rawOrders) return [];
@@ -127,6 +139,20 @@ export default function OrdersManagementPage() {
       revenueToday: acc.revenueToday + curr.revenueToday,
     }), { activeCount: 0, revenueToday: 0 });
   }, [storeSummaries]);
+
+  const handleDeleteStore = async (e: React.MouseEvent, storeId: string) => {
+    e.stopPropagation(); // Evitar que el click abra la tarjeta
+    if (!window.confirm("¿Estás seguro de que deseas eliminar esta tienda? Esta acción no se puede deshacer.")) return;
+    try {
+      await deleteDoc(doc(firestore, 'stores', storeId));
+      toast({ title: "Tienda eliminada exitosamente" });
+      if (selectedStoreId === storeId) {
+        setSelectedStoreId(null);
+      }
+    } catch (err) {
+      toast({ title: "Error al eliminar", description: "Verifica tus permisos o conexión.", variant: "destructive" });
+    }
+  };
 
   if (profileLoading || ordersLoading || storesLoading) return <div className="fixed inset-0 flex items-center justify-center bg-white"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
 
@@ -225,7 +251,7 @@ export default function OrdersManagementPage() {
           
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-black italic tracking-tighter uppercase text-slate-900">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black italic tracking-tighter uppercase text-slate-900 break-words">
                 {showMyPurchases ? "Mis Compras" : myStores?.find(s => s.id === selectedStoreId)?.name}
               </h1>
               <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-1">Gestión de Órdenes</p>
@@ -285,7 +311,7 @@ export default function OrdersManagementPage() {
                   <BarChart3 className="w-8 h-8 -rotate-3" />
                 </div>
                 <div>
-                  <h1 className="text-4xl sm:text-5xl font-black italic tracking-tighter uppercase leading-none text-slate-900 drop-shadow-sm">Panel Maestro</h1>
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black italic tracking-tighter uppercase leading-none text-slate-900 drop-shadow-sm break-words">Panel Maestro</h1>
                   <p className="text-[10px] sm:text-xs font-black text-primary uppercase tracking-[0.4em] mt-2">Centro de Comando Digital</p>
                 </div>
               </div>
@@ -303,6 +329,10 @@ export default function OrdersManagementPage() {
                   {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(globalKPIs.revenueToday)}
                 </p>
               </div>
+              <Button onClick={() => setShowFleetMap(true)} className="px-6 py-4 rounded-3xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 flex flex-col justify-center gap-1">
+                <p className="text-[9px] font-black text-white uppercase tracking-widest flex items-center gap-1.5"><MapIcon className="w-3 h-3" /> Mapa en Vivo</p>
+                <p className="text-[8px] font-bold text-white/70 uppercase tracking-wider">{drivers.length} activo{drivers.length !== 1 ? 's' : ''}</p>
+              </Button>
             </div>
           </div>
 
@@ -339,15 +369,50 @@ export default function OrdersManagementPage() {
             <section className="md:col-span-7 lg:col-span-8 space-y-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center"><StoreIcon className="w-4 h-4 text-blue-600" /></div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 italic">Mis Puntos de Venta</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 italic">
+                  {isAdmin ? "Todas las Tiendas (Admin)" : "Mis Puntos de Venta"}
+                </h3>
               </div>
               
               <div className="grid sm:grid-cols-2 gap-4">
                 {storeSummaries.map((store) => (
                   <Card key={store.id} onClick={() => setSelectedStoreId(store.id)} className="group relative border border-slate-100 rounded-[32px] shadow-sm bg-white cursor-pointer hover:shadow-xl hover:border-primary/20 transition-all duration-300 overflow-hidden flex flex-col">
                     <div className="p-6 pb-4 flex-1">
-                      <div className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                        <StoreIcon className="w-5 h-5 text-slate-600 group-hover:text-primary transition-colors" />
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                          <StoreIcon className="w-5 h-5 text-slate-600 group-hover:text-primary transition-colors" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {store.driverCode ? (
+                            <Badge variant="outline" className="bg-slate-50 font-mono text-[10px] font-black tracking-widest text-slate-500 border-primary/20 text-primary">
+                              CODE: {store.driverCode}
+                            </Badge>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 text-[9px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+                                await updateDocumentNonBlocking(doc(firestore, 'stores', store.id), { driverCode: code });
+                                toast({ title: "Código Generado", description: `Nuevo código: ${code}` });
+                              }}
+                            >
+                              Generar Código
+                            </Button>
+                          )}
+                          {(isAdmin || store.ownerId === user?.uid) && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-slate-400 hover:text-white hover:bg-red-500 z-10 transition-colors rounded-full"
+                              onClick={(e) => handleDeleteStore(e, store.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       <h2 className="text-xl font-black italic uppercase tracking-tighter text-slate-900 group-hover:text-primary transition-colors line-clamp-1">{store.name}</h2>
                       <div className="flex items-center gap-1 mt-1">
@@ -428,6 +493,9 @@ export default function OrdersManagementPage() {
           {activeOrderId && <OrderChat orderId={activeOrderId} orderData={rawOrders?.find(o => o.id === activeOrderId)} onClose={() => { setActiveOrderId(null); window.location.hash = ''; }} />}
         </DialogContent>
       </Dialog>
+
+      {/* MAPA EN VIVO DE REPARTIDORES */}
+      <FleetMap isOpen={showFleetMap} onClose={() => setShowFleetMap(false)} drivers={drivers} />
     </div>
   );
 }

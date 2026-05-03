@@ -55,8 +55,7 @@ const releaseOrderFlow = ai.defineFlow(
           reporterRole: 'repartidor',
           context: { 
             driverId: input.driverId, 
-            orderData: { value: input.orderValue },
-            isCriticalAlarm: isAlarm 
+            orderData: { value: input.orderValue }
           }
         }).then(() => isAlarm ? "Agente Soporte: ALARMA ENVIADA AL PATRÓN." : "Agente Soporte: Incidente registrado."),
 
@@ -70,7 +69,8 @@ const releaseOrderFlow = ai.defineFlow(
           currentState: 'PAYMENT_PENDING',
           context: { 
             reason: `LIBERACION_CON_CARGA_${input.reason.toUpperCase().replace(/\s/g, '_')}`,
-            isCancelled: true 
+            isCancelled: true,
+            isDelivered: false
           }
         }).then(() => {
           debtApplied = input.orderValue;
@@ -83,7 +83,10 @@ const releaseOrderFlow = ai.defineFlow(
           storeLocation: { lat: 0, lng: 0 },
           customerLocation: { lat: 0, lng: 0 },
           orderValue: input.orderValue,
-          currentState: 'REASSIGNING'
+          currentState: 'REASSIGNING',
+          isMultiOrder: false,
+          demandLevel: 'NORMAL',
+          priorityLevel: 1
         }).then(() => "Agente Asignador: Ruta devuelta al pool público."),
 
         // 4. Notificaciones: Alerta Maestra

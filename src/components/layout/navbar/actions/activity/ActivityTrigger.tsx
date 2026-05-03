@@ -50,7 +50,7 @@ export const ActivityTrigger = React.forwardRef<HTMLButtonElement, ActivityTrigg
       >
         <Bell className={cn("w-4 h-4 sm:w-4.5 sm:h-4.5", count > 0 ? "text-primary animate-vibrate" : "text-slate-400")} />
         {count > 0 && user && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[7px] sm:text-[8px] font-black w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[5px] flex items-center justify-center border-[1.5px] border-white shadow-sm ring-1 ring-red-500/20">
+          <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] sm:text-[11px] font-black min-w-[20px] h-[20px] px-1 rounded-full flex items-center justify-center border-2 border-white shadow-sm z-10">
             {count}
           </span>
         )}

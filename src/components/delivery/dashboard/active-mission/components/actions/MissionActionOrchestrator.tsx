@@ -28,13 +28,13 @@ export function MissionActionOrchestrator({
 
   return (
     <section className="space-y-4">
-      {/* PASO 1: COMENZAR A LLEVARLA (Transición de picking_up a shipped) */}
+      {/* PASO 1: COMENZAR RUTA (Transición de picking_up a shipped) */}
       {status === 'picking_up' && (
         <Button 
           onClick={() => onUpdateStatus('shipped')} 
-          className="w-full h-20 rounded-[32px] bg-orange-500 hover:bg-orange-600 text-white font-black text-xl uppercase italic gap-4 shadow-[0_20px_50px_rgba(249,115,22,0.4)] active:scale-95 transition-all border-b-[8px] border-orange-700 active:border-b-0"
+          className="w-full h-16 rounded-[28px] bg-orange-500 hover:bg-orange-600 text-white font-black text-sm sm:text-base uppercase italic gap-3 shadow-[0_20px_50px_rgba(249,115,22,0.4)] active:scale-95 transition-all border-b-[6px] border-orange-700 active:border-b-0"
         >
-          <Navigation className="w-7 h-7" /> COMENZAR A LLEVARLA
+          <Navigation className="w-5 h-5 shrink-0" /> <span className="truncate">COMENZAR RUTA</span>
         </Button>
       )}
 
@@ -42,9 +42,9 @@ export function MissionActionOrchestrator({
       {isEnRoute && (
         <Button 
           onClick={() => onUpdateStatus('at_destination')} 
-          className="w-full h-20 rounded-[32px] bg-blue-600 text-white font-black text-xl uppercase italic gap-4 shadow-2xl active:scale-95 transition-all border-b-[8px] border-blue-900 active:border-b-0"
+          className="w-full h-16 rounded-[28px] bg-blue-600 text-white font-black text-sm sm:text-base uppercase italic gap-3 shadow-2xl active:scale-95 transition-all border-b-[6px] border-blue-900 active:border-b-0"
         >
-          <Navigation className="w-7 h-7" /> LLEGUÉ AL DESTINO
+          <Navigation className="w-5 h-5" /> LLEGUÉ AL DESTINO
         </Button>
       )}
 
@@ -53,9 +53,9 @@ export function MissionActionOrchestrator({
       {isAtDestination && (
         <Button 
           onClick={() => onUpdateStatus('delivered')} 
-          className="w-full h-24 rounded-[36px] bg-purple-600 text-white font-black text-lg sm:text-xl uppercase italic gap-3 px-4 shadow-2xl active:scale-95 transition-all border-b-[10px] border-purple-800 active:border-b-0"
+          className="w-full h-16 rounded-[28px] bg-purple-600 text-white font-black text-sm sm:text-base uppercase italic gap-3 px-4 shadow-2xl active:scale-95 transition-all border-b-[6px] border-purple-800 active:border-b-0"
         >
-          <PackageCheck className="w-6 h-6 sm:w-8 sm:h-8 animate-bounce" /> INSTALÉ LA LAVADORA
+          <PackageCheck className="w-5 h-5 animate-bounce" /> INSTALÉ LA LAVADORA
         </Button>
       )}
     </section>

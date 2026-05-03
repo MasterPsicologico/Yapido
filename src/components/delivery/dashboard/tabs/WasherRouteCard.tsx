@@ -87,6 +87,7 @@ export function WasherRouteCard({ order, onAccept }: WasherRouteCardProps) {
             </div>
             <RoutePrice 
               formattedPrice={formattedPrice} 
+              totalPrice={order.totalPrice}
               requestHours={order.requestHours} 
               washerType={order.washerType} 
               createdAt={order.createdAt}

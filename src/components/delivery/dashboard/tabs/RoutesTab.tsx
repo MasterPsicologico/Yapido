@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Lock, Loader2, Trash2, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { FleetManagementCard } from '@/components/delivery/fleet/FleetManagementCard';
 
 interface RoutesTabProps {
   isOnline: boolean;
@@ -13,9 +14,13 @@ interface RoutesTabProps {
   hasRecycled?: boolean;
   onAccept: (id: string) => void;
   onGoOnline: () => void;
+  /** Fleet props — only provided when the user is a store owner */
+  ownedStore?: any;
+  fleetDrivers?: any[];
+  onOpenFleetPanel?: () => void;
 }
 
-export function RoutesTab({ isOnline, orders, hasRecycled, onAccept, onGoOnline }: RoutesTabProps) {
+export function RoutesTab({ isOnline, orders, hasRecycled, onAccept, onGoOnline, ownedStore, fleetDrivers, onOpenFleetPanel }: RoutesTabProps) {
   if (!isOnline) {
     return (
       <div className="text-center py-24 bg-slate-50 rounded-[48px] border-2 border-dashed space-y-6 animate-in fade-in duration-500">
@@ -94,6 +99,15 @@ export function RoutesTab({ isOnline, orders, hasRecycled, onAccept, onGoOnline 
           </Button>
         </Link>
       </div>
+
+      {/* FLEET MANAGEMENT CARD — Solo visible para dueños de negocio */}
+      {ownedStore && onOpenFleetPanel && (
+        <FleetManagementCard 
+          store={ownedStore} 
+          drivers={fleetDrivers || []} 
+          onOpenPanel={onOpenFleetPanel} 
+        />
+      )}
     </div>
   );
 }

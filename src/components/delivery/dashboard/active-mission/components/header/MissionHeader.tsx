@@ -2,12 +2,13 @@
 "use client";
 
 import { format } from 'date-fns';
-import { Clock, RotateCcw } from 'lucide-react';
+import { Clock, RotateCcw, Map, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface MissionHeaderProps {
   onReleaseOpen: () => void;
+  onOpenLiveMap?: () => void;
   status: string;
   isWithDriver: boolean;
   isInUse: boolean;
@@ -20,6 +21,7 @@ interface MissionHeaderProps {
  */
 export function MissionHeader({ 
   onReleaseOpen, 
+  onOpenLiveMap,
   status, 
   isWithDriver, 
   isInUse, 
@@ -43,14 +45,16 @@ export function MissionHeader({
 
   return (
     <div className="h-16 bg-slate-900 flex items-center justify-between px-4 text-white shrink-0 shadow-xl z-20">
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={onReleaseOpen} 
-        className="h-10 w-10 text-white/60 hover:text-red-500 hover:bg-white/5 rounded-full transition-all"
-      >
-        <RotateCcw className="w-5 h-5" />
-      </Button>
+      {onOpenLiveMap && (
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onOpenLiveMap} 
+          className="h-10 w-10 text-white/80 hover:text-primary hover:bg-primary/10 rounded-full transition-all"
+        >
+          <MapPin className="w-5 h-5" />
+        </Button>
+      )}
       
       <div className="flex items-center gap-2">
         <div className={cn("w-2 h-2 rounded-full animate-pulse", getStatusColor())} />
@@ -64,6 +68,14 @@ export function MissionHeader({
         <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
           <Clock className="w-4 h-4 text-primary" />
         </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onReleaseOpen} 
+          className="h-9 w-9 text-white/60 hover:text-red-500 hover:bg-white/5 rounded-full transition-all"
+        >
+          <RotateCcw className="w-4 h-4" />
+        </Button>
       </div>
     </div>
   );

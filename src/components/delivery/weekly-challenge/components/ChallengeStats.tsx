@@ -7,13 +7,14 @@ import { ChallengeStatCard } from './ChallengeStatCard';
 interface ChallengeStatsProps {
   avgRating: number;
   weeklyEarnings: number;
+  commissionRate?: number;
 }
 
 /**
  * ChallengeStats - Orquestador de Cuadrantes de Rendimiento Real.
  * Ahora recibe datos dinámicos de transacciones y reputación.
  */
-export function ChallengeStats({ avgRating, weeklyEarnings }: ChallengeStatsProps) {
+export function ChallengeStats({ avgRating, weeklyEarnings, commissionRate = 0.20 }: ChallengeStatsProps) {
   const formattedEarnings = new Intl.NumberFormat('es-CO', {
     style: 'currency',
     currency: 'COP',
@@ -31,13 +32,13 @@ export function ChallengeStats({ avgRating, weeklyEarnings }: ChallengeStatsProp
         iconColor="text-yellow-500 fill-yellow-500"
       />
 
-      {/* CUADRANTE GANANCIAS SEMANALES REALES */}
+      {/* CUADRANTE COMISIÓN SEMANAL DEL REPARTIDOR */}
       <ChallengeStatCard 
-        label="Total Semanal"
+        label={`Comisión (${Math.round(commissionRate * 100)}%)`}
         value={formattedEarnings}
         icon={Wallet}
-        iconBg="bg-primary/5"
-        iconColor="text-primary"
+        iconBg="bg-emerald-50"
+        iconColor="text-emerald-500"
       />
     </div>
   );

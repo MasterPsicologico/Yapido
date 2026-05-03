@@ -44,3 +44,19 @@ next-env.d.ts
 firebase-debug.log
 firestore-debug.log
 .vercel
+
+# project specific
+*.zip
+*.apk
+*.txt
+*.py
+.agents/
+.vscode/
+.firebase/
+.firebaserc
+.original_*
+scratch/
+MANIFEST.md
+APK_STRUCTURE.md
+Yapido_Universal.apk
+project.zip

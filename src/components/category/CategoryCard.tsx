@@ -48,7 +48,11 @@ export function CategoryCard({ category, onEdit }: CategoryCardProps) {
 
   const storesQuery = useMemoFirebase(() => {
     if (!firestore || !category.id) return null;
-    return query(collection(firestore, 'stores'), where('mainCategoryId', '==', category.id));
+    return query(
+      collection(firestore, 'stores'),
+      where('mainCategoryId', '==', category.id),
+      where('status', '==', 'active')
+    );
   }, [firestore, category.id]);
 
   const { data: stores } = useCollection(storesQuery);

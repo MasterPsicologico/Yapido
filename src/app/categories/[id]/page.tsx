@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { StoreCard } from '@/components/store/StoreCard';
 import { Button } from '@/components/ui/button';
@@ -50,10 +50,42 @@ export default function CategoryPage() {
 
   const storesQuery = useMemoFirebase(() => {
     if (!firestore || !id) return null;
-    return query(collection(firestore, 'stores'), where('mainCategoryId', '==', id), where('status', '==', 'active'));
+    // Quitamos el filtro de 'active' para manejar la papelera en memoria
+    return query(collection(firestore, 'stores'), where('mainCategoryId', '==', id));
   }, [firestore, id]);
 
-  const { data: stores, isLoading: loadingStores } = useCollection(storesQuery);
+  const { data: rawStores, isLoading: loadingStores } = useCollection(storesQuery);
+
+  // Filtrar por ciudad del usuario y manejar lógica de papelera
+  const stores = useMemo(() => {
+    if (!rawStores) return [];
+    let filtered = rawStores;
+
+    // Lógica de Papelera:
+    // 1. Mostrar 'active' a todos.
+    // 2. Mostrar 'trashed' SOLO al dueño o admin, y solo si lleva menos de 24h.
+    filtered = rawStores.filter((s: any) => {
+      const isOwner = user?.uid === s.ownerId;
+      const trashedAt = s.trashedAt?.toDate?.() || (s.trashedAt?.seconds ? new Date(s.trashedAt.seconds * 1000) : null);
+      const isWithin24h = trashedAt ? (Date.now() - trashedAt.getTime()) < (24 * 60 * 60 * 1000) : true;
+
+      if (s.status === 'active') return true;
+      if (s.status === 'trashed') {
+        if (isAdmin || isOwner) {
+          return isWithin24h; // Solo mostrar si está en el periodo de gracia
+        }
+      }
+      return false;
+    });
+
+    // Filtro geográfico
+    if (profile?.cityId) {
+      filtered = filtered.filter((s: any) => s.cityId === profile.cityId || !s.cityId);
+    }
+    
+    // Ordenar por calificación
+    return [...filtered].sort((a: any, b: any) => (b.averageRating || 0) - (a.averageRating || 0));
+  }, [rawStores, profile?.cityId, user?.uid, isAdmin]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
     const file = e.target.files?.[0];

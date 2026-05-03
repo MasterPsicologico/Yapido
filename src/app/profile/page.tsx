@@ -63,7 +63,11 @@ export default function ProfilePage() {
     if (!driverCode.trim() || !user || !firestore) return;
     setIsLinking(true);
     try {
-      const q = query(collection(firestore, 'stores'), where('driverCode', '==', driverCode.toUpperCase()));
+      const q = query(
+        collection(firestore, 'stores'), 
+        where('driverCode', '==', driverCode.toUpperCase()),
+        where('status', '==', 'active')
+      );
       const snap = await getDocs(q);
       
       if (snap.empty) {

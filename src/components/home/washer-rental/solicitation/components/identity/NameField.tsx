@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from 'react';
@@ -6,15 +5,18 @@ import { User as UserIcon, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { SaveIndicator } from './SaveIndicator';
 
 interface NameFieldProps {
   value: string;
   onChange: (v: string) => void;
+  onBlur?: () => void;
+  saveStatus?: 'idle' | 'typing' | 'saved';
   hasError?: boolean;
 }
 
 export const NameField = React.forwardRef<HTMLDivElement, NameFieldProps>(
-  ({ value, onChange, hasError }, ref) => {
+  ({ value, onChange, onBlur, saveStatus, hasError }, ref) => {
     return (
       <div ref={ref} className={cn("space-y-2 group transition-all duration-300", hasError && "animate-shake-strong")}>
         <div className="flex items-center gap-2 ml-4">
@@ -39,8 +41,9 @@ export const NameField = React.forwardRef<HTMLDivElement, NameFieldProps>(
           <Input 
             value={value} 
             onChange={(e) => onChange(e.target.value)} 
+            onBlur={onBlur}
             className={cn(
-              "h-16 rounded-[24px] border-2 pl-16 pr-6 font-black text-slate-900 text-lg transition-all duration-500",
+              "h-16 rounded-[24px] border-2 pl-16 pr-14 font-black text-slate-900 text-lg transition-all duration-500",
               "bg-gradient-to-r from-yellow-50/50 to-white focus:bg-white",
               hasError 
                 ? "border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]" 
@@ -48,6 +51,8 @@ export const NameField = React.forwardRef<HTMLDivElement, NameFieldProps>(
             )}
             placeholder="Tu identidad maestra..." 
           />
+
+          <SaveIndicator status={saveStatus} className="right-4" />
         </div>
       </div>
     );

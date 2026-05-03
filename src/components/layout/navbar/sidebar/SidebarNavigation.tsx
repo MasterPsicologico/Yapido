@@ -62,18 +62,6 @@ export function SidebarNavigation({ user, canAccessManage, isRepartidor, isAdmin
             </SheetClose>
           )}
 
-          {/* 3. CONSOLA DE MANDO (DUEÑOS O ADMIN) */}
-          {canAccessManage && (
-            <SheetClose asChild>
-              <Link href="/admin/manage" className="flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all hover:bg-slate-50 group">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10 text-primary animate-pulse group-hover:bg-primary group-hover:text-white transition-colors">
-                  <Waves className="w-5 h-5" />
-                </div>
-                <span className="font-bold text-slate-700 group-hover:text-slate-900">Consola de Mando</span>
-              </Link>
-            </SheetClose>
-          )}
-
           {/* 4. VERIFICACIÓN DE FLOTA (SOLO ADMIN) */}
           {isAdmin && (
             <SheetClose asChild>

@@ -56,6 +56,13 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
     }
   }, [orderId]);
 
+  // VINCULACIÓN DE STREAM A VIDEO REF
+  useEffect(() => {
+    if (isCameraOpen && stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [isCameraOpen, stream]);
+
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !orderId) return null;
     return query(collection(firestore, 'orders', orderId, 'messages'), orderBy('createdAt', 'asc'));
@@ -127,14 +134,21 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const compressed = await compressImage(file, 800, 800, 0.7);
+      // Calidad aumentada: 1920x1080 con 0.85 de calidad
+      const compressed = await compressImage(file, 1920, 1080, 0.85);
       handleSendMessage({ imageUrl: compressed, type: 'image' });
     }
   };
 
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        } 
+      });
       setStream(mediaStream);
       setIsCameraOpen(true);
     } catch (error) {
@@ -156,7 +170,8 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(videoRef.current, 0, 0);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        // Calidad de captura aumentada a 0.9
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         handleSendMessage({ imageUrl: dataUrl, type: 'image' });
         stopCamera();
       }
@@ -270,10 +285,34 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
       </div>
 
       {isCameraOpen && (
-        <div className="absolute inset-0 z-[250] bg-black flex flex-col p-6 animate-in fade-in">
-          <div className="flex justify-between items-center mb-4"><h4 className="text-white font-black uppercase text-xs tracking-widest italic">Captura Directa</h4><Button variant="ghost" size="icon" onClick={stopCamera} className="text-white"><X className="w-6 h-6" /></Button></div>
-          <div className="flex-1 relative rounded-[32px] overflow-hidden bg-slate-900 border-2 border-white/10"><video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" /></div>
-          <div className="py-8 flex justify-center"><Button onClick={capturePhoto} className="w-20 h-20 rounded-full bg-white text-black border-8 border-slate-300 active:scale-90"><Camera className="w-8 h-8" /></Button></div>
+        <div className="absolute inset-0 z-[250] bg-black flex flex-col animate-in fade-in">
+          <div className="absolute top-6 left-6 right-6 z-[260] flex justify-between items-center">
+            <h4 className="text-white font-black uppercase text-xs tracking-widest italic drop-shadow-lg">Captura Directa</h4>
+            <Button variant="ghost" size="icon" onClick={stopCamera} className="text-white bg-black/20 rounded-full h-12 w-12 hover:bg-black/40">
+              <X className="w-6 h-6" />
+            </Button>
+          </div>
+          
+          <div className="flex-1 w-full bg-slate-900">
+            <video 
+              ref={videoRef} 
+              autoPlay 
+              muted 
+              playsInline 
+              className="w-full h-full object-cover" 
+            />
+          </div>
+          
+          <div className="absolute bottom-10 left-0 right-0 flex justify-center z-[260]">
+            <Button 
+              onClick={capturePhoto} 
+              className="w-24 h-24 rounded-full bg-white/20 text-white border-4 border-white backdrop-blur-md active:scale-90 transition-all p-0 flex items-center justify-center group"
+            >
+              <div className="w-16 h-16 rounded-full bg-white group-hover:scale-110 transition-transform flex items-center justify-center">
+                <Camera className="w-8 h-8 text-black" />
+              </div>
+            </Button>
+          </div>
         </div>
       )}
     </div>

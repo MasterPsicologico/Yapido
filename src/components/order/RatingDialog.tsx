@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+import { updateAverageRating } from '@/components/rating/update-average-rating';
 
 interface RatingDialogProps {
   orderId: string;
@@ -58,19 +59,29 @@ export function RatingDialog({ orderId, storeName, isOpen, onOpenChange, ratingT
       if (ratingType === 'to_store') {
         updateData.rating = rating;
         updateData.review = review;
+        updateData.ratedByCustomer = true;
       } else if (ratingType === 'to_driver') {
         updateData.driverRatingByCustomer = rating;
         updateData.driverReviewByCustomer = review;
+        updateData.ratedByCustomer = true;
       } else if (ratingType === 'to_customer') {
         updateData.customerRatingByStore = rating;
         updateData.customerReviewByStore = review;
+        updateData.ratedByDriver = true;
       }
 
       updateDocumentNonBlocking(orderRef, updateData);
+
+      // Actualizar averageRating en la entidad objetivo
+      try {
+        await updateAverageRating(firestore, orderId, ratingType, rating);
+      } catch (err) {
+        console.warn('[RatingDialog] averageRating update skipped:', err);
+      }
       
       toast({ 
         title: "¡Gracias por tu opinión!", 
-        description: "Tu reseña ayuda a la comunidad de Vitriniando.",
+        description: "Tu reseña ayuda a la comunidad de Yapido.",
         className: "bg-green-600 text-white border-none"
       });
       onOpenChange(false);

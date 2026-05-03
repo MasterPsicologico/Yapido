@@ -11,6 +11,9 @@ import { cn } from '@/lib/utils';
 import { CitySelector } from './solicitation/components/identity/CitySelector';
 import { ZoneSelector } from './solicitation/components/identity/ZoneSelector';
 import { useCityConfig } from '@/hooks/use-city-config';
+import { ImageIcon } from 'lucide-react';
+import { compressImage } from '@/lib/image-compression';
+import Image from 'next/image';
 
 interface WasherStoreCreationDialogProps {
   isOpen: boolean;
@@ -35,6 +38,8 @@ export function WasherStoreCreationDialog({
   const [hasSemi, setHasSemi] = useState(false);
   const [selectedCityId, setSelectedCityId] = useState("");
   const [selectedZoneId, setSelectedZoneId] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
 
   const { cityConfig, activeCities, activeZones, hasMultipleZones } = useCityConfig({
     overrideCityId: selectedCityId || undefined,
@@ -49,6 +54,21 @@ export function WasherStoreCreationDialog({
       if (profile.zoneId) setSelectedZoneId(profile.zoneId);
     }
   });
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsCompressing(true);
+      try {
+        const base64 = await compressImage(file, 800, 600, 0.8);
+        setPreviewImage(base64);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+      } finally {
+        setIsCompressing(false);
+      }
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -137,6 +157,41 @@ export function WasherStoreCreationDialog({
                       <div className="absolute right-6 top-1/2 -translate-y-1/2 text-green-500/30"><Zap className="w-5 h-5 fill-current" /></div>
                     </div>
                   </div>
+
+                  <div className="space-y-3 group">
+                    <Label className="text-[9px] font-black uppercase text-slate-400 ml-4 tracking-widest group-focus-within:text-yellow-600 transition-colors">Foto de Portada del Negocio</Label>
+                    <div 
+                      className={cn(
+                        "relative h-48 rounded-[32px] border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all",
+                        previewImage ? "border-yellow-500/50" : "border-slate-200 hover:border-yellow-500/30 hover:bg-yellow-50/10"
+                      )}
+                      onClick={() => document.getElementById('store-image-input')?.click()}
+                    >
+                      {previewImage ? (
+                        <>
+                          <Image src={previewImage} alt="Preview" fill className="object-cover" />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                            <p className="text-white font-black text-[10px] uppercase tracking-widest">Cambiar Imagen</p>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400">
+                            {isCompressing ? <Loader2 className="w-6 h-6 animate-spin" /> : <ImageIcon className="w-6 h-6" />}
+                          </div>
+                          <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Subir Imagen Real</p>
+                        </div>
+                      )}
+                      <input 
+                        id="store-image-input"
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleImageChange}
+                      />
+                      <input type="hidden" name="base64Image" value={previewImage || ''} />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -208,45 +263,101 @@ export function WasherStoreCreationDialog({
 
                 <div className="grid gap-4 relative z-10">
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center px-4 leading-relaxed">
-                    Si ofreces equipos principales, marca tus disponibilidades actuales:
+                    Marca tus equipos y define el valor del alquiler por hora:
                   </p>
                   
-                  <div className="grid grid-cols-1 gap-4">
-                    <button 
-                      type="button"
-                      onClick={() => setHasAuto(!hasAuto)}
-                      className={cn(
-                        "flex items-center justify-between p-6 rounded-[28px] border-2 transition-all duration-500 group/btn active:scale-[0.98]",
-                        hasAuto 
-                          ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]" 
-                          : "bg-slate-50 border-slate-50 text-slate-400 hover:border-yellow-500/20 hover:bg-white"
+                  <div className="grid grid-cols-1 gap-6">
+                    {/* AUTOMÁTICA */}
+                    <div className="space-y-3">
+                      <button 
+                        type="button"
+                        onClick={() => setHasAuto(!hasAuto)}
+                        className={cn(
+                          "w-full flex items-center justify-between p-6 rounded-[28px] border-2 transition-all duration-500 active:scale-[0.98]",
+                          hasAuto 
+                            ? "bg-slate-900 border-slate-900 text-white shadow-xl" 
+                            : "bg-slate-50 border-slate-50 text-slate-400 hover:border-yellow-500/20 hover:bg-white"
+                        )}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={cn("w-2 h-2 rounded-full", hasAuto ? "bg-yellow-500 animate-pulse shadow-[0_0_10px_rgba(234,179,8,1)]" : "bg-slate-300")} />
+                          <span className="font-black text-sm uppercase italic tracking-tighter">Automáticas</span>
+                        </div>
+                        {hasAuto && <CheckCircle2 className="w-6 h-6 text-yellow-500 animate-in zoom-in" />}
+                      </button>
+                      
+                      {hasAuto && (
+                        <div className="grid grid-cols-2 gap-3 px-2 animate-in slide-in-from-top-2">
+                           <div className="space-y-1.5">
+                             <Label className="text-[8px] font-black uppercase text-slate-400 ml-2">Precio/Hora</Label>
+                             <Input 
+                               name="pricePerHourAuto" 
+                               type="number" 
+                               defaultValue="3500" 
+                               className="h-12 rounded-xl bg-slate-50 border-none text-slate-900 font-black text-center" 
+                               required={hasAuto}
+                             />
+                           </div>
+                           <div className="space-y-1.5">
+                             <Label className="text-[8px] font-black uppercase text-slate-400 ml-2">Mín. Horas</Label>
+                             <Input 
+                               name="minHoursAuto" 
+                               type="number" 
+                               defaultValue="5" 
+                               className="h-12 rounded-xl bg-slate-50 border-none text-slate-900 font-black text-center" 
+                               required={hasAuto}
+                             />
+                           </div>
+                        </div>
                       )}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={cn("w-2 h-2 rounded-full", hasAuto ? "bg-yellow-500 animate-pulse shadow-[0_0_10px_rgba(234,179,8,1)]" : "bg-slate-300")} />
-                        <span className="font-black text-sm uppercase italic tracking-tighter">Automáticas</span>
-                      </div>
-                      {hasAuto && <CheckCircle2 className="w-6 h-6 text-yellow-500 animate-in zoom-in" />}
-                    </button>
-                    <input type="hidden" name="hasAutomatic" value={hasAuto ? "true" : "false"} />
+                      <input type="hidden" name="hasAutomatic" value={hasAuto ? "true" : "false"} />
+                    </div>
 
-                    <button 
-                      type="button"
-                      onClick={() => setHasSemi(!hasSemi)}
-                      className={cn(
-                        "flex items-center justify-between p-6 rounded-[28px] border-2 transition-all duration-500 group/btn active:scale-[0.98]",
-                        hasSemi 
-                          ? "bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]" 
-                          : "bg-slate-50 border-slate-50 text-slate-400 hover:border-yellow-500/20 hover:bg-white"
+                    {/* SEMIAUTOMÁTICA */}
+                    <div className="space-y-3">
+                      <button 
+                        type="button"
+                        onClick={() => setHasSemi(!hasSemi)}
+                        className={cn(
+                          "w-full flex items-center justify-between p-6 rounded-[28px] border-2 transition-all duration-500 active:scale-[0.98]",
+                          hasSemi 
+                            ? "bg-slate-900 border-slate-900 text-white shadow-xl" 
+                            : "bg-slate-50 border-slate-50 text-slate-400 hover:border-yellow-500/20 hover:bg-white"
+                        )}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={cn("w-2 h-2 rounded-full", hasSemi ? "bg-yellow-500 animate-pulse shadow-[0_0_10px_rgba(234,179,8,1)]" : "bg-slate-300")} />
+                          <span className="font-black text-sm uppercase italic tracking-tighter">Semiautomáticas</span>
+                        </div>
+                        {hasSemi && <CheckCircle2 className="w-6 h-6 text-yellow-500 animate-in zoom-in" />}
+                      </button>
+
+                      {hasSemi && (
+                        <div className="grid grid-cols-2 gap-3 px-2 animate-in slide-in-from-top-2">
+                           <div className="space-y-1.5">
+                             <Label className="text-[8px] font-black uppercase text-slate-400 ml-2">Precio/Hora</Label>
+                             <Input 
+                               name="pricePerHourSemi" 
+                               type="number" 
+                               defaultValue="3000" 
+                               className="h-12 rounded-xl bg-slate-50 border-none text-slate-900 font-black text-center" 
+                               required={hasSemi}
+                             />
+                           </div>
+                           <div className="space-y-1.5">
+                             <Label className="text-[8px] font-black uppercase text-slate-400 ml-2">Mín. Horas</Label>
+                             <Input 
+                               name="minHoursSemi" 
+                               type="number" 
+                               defaultValue="5" 
+                               className="h-12 rounded-xl bg-slate-50 border-none text-slate-900 font-black text-center" 
+                               required={hasSemi}
+                             />
+                           </div>
+                        </div>
                       )}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={cn("w-2 h-2 rounded-full", hasSemi ? "bg-yellow-500 animate-pulse shadow-[0_0_10px_rgba(234,179,8,1)]" : "bg-slate-300")} />
-                        <span className="font-black text-sm uppercase italic tracking-tighter">Semiautomáticas</span>
-                      </div>
-                      {hasSemi && <CheckCircle2 className="w-6 h-6 text-yellow-500 animate-in zoom-in" />}
-                    </button>
-                    <input type="hidden" name="hasSemiautomatic" value={hasSemi ? "true" : "false"} />
+                      <input type="hidden" name="hasSemiautomatic" value={hasSemi ? "true" : "false"} />
+                    </div>
                   </div>
                 </div>
 

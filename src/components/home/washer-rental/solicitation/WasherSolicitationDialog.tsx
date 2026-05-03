@@ -2,15 +2,16 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { doc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
-import { LogIn, Sparkles, ShieldCheck, ChevronDown, ChevronUp, User, Store, Bike } from 'lucide-react';
+import { LogIn, Sparkles, ShieldCheck, ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
 
 // Importación de Componentes Atómicos
 import { SolicitationHeader } from './components/header/SolicitationHeader';
@@ -55,6 +56,7 @@ export function WasherSolicitationDialog({
   const router = useRouter();
   const { user } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   
   const [tempName, setTempName] = useState("");
   const [tempAddress, setTempAddress] = useState("");
@@ -63,7 +65,7 @@ export function WasherSolicitationDialog({
   const [selectedCityId, setSelectedCityId] = useState("");
   const [selectedZoneId, setSelectedZoneId] = useState("");
   const [requestHours, setRequestHours] = useState(5);
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'digital'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'digital'>('digital');
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
   const [washerType, setWasherType] = useState<'automatica' | 'semiautomatica'>('automatica');
   const [floor, setFloor] = useState("1");
@@ -75,6 +77,8 @@ export function WasherSolicitationDialog({
   const [redirectCountdown, setRedirectCountdown] = useState(5);
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
   const [isPersonalDataCollapsed, setIsPersonalDataCollapsed] = useState(false);
+  const [isServiceDataCollapsed, setIsServiceDataCollapsed] = useState(false);
+  const [saveStatuses, setSaveStatuses] = useState<Record<string, 'idle' | 'typing' | 'saved'>>({});
   const prevIsCompleteRef = useRef(false);
 
   // CEREBRO GEOGRÁFICO: Carga la configuración de la ciudad y zona seleccionada
@@ -129,22 +133,47 @@ export function WasherSolicitationDialog({
     );
   }, [tempName, selectedCityId, selectedZoneId, tempAddress, tempPhone, hasMultipleZones]);
 
+  const handleFieldChange = (field: string, value: string, setter: (v: string) => void) => {
+    setter(value);
+    setSaveStatuses(prev => ({ ...prev, [field]: 'typing' }));
+  };
+
+  const handleFieldBlur = (field: string, value: string, dbKey: string) => {
+    if (!user?.uid || !value.trim()) {
+      setSaveStatuses(prev => ({ ...prev, [field]: 'idle' }));
+      return;
+    }
+    const userDocRef = doc(firestore, 'users', user.uid);
+    setDocumentNonBlocking(userDocRef, {
+      [dbKey]: value,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    setSaveStatuses(prev => ({ ...prev, [field]: 'saved' }));
+  };
+
   useEffect(() => {
     if (isPersonalDataComplete && !prevIsCompleteRef.current) {
-      const timer = setTimeout(() => {
-        setIsPersonalDataCollapsed(true);
-        if (user?.uid) {
-          setDocumentNonBlocking(`users/${user.uid}`, {
-            displayName: tempName,
-            address: tempAddress,
-            sector: tempSector,
-            phoneNumber: tempPhone,
-            cityId: selectedCityId,
-            zoneId: hasMultipleZones ? selectedZoneId : null,
-            updatedAt: new Date().toISOString()
-          }, { merge: true });
-        }
-      }, 800);
+      // Guardar INMEDIATAMENTE a Firestore sin delay — esto es la señal permanente
+      if (user?.uid) {
+        const userDocRef = doc(firestore, 'users', user.uid);
+        setDocumentNonBlocking(userDocRef, {
+          displayName: tempName,
+          address: tempAddress,
+          sector: tempSector,
+          phoneNumber: tempPhone,
+          cityId: selectedCityId,
+          zoneId: hasMultipleZones ? selectedZoneId : null,
+          personalDataComplete: true,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      }
+      // Marcar todos los campos como guardados visualmente
+      setSaveStatuses({
+        name: 'saved', city: 'saved', zone: 'saved',
+        address: 'saved', sector: 'saved', phone: 'saved'
+      });
+      // Contraer con un micro-delay solo visual (la data ya se guardó)
+      const timer = setTimeout(() => setIsPersonalDataCollapsed(true), 600);
       prevIsCompleteRef.current = true;
       return () => clearTimeout(timer);
     } else if (!isPersonalDataComplete) {
@@ -161,15 +190,34 @@ export function WasherSolicitationDialog({
       if (profile.cityId) setSelectedCityId(profile.cityId);
       if (profile.zoneId) setSelectedZoneId(profile.zoneId);
 
+      if (profile.lastWasherType) {
+        setWasherType(profile.lastWasherType);
+        setFloor(profile.lastFloor || "1");
+        setHasElevator(profile.lastHasElevator || false);
+        setHasStairs(profile.lastHasStairs || false);
+        setStairCount(profile.lastStairCount || 1);
+        setIsServiceDataCollapsed(true);
+      } else {
+        setIsServiceDataCollapsed(false);
+      }
+
+      // Verificar completitud usando la bandera permanente O los datos directos
       const isComplete = Boolean(
-        (profile.displayName || "").trim() && 
-        profile.cityId && 
-        (profile.address || "").trim() && 
-        (profile.phoneNumber || "").trim()
+        profile.personalDataComplete || (
+          (profile.displayName || "").trim() && 
+          profile.cityId && 
+          (profile.address || "").trim() && 
+          (profile.phoneNumber || "").trim()
+        )
       );
       if (isComplete) {
         setIsPersonalDataCollapsed(true);
         prevIsCompleteRef.current = true;
+        // Marcar todos como guardados para mostrar chulitos verdes
+        setSaveStatuses({
+          name: 'saved', city: 'saved', zone: 'saved',
+          address: 'saved', sector: 'saved', phone: 'saved'
+        });
       } else {
         setIsPersonalDataCollapsed(false);
         prevIsCompleteRef.current = false;
@@ -245,6 +293,20 @@ export function WasherSolicitationDialog({
     }
 
     setOrderStatus('sending');
+    
+    // Guardar preferencias de servicio para futuras solicitudes
+    if (user?.uid) {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      setDocumentNonBlocking(userDocRef, {
+        lastWasherType: washerType,
+        lastFloor: floor,
+        lastHasElevator: hasElevator,
+        lastHasStairs: hasStairs,
+        lastStairCount: stairCount,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+
     try {
       const orderId = await onSubmitRequest({
         customerName: tempName, customerAddress: tempAddress, customerSector: tempSector,
@@ -343,11 +405,21 @@ export function WasherSolicitationDialog({
                         </button>
                       </div>
                     )}
-                    <NameField value={tempName} onChange={setTempName} hasError={fieldErrors.name} />
+                    <NameField 
+                      value={tempName} 
+                      onChange={(v) => handleFieldChange('name', v, setTempName)} 
+                      onBlur={() => handleFieldBlur('name', tempName, 'displayName')}
+                      saveStatus={saveStatuses['name']}
+                      hasError={fieldErrors.name} 
+                    />
                     <CitySelector 
                       selectedCityId={selectedCityId} 
-                      onCityChange={setSelectedCityId} 
+                      onCityChange={(v) => {
+                        handleFieldChange('city', v, setSelectedCityId);
+                        handleFieldBlur('city', v, 'cityId');
+                      }} 
                       activeCities={activeCities}
+                      saveStatus={saveStatuses['city']}
                       hasError={fieldErrors.city} 
                     />
                     {hasMultipleZones && (
@@ -355,16 +427,33 @@ export function WasherSolicitationDialog({
                         zones={activeZones}
                         cityConfig={cityConfig}
                         selectedZoneId={selectedZoneId}
-                        onZoneChange={setSelectedZoneId}
+                        onZoneChange={(v) => {
+                          handleFieldChange('zone', v, setSelectedZoneId);
+                          handleFieldBlur('zone', v, 'zoneId');
+                        }}
+                        saveStatus={saveStatuses['zone']}
                         error={fieldErrors.zone}
                       />
                     )}
                     <AddressField 
-                      address={tempAddress} onAddressChange={setTempAddress}
-                      sector={tempSector} onSectorChange={setTempSector}
-                      errorSector={fieldErrors.sector} errorAddress={fieldErrors.address}
+                      address={tempAddress} 
+                      onAddressChange={(v) => handleFieldChange('address', v, setTempAddress)}
+                      onAddressBlur={() => handleFieldBlur('address', tempAddress, 'address')}
+                      addressSaveStatus={saveStatuses['address']}
+                      sector={tempSector} 
+                      onSectorChange={(v) => handleFieldChange('sector', v, setTempSector)}
+                      onSectorBlur={() => handleFieldBlur('sector', tempSector, 'sector')}
+                      sectorSaveStatus={saveStatuses['sector']}
+                      errorSector={fieldErrors.sector} 
+                      errorAddress={fieldErrors.address}
                     />
-                    <PhoneField value={tempPhone} onChange={setTempPhone} hasError={fieldErrors.phone} />
+                    <PhoneField 
+                      value={tempPhone} 
+                      onChange={(v) => handleFieldChange('phone', v, setTempPhone)} 
+                      onBlur={() => handleFieldBlur('phone', tempPhone, 'phoneNumber')}
+                      saveStatus={saveStatuses['phone']}
+                      hasError={fieldErrors.phone} 
+                    />
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -385,54 +474,65 @@ export function WasherSolicitationDialog({
                         EDITAR <ChevronDown className="w-3 h-3" />
                       </div>
                     </div>
-                    
-                    {/* Menú de Navegación Rápida Sutil */}
-                    <div className="flex items-center justify-center gap-6 px-4 py-1.5 bg-slate-50/50 rounded-full border border-slate-100/50 w-fit mx-auto shadow-[0_2px_10px_rgba(0,0,0,0.02)] backdrop-blur-sm">
-                      <button 
-                        onClick={() => { onOpenChange(false); router.push('/profile'); }}
-                        className="text-[9px] font-black text-slate-400 hover:text-slate-700 flex items-center gap-1.5 transition-all hover:scale-105"
-                      >
-                        <User className="w-3 h-3" /> PERFIL
-                      </button>
-                      <div className="w-1 h-1 rounded-full bg-slate-300" />
-                      <button 
-                        onClick={() => { onOpenChange(false); router.push('/business'); }}
-                        className="text-[9px] font-black text-slate-400 hover:text-slate-700 flex items-center gap-1.5 transition-all hover:scale-105"
-                      >
-                        <Store className="w-3 h-3" /> NEGOCIO
-                      </button>
-                      <div className="w-1 h-1 rounded-full bg-slate-300" />
-                      <button 
-                        onClick={() => { onOpenChange(false); router.push('/delivery'); }}
-                        className="text-[9px] font-black text-slate-400 hover:text-slate-700 flex items-center gap-1.5 transition-all hover:scale-105"
-                      >
-                        <Bike className="w-3 h-3" /> DELIVERY
-                      </button>
-                    </div>
+
                   </div>
                 )}
 
-                <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-                  <ServiceConfiguration 
-                    isAdmin={isAdmin} washerType={washerType} setWasherType={setWasherType}
-                    floor={floor} setFloor={setFloor} hasElevator={hasElevator} setHasElevator={setHasElevator}
-                    hasStairs={hasStairs} setHasStairs={setHasStairs} stairCount={stairCount} setStairCount={setStairCount}
-                    availableMachineTypes={availableMachineTypes}
-                  />
-                </div>
+                {isPersonalDataComplete && (
+                  <div className="animate-in fade-in slide-in-from-top-8 duration-700 space-y-10">
+                    {!isServiceDataCollapsed ? (
+                      <div className={cn("transition-all duration-500 relative", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
+                        {profile?.lastWasherType && (
+                          <div className="flex justify-end mb-[-20px] relative z-20">
+                            <button 
+                              onClick={() => setIsServiceDataCollapsed(true)}
+                              className="text-[10px] font-black text-yellow-600 flex items-center gap-1 bg-yellow-50 hover:bg-yellow-100 px-3 py-1.5 rounded-full transition-colors mr-4 mt-2"
+                            >
+                              OCULTAR DETALLES <ChevronUp className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                        <ServiceConfiguration 
+                          isAdmin={isAdmin} washerType={washerType} setWasherType={setWasherType}
+                          floor={floor} setFloor={setFloor} hasElevator={hasElevator} setHasElevator={setHasElevator}
+                          hasStairs={hasStairs} setHasStairs={setHasStairs} stairCount={stairCount} setStairCount={setStairCount}
+                          availableMachineTypes={availableMachineTypes}
+                        />
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => setIsServiceDataCollapsed(false)}
+                        className="bg-yellow-50/50 border-2 border-dashed border-yellow-200 rounded-[24px] p-4 flex items-center justify-between cursor-pointer hover:bg-yellow-50 transition-colors group relative z-10"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 shadow-sm group-hover:scale-110 transition-transform">
+                            <Settings2 className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <h4 className="text-[11px] font-black text-yellow-800 uppercase tracking-widest">Detalles del Servicio</h4>
+                            <p className="text-[10px] font-bold text-yellow-600/70 uppercase tracking-wider">{washerType} • Piso {floor}</p>
+                          </div>
+                        </div>
+                        <div className="text-[10px] font-black text-yellow-600 flex items-center gap-1 bg-white border border-yellow-100 shadow-sm px-3 py-2 rounded-full group-hover:bg-yellow-100/50 transition-colors">
+                          EDITAR <ChevronDown className="w-3 h-3" />
+                        </div>
+                      </div>
+                    )}
 
-                <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-                  <DurationManager requestHours={requestHours} onAdjust={handleAdjustHours} minHours={resolvedPricing.minHours} formattedPrice={formattedPrice} flashEffect={flashEffect} />
-                </div>
+                    <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
+                      <DurationManager requestHours={requestHours} onAdjust={handleAdjustHours} minHours={resolvedPricing.minHours} formattedPrice={formattedPrice} flashEffect={flashEffect} />
+                    </div>
 
-                <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-                  <PaymentStrategySelector method={paymentMethod} onChange={setPaymentMethod} />
-                </div>
+                    <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
+                      <PaymentStrategySelector method={paymentMethod} onChange={setPaymentMethod} />
+                    </div>
 
-                {orderStatus === 'success' ? (
-                  <SuccessProtocol countdown={redirectCountdown} />
-                ) : (
-                  <SubmitAction isSending={orderStatus === 'sending'} isAnyStoreOpen={isAnyStoreOpen} formattedPrice={formattedPrice} paymentMethod={paymentMethod} onSubmit={handleFormSubmit} />
+                    {orderStatus === 'success' ? (
+                      <SuccessProtocol countdown={redirectCountdown} />
+                    ) : (
+                      <SubmitAction isSending={orderStatus === 'sending'} isAnyStoreOpen={isAnyStoreOpen} formattedPrice={formattedPrice} paymentMethod={paymentMethod} onSubmit={handleFormSubmit} />
+                    )}
+                  </div>
                 )}
               </>
             )}

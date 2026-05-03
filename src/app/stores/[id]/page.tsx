@@ -81,15 +81,34 @@ export default function StorePage() {
       <Navbar />
       <div className="text-center space-y-4">
         <StoreIcon className="w-16 h-16 mx-auto text-muted-foreground opacity-20" />
-        <h2 className="text-2xl font-bold italic text-slate-400">Vitrina no encontrada</h2>
+        <h2 className="text-2xl font-bold italic text-slate-400 uppercase tracking-tighter">Vitrina no encontrada</h2>
         <Link href="/">
-          <Button className="rounded-full">Volver al Inicio</Button>
+          <Button className="rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-all">Volver al Inicio</Button>
         </Link>
       </div>
     </div>
   );
 
   const canEdit = user?.uid === store?.ownerId || isAdmin;
+
+  // Lógica de Invisibilidad de Papelera:
+  // Si la tienda está en papelera y el usuario no es el dueño ni admin, actuar como si no existiera.
+  if (store?.status === 'trashed' && !canEdit) {
+    return (
+      <div className="flex flex-col min-h-screen items-center justify-center p-4">
+        <Navbar />
+        <div className="text-center space-y-4">
+          <StoreIcon className="w-16 h-16 mx-auto text-muted-foreground opacity-20" />
+          <h2 className="text-2xl font-bold italic text-slate-400 uppercase tracking-tighter">Vitrina no disponible</h2>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400/60 max-w-[200px] mx-auto">Esta tienda ha sido eliminada por su propietario.</p>
+          <Link href="/">
+            <Button className="rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-all">Volver al Inicio</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const effectivePhoneNumber = store?.phoneNumber || ownerProfile?.phoneNumber;
 
   const handleOpenInternalChat = async () => {

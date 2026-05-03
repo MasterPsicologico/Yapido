@@ -217,6 +217,8 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
     if (!user || !firestore) return;
     setIsSendingRequest(true);
     const fd = new FormData(e.currentTarget);
+    const base64Image = fd.get('base64Image') as string;
+    
     try {
       const storeRef = doc(collection(firestore, 'stores'));
       await setDocumentNonBlocking(storeRef, {
@@ -226,14 +228,20 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
         zoneId: fd.get('zoneId') || null, zoneName: fd.get('zoneName') || null,
         hasAutomatic: fd.get('hasAutomatic') === 'true',
         hasSemiautomatic: fd.get('hasSemiautomatic') === 'true',
+        pricePerHourAuto: Number(fd.get('pricePerHourAuto')) || 3500,
+        minHoursAuto: Number(fd.get('minHoursAuto')) || 5,
+        pricePerHourSemi: Number(fd.get('pricePerHourSemi')) || 3000,
+        minHoursSemi: Number(fd.get('minHoursSemi')) || 5,
+        totalUnits: Number(fd.get('totalUnits')) || 0,
         mainCategoryId: 'category-washer', type: 'washer_rental', status: 'active', createdAt: serverTimestamp(),
-        imageUrl: `https://picsum.photos/seed/${storeRef.id}/800/600`, driverCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+        imageUrl: base64Image || `https://picsum.photos/seed/${storeRef.id}/800/600`, 
+        driverCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
         privateDrivers: []
       }, { merge: true });
       if (profile?.role === 'cliente') updateDocumentNonBlocking(doc(firestore, 'users', user.uid), { role: 'dueño', updatedAt: serverTimestamp() });
       toast({ title: "¡Vitrina Lanzada!" });
       setOpenAddWasherStore(false);
-      router.push(`/admin/washer/${storeRef.id}`);
+      router.push(`/stores/${storeRef.id}`);
     } catch (e) {
       toast({ title: "Error al registrar", variant: "destructive" });
     } finally {

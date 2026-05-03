@@ -34,10 +34,10 @@ export function StatusIdentityCard({ order, isAssigned, onGoToTracking }: Status
               </div>
               <div>
                 <h3 className="text-2xl font-black italic uppercase tracking-tighter leading-none">
-                  {isAssigned ? "¡PEDIDO EN RUTA!" : "PROCESO DE ALISTAMIENTO"}
+                  {order?.status === 'preparing' ? "PEDIDO ACEPTADO" : isAssigned ? "¡PEDIDO EN RUTA!" : "PROCESO DE ALISTAMIENTO"}
                 </h3>
                 <p className={cn("text-[10px] font-bold uppercase tracking-widest mt-2", isAssigned ? "text-green-400" : "text-slate-400")}>
-                  {isAssigned ? "TU CONTRATO HA SIDO FORMALIZADO" : "DESPACHANDO TU LAVADORA ÉLITE"}
+                  {order?.status === 'preparing' ? "LA TIENDA ESTÁ PREPARANDO TU EQUIPO" : isAssigned ? "TU CONTRATO HA SIDO FORMALIZADO" : "DESPACHANDO TU LAVADORA ÉLITE"}
                 </p>
               </div>
             </div>

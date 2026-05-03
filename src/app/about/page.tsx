@@ -35,11 +35,6 @@ export default function AboutPage() {
                   Nuestros Servicios
                 </Button>
               </Link>
-              <Link href="/admin/manage">
-                <Button size="lg" variant="outline" className="bg-transparent text-white border-white/20 hover:bg-white/10 px-10 rounded-sm h-14 text-lg uppercase tracking-wider">
-                  Consola de Mando
-                </Button>
-              </Link>
             </div>
           </div>
         </section>

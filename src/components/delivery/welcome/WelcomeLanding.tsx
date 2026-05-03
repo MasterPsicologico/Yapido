@@ -133,7 +133,7 @@ export function WelcomeLanding({ isAdmin, config, onUpdateConfig }: WelcomeLandi
     }
   };
 
-  const isFormReady = acceptedTerms && docFront && docBack && selfie && idNumber && vehicleType;
+  const isFormReady = Boolean(acceptedTerms && docFront && docBack && selfie && idNumber && vehicleType);
 
   return (
     <div className={cn(

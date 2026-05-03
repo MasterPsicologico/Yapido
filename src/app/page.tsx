@@ -8,7 +8,7 @@ import { HomeCategorySection } from '@/components/home/HomeCategorySection';
 import { HomePromoBanner } from '@/components/home/HomePromoBanner';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, doc, orderBy } from 'firebase/firestore';
+import { collection, query, doc, orderBy, where } from 'firebase/firestore';
 import { Cpu, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
@@ -73,7 +73,7 @@ function HomeContent({ user, isUserLoading }: { user: any, isUserLoading: boolea
   const { data: mainCategories, isLoading: loadingCategories } = useCollection(catQ);
 
   const allStoresQ = useMemoFirebase(() => 
-    isLocked ? null : query(collection(firestore, 'stores')), 
+    isLocked ? null : query(collection(firestore, 'stores'), where('status', '==', 'active')), 
     [firestore, isLocked]
   );
   const { data: allStores } = useCollection(allStoresQ);

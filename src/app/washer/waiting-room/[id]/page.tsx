@@ -27,6 +27,7 @@ export default function WasherWaitingRoom() {
   const { user } = useUser();
   
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [hasNotifiedAccepted, setHasNotifiedAccepted] = useState(false);
 
   // LISTENER MAESTRO: La Orden
   const orderRef = useMemoFirebase(() => (!firestore || !id || !user) ? null : doc(firestore, 'orders', id), [firestore, id, user]);
@@ -87,6 +88,19 @@ export default function WasherWaitingRoom() {
     toast({ title: "¡Trato Cerrado!", className: "bg-green-600 text-white" });
   };
 
+  // NOTIFICACIÓN EN TIEMPO REAL CUANDO SE ACEPTA EL PEDIDO
+  useEffect(() => {
+    if (!hasNotifiedAccepted && order?.status && order.status !== 'pending' && order.status !== 'searching' && order.status !== 'cancelled') {
+      const storeName = order.storeName || 'una tienda';
+      toast({ 
+        title: "¡Pedido Aceptado!", 
+        description: `Tu pedido ha sido aceptado por ${storeName}. El proceso ha comenzado.`,
+        className: "bg-primary text-white shadow-2xl border-none font-black" 
+      });
+      setHasNotifiedAccepted(true);
+    }
+  }, [order?.status, hasNotifiedAccepted]);
+
   if (loadingOrder) return (
     <div className="fixed inset-0 flex items-center justify-center bg-white">
       <div className="flex flex-col items-center gap-4">
@@ -96,7 +110,10 @@ export default function WasherWaitingRoom() {
     </div>
   );
 
-  const isAssigned = ['ready_for_pickup', 'at_store', 'delivered_to_driver', 'shipped', 'at_destination', 'delivered'].includes(order?.status);
+  const isAssigned = [
+    'preparing', 'picking_up', 'at_pickup', 'ready_for_pickup', 
+    'at_store', 'delivered_to_driver', 'shipped', 'at_destination', 'delivered'
+  ].includes(order?.status);
   const minutes = timeLeft !== null ? Math.floor(timeLeft / 60) : 5;
   const seconds = timeLeft !== null ? timeLeft % 60 : 0;
 

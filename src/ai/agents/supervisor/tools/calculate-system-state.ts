@@ -34,7 +34,7 @@ export const calculateSystemStateTool = ai.defineTool(
     return {
       healthScore,
       status: healthScore > 80 ? 'EXCELENTE' : healthScore > 50 ? 'ESTABLE' : 'CRÍTICO',
-      alertLevel: healthScore > 80 ? 'green' : healthScore > 50 ? 'yellow' : 'red',
+      alertLevel: (healthScore > 80 ? 'green' : healthScore > 50 ? 'yellow' : 'red') as 'green' | 'yellow' | 'red',
     };
   }
 );

@@ -38,37 +38,38 @@ export function TerminalView({
   onClose, onAdjustHours, onInternalChat, onUpdateStatus, onFinalize
 }: TerminalViewProps) {
   return (
-    <div className="fixed inset-0 z-[600] bg-white flex flex-col animate-in fade-in zoom-in duration-300 overflow-hidden">
-      {/* Header de la Terminal */}
-      <div className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-6 shrink-0 shadow-sm relative z-10">
-         <div className="flex items-center gap-4">
-            <div className={cn(
-              "w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner",
-              isCompleted ? "bg-green-500 text-white" : isExpired ? "bg-red-500 text-white" : "bg-primary text-white"
-            )}>
-              {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : <Timer className="w-6 h-6" />}
-            </div>
-            <div className="min-w-0">
-              <h4 className="text-xl font-black uppercase italic tracking-tighter text-slate-900 leading-tight break-words pr-4">
-                {order.customerName}
-              </h4>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Terminal de Mando</p>
-            </div>
-         </div>
-         <Button 
-           variant="ghost" 
-           size="icon" 
-           onClick={onClose}
-           className="h-12 w-12 rounded-full bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-90 shrink-0"
-         >
-           <X className="w-6 h-6 stroke-[3]" />
-         </Button>
-      </div>
-
+    <div className="fixed inset-0 z-[600] bg-[#f8fafc] flex flex-col animate-in fade-in zoom-in duration-300 overflow-hidden">
       {/* Cuerpo de la Terminal con Scroll Blindado */}
-      <ScrollArea className="flex-1 w-full bg-[#f8fafc]">
-        <div className="p-6 pb-32 space-y-10 max-w-2xl mx-auto">
-          <div className="h-1 w-12 bg-slate-200 rounded-full mx-auto" />
+      <ScrollArea className="flex-1 w-full">
+        {/* Header que ahora hace scroll con el contenido */}
+        <div className="w-full bg-white border-b border-slate-100 shadow-sm mb-8">
+           <div className="max-w-2xl mx-auto px-6 py-6 flex items-start justify-between">
+             <div className="flex items-center gap-4 pr-4">
+                <div className={cn(
+                  "w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center shadow-inner",
+                  isCompleted ? "bg-green-500 text-white" : isExpired ? "bg-red-500 text-white" : "bg-primary text-white"
+                )}>
+                  {isCompleted ? <CheckCircle2 className="w-6 h-6" /> : <Timer className="w-6 h-6" />}
+                </div>
+                <div className="min-w-0 space-y-1.5">
+                  <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Terminal de Mando</p>
+                  <h4 className="text-sm font-black uppercase italic tracking-tight text-slate-900 leading-tight break-words">
+                    {order.customerName}
+                  </h4>
+                </div>
+             </div>
+             <Button 
+               variant="ghost" 
+               size="icon" 
+               onClick={onClose}
+               className="h-12 w-12 rounded-full bg-slate-50 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-90 shrink-0"
+             >
+               <X className="w-6 h-6 stroke-[3]" />
+             </Button>
+           </div>
+        </div>
+
+        <div className="px-6 pb-32 space-y-10 max-w-2xl mx-auto">
           
           {!isCompleted && (
             <div className="w-full flex justify-center overflow-hidden px-1">

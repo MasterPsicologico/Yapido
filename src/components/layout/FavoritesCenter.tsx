@@ -28,6 +28,12 @@ export function FavoritesCenter() {
   const favoriteStoreIds = profile?.favoriteStores || [];
   const favoriteProductIds = profile?.favoriteProducts || [];
 
+  const isAdmin = useMemo(() => {
+    if (!user) return false;
+    const superAdmins = ['9qjHXRHfKfS2LrlE6074rR9JOm83', 'OUeZfonX8AY4YHRI4qLCc1WiVFN2', 'YohYZ5BLFiUIL9Z4IWrTVlDjwt43', 'ZfSO1go6agR2owAsDh07GH440QN2'];
+    return superAdmins.includes(user.uid) || profile?.role === 'admin';
+  }, [user, profile]);
+
   const storesQuery = useMemoFirebase(() => {
     if (!firestore || favoriteStoreIds.length === 0) return null;
     return query(collection(firestore, 'stores'), where(documentId(), 'in', favoriteStoreIds.slice(0, 10)));
@@ -38,8 +44,21 @@ export function FavoritesCenter() {
     return query(collection(firestore, 'products'), where(documentId(), 'in', favoriteProductIds.slice(0, 10)));
   }, [firestore, favoriteProductIds]);
 
-  const { data: stores } = useCollection(storesQuery);
+  const { data: rawStores } = useCollection(storesQuery);
   const { data: products } = useCollection(productsQuery);
+
+  const stores = useMemo(() => {
+    if (!rawStores) return [];
+    return rawStores.filter((s: any) => {
+      const isOwner = user?.uid === s.ownerId;
+      const trashedAt = s.trashedAt?.toDate?.() || (s.trashedAt?.seconds ? new Date(s.trashedAt.seconds * 1000) : null);
+      const isWithin24h = trashedAt ? (Date.now() - trashedAt.getTime()) < (24 * 60 * 60 * 1000) : true;
+
+      if (s.status === 'active') return true;
+      if (s.status === 'trashed' && (isAdmin || isOwner) && isWithin24h) return true;
+      return false;
+    });
+  }, [rawStores, user?.uid, isAdmin]);
 
   const totalCount = favoriteStoreIds.length + favoriteProductIds.length;
 
