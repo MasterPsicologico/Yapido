@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import {
   Loader,
   Navigation,
@@ -18,11 +20,7 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { DriverLiveLocation } from "@/hooks/use-fleet-live-locations";
-declare global {
-  interface Window {
-    google?: typeof google;
-  }
-}
+
 interface MapConfig {
   center?: { lat: number; lng: number };
   zoom?: number;
@@ -31,6 +29,7 @@ interface MapConfig {
   driverId?: string;
   driverName?: string;
 }
+
 interface FleetMapProps {
   isOpen: boolean;
   onClose: () => void;
@@ -39,6 +38,7 @@ interface FleetMapProps {
   mode?: "fleet" | "driver-route" | "customer-tracking";
   onDriverSelect?: (driver: DriverLiveLocation) => void;
 }
+
 interface EtaInfo {
   duration: number;
   distance: number;
@@ -46,49 +46,48 @@ interface EtaInfo {
   distanceText: string;
 }
 
-function createDriverIcon(name: string, isSelected: boolean) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 64;
-  canvas.height = 80;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return "";
-  ctx.fillStyle = isSelected ? "#6a4ff9" : "#94a3b8";
-  ctx.beginPath();
-  ctx.moveTo(32, 80);
-  ctx.lineTo(6, 38);
-  ctx.arc(32, 38, 26, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 22px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(name.charAt(0).toUpperCase(), 32, 38);
-  return canvas.toDataURL();
-}
-
-async function getRoute(
-  map: google.maps.Map,
-  origin: { lat: number; lng: number },
-  destination: { lat: number; lng: number }
-): Promise<google.maps.DirectionsResult | null> {
-  return new Promise((resolve) => {
-    if (!window.google?.maps?.DirectionsService) {
-      resolve(null);
-      return;
-    }
-    const service = new window.google.maps.DirectionsService();
-    service.route(
-      {
-        origin: new window.google.maps.LatLng(origin.lat, origin.lng),
-        destination: new window.google.maps.LatLng(destination.lat, destination.lng),
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === "OK" && result) resolve(result);
-        else resolve(null);
-      }
-    );
-  });
+function createDriverElement(name: string, isSelected: boolean) {
+  const el = document.createElement("div");
+  el.className = "driver-marker";
+  el.innerHTML = `
+    <div style="
+      width: 48px;
+      height: 60px;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    ">
+      <div style="
+        width: 40px;
+        height: 40px;
+        background: ${isSelected ? '#6a4ff9' : '#94a3b8'};
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        border: 3px solid white;
+      ">
+        <span style="
+          color: white;
+          font-weight: bold;
+          font-size: 16px;
+          font-family: sans-serif;
+        ">${name.charAt(0).toUpperCase()}</span>
+      </div>
+      <div style="
+        position: absolute;
+        bottom: 0;
+        width: 0;
+        height: 0;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-top: 12px solid ${isSelected ? '#6a4ff9' : '#94a3b8'};
+      "></div>
+    </div>
+  `;
+  return el;
 }
 
 export function FleetMap({
@@ -99,180 +98,213 @@ export function FleetMap({
   mode = "fleet",
   onDriverSelect,
 }: FleetMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
-  const routeDisplayRef = useRef<google.maps.DirectionsRenderer | null>(null);
-  const routeServiceRef = useRef<google.maps.DirectionsService | null>(null);
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [mapError, setMapError] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState<DriverLiveLocation | null>(null);
   const [eta, setEta] = useState<EtaInfo | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
-  const defaultCenter = { lat: 6.247, lng: -75.565 };
-  
+  const defaultCenter: [number, number] = [-75.565, 6.247];
+
   useEffect(() => {
-    if (!isOpen || !mapRef.current) return;
+    if (!isOpen || !mapContainer.current) return;
     let isMounted = true;
-    let cleanupLoaded = false;
-    
+
     async function initMap() {
       setIsLoading(true);
       setMapError(false);
-      
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-      if (!apiKey) {
+
+      const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+      if (!mapboxToken) {
         setMapError(true);
         setIsLoading(false);
         return;
       }
-      
-      if (!window.google?.maps) {
-        if (!document.getElementById("google-maps-script")) {
-          await new Promise<void>((resolve, reject) => {
-            const script = document.createElement("script");
-            script.id = "google-maps-script";
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&v=3&libraries=marker`;
-            script.async = true;
-            script.defer = true;
-            script.onload = () => resolve();
-            script.onerror = () => reject();
-            document.head.appendChild(script);
-          }).catch(() => {
-            if (isMounted) {
-              setMapError(true);
-              setIsLoading(false);
-            }
-            cleanupLoaded = true;
-          });
-          
-          if (cleanupLoaded) return;
-        }
-        
-        await new Promise<void>((resolve) => {
-          if (window.google?.maps) { resolve(); return; }
-          const check = setInterval(() => {
-            if (window.google?.maps) {
-              clearInterval(check);
-              resolve();
-            }
-          }, 100);
-          setTimeout(() => { clearInterval(check); resolve(); }, 5000);
-        });
+
+      mapboxgl.accessToken = mapboxToken;
+
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
       }
-      
-      if (!isMounted || !mapRef.current) return;
-      if (!window.google?.maps) {
-        setMapError(true);
-        setIsLoading(false);
-        return;
-      }
-      
-      const mapCenter = config?.center || defaultCenter;
-      const map = new window.google.maps.Map(mapRef.current, {
-        center: new window.google.maps.LatLng(mapCenter.lat, mapCenter.lng),
+
+      const mapCenter = config?.center 
+        ? [config.center.lng, config.center.lat] as [number, number]
+        : defaultCenter;
+
+      const map = new mapboxgl.Map({
+        container: mapContainer.current as HTMLElement,
+        style: "mapbox://styles/mapbox/navigation-day-v1",
+        center: mapCenter,
         zoom: 14,
-        disableDefaultUI: true,
-        zoomControl: true,
-        fullscreenControl: false,
-        mapTypeControl: false,
-        streetViewControl: false,
+        attributionControl: true,
       });
-      
-      mapInstanceRef.current = map;
-      routeServiceRef.current = new window.google.maps.DirectionsService();
-      routeDisplayRef.current = new window.google.maps.DirectionsRenderer({
-        map,
-        suppressMarkers: true,
-        polylineOptions: {
-          strokeColor: "#6a4ff9",
-          strokeOpacity: 0.75,
-          strokeWeight: 5,
-        },
+
+      map.addControl(new mapboxgl.NavigationControl(), "top-right");
+
+      map.on("load", () => {
+        if (isMounted) {
+          setIsMapReady(true);
+          setIsLoading(false);
+        }
       });
-      setIsMapReady(true);
-      setIsLoading(false);
+
+      map.on("error", () => {
+        if (isMounted) {
+          setMapError(true);
+          setIsLoading(false);
+        }
+      });
+
+      mapRef.current = map;
     }
-    
+
     initMap();
-    
+
     return () => {
       isMounted = false;
-      mapInstanceRef.current = null;
-      markersRef.current.forEach((m) => m.setMap(null));
-      markersRef.current.clear();
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
-  }, [isOpen]);
+  }, [isOpen, config?.center]);
+
   const updateMarkers = useCallback(
     (driverList: DriverLiveLocation[]) => {
-      const map = mapInstanceRef.current;
-      if (!map || !isMapReady) return;
-      markersRef.current.forEach((m) => { m.setMap(null); });
+      if (!mapRef.current || !isMapReady) return;
+
+      markersRef.current.forEach((m) => m.remove());
       markersRef.current.clear();
+
       driverList.forEach((driver) => {
         if (!driver.currentLocation) return;
-        const pos = new window.google.maps.LatLng(driver.currentLocation.lat, driver.currentLocation.lng);
-        const marker = new window.google.maps.Marker({
-          position: pos,
-          map,
-          icon: {
-            url: createDriverIcon(driver.displayName || "?", selectedDriver?.id === driver.id),
-            scaledSize: new window.google.maps.Size(64, 80),
-            anchor: new window.google.maps.Point(32, 70),
-          },
-          title: driver.displayName,
-        });
-        const infoWindow = new window.google.maps.InfoWindow({
-          content: `<div style="padding:8px;font-family:sans-serif">
-            <strong style="font-size:14px">${driver.displayName}</strong>
-            <div style="font-size:12px;color:#64748b;margin-top:4px">En línea</div>
-          </div>`,
-        });
-        marker.addListener("click", () => {
+
+        const el = createDriverElement(driver.displayName || "?", selectedDriver?.id === driver.id);
+
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([driver.currentLocation.lng, driver.currentLocation.lat])
+          .addTo(mapRef.current!);
+
+        const popup = new mapboxgl.Popup({ offset: 25, closeButton: false })
+          .setHTML(`
+            <div style="padding:8px;font-family:sans-serif;min-width:100px">
+              <strong style="font-size:14px">${driver.displayName}</strong>
+              <div style="font-size:12px;color:#64748b;margin-top:4px">En línea</div>
+            </div>
+          `);
+
+        marker.setPopup(popup);
+
+        marker.getElement().addEventListener("click", () => {
           setSelectedDriver(driver);
           onDriverSelect?.(driver);
           if (config?.destination && driver.currentLocation) {
             computeRouteForDriver(driver);
           }
         });
-        infoWindow.open(map, marker);
-        setTimeout(() => infoWindow.close(), 3000);
+
+        popup.addTo(mapRef.current!);
+        setTimeout(() => popup.remove(), 3000);
+
         markersRef.current.set(driver.id, marker);
       });
+
       if (drivers.length === 1 && drivers[0].currentLocation) {
-        map.setCenter(new window.google.maps.LatLng(drivers[0].currentLocation.lat, drivers[0].currentLocation.lng));
+        mapRef.current.flyTo({
+          center: [drivers[0].currentLocation.lng, drivers[0].currentLocation.lat],
+          zoom: 15,
+          essential: true
+        });
       }
     },
     [drivers, selectedDriver, config, onDriverSelect, isMapReady]
   );
+
   const computeRouteForDriver = useCallback(
     async (driver: DriverLiveLocation) => {
-      if (!routeServiceRef.current || !routeDisplayRef.current || !driver.currentLocation || !config?.destination) return;
-      const result = await getRoute(mapInstanceRef.current!, driver.currentLocation, config.destination);
-      if (result) {
-        routeDisplayRef.current.setDirections(result);
-        const route = result.routes[0]?.legs[0];
-        if (route) {
-          setEta({
-            duration: route.duration?.value || 0,
-            distance: route.distance?.value || 0,
-            durationText: route.duration?.text || "?",
-            distanceText: route.distance?.text || "?",
-          });
+      if (!driver.currentLocation || !config?.destination || !mapRef.current || !isMapReady) return;
+
+      const origin = [driver.currentLocation.lng, driver.currentLocation.lat] as [number, number];
+      const destination = [config.destination.lng, config.destination.lat] as [number, number];
+
+      try {
+        const response = await fetch(
+          `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${destination[0]},${destination[1]}?geometries=geojson&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
+        );
+        const data = await response.json();
+
+        if (data.routes && data.routes[0]) {
+          const route = data.routes[0];
+
+          const duration = route.duration;
+          const distance = route.distance;
+          const hours = Math.floor(duration / 3600);
+          const minutes = Math.floor((duration % 3600) / 60);
+          const durationText = hours > 0 ? `${hours}h ${minutes}min` : `${Math.round(duration / 60)} min`;
+          const distanceKm = (distance / 1000).toFixed(1);
+          const distanceText = `${distanceKm} km`;
+
+          setEta({ duration, distance, durationText, distanceText });
+
+          const geojson: GeoJSON.Feature<GeoJSON.LineString> = {
+            type: "Feature",
+            properties: {},
+            geometry: route.geometry
+          };
+
+          if (mapRef.current.getSource("driver-route")) {
+            (mapRef.current.getSource("driver-route") as mapboxgl.GeoJSONSource).setData(geojson);
+          } else {
+            mapRef.current.addSource("driver-route", {
+              type: "geojson",
+              data: geojson
+            });
+
+            mapRef.current.addLayer({
+              id: "driver-route",
+              type: "line",
+              source: "driver-route",
+              layout: {
+                "line-join": "round",
+                "line-cap": "round"
+              },
+              paint: {
+                "line-color": "#6a4ff9",
+                "line-width": 5,
+                "line-opacity": 0.75
+              }
+            });
+          }
+
+          const bounds = new mapboxgl.LngLatBounds(
+            [Math.min(origin[0], destination[0]), Math.min(origin[1], destination[1])],
+            [Math.max(origin[0], destination[0]), Math.max(origin[1], destination[1])]
+          );
+          mapRef.current.fitBounds(bounds, { padding: 80 });
         }
+      } catch (err) {
+        console.error("Error computing route:", err);
       }
     },
-    [config]
+    [config, isMapReady]
   );
+
   useEffect(() => {
-    if (isMapReady && drivers.length > 0) updateMarkers(drivers);
+    if (isMapReady && drivers.length > 0) {
+      updateMarkers(drivers);
+    }
   }, [drivers, isMapReady, updateMarkers]);
+
   useEffect(() => {
     if (selectedDriver && config?.destination && selectedDriver.currentLocation) {
       computeRouteForDriver(selectedDriver);
     }
   }, [selectedDriver, config, computeRouteForDriver]);
-  const handleOpenInGoogleMaps = useCallback((driver: DriverLiveLocation) => {
+
+  const handleOpenInMaps = useCallback((driver: DriverLiveLocation) => {
     if (!driver.currentLocation) return;
     if (config?.destination) {
       window.open(
@@ -286,11 +318,14 @@ export function FleetMap({
       );
     }
   }, [config]);
+
   const handleCallDriver = useCallback((driver: DriverLiveLocation) => {
     if (!driver.phoneNumber) { toast({ title: "Sin teléfono", variant: "destructive" }); return; }
     window.open(`tel:${driver.phoneNumber}`, "_self");
   }, []);
+
   if (!isOpen) return null;
+
   return (
     <AnimatePresence>
       <motion.div
@@ -319,7 +354,7 @@ export function FleetMap({
           </div>
         </div>
         <div className="flex-1 relative">
-          <div ref={mapRef} className="absolute inset-0 w-full h-full" />
+          <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
           {isLoading && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-10">
               <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -369,7 +404,7 @@ export function FleetMap({
                   className="h-10 w-10 rounded-2xl bg-green-50 text-green-600 hover:bg-green-100">
                   <Phone className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => handleOpenInGoogleMaps(selectedDriver)}
+                <Button variant="ghost" size="icon" onClick={() => handleOpenInMaps(selectedDriver)}
                   className="h-10 w-10 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20">
                   <Navigation className="w-4 h-4" />
                 </Button>
@@ -384,9 +419,12 @@ export function FleetMap({
                 key={driver.id}
                 onClick={() => {
                   setSelectedDriver(driver);
-                  if (driver.currentLocation && mapInstanceRef.current) {
-                    mapInstanceRef.current.setCenter(new window.google.maps.LatLng(driver.currentLocation.lat, driver.currentLocation.lng));
-                    mapInstanceRef.current.setZoom(15);
+                  if (driver.currentLocation && mapRef.current) {
+                    mapRef.current.flyTo({
+                      center: [driver.currentLocation.lng, driver.currentLocation.lat],
+                      zoom: 15,
+                      essential: true
+                    });
                   }
                   onDriverSelect?.(driver);
                 }}
