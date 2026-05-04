@@ -80,6 +80,9 @@ export function DriverLiveMap({
   const [currentRoute, setCurrentRoute] = useState<RouteInfo | null>(null);
   const [isCardExpanded, setIsCardExpanded] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [resolvedPickup, setResolvedPickup] = useState<{ lat: number; lng: number } | null>(null);
+  const [resolvedDelivery, setResolvedDelivery] = useState<{ lat: number; lng: number } | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   
   const pickupLocation = order.storeLocation;
   const deliveryLocation = order.customerLocation;
@@ -178,6 +181,55 @@ export function DriverLiveMap({
     };
   }, [order.id]);
 
+  const geocodeAddress = useCallback(async (address: string): Promise<{ lat: number; lng: number } | null> => {
+    if (!address) return null;
+    try {
+      const encodedAddress = encodeURIComponent(address + ", Medellín, Colombia");
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&limit=1`
+      );
+      const data = await response.json();
+      if (data.features && data.features.length > 0) {
+        return {
+          lng: data.features[0].center[0],
+          lat: data.features[0].center[1]
+        };
+      }
+    } catch (err) {
+      console.error("Geocoding error:", err);
+    }
+    return null;
+  }, []);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    
+    const resolveLocations = async () => {
+      setIsGeocoding(true);
+      
+      let pickupCoords: { lat: number; lng: number } | null = null;
+      let deliveryCoords: { lat: number; lng: number } | null = null;
+      
+      if (pickupLocation?.lat && pickupLocation?.lng && pickupLocation.lat !== 0) {
+        pickupCoords = pickupLocation;
+      } else if (order.storeAddress) {
+        pickupCoords = await geocodeAddress(order.storeAddress);
+      }
+      
+      if (deliveryLocation?.lat && deliveryLocation?.lng && deliveryLocation.lat !== 0) {
+        deliveryCoords = deliveryLocation;
+      } else if (order.customerAddress) {
+        deliveryCoords = await geocodeAddress(order.customerAddress);
+      }
+      
+      setResolvedPickup(pickupCoords);
+      setResolvedDelivery(deliveryCoords);
+      setIsGeocoding(false);
+    };
+    
+    resolveLocations();
+  }, [isMapReady, pickupLocation, deliveryLocation, order.storeAddress, order.customerAddress, geocodeAddress]);
+
   const isPickingUp = order.status === "picking_up" || order.status === "at_store";
 
   const updateMarkers = useCallback(() => {
@@ -249,17 +301,17 @@ export function DriverLiveMap({
   }, [driverLocation, isMapReady, updateMarkers]);
 
   const fetchAndDrawRoute = useCallback(async () => {
-    if (!mapRef.current || !isMapReady || !deliveryLocation) return;
+    if (!mapRef.current || !isMapReady || !resolvedDelivery) return;
     
     const origin = isActive && driverLocation 
       ? [driverLocation.lng, driverLocation.lat] as [number, number]
-      : pickupLocation 
-        ? [pickupLocation.lng, pickupLocation.lat] as [number, number]
+      : resolvedPickup 
+        ? [resolvedPickup.lng, resolvedPickup.lat] as [number, number]
         : null;
     
     if (!origin) return;
     
-    const destination = [deliveryLocation.lng, deliveryLocation.lat] as [number, number];
+    const destination = [resolvedDelivery.lng, resolvedDelivery.lat] as [number, number];
     
     const routeColor = isPickingUp ? "#6a4ff9" : "#3b82f6";
     
@@ -330,19 +382,19 @@ export function DriverLiveMap({
   }, [pickupLocation, deliveryLocation, driverLocation, isActive, isMapReady, isPickingUp]);
 
   useEffect(() => {
-    if (isActive && driverLocation && isMapReady) {
+    if (isActive && driverLocation && isMapReady && (resolvedPickup || resolvedDelivery)) {
       fetchAndDrawRoute();
     }
-  }, [isActive, driverLocation, isMapReady, fetchAndDrawRoute]);
+  }, [isActive, driverLocation, isMapReady, resolvedPickup, resolvedDelivery, fetchAndDrawRoute]);
 
   useEffect(() => {
-    if (isActive && driverLocation) {
+    if (isActive && driverLocation && (resolvedPickup || resolvedDelivery)) {
       const interval = setInterval(() => {
         fetchAndDrawRoute();
       }, 30000);
       return () => clearInterval(interval);
     }
-  }, [isActive, driverLocation, fetchAndDrawRoute]);
+  }, [isActive, driverLocation, resolvedPickup, resolvedDelivery, fetchAndDrawRoute]);
 
   const handleStartOrder = async () => {
     setIsStarting(true);

@@ -38,7 +38,7 @@ export function HeaderUserInfo({ isOnline, profile, level, onOpenInfo }: HeaderU
           isOnline ? "bg-primary/40" : "bg-white/20"
         )} />
         <Avatar className="w-[64px] h-[64px] border-[4px] border-white shadow-2xl relative z-10 group-hover/info:border-primary transition-all">
-          <AvatarImage src={profile?.photoURL} className="object-cover" />
+          <AvatarImage src={profile?.photoURL} className="object-cover !opacity-100 !grayscale-0" />
           <AvatarFallback className="bg-primary text-white font-black text-xl uppercase italic">
             {profile?.displayName?.charAt(0) || 'R'}
           </AvatarFallback>

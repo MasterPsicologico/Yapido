@@ -15,7 +15,7 @@ import { WasherAdminPricingDialog } from './washer-rental/WasherAdminPricingDial
 import { WasherStoreCreationDialog } from './washer-rental/WasherStoreCreationDialog';
 
 export const checkIsBusinessOpen = (openTime?: string, closeTime?: string) => {
-  if (!openTime || !closeTime) return false;
+  if (!openTime || !closeTime) return true;
   const now = new Date();
   const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
   const [openH, openM] = openTime.split(':').map(Number);
@@ -233,7 +233,7 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
         pricePerHourSemi: Number(fd.get('pricePerHourSemi')) || 3000,
         minHoursSemi: Number(fd.get('minHoursSemi')) || 5,
         totalUnits: Number(fd.get('totalUnits')) || 0,
-        mainCategoryId: 'category-washer', type: 'washer_rental', status: 'active', createdAt: serverTimestamp(),
+        mainCategoryId: 'category-washer', type: 'washer_rental', status: 'active', isOpen: true, createdAt: serverTimestamp(),
         imageUrl: base64Image || `https://picsum.photos/seed/${storeRef.id}/800/600`, 
         driverCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
         privateDrivers: []

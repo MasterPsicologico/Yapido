@@ -43,11 +43,44 @@ export default function DeliveryDashboardPage() {
   const [showLiveMap, setShowLiveMap] = useState(false);
   const [isTrackingActive, setIsTrackingActive] = useState(false);
   
+  useEffect(() => {
+    if (!loadingProfile && profile) {
+      setIsOnline(profile.deliveryActive ?? true);
+    }
+  }, [loadingProfile, profile?.deliveryActive]);
+  
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleToggleOnline = async () => {
+    const newStatus = !isOnline;
+    setIsOnline(newStatus);
+    
+    if (firestore && user?.uid) {
+      try {
+        const userRef = doc(firestore, 'users', user.uid);
+        await updateDocumentNonBlocking(userRef, { 
+          deliveryActive: newStatus,
+          lastOnlineToggle: serverTimestamp()
+        });
+        toast({ 
+          title: newStatus ? "¡Estás en línea!" : "Te has desconectado", 
+          description: newStatus ? "Recibirás notificaciones de pedidos" : "No recibirás nuevos pedidos",
+          className: newStatus ? "bg-green-600 text-white" : "bg-slate-600 text-white"
+        });
+      } catch (err) {
+        console.error('Error toggling online status:', err);
+        toast({ title: "Error de conexión", variant: "destructive" });
+      }
+    }
+  };
 
   useEffect(() => {
     if (!loadingProfile && profile?.role === 'repartidor' && profile?.hasSeenApproval === false && !isAdmin) {
@@ -306,7 +339,7 @@ export default function DeliveryDashboardPage() {
         <div className="flex-1 overflow-y-auto no-scrollbar">
           <DashboardHeader 
             profile={profile} level={level} stats={{ rating: profile?.avgRating || 5.0, deliveredCount: 0 }} 
-            isOnline={isOnline} onToggleOnline={() => setIsOnline(!isOnline)} 
+            isOnline={isOnline} onToggleOnline={handleToggleOnline} 
             isAdmin={isAdmin} dashboardConfig={dashboardConfig} 
             onImageUpload={handleDashboardImageUpload} isUploading={isUploadingDashboard}
           />
@@ -333,7 +366,7 @@ export default function DeliveryDashboardPage() {
                   orders={availableOrders} 
                   hasRecycled={hasRecycledOrders}
                   onAccept={handleAcceptOrder} 
-                  onGoOnline={() => setIsOnline(true)}
+                  onGoOnline={handleToggleOnline}
                   ownedStore={ownedStore}
                   fleetDrivers={fleetDrivers}
                   onOpenFleetPanel={() => setIsFleetPanelOpen(true)}

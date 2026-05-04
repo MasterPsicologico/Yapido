@@ -75,7 +75,7 @@ export function FleetManagementCard({ store, drivers, onOpenPanel }: FleetManage
             <div className="flex-1 min-w-0">
               <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1">Código de vinculación</p>
               {store.driverCode ? (
-                <p className="text-2xl font-black tracking-[0.4em] text-primary font-mono leading-none">{store.driverCode}</p>
+                <p className="text-xl font-black tracking-[0.4em] text-primary font-mono leading-none">{store.driverCode}</p>
               ) : (
                 <p className="text-lg font-black text-slate-500 italic">Sin código aún</p>
               )}
@@ -86,11 +86,11 @@ export function FleetManagementCard({ store, drivers, onOpenPanel }: FleetManage
                 variant="ghost"
                 onClick={handleCopy}
                 className={cn(
-                  "h-10 w-10 rounded-xl shrink-0 transition-all",
+                  "h-8 w-8 rounded-lg shrink-0 transition-all flex-shrink-0",
                   copied ? "bg-green-500/20 text-green-400" : "bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
                 )}
               >
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
               </Button>
             ) : (
               <Button
