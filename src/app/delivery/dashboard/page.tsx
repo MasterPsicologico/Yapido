@@ -230,7 +230,10 @@ export default function DeliveryDashboardPage() {
     if (!firestore || !id) return;
     
     const orderRef = doc(firestore, 'orders', id);
-    const updateData: any = { ...metadata, status: newStatus, updatedAt: serverTimestamp() };
+    
+    // Extract isPickupDone before spreading metadata into the update
+    const { isPickupDone, ...restMetadata } = metadata;
+    const updateData: any = { ...restMetadata, status: newStatus, updatedAt: serverTimestamp() };
     
     if (newStatus === 'delivered') {
       updateData.deliveredAt = serverTimestamp();
@@ -240,7 +243,22 @@ export default function DeliveryDashboardPage() {
 
     if (newStatus === 'completed') {
       updateData.completedAt = serverTimestamp();
-      toast({ title: "Contrato Finalizado", className: "bg-green-600 text-white" });
+      // Si viene del flujo de recogida, grabar metadata de pickup
+      if (isPickupDone) {
+        updateData.pickupCompletedAt = serverTimestamp();
+        updateData.isPickupDone = true;
+        toast({ title: "¡Lavadora Recogida!", description: "Misión finalizada exitosamente.", className: "bg-green-600 text-white" });
+      } else {
+        toast({ title: "Contrato Finalizado", className: "bg-green-600 text-white" });
+      }
+    }
+
+    if (newStatus === 'picking_up') {
+      toast({ title: "Recogida Iniciada", description: "En camino a recoger la lavadora.", className: "bg-orange-500 text-white" });
+    }
+
+    if (newStatus === 'at_pickup') {
+      toast({ title: "En el Sitio", description: "Has llegado al punto de recogida.", className: "bg-orange-600 text-white" });
     }
     
     updateDocumentNonBlocking(orderRef, updateData);

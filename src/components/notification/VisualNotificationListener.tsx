@@ -25,13 +25,21 @@ const ALERT_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-previ
 
 const SYNC_KEY = 'vitriniando_status_sync_v2';
 
-const STATUS_CONTENT: Record<string, any> = {
+// ── NOTIFICACIONES DE FASE DE ENTREGA (sin deliveredAt) ──
+const DELIVERY_STATUS_CONTENT: Record<string, any> = {
   ready_for_pickup: {
     title: "¡TIENDA ASIGNADA!",
     desc: "Un establecimiento ha aceptado tu solicitud. El equipo está entrando en fase de alistamiento.",
     icon: Sparkles,
     color: "text-amber-500",
     bg: "bg-amber-50"
+  },
+  picking_up: {
+    title: "¡PEDIDO ACEPTADO!",
+    desc: "El repartidor ha aceptado la misión y va en camino a recoger tu equipo en la tienda.",
+    icon: Truck,
+    color: "text-primary",
+    bg: "bg-blue-50"
   },
   shipped: {
     title: "¡PEDIDO EN RUTA!",
@@ -55,13 +63,53 @@ const STATUS_CONTENT: Record<string, any> = {
     bg: "bg-green-50"
   },
   completed: {
-    title: "MISIÓN FINALIZADA",
+    title: "CONTRATO CERRADO",
     desc: "El servicio ha concluido exitosamente. Gracias por confiar en Vitriniando.",
     icon: ShoppingBag,
     color: "text-slate-900",
     bg: "bg-slate-50"
   }
 };
+
+// ── NOTIFICACIONES DE FASE DE RECOGIDA (cuando deliveredAt ya existe) ──
+const PICKUP_STATUS_CONTENT: Record<string, any> = {
+  picking_up: {
+    title: "¡RECOGIDA EN CAMINO!",
+    desc: "El repartidor va en camino a recoger tu lavadora. Por favor, prepárala y desconéctala para la devolución.",
+    icon: Truck,
+    color: "text-orange-500",
+    bg: "bg-orange-50"
+  },
+  at_pickup: {
+    title: "¡REPARTIDOR EN TU PUERTA!",
+    desc: "El repartidor ha llegado a tu ubicación para recoger la lavadora. Por favor, abre la puerta.",
+    icon: MapPin,
+    color: "text-orange-600",
+    bg: "bg-orange-50"
+  },
+  completed: {
+    title: "¡LAVADORA RECOGIDA!",
+    desc: "La lavadora ha sido recogida exitosamente. Tu servicio ha finalizado. ¡Gracias por usar Vitriniando!",
+    icon: CheckCircle2,
+    color: "text-green-500",
+    bg: "bg-green-50"
+  }
+};
+
+/**
+ * Selecciona el contenido de notificación correcto según el contexto de la orden.
+ * Si la orden ya tiene `deliveredAt`, está en fase de recogida → mensajes de pickup.
+ * Si no tiene `deliveredAt`, está en fase de entrega → mensajes de delivery.
+ */
+function getStatusContent(order: any): any | null {
+  const isPickupPhase = !!order.deliveredAt;
+  
+  if (isPickupPhase && PICKUP_STATUS_CONTENT[order.status]) {
+    return PICKUP_STATUS_CONTENT[order.status];
+  }
+  
+  return DELIVERY_STATUS_CONTENT[order.status] || null;
+}
 
 /**
  * VisualNotificationListener - El Especialista en Sincronía de Causa y Efecto.
@@ -88,7 +136,7 @@ export function VisualNotificationListener() {
       const targetOrders = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() as any }))
         // Incluimos tanto al cliente como al dueño de la tienda para que ambos vean las alertas
-        .filter(order => (order.customerId === user.uid || order.storeOwnerId === user.uid) && STATUS_CONTENT[order.status])
+        .filter(order => (order.customerId === user.uid || order.storeOwnerId === user.uid) && getStatusContent(order))
         .filter(order => order.status !== currentSync[order.id]) // Filtramos los que ya hemos visto
         .sort((a, b) => {
           const tA = a.updatedAt?.toMillis?.() || (a.updatedAt?.seconds * 1000) || 0;
@@ -140,7 +188,7 @@ export function VisualNotificationListener() {
     }
   };
 
-  const content = activeAlert ? STATUS_CONTENT[activeAlert.status] : null;
+  const content = activeAlert ? getStatusContent(activeAlert) : null;
   const Icon = content?.icon || Zap;
 
   return (

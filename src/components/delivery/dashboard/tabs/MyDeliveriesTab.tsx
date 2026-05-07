@@ -85,7 +85,10 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
   const activeCount = filteredRentals.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length;
 
   const handleFinalizePickUp = (orderId: string) => {
-    onUpdateStatus('completed', { id: orderId });
+    onUpdateStatus('completed', { 
+      id: orderId, 
+      isPickupDone: true
+    });
     setExpandedId(null);
   };
 

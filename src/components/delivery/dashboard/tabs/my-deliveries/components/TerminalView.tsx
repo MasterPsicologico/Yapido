@@ -4,11 +4,12 @@
 import { X, MapPin, Smartphone, MessageSquareText, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CheckCircle2, Timer } from 'lucide-react';
+import { CheckCircle2, Timer, PackageCheck } from 'lucide-react';
 import { MissionUsageCountdown } from '@/components/delivery/dashboard/active-mission/components/timer/MissionUsageCountdown';
 import { MyDeliveriesActions } from './MyDeliveriesActions';
 import { PickupNavDetails } from './PickupNavDetails';
 import { MissionLogTimeline } from './MissionLogTimeline';
+import { PickupMissionView } from './PickupMissionView';
 import { cn } from '@/lib/utils';
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -37,6 +38,21 @@ export function TerminalView({
   order, isCompleted, isExpired, timeIn, timeOut, absRemaining, durationHours, remaining,
   onClose, onAdjustHours, onInternalChat, onUpdateStatus, onFinalize
 }: TerminalViewProps) {
+
+  // ROUTING: Si está en modo recogida, renderizar vista especializada
+  const isPickupPhase = order.status === 'picking_up' || order.status === 'at_pickup';
+  if (isPickupPhase) {
+    return (
+      <PickupMissionView
+        order={order}
+        onClose={onClose}
+        onInternalChat={onInternalChat}
+        onUpdateStatus={onUpdateStatus}
+        onFinalize={onFinalize}
+      />
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-[600] bg-[#f8fafc] flex flex-col animate-in fade-in zoom-in duration-300 overflow-hidden">
       {/* Cuerpo de la Terminal con Scroll Blindado */}
@@ -71,7 +87,31 @@ export function TerminalView({
 
         <div className="px-6 pb-32 space-y-10 max-w-2xl mx-auto">
           
-          {!isCompleted && (
+          {isCompleted ? (
+            <div className="bg-green-50 border border-green-200 rounded-[32px] p-8 text-center space-y-4 shadow-inner">
+              <div className="w-16 h-16 mx-auto bg-green-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <PackageCheck className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-black italic uppercase tracking-tight text-green-800">Misión Finalizada</h3>
+              <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest">Lavadora recogida exitosamente</p>
+              <div className="flex items-center justify-center gap-6 pt-2">
+                <div className="text-center">
+                  <p className="text-[8px] font-black text-green-500 uppercase tracking-widest">Entregada</p>
+                  <p className="text-sm font-black text-green-800">{timeIn}</p>
+                </div>
+                <div className="w-px h-8 bg-green-200" />
+                <div className="text-center">
+                  <p className="text-[8px] font-black text-green-500 uppercase tracking-widest">Recogida</p>
+                  <p className="text-sm font-black text-green-800">
+                    {order.completedAt 
+                      ? new Date(order.completedAt?.toDate?.() || (order.completedAt?.seconds ? order.completedAt.seconds * 1000 : Date.now())).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+                      : timeOut
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
             <div className="w-full flex justify-center overflow-hidden px-1">
               <MissionUsageCountdown 
                 progress={{
