@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPinned, Navigation, Phone, MessageCircle, Wallet, CreditCard, ArrowUpCircle, Loader2, Zap, Clock, Building2, Stairs, Package, Timer } from 'lucide-react';
+import { MapPinned, Navigation, Phone, MessageCircle, Wallet, CreditCard, ArrowUpCircle, Loader2, Zap, Clock, Building2, Check, Package, Timer } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -242,7 +242,7 @@ export function MissionDeliveryCard({
                       {hasStairs ? (
                         <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
                       ) : (
-                        <Stairs className="w-4 h-4 text-emerald-500" />
+                        <Check className="w-4 h-4 text-emerald-500" />
                       )}
                     </div>
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Dificultad</p>

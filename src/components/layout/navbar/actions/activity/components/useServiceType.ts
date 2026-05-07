@@ -41,6 +41,6 @@ export function getServiceLabel(type: ServiceType, isStoreOwner: boolean, status
     return { label: 'Venta: Activa', action: 'ACTIVA' };
   }
   
-  if (status === 'shipped' || status === 'delivered_to_driver') return { label: 'Compra: Confirmar Entrega', action: 'CONFIRMAR' };
-  return { label: 'Compra: En Seguimiento', action: 'SEGUIMIENTO' };
+  if (status === 'shipped' || status === 'delivered_to_driver') return { label: 'Confirmar Entrega', action: 'CONFIRMAR' };
+  return { label: 'En Seguimiento', action: 'SEGUIMIENTO' };
 }
