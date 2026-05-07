@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { doc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from '@/lib/utils';
@@ -11,7 +11,7 @@ import { useUser, useAuth, useFirestore } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
-import { LogIn, Sparkles, ShieldCheck, ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
+import { LogIn, Sparkles, ShieldCheck, ChevronDown, ChevronUp, Settings2, Check, Circle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Importación de Componentes Atómicos
@@ -79,11 +79,8 @@ export function WasherSolicitationDialog({
   const [flashEffect, setFlashEffect] = useState<'none' | 'red' | 'green'>('none');
   const [isPersonalDataCollapsed, setIsPersonalDataCollapsed] = useState(false);
   const [isServiceDataCollapsed, setIsServiceDataCollapsed] = useState(false);
-  const [isServiceConfirmed, setIsServiceConfirmed] = useState(false);
   const [saveStatuses, setSaveStatuses] = useState<Record<string, 'idle' | 'typing' | 'saved'>>({});
   const prevIsCompleteRef = useRef(false);
-  const initialCollapseChecked = useRef(false);
-  const [lastIsComplete, setLastIsComplete] = useState(false);
 
   // CEREBRO GEOGRÁFICO: Carga la configuración de la ciudad y zona seleccionada
   const { cityConfig, activeCities, activeCitiesLoading, activeZones, hasMultipleZones, resolvedPricing } = useCityConfig({
@@ -155,9 +152,17 @@ export function WasherSolicitationDialog({
     setSaveStatuses(prev => ({ ...prev, [field]: 'saved' }));
   };
 
-  // Guardar en Firestore automáticamente al completarse los datos personales
+  // Efecto que colapsa SOLO cuando todos los campos han sido guardados (onBlur)
   useEffect(() => {
-    if (isPersonalDataComplete && !prevIsCompleteRef.current && user?.uid && isOpen) {
+    const allFieldsSaved = saveStatuses.name === 'saved' && 
+                           saveStatuses.city === 'saved' && 
+                           saveStatuses.zone === 'saved' &&
+                           saveStatuses.address === 'saved' && 
+                           saveStatuses.sector === 'saved' && 
+                           saveStatuses.phone === 'saved';
+    
+    if (allFieldsSaved && isPersonalDataComplete && !prevIsCompleteRef.current && user?.uid) {
+      // Guardar a Firestore que los datos están completos
       const userDocRef = doc(firestore, 'users', user.uid);
       setDocumentNonBlocking(userDocRef, {
         displayName: tempName,
@@ -170,26 +175,47 @@ export function WasherSolicitationDialog({
         updatedAt: new Date().toISOString()
       }, { merge: true });
       
+      // Contraer con delay visual
+      const timer = setTimeout(() => setIsPersonalDataCollapsed(true), 600);
       prevIsCompleteRef.current = true;
-    } else if (!isPersonalDataComplete) {
-      prevIsCompleteRef.current = false;
+      return () => clearTimeout(timer);
     }
-  }, [isPersonalDataComplete, user, tempName, tempAddress, tempSector, tempPhone, selectedCityId, selectedZoneId, hasMultipleZones, firestore, isOpen]);
+  }, [saveStatuses, isPersonalDataComplete, user, tempName, tempAddress, tempSector, tempPhone, selectedCityId, selectedZoneId, hasMultipleZones, firestore]);
 
-  // Inicialización de campos y estados del perfil al abrir el diálogo
   useEffect(() => {
     if (profile && isOpen && orderStatus === 'idle') {
-      setIsPersonalDataCollapsed(false);
-      prevIsCompleteRef.current = false;
-      initialCollapseChecked.current = false;
-      setLastIsComplete(false);
-      
       setTempName(profile.displayName || "");
       setTempAddress(profile.address || "");
       setTempSector(profile.sector || "");
       setTempPhone(profile.phoneNumber || "");
       if (profile.cityId) setSelectedCityId(profile.cityId);
       if (profile.zoneId) setSelectedZoneId(profile.zoneId);
+
+      // Detectar si los datos personales ya están completos desde el perfil
+      const profileHasAllData = Boolean(
+        profile.displayName?.trim() &&
+        profile.cityId &&
+        profile.address?.trim() &&
+        profile.phoneNumber?.trim()
+      );
+
+      if (profileHasAllData) {
+        // Datos ya completos: colapsar por defecto
+        setIsPersonalDataCollapsed(true);
+        prevIsCompleteRef.current = true;
+        setSaveStatuses({
+          name: 'saved', city: 'saved', zone: 'saved',
+          address: 'saved', sector: 'saved', phone: 'saved'
+        });
+      } else {
+        // Datos incompletos: expandir para que el usuario los complete
+        setIsPersonalDataCollapsed(false);
+        prevIsCompleteRef.current = false;
+        setSaveStatuses({
+          name: 'idle', city: 'idle', zone: 'idle',
+          address: 'idle', sector: 'idle', phone: 'idle'
+        });
+      }
 
       if (profile.lastWasherType) {
         setWasherType(profile.lastWasherType);
@@ -198,42 +224,11 @@ export function WasherSolicitationDialog({
         setHasStairs(profile.lastHasStairs || false);
         setStairCount(profile.lastStairCount || 1);
         setIsServiceDataCollapsed(true);
-        setIsServiceConfirmed(true);
       } else {
         setIsServiceDataCollapsed(false);
-        setIsServiceConfirmed(false);
       }
-
-      setSaveStatuses({
-        name: 'idle', city: 'idle', zone: 'idle',
-        address: 'idle', sector: 'idle', phone: 'idle'
-      });
     }
   }, [profile, isOpen, orderStatus]);
-
-  // 1. Control de colapso inicial cuando se abre el diálogo y los datos ya están completos
-  useEffect(() => {
-    if (isOpen && isPersonalDataComplete && !initialCollapseChecked.current) {
-      setIsPersonalDataCollapsed(true);
-      initialCollapseChecked.current = true;
-      setLastIsComplete(true);
-    }
-  }, [isOpen, isPersonalDataComplete]);
-
-  // 2. Control de autocolapso con delay visual cuando el usuario completa manualmente los campos
-  useEffect(() => {
-    if (isPersonalDataComplete && !lastIsComplete) {
-      setLastIsComplete(true);
-      if (initialCollapseChecked.current) {
-        const timer = setTimeout(() => {
-          setIsPersonalDataCollapsed(true);
-        }, 800);
-        return () => clearTimeout(timer);
-      }
-    } else if (!isPersonalDataComplete && lastIsComplete) {
-      setLastIsComplete(false);
-    }
-  }, [isPersonalDataComplete, lastIsComplete]);
 
   // Sync minHours cuando cambia la configuración de la ciudad o zona
   useEffect(() => {
@@ -403,18 +398,34 @@ export function WasherSolicitationDialog({
               </div>
             ) : (
               <>
-                {/* Paso 1: Datos Personales (Acordeón Animado) */}
-                <div className="space-y-4">
-                  <AnimatePresence mode="wait">
-                    {!isPersonalDataCollapsed ? (
-                      <motion.div
-                        key="personal-form"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.4, ease: "easeInOut" }}
-                        className={cn("space-y-6 relative overflow-hidden", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}
-                      >
+                {/* STEP PROGRESS INDICATOR */}
+                <div className="flex items-center justify-center gap-2 py-2">
+                  {[{ label: 'Datos', done: isPersonalDataComplete }, { label: 'Servicio', done: isServiceDataCollapsed && isPersonalDataComplete }, { label: 'Hora & Pago', done: false }].map((step, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className={cn(
+                        "w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black transition-all duration-500",
+                        step.done ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-100" : "bg-slate-100 text-slate-400"
+                      )}>
+                        {step.done ? <Check className="w-3.5 h-3.5" /> : <span>{i + 1}</span>}
+                      </div>
+                      <span className={cn("text-[9px] font-black uppercase tracking-widest transition-colors duration-300", step.done ? "text-emerald-600" : "text-slate-300")}>{step.label}</span>
+                      {i < 2 && <div className={cn("w-6 h-0.5 rounded-full transition-all duration-700", step.done ? "bg-emerald-400" : "bg-slate-100")} />}
+                    </div>
+                  ))}
+                </div>
+
+                {/* SECCIÓN 1: DATOS PERSONALES */}
+                <AnimatePresence mode="wait">
+                  {!isPersonalDataCollapsed ? (
+                    <motion.div
+                      key="personal-expanded"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className={cn("space-y-6 relative", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
                         {isPersonalDataComplete && (
                           <div className="flex justify-end mb-[-10px] relative z-10">
                             <button 
@@ -474,151 +485,137 @@ export function WasherSolicitationDialog({
                           saveStatus={saveStatuses['phone']}
                           hasError={fieldErrors.phone} 
                         />
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="personal-summary"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.3 }}
-                        className="space-y-3"
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="personal-collapsed"
+                      initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.97 }}
+                      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                    >
+                      <div 
+                        onClick={() => setIsPersonalDataCollapsed(false)}
+                        className="bg-emerald-50/60 border-2 border-emerald-200/60 rounded-[24px] p-4 flex items-center justify-between cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition-all duration-300 group shadow-sm hover:shadow-md"
                       >
-                        <div 
-                          onClick={() => setIsPersonalDataCollapsed(false)}
-                          className="bg-slate-50/80 border-2 border-dashed border-slate-200 rounded-[24px] p-4 flex items-center justify-between cursor-pointer hover:bg-slate-100 transition-colors group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm group-hover:scale-110 transition-transform">
-                              <ShieldCheck className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-widest">Datos Personales</h4>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{tempName.split(' ')[0]} • Listo</p>
-                            </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                            <ShieldCheck className="w-6 h-6" />
                           </div>
-                          <div className="text-[10px] font-black text-primary flex items-center gap-1 bg-white border border-slate-100 shadow-sm px-3 py-2 rounded-full group-hover:bg-primary/5 transition-colors">
-                            EDITAR <ChevronDown className="w-3 h-3" />
+                          <div>
+                            <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-widest">Datos Personales</h4>
+                            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1"><Check className="w-3 h-3" /> {tempName.split(' ')[0]} • Completo</p>
                           </div>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                        <div className="text-[10px] font-black text-primary flex items-center gap-1 bg-white border border-slate-100 shadow-sm px-3 py-2 rounded-full group-hover:bg-primary/5 transition-colors">
+                          EDITAR <ChevronDown className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                {/* Paso 2: Detalles Técnicos (Se revela solo si Paso 1 está completo) */}
-                <AnimatePresence mode="wait">
+                {/* SECCIÓN 2+: SERVICIO, HORAS, PAGO */}
+                <AnimatePresence>
                   {isPersonalDataComplete && (
                     <motion.div
-                      key="step-2-technical"
+                      key="rest-of-form"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 20 }}
-                      transition={{ duration: 0.5, ease: "easeOut" }}
-                      className="space-y-10 mt-6"
+                      transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1], delay: 0.15 }}
+                      className="space-y-10"
                     >
-                      <div className="space-y-4">
-                        <AnimatePresence mode="wait">
-                          {!isServiceDataCollapsed ? (
-                            <motion.div
-                              key="technical-form"
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.4, ease: "easeInOut" }}
-                              className={cn("space-y-6 relative overflow-hidden", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}
-                            >
-                              {isServiceConfirmed && (
-                                <div className="flex justify-end mb-[-20px] relative z-20">
-                                  <button 
-                                    onClick={() => setIsServiceDataCollapsed(true)}
-                                    className="text-[10px] font-black text-yellow-600 flex items-center gap-1 bg-yellow-50 hover:bg-yellow-100 px-3 py-1.5 rounded-full transition-colors mr-4 mt-2"
-                                  >
-                                    OCULTAR DETALLES <ChevronUp className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              )}
+                      {/* Detalles del Servicio */}
+                      <AnimatePresence mode="wait">
+                        {!isServiceDataCollapsed ? (
+                          <motion.div
+                            key="service-expanded"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                            className="overflow-hidden"
+                          >
+                            <div className={cn("relative", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
+                              <div className="flex justify-end mb-[-20px] relative z-20">
+                                <button 
+                                  onClick={() => setIsServiceDataCollapsed(true)}
+                                  className="text-[10px] font-black text-yellow-600 flex items-center gap-1 bg-yellow-50 hover:bg-yellow-100 px-3 py-1.5 rounded-full transition-colors mr-4 mt-2"
+                                >
+                                  OCULTAR DETALLES <ChevronUp className="w-3 h-3" />
+                                </button>
+                              </div>
                               <ServiceConfiguration 
                                 isAdmin={isAdmin} washerType={washerType} setWasherType={setWasherType}
                                 floor={floor} setFloor={setFloor} hasElevator={hasElevator} setHasElevator={setHasElevator}
                                 hasStairs={hasStairs} setHasStairs={setHasStairs} stairCount={stairCount} setStairCount={setStairCount}
                                 availableMachineTypes={availableMachineTypes}
                               />
-                              
-                              {/* Botón premium para confirmar detalles de servicio en Paso 2 */}
-                              <div className="pt-2">
-                                <Button
-                                  type="button"
-                                  onClick={() => {
-                                    setIsServiceConfirmed(true);
-                                    setIsServiceDataCollapsed(true);
-                                    toast({
-                                      title: "Detalles Guardados",
-                                      description: "Configuración técnica confirmada correctamente.",
-                                      variant: "default",
-                                    });
-                                  }}
-                                  className="w-full h-14 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2"
-                                >
-                                  <Settings2 className="w-4 h-4 text-slate-950 animate-spin [animation-duration:8s]" />
-                                  CONFIRMAR DETALLES DE SERVICIO
-                                </Button>
-                              </div>
-                            </motion.div>
-                          ) : (
-                            <motion.div
-                              key="technical-summary"
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.95 }}
-                              transition={{ duration: 0.3 }}
+                            </div>
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="service-collapsed"
+                            initial={{ opacity: 0, y: -10, scale: 0.97 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.97 }}
+                            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                          >
+                            <div 
                               onClick={() => setIsServiceDataCollapsed(false)}
-                              className="bg-yellow-50/50 border-2 border-dashed border-yellow-200 rounded-[24px] p-4 flex items-center justify-between cursor-pointer hover:bg-yellow-50 transition-colors group relative z-10"
+                              className="bg-yellow-50/50 border-2 border-yellow-200/60 rounded-[24px] p-4 flex items-center justify-between cursor-pointer hover:bg-yellow-50 hover:border-yellow-300 transition-all duration-300 group shadow-sm hover:shadow-md"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 shadow-sm group-hover:scale-110 transition-transform">
+                                <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 shadow-sm group-hover:scale-110 transition-transform duration-300">
                                   <Settings2 className="w-6 h-6" />
                                 </div>
                                 <div>
                                   <h4 className="text-[11px] font-black text-yellow-800 uppercase tracking-widest">Detalles del Servicio</h4>
-                                  <p className="text-[10px] font-bold text-yellow-600/70 uppercase tracking-wider">{washerType} • Piso {floor}</p>
+                                  <p className="text-[10px] font-bold text-yellow-600/70 uppercase tracking-wider flex items-center gap-1"><Check className="w-3 h-3" /> {washerType} • Piso {floor}</p>
                                 </div>
                               </div>
                               <div className="text-[10px] font-black text-yellow-600 flex items-center gap-1 bg-white border border-yellow-100 shadow-sm px-3 py-2 rounded-full group-hover:bg-yellow-100/50 transition-colors">
                                 EDITAR <ChevronDown className="w-3 h-3" />
                               </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-
-                      {/* Paso 3: Horas y Pago (Se revela solo si Paso 2 está confirmado/colapsado) */}
-                      <AnimatePresence mode="wait">
-                        {(isServiceConfirmed || isServiceDataCollapsed) && (
-                          <motion.div
-                            key="step-3-hours-payment"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 20 }}
-                            transition={{ duration: 0.5, ease: "easeOut" }}
-                            className="space-y-10 mt-6"
-                          >
-                            <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-                              <DurationManager requestHours={requestHours} onAdjust={handleAdjustHours} minHours={resolvedPricing.minHours} formattedPrice={formattedPrice} flashEffect={flashEffect} />
                             </div>
-
-                            <div className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}>
-                              <PaymentStrategySelector method={paymentMethod} onChange={setPaymentMethod} />
-                            </div>
-
-                            {orderStatus === 'success' ? (
-                              <SuccessProtocol countdown={redirectCountdown} />
-                            ) : (
-                              <SubmitAction isSending={orderStatus === 'sending'} isAnyStoreOpen={isAnyStoreOpen} formattedPrice={formattedPrice} paymentMethod={paymentMethod} onSubmit={handleFormSubmit} />
-                            )}
                           </motion.div>
                         )}
                       </AnimatePresence>
+
+                      {/* Duración y Precio */}
+                      <motion.div 
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}
+                      >
+                        <DurationManager requestHours={requestHours} onAdjust={handleAdjustHours} minHours={resolvedPricing.minHours} formattedPrice={formattedPrice} flashEffect={flashEffect} />
+                      </motion.div>
+
+                      {/* Método de Pago */}
+                      <motion.div 
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.3 }}
+                        className={cn("transition-all duration-500", orderStatus !== 'idle' && "opacity-40 pointer-events-none grayscale")}
+                      >
+                        <PaymentStrategySelector method={paymentMethod} onChange={setPaymentMethod} />
+                      </motion.div>
+
+                      {/* Submit / Success */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.4 }}
+                      >
+                        {orderStatus === 'success' ? (
+                          <SuccessProtocol countdown={redirectCountdown} />
+                        ) : (
+                          <SubmitAction isSending={orderStatus === 'sending'} isAnyStoreOpen={isAnyStoreOpen} formattedPrice={formattedPrice} paymentMethod={paymentMethod} onSubmit={handleFormSubmit} />
+                        )}
+                      </motion.div>
                     </motion.div>
                   )}
                 </AnimatePresence>
