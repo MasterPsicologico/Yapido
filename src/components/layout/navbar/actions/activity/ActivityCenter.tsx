@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { ActivityTrigger } from './ActivityTrigger';
 import { ActivityItem } from './ActivityItem';
+import { getServiceType, getServiceLabel } from './components/useServiceType';
 
 const SEEN_ORDERS_KEY = 'vitriniando_seen_activity_v1';
 
@@ -75,26 +76,30 @@ export function ActivityCenter() {
       .map(order => {
         let task = null;
         const timestamp = order.updatedAt || order.createdAt;
+        const serviceType = getServiceType(order);
+        const isStoreOwner = order.storeOwnerId === user.uid;
 
         if (order.storeOwnerId === user.uid) {
-          if (order.status === 'pending') task = { label: "Venta: Nuevo Pedido", desc: order.productName, icon: Zap, color: "text-orange-500", bg: "bg-orange-50" };
-          else if (order.status === 'preparing') task = { label: "Venta: Preparando", desc: order.productName, icon: Clock, color: "text-blue-500", bg: "bg-blue-50" };
-          else if (order.status === 'ready_for_pickup') task = { label: "Venta: Listo en Tienda", desc: order.productName, icon: CheckCircle2, color: "text-indigo-500", bg: "bg-indigo-50" };
-          else if (order.status === 'shipped') task = { label: "Venta: En Reparto", desc: order.productName, icon: Truck, color: "text-purple-500", bg: "bg-purple-50" };
+          const { label } = getServiceLabel(serviceType, true, order.status);
+          if (order.status === 'pending') task = { label, desc: order.productName, icon: Zap, color: "text-orange-500", bg: "bg-orange-50" };
+          else if (order.status === 'preparing') task = { label, desc: order.productName, icon: Clock, color: "text-blue-500", bg: "bg-blue-50" };
+          else if (order.status === 'ready_for_pickup') task = { label, desc: order.productName, icon: CheckCircle2, color: "text-indigo-500", bg: "bg-indigo-50" };
+          else if (order.status === 'shipped') task = { label, desc: order.productName, icon: Truck, color: "text-purple-500", bg: "bg-purple-50" };
         } 
         else if (order.deliveryDriverId === user.uid && (order.status === 'shipped' || order.status === 'at_store' || order.status === 'delivered_to_driver')) {
           task = { label: "Ruta: Entrega en Curso", desc: order.productName, icon: Navigation, color: "text-secondary", bg: "bg-secondary/10" };
         }
         else if (order.customerId === user.uid) {
-          if (order.status === 'shipped' || order.status === 'delivered_to_driver') task = { label: "Compra: Confirmar Entrega", desc: order.productName, icon: Package, color: "text-blue-500", bg: "bg-blue-50" };
-          else task = { label: "Compra: En Seguimiento", desc: order.productName, icon: Timer, color: "text-slate-500", bg: "bg-slate-50" };
+          const { label } = getServiceLabel(serviceType, false, order.status);
+          if (order.status === 'shipped' || order.status === 'delivered_to_driver') task = { label, desc: order.productName, icon: Package, color: "text-blue-500", bg: "bg-blue-50" };
+          else task = { label, desc: order.productName, icon: Clock, color: "text-slate-500", bg: "bg-slate-50" };
         }
 
         if (!task && profile?.role === 'repartidor' && order.status === 'ready_for_pickup' && !order.deliveryDriverId) {
           task = { label: "Ruta: Disponible ahora", desc: order.productName, icon: Truck, color: "text-green-500", bg: "bg-green-50" };
         }
 
-        return task ? { ...task, orderId: order.id, timestamp } : null;
+        return task ? { ...task, orderId: order.id, timestamp, serviceType } : null;
       }).filter(Boolean);
   }, [rawOrders, user, profile]);
 
@@ -135,6 +140,7 @@ export function ActivityCenter() {
                 bg={act!.bg}
                 timestamp={act!.timestamp}
                 isUnread={!seenIds.includes(act!.orderId)}
+                serviceType={act!.serviceType}
               />
             </div>
           )) : (

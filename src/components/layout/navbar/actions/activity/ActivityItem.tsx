@@ -1,10 +1,11 @@
-
 "use client";
 
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { AnalogClock } from './components/AnalogClock';
+import { ServiceType } from './components/useServiceType';
 
 interface ActivityItemProps {
   orderId: string;
@@ -15,13 +16,16 @@ interface ActivityItemProps {
   bg: string;
   timestamp?: any;
   isUnread?: boolean;
+  serviceType?: ServiceType;
   onClick?: () => void;
 }
 
-export function ActivityItem({ orderId, label, desc, icon: Icon, color, bg, timestamp, isUnread, onClick }: ActivityItemProps) {
+export function ActivityItem({ orderId, label, desc, icon: Icon, color, bg, timestamp, isUnread, serviceType, onClick }: ActivityItemProps) {
   const dateObj = timestamp?.toDate?.() || new Date();
-  const timeStr = format(dateObj, "HH:mm");
+  const hours = dateObj.getHours();
+  const minutes = dateObj.getMinutes();
   const dateStr = format(dateObj, "eee", { locale: es }).toUpperCase();
+  const showClock = serviceType === 'RENTAL';
 
   return (
     <div 
@@ -29,16 +33,23 @@ export function ActivityItem({ orderId, label, desc, icon: Icon, color, bg, time
       onClick={onClick}
     >
       <div className="flex items-start gap-4">
-        {/* ICON CONTAINER */}
-        <div className={cn(
-          "w-11 h-11 rounded-full flex items-center justify-center shrink-0 shadow-sm transition-all duration-500",
-          bg, color,
-          isUnread && "animate-pulse ring-4 ring-offset-0 ring-primary/5"
-        )}>
-          <Icon className="w-5.5 h-5.5" />
-        </div>
+        {showClock ? (
+          <div className={cn(
+            "flex items-center justify-center shrink-0 transition-all duration-500",
+            isUnread && "animate-pulse ring-4 ring-offset-0 ring-primary/5"
+          )}>
+            <AnalogClock hours={hours} minutes={minutes} size="md" className={cn(bg, color)} />
+          </div>
+        ) : (
+          <div className={cn(
+            "w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-sm transition-all duration-500",
+            bg, color,
+            isUnread && "animate-pulse ring-4 ring-offset-0 ring-primary/5"
+          )}>
+            <Icon className="w-5.5 h-5.5" />
+          </div>
+        )}
 
-        {/* CONTENT CONTAINER */}
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-center justify-between gap-2">
             <p className={cn(
@@ -48,11 +59,19 @@ export function ActivityItem({ orderId, label, desc, icon: Icon, color, bg, time
               {label}
             </p>
             
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100/50 border border-slate-200/50 group-hover:bg-white group-hover:shadow-sm transition-all shrink-0">
-              <span className="text-[8px] font-black text-slate-400 tracking-tighter">{dateStr}</span>
-              <div className="w-[1px] h-2 bg-slate-300" />
-              <span className="text-[9px] font-black text-slate-600 font-mono">{timeStr}</span>
-            </div>
+            {showClock && (
+              <div className="flex items-center px-2 py-0.5 rounded-md bg-slate-100/50 border border-slate-200/50 group-hover:bg-white group-hover:shadow-sm transition-all shrink-0">
+                <span className="text-[8px] font-black text-slate-400 tracking-tighter">{dateStr}</span>
+              </div>
+            )}
+            
+            {!showClock && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100/50 border border-slate-200/50 group-hover:bg-white group-hover:shadow-sm transition-all shrink-0">
+                <span className="text-[8px] font-black text-slate-400 tracking-tighter">{dateStr}</span>
+                <div className="w-[1px] h-2 bg-slate-300" />
+                <span className="text-[9px] font-black text-slate-600 font-mono">{format(dateObj, "HH:mm")}</span>
+              </div>
+            )}
           </div>
 
           <p className={cn(
@@ -63,7 +82,6 @@ export function ActivityItem({ orderId, label, desc, icon: Icon, color, bg, time
           </p>
         </div>
 
-        {/* INDICADOR DE NO LEÍDO */}
         {isUnread && (
           <div className={cn("absolute top-3 right-3 w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm bg-primary", color.replace('text-', 'bg-'))} />
         )}

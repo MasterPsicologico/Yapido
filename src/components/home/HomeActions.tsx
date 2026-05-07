@@ -88,12 +88,19 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
 
   const washerStoresQuery = useMemoFirebase(() => query(
     collection(firestore, 'stores'), 
-    where('type', '==', 'washer_rental'),
+    where('mainCategoryId', '==', 'category-washer'),
     where('status', '==', 'active')
   ), [firestore]);
-  const { data: washerStores } = useCollection(washerStoresQuery);
+  const { data: washerStores, isLoading: loadingStores } = useCollection(washerStoresQuery);
 
-  const activeStoresCount = washerStores?.filter(s => checkIsBusinessOpen(s.openTime, s.closeTime)).length || 0;
+  const activeStoresCount = washerStores?.filter(s => {
+    const isWasherStore = s.type === 'washer_rental' || s.mainCategoryId === 'category-washer';
+    if (!isWasherStore) return false;
+    // Si la tienda tiene isOpen=false, está cerrada
+    if (s.isOpen === false) return false;
+    // Verificar horarios con lógica flexible (soporta openTime/closeTime o operatingHours)
+    return checkIsBusinessOpen(s.openTime, s.closeTime);
+  }).length || 0;
   const isAnyStoreOpen = activeStoresCount > 0;
 
   // Consulta de pedidos recientes para Social Proof

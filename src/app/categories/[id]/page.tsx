@@ -148,6 +148,8 @@ export default function CategoryPage() {
     const name = formData.get('name') as string;
     const address = formData.get('address') as string;
 
+    const isWasherCategory = id === 'category-washer';
+
     setIsRegistering(true);
     try {
       const storeRef = doc(collection(firestore, 'stores'));
@@ -155,9 +157,13 @@ export default function CategoryPage() {
         id: storeRef.id,
         ownerId: user.uid,
         mainCategoryId: id,
+        type: isWasherCategory ? 'washer_rental' : undefined,
         name,
         address,
         status: 'active',
+        isOpen: true,
+        openTime: '06:00',
+        closeTime: '22:00',
         imageUrl: base64Image || `https://picsum.photos/seed/${storeRef.id}/800/600`,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),

@@ -151,38 +151,42 @@ export function WasherSolicitationDialog({
     setSaveStatuses(prev => ({ ...prev, [field]: 'saved' }));
   };
 
+  // Efecto que colapsa SOLO cuando todos los campos han sido guardados (onBlur)
   useEffect(() => {
-    if (isPersonalDataComplete && !prevIsCompleteRef.current) {
-      // Guardar INMEDIATAMENTE a Firestore sin delay — esto es la señal permanente
-      if (user?.uid) {
-        const userDocRef = doc(firestore, 'users', user.uid);
-        setDocumentNonBlocking(userDocRef, {
-          displayName: tempName,
-          address: tempAddress,
-          sector: tempSector,
-          phoneNumber: tempPhone,
-          cityId: selectedCityId,
-          zoneId: hasMultipleZones ? selectedZoneId : null,
-          personalDataComplete: true,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
-      }
-      // Marcar todos los campos como guardados visualmente
-      setSaveStatuses({
-        name: 'saved', city: 'saved', zone: 'saved',
-        address: 'saved', sector: 'saved', phone: 'saved'
-      });
-      // Contraer con un micro-delay solo visual (la data ya se guardó)
+    const allFieldsSaved = saveStatuses.name === 'saved' && 
+                           saveStatuses.city === 'saved' && 
+                           saveStatuses.zone === 'saved' &&
+                           saveStatuses.address === 'saved' && 
+                           saveStatuses.sector === 'saved' && 
+                           saveStatuses.phone === 'saved';
+    
+    if (allFieldsSaved && isPersonalDataComplete && !prevIsCompleteRef.current && user?.uid) {
+      // Guardar a Firestore que los datos están completos
+      const userDocRef = doc(firestore, 'users', user.uid);
+      setDocumentNonBlocking(userDocRef, {
+        displayName: tempName,
+        address: tempAddress,
+        sector: tempSector,
+        phoneNumber: tempPhone,
+        cityId: selectedCityId,
+        zoneId: hasMultipleZones ? selectedZoneId : null,
+        personalDataComplete: true,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      
+      // Contraer con delay visual
       const timer = setTimeout(() => setIsPersonalDataCollapsed(true), 600);
       prevIsCompleteRef.current = true;
       return () => clearTimeout(timer);
-    } else if (!isPersonalDataComplete) {
-      prevIsCompleteRef.current = false;
     }
-  }, [isPersonalDataComplete, user, tempName, tempAddress, tempSector, tempPhone, selectedCityId, selectedZoneId, hasMultipleZones]);
+  }, [saveStatuses, isPersonalDataComplete, user, tempName, tempAddress, tempSector, tempPhone, selectedCityId, selectedZoneId, hasMultipleZones, firestore]);
 
   useEffect(() => {
     if (profile && isOpen && orderStatus === 'idle') {
+      // Reiniciar estados al abrir
+      setIsPersonalDataCollapsed(false);
+      prevIsCompleteRef.current = false;
+      
       setTempName(profile.displayName || "");
       setTempAddress(profile.address || "");
       setTempSector(profile.sector || "");
@@ -201,27 +205,13 @@ export function WasherSolicitationDialog({
         setIsServiceDataCollapsed(false);
       }
 
-      // Verificar completitud usando la bandera permanente O los datos directos
-      const isComplete = Boolean(
-        profile.personalDataComplete || (
-          (profile.displayName || "").trim() && 
-          profile.cityId && 
-          (profile.address || "").trim() && 
-          (profile.phoneNumber || "").trim()
-        )
-      );
-      if (isComplete) {
-        setIsPersonalDataCollapsed(true);
-        prevIsCompleteRef.current = true;
-        // Marcar todos como guardados para mostrar chulitos verdes
-        setSaveStatuses({
-          name: 'saved', city: 'saved', zone: 'saved',
-          address: 'saved', sector: 'saved', phone: 'saved'
-        });
-      } else {
-        setIsPersonalDataCollapsed(false);
-        prevIsCompleteRef.current = false;
-      }
+      // NO colapsar automáticamente - dejar que el usuario complete los campos
+      // Los datos personales siempre starts expandidos para que el usuario pueda editarlos
+      setIsPersonalDataCollapsed(false);
+      setSaveStatuses({
+        name: 'idle', city: 'idle', zone: 'idle',
+        address: 'idle', sector: 'idle', phone: 'idle'
+      });
     }
   }, [profile, isOpen, orderStatus]);
 
