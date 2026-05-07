@@ -213,15 +213,11 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isMissionChatOpen} onOpenChange={setIsMissionChatOpen}>
-        <DialogContent className="p-0 border-none bg-white max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 flex flex-col z-[300] [&>button:last-child]:hidden">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Chat de Misión</DialogTitle>
-            <DialogDescription>Comunicación segura con el cliente.</DialogDescription>
-          </DialogHeader>
+      {isMissionChatOpen && (
+        <div className="fixed inset-0 z-[600] bg-white w-screen h-[100dvh]">
           <OrderChat orderId={mission.id} orderData={mission} onClose={() => setIsMissionChatOpen(false)} />
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
       
       <ReleaseMissionDialog 
         isOpen={isReleaseDialogOpen}

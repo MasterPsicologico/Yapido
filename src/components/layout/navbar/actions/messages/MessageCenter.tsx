@@ -95,7 +95,7 @@ export function MessageCenter() {
   const handleItemClick = (orderId: string) => {
     setOpen(false);
     setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId } }));
+      window.dispatchEvent(new CustomEvent('open-global-chat', { detail: { orderId } }));
     }, 150);
   };
 

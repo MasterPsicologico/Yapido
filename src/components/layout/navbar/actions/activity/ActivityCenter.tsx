@@ -2,7 +2,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from 'react';
-import { Bell, Clock, Package, Truck, Zap, CheckCircle2, Navigation, Timer } from 'lucide-react';
+import { Bell, Clock, Package, Truck, Zap, CheckCircle2, Navigation, Timer, MapPin, Store, CircleDot } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -66,7 +66,7 @@ export function ActivityCenter() {
     if (!rawOrders || !user) return [];
     
     return rawOrders
-      .filter(order => order.status !== 'delivered' && order.status !== 'cancelled')
+      .filter(order => order.status !== 'cancelled')
       .sort((a, b) => {
         // Orden cronológico: los más recientes arriba (orden de llegada)
         const timeA = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
@@ -84,14 +84,28 @@ export function ActivityCenter() {
           if (order.status === 'pending') task = { label, desc: order.productName, icon: Zap, color: "text-orange-500", bg: "bg-orange-50" };
           else if (order.status === 'preparing') task = { label, desc: order.productName, icon: Clock, color: "text-blue-500", bg: "bg-blue-50" };
           else if (order.status === 'ready_for_pickup') task = { label, desc: order.productName, icon: CheckCircle2, color: "text-indigo-500", bg: "bg-indigo-50" };
-          else if (order.status === 'shipped') task = { label, desc: order.productName, icon: Truck, color: "text-purple-500", bg: "bg-purple-50" };
+          else if (order.status === 'at_store') task = { label: 'Venta: En Tienda', desc: order.productName, icon: Store, color: "text-amber-500", bg: "bg-amber-50" };
+          else if (order.status === 'delivered_to_driver') task = { label: 'Venta: Con Repartidor', desc: order.productName, icon: Package, color: "text-purple-500", bg: "bg-purple-50" };
+          else if (order.status === 'shipped') task = { label, desc: order.productName, icon: Truck, color: "text-blue-500", bg: "bg-blue-50" };
+          else if (order.status === 'at_destination') task = { label: 'Venta: En Destino', desc: order.productName, icon: MapPin, color: "text-cyan-500", bg: "bg-cyan-50" };
+          else if (order.status === 'delivered') task = { label: 'Venta: Entregado', desc: order.productName, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50" };
         } 
-        else if (order.deliveryDriverId === user.uid && (order.status === 'shipped' || order.status === 'at_store' || order.status === 'delivered_to_driver')) {
-          task = { label: "Ruta: Entrega en Curso", desc: order.productName, icon: Navigation, color: "text-secondary", bg: "bg-secondary/10" };
+        else if (order.deliveryDriverId === user.uid) {
+          if (order.status === 'ready_for_pickup') task = { label: "Ruta: Recoger en Tienda", desc: order.productName, icon: Store, color: "text-amber-500", bg: "bg-amber-50" };
+          else if (order.status === 'at_store') task = { label: "Ruta: En Tienda", desc: order.productName, icon: Store, color: "text-amber-600", bg: "bg-amber-100" };
+          else if (order.status === 'delivered_to_driver') task = { label: "Ruta: Con Cliente", desc: order.productName, icon: Package, color: "text-purple-500", bg: "bg-purple-50" };
+          else if (order.status === 'shipped') task = { label: "Ruta: En Camino", desc: order.productName, icon: Navigation, color: "text-blue-500", bg: "bg-blue-50" };
+          else if (order.status === 'at_destination') task = { label: "Ruta: Llegué al Destino", desc: order.productName, icon: MapPin, color: "text-cyan-500", bg: "bg-cyan-50" };
+          else if (order.status === 'delivered') task = { label: "Ruta: Entrega Completada", desc: order.productName, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50" };
         }
         else if (order.customerId === user.uid) {
           const { label } = getServiceLabel(serviceType, false, order.status);
-          if (order.status === 'shipped' || order.status === 'delivered_to_driver') task = { label, desc: order.productName, icon: Package, color: "text-blue-500", bg: "bg-blue-50" };
+          if (order.status === 'ready_for_pickup') task = { label: 'Pedido: Asignado', desc: order.productName, icon: CheckCircle2, color: "text-indigo-500", bg: "bg-indigo-50" };
+          else if (order.status === 'at_store') task = { label: 'Pedido: En Tienda', desc: order.productName, icon: Store, color: "text-amber-500", bg: "bg-amber-50" };
+          else if (order.status === 'delivered_to_driver') task = { label: 'Pedido: Con Repartidor', desc: order.productName, icon: Package, color: "text-purple-500", bg: "bg-purple-50" };
+          else if (order.status === 'shipped') task = { label: 'Pedido: En Camino', desc: order.productName, icon: Truck, color: "text-blue-500", bg: "bg-blue-50" };
+          else if (order.status === 'at_destination') task = { label: 'Pedido: Llegando', desc: order.productName, icon: CircleDot, color: "text-cyan-500", bg: "bg-cyan-50" };
+          else if (order.status === 'delivered') task = { label: 'Pedido: Entregado', desc: order.productName, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50" };
           else task = { label, desc: order.productName, icon: Clock, color: "text-slate-500", bg: "bg-slate-50" };
         }
 
@@ -111,7 +125,7 @@ export function ActivityCenter() {
     setOpen(false);
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent('order-attended', { detail: { orderId } }));
-      window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId } }));
+      window.dispatchEvent(new CustomEvent('open-global-chat', { detail: { orderId } }));
     }, 150);
   };
 

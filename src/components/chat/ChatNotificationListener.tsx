@@ -166,7 +166,7 @@ export function ChatNotificationListener() {
         <ToastAction 
           altText="Atender" 
           onClick={() => {
-            window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId } }));
+            window.dispatchEvent(new CustomEvent('open-global-chat', { detail: { orderId } }));
           }}
           className="bg-primary text-white hover:bg-primary/90 font-black rounded-full h-10 px-6 border-none"
         >

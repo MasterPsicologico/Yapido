@@ -11,15 +11,15 @@ export function GlobalOrderChatModal() {
   const firestore = useFirestore();
 
   useEffect(() => {
-    const handleChatOpened = (e: any) => {
+    const handleOpenGlobalChat = (e: any) => {
       const orderId = e.detail?.orderId;
       if (orderId) {
         setActiveOrderId(orderId);
       }
     };
 
-    window.addEventListener('chat-opened', handleChatOpened);
-    return () => window.removeEventListener('chat-opened', handleChatOpened);
+    window.addEventListener('open-global-chat', handleOpenGlobalChat);
+    return () => window.removeEventListener('open-global-chat', handleOpenGlobalChat);
   }, []);
 
   const memoizedDocRef = useMemo(() => {

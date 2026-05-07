@@ -136,7 +136,7 @@ export function VisualNotificationListener() {
 
     if (goToOrder) {
       window.dispatchEvent(new CustomEvent('order-attended', { detail: { orderId: alertId } }));
-      window.dispatchEvent(new CustomEvent('chat-opened', { detail: { orderId: alertId } }));
+      window.dispatchEvent(new CustomEvent('open-global-chat', { detail: { orderId: alertId } }));
     }
   };
 
