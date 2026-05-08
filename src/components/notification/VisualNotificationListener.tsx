@@ -135,8 +135,13 @@ export function VisualNotificationListener() {
       
       const targetOrders = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() as any }))
-        // Incluimos tanto al cliente como al dueño de la tienda para que ambos vean las alertas
-        .filter(order => (order.customerId === user.uid || order.storeOwnerId === user.uid) && getStatusContent(order))
+        // Solo cliente y dueño de tienda reciben notificaciones visuales.
+        // El repartidor NUNCA debe ver estas alertas: él es quien dispara los cambios de status.
+        .filter(order => {
+          const isDriver = order.deliveryDriverId === user.uid;
+          if (isDriver) return false; // El repartidor está excluido siempre
+          return (order.customerId === user.uid || order.storeOwnerId === user.uid) && getStatusContent(order);
+        })
         .filter(order => order.status !== currentSync[order.id]) // Filtramos los que ya hemos visto
         .sort((a, b) => {
           const tA = a.updatedAt?.toMillis?.() || (a.updatedAt?.seconds * 1000) || 0;
