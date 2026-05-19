@@ -294,7 +294,7 @@ export default function StorePage() {
       return;
     }
     const cleanPhone = phone.replace(/\D/g, '');
-    const message = `¡Hola! 👋 Te contacto desde Vitriniando. Me interesa tu vitrina *${store.name}*.`;
+    const message = `¡Hola! 👋 Te contacto desde yapido.click. Me interesa tu vitrina *${store.name}*.`;
     const url = `https://wa.me/${cleanPhone.startsWith('57') ? cleanPhone : '57' + cleanPhone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };

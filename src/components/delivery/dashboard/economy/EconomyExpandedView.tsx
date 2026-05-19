@@ -50,10 +50,10 @@ export function EconomyExpandedView({ onClose, orders, revenueToday, commissionR
           </div>
           <h2 className="text-emerald-400 font-black tracking-[0.3em] uppercase text-xs">Ganancias de hoy</h2>
         </div>
-        <h1 className="text-4xl sm:text-5xl font-black italic tracking-tighter text-white">
+        <h1 className="text-3xl sm:text-4xl font-black italic tracking-tighter text-white">
           {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(driverEarnings)}
         </h1>
-        <p className="text-slate-400 font-medium mt-1 text-sm">
+        <p className="text-slate-400 font-medium mt-1 text-xs">
           {Math.round(commissionRate * 100)}% del ingreso total del negocio
         </p>
 

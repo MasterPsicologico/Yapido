@@ -49,7 +49,7 @@ export function EconomyPanel({ activeCount, revenueToday, orders, commissionRate
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
             <TrendingUp className="w-3 h-3 text-emerald-400" /> Ganancias de hoy
           </p>
-          <p className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tighter group-hover:text-emerald-300 transition-colors">
+          <p className="text-xl sm:text-2xl font-black text-emerald-400 tracking-tighter group-hover:text-emerald-300 transition-colors">
             {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(driverEarnings)}
           </p>
           <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">

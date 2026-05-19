@@ -91,7 +91,7 @@ export function HeaderProfileModal({ isOpen, onOpenChange, profile, level, isOnl
               </div>
               <div className="flex items-center gap-4 px-2">
                 <Mail className="w-4 h-4 text-primary" />
-                <span className="text-xs font-bold text-slate-600">{profile?.email || 'repartidor@vitriniando.com'}</span>
+                <span className="text-xs font-bold text-slate-600">{profile?.email || 'repartidor@yapido.click.com'}</span>
               </div>
               <div className="flex items-center gap-4 px-2">
                 <MapPin className="w-4 h-4 text-primary" />
@@ -107,7 +107,7 @@ export function HeaderProfileModal({ isOpen, onOpenChange, profile, level, isOnl
             </Button>
             <div className="flex items-center justify-center gap-2 mt-6 text-slate-300">
               <Sparkles className="w-3 h-3 text-primary" />
-              <span className="text-[8px] font-black uppercase tracking-[0.4em]">Vitriniando AI Central</span>
+              <span className="text-[8px] font-black uppercase tracking-[0.4em]">yapido.click AI Central</span>
             </div>
           </div>
         </div>

@@ -398,4 +398,5 @@ export function DeviceSpacing({
   );
 }
 
-export { useDeviceSize, DeviceSize };
+export { useDeviceSize };
+export type { DeviceSize };

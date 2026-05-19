@@ -23,6 +23,8 @@ interface MyDeliveriesTabProps {
 export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [now, setNow] = useState(new Date());
   const [internalChatOrder, setInternalChatOrder] = useState<any | null>(null);
   const firestore = useFirestore();
@@ -41,11 +43,24 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
     return () => { document.body.style.overflow = 'unset'; };
   }, [expandedId]);
 
+  // DINÁMICO: Los días del mes seleccionado (no solo el mes actual)
   const monthDays = useMemo(() => {
-    const start = startOfMonth(new Date());
-    const end = endOfMonth(new Date());
+    const start = startOfMonth(new Date(selectedYear, selectedMonth, 1));
+    const end = endOfMonth(new Date(selectedYear, selectedMonth, 1));
     return eachDayOfInterval({ start, end });
-  }, []);
+  }, [selectedYear, selectedMonth]);
+
+  // Al cambiar de mes, seleccionar el primer día de ese mes (o hoy si es el mes actual)
+  const handleChangeMonth = (year: number, month: number) => {
+    setSelectedYear(year);
+    setSelectedMonth(month);
+    const today = new Date();
+    if (year === today.getFullYear() && month === today.getMonth()) {
+      setSelectedDate(today);
+    } else {
+      setSelectedDate(new Date(year, month, 1));
+    }
+  };
 
   // LÓGICA DE AUDITORÍA: Días con lavadoras que no se han traído (En uso)
   const pendingDates = useMemo(() => {
@@ -83,15 +98,6 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
     return rentals.filter(order => {
       // Los pedidos de recogida activa ya están en su propia sección, no duplicar
       if (['picking_up', 'at_pickup'].includes(order.status)) return false;
-
-      // EXCEPCIÓN DE PERSISTENCIA CONTINUA:
-      // Cualquier pedido que no esté finalizado (completed o cancelled)
-      // SIEMPRE debe ser visible para garantizar la continuidad de la misión.
-      // Así el repartidor nunca pierde de vista una lavadora activa, incluso si cambia el día.
-      if (order.status !== 'completed' && order.status !== 'cancelled') {
-        return true;
-      }
-
       const orderDate = order.createdAt?.toDate?.() || (order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000) : null);
       if (!orderDate) return false;
       return isSameDay(orderDate, selectedDate);
@@ -115,6 +121,9 @@ export function MyDeliveriesTab({ rentals, onUpdateStatus }: MyDeliveriesTabProp
         selectedDate={selectedDate} 
         onSelectDate={setSelectedDate} 
         pendingDates={pendingDates}
+        currentYear={selectedYear}
+        currentMonth={selectedMonth}
+        onChangeMonth={handleChangeMonth}
       />
 
       <div className="grid gap-4">

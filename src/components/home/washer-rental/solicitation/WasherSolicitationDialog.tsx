@@ -93,10 +93,10 @@ export function WasherSolicitationDialog({
     if (!selectedCityId) return { automatic: true, semiautomatic: true };
 
     const storesInRegion = activeStores.filter((store: any) => {
-      if (store.status !== 'active' || !checkIsBusinessOpen(store.openTime, store.closeTime)) return false;
-      if (store.cityId && store.cityId !== selectedCityId) return false;
+      if (store.status !== 'active') return false;
+      if (store.cityId !== selectedCityId) return false;
       if (hasMultipleZones && selectedZoneId) {
-        if (store.zoneId && store.zoneId !== selectedZoneId) return false;
+        if (store.zoneId !== selectedZoneId) return false;
       }
       return true;
     });
@@ -107,8 +107,8 @@ export function WasherSolicitationDialog({
     let hasSemi = false;
 
     storesInRegion.forEach((store: any) => {
-      if (store.hasAutomatic) hasAuto = true;
-      if (store.hasSemiautomatic) hasSemi = true;
+      if (store.hasAutomatic === true || store.hasAutomatic === 'true') hasAuto = true;
+      if (store.hasSemiautomatic === true || store.hasSemiautomatic === 'true') hasSemi = true;
     });
 
     if (!hasAuto && !hasSemi) return { automatic: true, semiautomatic: true };

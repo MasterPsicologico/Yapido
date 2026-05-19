@@ -18,7 +18,7 @@ import { ActivityTrigger } from './ActivityTrigger';
 import { ActivityItem } from './ActivityItem';
 import { getServiceType, getServiceLabel } from './components/useServiceType';
 
-const SEEN_ORDERS_KEY = 'vitriniando_seen_activity_v1';
+const SEEN_ORDERS_KEY = 'yapido_click_seen_activity_v1';
 
 export function ActivityCenter() {
   const { user } = useUser();

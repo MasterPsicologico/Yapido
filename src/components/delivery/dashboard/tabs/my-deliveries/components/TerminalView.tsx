@@ -187,7 +187,7 @@ export function TerminalView({
           
           <div className="flex flex-col items-center gap-3 pt-10 opacity-40">
             <Zap className="w-6 h-6 text-primary animate-pulse" />
-            <p className="text-[8px] font-black uppercase tracking-[0.5em] text-slate-400">Vitriniando AI Central • Kernel v1.0.4</p>
+            <p className="text-[8px] font-black uppercase tracking-[0.5em] text-slate-400">yapido.click AI Central • Kernel v1.0.4</p>
           </div>
         </div>
       </ScrollArea>

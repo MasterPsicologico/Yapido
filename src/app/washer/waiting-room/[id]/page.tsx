@@ -1,19 +1,21 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Loader2 } from 'lucide-react';
 import { useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, useUser } from '@/firebase';
 import { doc, collection, query, orderBy, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+import { format, addHours, differenceInSeconds } from 'date-fns';
 
 // IMPORTACIÓN DE MÓDULOS FRAGMENTADOS
 import { TimerHero } from './components/TimerHero';
 import { StatusIdentityCard } from './components/StatusIdentityCard';
 import { OffersRadarSection } from './components/OffersRadarSection';
 import { RetrySearchSection } from './components/RetrySearchSection';
+import { MissionUsageCountdown } from '@/components/delivery/dashboard/active-mission/components/timer/MissionUsageCountdown';
 
 /**
  * WasherWaitingRoom - Centro de Comando del Cliente.
@@ -28,6 +30,7 @@ export default function WasherWaitingRoom() {
   
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [hasNotifiedAccepted, setHasNotifiedAccepted] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   // LISTENER MAESTRO: La Orden
   const orderRef = useMemoFirebase(() => (!firestore || !id || !user) ? null : doc(firestore, 'orders', id), [firestore, id, user]);
@@ -40,7 +43,13 @@ export default function WasherWaitingRoom() {
   }, [firestore, id, user]);
   const { data: offers } = useCollection(offersQuery);
 
-  // MOTOR DE CRONÓMETRO ÉLITE
+  // MOTOR DE RELOJ GLOBAL (para Usage Countdown)
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // MOTOR DE CRONÓMETRO ÉLITE (Para Asignación)
   useEffect(() => {
     if (!order?.createdAt) return;
 
@@ -101,6 +110,52 @@ export default function WasherWaitingRoom() {
     }
   }, [order?.status, hasNotifiedAccepted]);
 
+  const parseTimestamp = (ts: any) => {
+    if (!ts) return null;
+    if (typeof ts.toDate === 'function') return ts.toDate();
+    if (ts.seconds) return new Date(ts.seconds * 1000);
+    return new Date(ts);
+  };
+
+  const usageProgress = useMemo(() => {
+    if (order?.status !== 'delivered' || !order?.deliveredAt) return null;
+    const deliveredAt = parseTimestamp(order.deliveredAt);
+    if (!deliveredAt) return null;
+    
+    const durationHours = Number(order.requestHours || 5);
+    const expiryTime = addHours(deliveredAt, durationHours);
+    const totalSeconds = durationHours * 3600;
+    
+    const diffInSecs = differenceInSeconds(expiryTime, currentTime);
+    const isExpired = diffInSecs < 0;
+    const absSeconds = Math.abs(diffInSecs);
+    
+    return {
+      hours: Math.floor(absSeconds / 3600),
+      minutes: Math.floor((absSeconds % 3600) / 60),
+      seconds: absSeconds % 60,
+      isExpired,
+      expiryLabel: format(expiryTime, 'HH:mm'),
+      percentage: Math.min(100, (1 - (diffInSecs / totalSeconds)) * 100),
+      dropOffTime: format(deliveredAt, 'HH:mm'),
+      originalExpiry: format(expiryTime, 'HH:mm')
+    };
+  }, [order?.status, order?.deliveredAt, order?.requestHours, currentTime]);
+
+  const handleSOS = () => {
+    if (!firestore || !orderRef) return;
+    const isConfirm = window.confirm("¿Estás seguro de que deseas reportar una avería? Un técnico o repartidor será notificado.");
+    if (!isConfirm) return;
+
+    updateDocumentNonBlocking(orderRef, {
+      isSosActive: true,
+      sosReportedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+
+    toast({ title: "S.O.S Reportado", description: "Hemos notificado a la tienda y al repartidor.", className: "bg-red-600 text-white font-bold" });
+  };
+
   if (loadingOrder) return (
     <div className="fixed inset-0 flex items-center justify-center bg-white">
       <div className="flex flex-col items-center gap-4">
@@ -123,28 +178,48 @@ export default function WasherWaitingRoom() {
       
       <main className="flex-1 container mx-auto px-4 py-10 max-w-2xl space-y-10 pb-32">
         
-        <TimerHero 
-          isAssigned={isAssigned} 
-          timeLeft={timeLeft} 
-          minutes={minutes} 
-          seconds={seconds} 
-        />
+        {order?.status === 'delivered' && usageProgress ? (
+          <>
+            <div className="text-center space-y-2 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              <h1 className="text-3xl font-black italic tracking-tighter uppercase text-slate-900">
+                Tu lavadora está instalada
+              </h1>
+              <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">
+                Disfruta de tu servicio
+              </p>
+            </div>
+            <MissionUsageCountdown 
+              progress={usageProgress} 
+              hideControls={true}
+              onSOS={handleSOS}
+            />
+          </>
+        ) : (
+          <>
+            <TimerHero 
+              isAssigned={isAssigned} 
+              timeLeft={timeLeft} 
+              minutes={minutes} 
+              seconds={seconds} 
+            />
 
-        <StatusIdentityCard 
-          order={order} 
-          isAssigned={isAssigned} 
-          onGoToTracking={() => router.push('/admin/orders')} 
-        />
+            <StatusIdentityCard 
+              order={order} 
+              isAssigned={isAssigned} 
+              onGoToTracking={() => router.push('/admin/orders')} 
+            />
 
-        {!isAssigned && (
-          <OffersRadarSection 
-            offers={offers} 
-            onAccept={handleAcceptOffer} 
-          />
-        )}
+            {!isAssigned && (
+              <OffersRadarSection 
+                offers={offers} 
+                onAccept={handleAcceptOffer} 
+              />
+            )}
 
-        {timeLeft === 0 && !isAssigned && (
-          <RetrySearchSection />
+            {timeLeft === 0 && !isAssigned && (
+              <RetrySearchSection />
+            )}
+          </>
         )}
 
       </main>

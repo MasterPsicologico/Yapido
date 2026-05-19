@@ -33,6 +33,9 @@ export function MissionHeader({
     if (isInUse) return "EN USO";
     if (isAtDestination) return "EN EL DESTINO";
     if (status === 'shipped' || status === 'delivered_to_driver' || status === 'at_store') return "EN RUTA AL CLIENTE";
+    if (status === 'ready_for_pickup') return "PEDIDO ACEPTADO";
+    if (status === 'picking_up') return "EN RUTA A RECOGER";
+    if (status === 'at_pickup') return "EN PUNTO DE RECOGIDA";
     return "MISIÓN ACTIVA";
   };
 
@@ -40,6 +43,9 @@ export function MissionHeader({
     if (isInUse) return "bg-amber-500";
     if (isAtDestination) return "bg-blue-500";
     if (status === 'shipped' || status === 'delivered_to_driver' || status === 'at_store') return "bg-primary";
+    if (status === 'ready_for_pickup') return "bg-green-500";
+    if (status === 'picking_up') return "bg-orange-500";
+    if (status === 'at_pickup') return "bg-orange-600";
     return "bg-green-500";
   };
 

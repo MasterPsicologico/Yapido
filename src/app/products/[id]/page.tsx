@@ -115,7 +115,7 @@ export default function ProductPage() {
             {product?.imageUrl && <Image src={product.imageUrl} alt={product.name || 'Producto'} fill className="object-cover" />}
           </div>
           <div className="p-8 flex flex-col">
-            <Badge className="bg-primary/10 text-primary border-none uppercase text-[10px] font-black px-4 py-1 rounded-full w-fit mb-4">Vitriniando Pro</Badge>
+            <Badge className="bg-primary/10 text-primary border-none uppercase text-[10px] font-black px-4 py-1 rounded-full w-fit mb-4">yapido.click Pro</Badge>
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-tight mb-2">{product?.name}</h1>
             <span className="text-4xl font-black text-primary tracking-tighter mb-8">
               {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(product?.price || 0)}

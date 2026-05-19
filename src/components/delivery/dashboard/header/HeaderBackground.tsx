@@ -10,8 +10,8 @@ interface HeaderBackgroundProps {
   dashboardConfig?: any;
 }
 
-const CACHE_ACTIVE = 'vitriniando_delivery_bg_active';
-const CACHE_INACTIVE = 'vitriniando_delivery_bg_inactive';
+const CACHE_ACTIVE = 'yapido_click_delivery_bg_active';
+const CACHE_INACTIVE = 'yapido_click_delivery_bg_inactive';
 
 export function HeaderBackground({ isOnline, dashboardConfig }: HeaderBackgroundProps) {
   const [localActive, setLocalActive] = useState<string | null>(null);

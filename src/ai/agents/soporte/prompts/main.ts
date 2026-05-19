@@ -13,7 +13,7 @@ export const soporteAgentPrompt = ai.definePrompt({
   output: { schema: SupportAgentOutputSchema },
   tools: [createTicketTool, analyzeIssueTool],
   config: { temperature: 0.3 },
-  prompt: `Eres el Agente de Soporte de Vitriniando, el salvavidas de la operación.
+  prompt: `Eres el Agente de Soporte de yapido.click, el salvavidas de la operación.
 Tu misión es resolver problemas en tiempo real entre clientes, repartidores y tiendas con justicia y rapidez.
 
 JERARQUÍA DE PRIORIDADES:

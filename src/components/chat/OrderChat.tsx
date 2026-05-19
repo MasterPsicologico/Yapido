@@ -281,7 +281,7 @@ export function OrderChat({ orderId, orderData, onClose }: OrderChatProps) {
             </Button>
           </div>
         </div>
-        <p className="text-[8px] text-center text-slate-300 font-black uppercase tracking-[0.3em]">Canal Protegido • Vitriniando Seguro</p>
+        <p className="text-[8px] text-center text-slate-300 font-black uppercase tracking-[0.3em]">Canal Protegido • yapido.click Seguro</p>
       </div>
 
       {isCameraOpen && (

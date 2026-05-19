@@ -96,7 +96,7 @@ export default function FleetAdminPage() {
   const downloadImage = (base64: string, name: string) => {
     const link = document.createElement('a');
     link.href = base64;
-    link.download = `Vitriniando_${name}.jpg`;
+    link.download = `yapido.click_${name}.jpg`;
     link.click();
   };
 

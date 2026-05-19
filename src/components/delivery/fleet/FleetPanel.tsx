@@ -111,30 +111,32 @@ export function FleetPanel({ isOpen, onClose, store, drivers, orders, onRemoveDr
                 <Shield className="w-4 h-4 text-primary" />
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">Código de vinculación</p>
               </div>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1 bg-slate-50 rounded-2xl p-5 text-center">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 min-w-0 bg-slate-50 rounded-2xl py-3 px-4 text-center">
                   {store?.driverCode ? (
-                    <p className="text-3xl font-black tracking-[0.5em] text-slate-900 font-mono leading-none">{store.driverCode}</p>
+                    <p className="text-lg font-black tracking-[0.25em] text-slate-900 font-mono leading-none">{store.driverCode}</p>
                   ) : (
-                    <p className="text-xl font-black text-slate-400 italic">Sin código</p>
+                    <p className="text-sm font-black text-slate-400 italic">Sin código</p>
                   )}
                 </div>
                 {store?.driverCode ? (
                   <Button 
                     onClick={handleCopy}
+                    size="icon"
                     className={cn(
-                      "h-14 px-6 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-2 transition-all shadow-lg",
+                      "h-11 w-11 shrink-0 rounded-xl transition-all shadow-md",
                       copied ? "bg-green-500 hover:bg-green-600" : "bg-slate-900 hover:bg-slate-800"
                     )}
                   >
-                    {copied ? <><Check className="w-4 h-4" /> Copiado</> : <><Copy className="w-4 h-4" /> Copiar</>}
+                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   </Button>
                 ) : (
                   <Button 
                     onClick={handleGenerateCode}
-                    className="h-14 px-6 rounded-2xl bg-primary hover:bg-primary/90 font-black uppercase text-[10px] tracking-widest gap-2 transition-all shadow-lg"
+                    size="icon"
+                    className="h-11 w-11 shrink-0 rounded-xl bg-primary hover:bg-primary/90 shadow-md"
                   >
-                    <Zap className="w-4 h-4" /> Generar
+                    <Zap className="w-4 h-4" />
                   </Button>
                 )}
               </div>

@@ -11,6 +11,7 @@ import { ReleaseMissionDialog } from './release-mission';
 import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc, increment, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+import { nequiClient } from '@/lib/nequi/nequi-client';
 
 // COMPONENTES ATÓMICOS
 import { MissionHeader } from './active-mission/components/header/MissionHeader';
@@ -33,12 +34,68 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
   const [isMissionChatOpen, setIsMissionChatOpen] = useState(false);
   const [isReleaseDialogOpen, setIsReleaseDialogOpen] = useState(false);
   const [isConfirmPaymentOpen, setIsConfirmPaymentOpen] = useState(false);
+  const [isProcessingNequi, setIsProcessingNequi] = useState(false);
+  const [evidencePhoto, setEvidencePhoto] = useState<string | null>(null);
   const firestore = useFirestore();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const handleCapturePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Create a local URL for the photo. In a real app, we would upload to Storage.
+      const url = URL.createObjectURL(file);
+      setEvidencePhoto(url);
+    }
+  };
+
+  const handleNequiPayment = async () => {
+    setIsProcessingNequi(true);
+    try {
+      const response = await nequiClient.requestPayment({
+        phoneNumber: customerProfile?.phoneNumber || '0000000000',
+        value: mission.totalPrice || 0,
+        reference: mission.id
+      });
+      
+      // En producción, aquí se implementaría WebSockets o un polling al backend.
+      // Como estamos simulando la API, hacemos un polling falso para consultar el estado.
+      
+      const pollInterval = setInterval(async () => {
+        const status = await nequiClient.checkPaymentStatus(response.transactionId);
+        
+        if (status === 'APPROVED') {
+          clearInterval(pollInterval);
+          setIsProcessingNequi(false);
+          onUpdateStatus('completed', { paymentMethod: 'nequi', nequiTransactionId: response.transactionId });
+          setIsConfirmPaymentOpen(false);
+          toast({ title: "Pago Exitoso", description: "Nequi ha confirmado el pago.", className: "bg-green-600 text-white" });
+        } else if (status === 'REJECTED' || status === 'FAILED') {
+          clearInterval(pollInterval);
+          setIsProcessingNequi(false);
+          toast({ title: "Pago Rechazado", description: "El cliente rechazó el pago o hubo un error en Nequi.", variant: "destructive" });
+        }
+        // Si sigue 'PENDING', continúa el polling
+      }, 3000);
+
+      // Timeout de seguridad por si el cliente se queda dormido
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        if (isProcessingNequi) { // Si todavía está procesando
+          setIsProcessingNequi(false);
+          toast({ title: "Tiempo Excedido", description: "El pago Nequi no fue confirmado a tiempo.", variant: "destructive" });
+        }
+      }, 45000); // 45 segundos
+
+    } catch (error) {
+      console.error(error);
+      setIsProcessingNequi(false);
+      toast({ title: "Error Nequi", description: "No se pudo conectar con Nequi.", variant: "destructive" });
+    }
+  };
 
   const isInUse = mission.status === 'delivered';
   
@@ -99,9 +156,9 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
   };
 
   const handleFinalConfirmPayment = () => {
-    onUpdateStatus('delivered');
+    onUpdateStatus('completed');
     setIsConfirmPaymentOpen(false);
-    toast({ title: "Ciclo de cobro cerrado", className: "bg-green-600 text-white" });
+    toast({ title: "Recogida Finalizada", description: "Misión completada exitosamente.", className: "bg-green-600 text-white" });
   };
 
   return (
@@ -150,9 +207,21 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             isAtDestination={mission.status === 'at_destination'}
             isInUse={isInUse}
             isExpired={usageProgress?.isExpired}
-            onUpdateStatus={mission.status === 'at_destination' ? handleInitialInstallClick : onUpdateStatus}
-            onStartCamera={() => {}}
-            evidencePhoto={null}
+            washerId={mission.washerId}
+            missionId={mission.id}
+            storeId={mission.storeId}
+            onUpdateStatus={onUpdateStatus}
+            onStartCamera={() => document.getElementById('camera-capture')?.click()}
+            evidencePhoto={evidencePhoto}
+          />
+          
+          <input 
+            type="file" 
+            id="camera-capture" 
+            accept="image/*" 
+            capture="environment" 
+            className="hidden" 
+            onChange={handleCapturePhoto} 
           />
         </div>
       </main>
@@ -195,20 +264,44 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
             </div>
           </div>
 
-          <DialogFooter className="flex flex-col gap-3 sm:flex-col pb-2 w-full">
-            <Button 
-              onClick={handleFinalConfirmPayment}
-              className="w-full h-14 rounded-[20px] bg-green-500 hover:bg-green-600 text-white font-black text-base md:text-lg uppercase italic tracking-widest gap-2 shadow-lg hover:shadow-xl transition-all active:scale-95"
-            >
-              <CheckCircle2 className="w-5 h-5" /> SÍ, HE COBRADO
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={() => setIsConfirmPaymentOpen(false)}
-              className="text-slate-400 font-bold text-[10px] uppercase tracking-widest h-10 rounded-full hover:bg-slate-100 transition-colors w-full"
-            >
-              VOLVER Y REVISAR
-            </Button>
+          <DialogFooter className="flex flex-col gap-3 sm:flex-col pb-2 w-full relative">
+            {isProcessingNequi ? (
+              <div className="flex flex-col items-center justify-center py-6 space-y-4">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                <p className="text-xs font-black uppercase tracking-widest text-slate-500 animate-pulse text-center">
+                  Esperando confirmación<br/>del cliente en Nequi...
+                </p>
+              </div>
+            ) : (
+              <>
+                {mission.paymentMethod === 'nequi' ? (
+                  <Button 
+                    onClick={handleNequiPayment}
+                    className="w-full h-14 rounded-[20px] bg-[#2E0F59] hover:bg-[#1f0a3d] text-white font-black text-base md:text-lg uppercase italic tracking-widest gap-2 shadow-lg hover:shadow-xl transition-all active:scale-95"
+                  >
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pideya-b5a8b.appspot.com/o/nequi-logo.png?alt=media" alt="Nequi" className="h-6 w-auto" onError={(e) => e.currentTarget.style.display = 'none'} />
+                    ENVIAR COBRO NEQUI
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleFinalConfirmPayment}
+                    className="w-full h-14 rounded-[20px] bg-green-500 hover:bg-green-600 text-white font-black text-base md:text-lg uppercase italic tracking-widest gap-2 shadow-lg hover:shadow-xl transition-all active:scale-95"
+                  >
+                    <CheckCircle2 className="w-5 h-5" /> EFECTIVO RECIBIDO
+                  </Button>
+                )}
+                
+                <Button 
+                  onClick={() => {
+                    setIsConfirmPaymentOpen(false);
+                    onUpdateStatus('debt_pending');
+                  }}
+                  className="text-amber-600 font-bold text-[10px] uppercase tracking-widest h-10 rounded-full hover:bg-amber-50 transition-colors w-full border-2 border-amber-200 mt-2"
+                >
+                  ⚠️ NO HA PAGADO
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

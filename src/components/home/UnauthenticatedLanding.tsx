@@ -18,7 +18,7 @@ interface UnauthenticatedLandingProps {
   isEditor?: boolean;
 }
 
-const CACHE_KEY = 'vitriniando_cover_cache';
+const CACHE_KEY = 'yapido_click_cover_cache';
 
 export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }: UnauthenticatedLandingProps) {
   const firestore = useFirestore();
@@ -103,7 +103,7 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
         {coverImage && (
           <Image 
             src={coverImage} 
-            alt="Portada Vitriniando" 
+            alt="Portada yapido.click" 
             fill 
             className="object-cover opacity-100 transition-opacity duration-1000" 
             priority 

@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { MessageTrigger } from './MessageTrigger';
 import { MessageItem } from './MessageItem';
 
-const SEEN_ORDERS_KEY = 'vitriniando_seen_orders_v1';
+const SEEN_ORDERS_KEY = 'yapido_click_seen_orders_v1';
 
 export function MessageCenter() {
   const { user } = useUser();

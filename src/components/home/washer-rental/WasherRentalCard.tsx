@@ -33,8 +33,8 @@ interface WasherRentalCardProps {
   onBannerUpload: (e: React.ChangeEvent<HTMLInputElement>, target: 'mobile' | 'pc') => void;
 }
 
-const CACHE_MOBILE = 'vitriniando_washer_banner_mobile';
-const CACHE_DESKTOP = 'vitriniando_washer_banner_desktop';
+const CACHE_MOBILE = 'yapido_click_washer_banner_mobile';
+const CACHE_DESKTOP = 'yapido_click_washer_banner_desktop';
 
 /* ═══════════════════════════════════════════════════════════════
    WASHER RENTAL CARD — Ultra-Premium with Framer Motion Physics
@@ -104,7 +104,7 @@ export function WasherRentalCard({
       onMouseMove={handleContainerMouse}
       className={cn(
         "relative w-full overflow-hidden flex flex-col items-center justify-start transition-all duration-700",
-        user ? "h-[calc(100dvh-64px)]" : "h-[100dvh]"
+        user ? "h-[calc(100dvh-64px)] lg:h-[calc(100dvh-80px)]" : "h-[100dvh]"
       )}
     >
       {/* ═══ LAYER 0: Animated Mesh Gradient Base ═══ */}
@@ -255,7 +255,7 @@ function AppDock({
   const desktopInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center">
+    <div className="absolute bottom-6 sm:bottom-10 lg:bottom-16 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center">
       
       {/* Badge Tiendas Activas */}
       <AnimatePresence>
@@ -263,10 +263,10 @@ function AppDock({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-4 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-sm flex items-center gap-2 shadow-glow-emerald"
+            className="mb-4 sm:mb-5 lg:mb-6 px-3 sm:px-4 py-1 sm:py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-sm flex items-center gap-2 shadow-glow-emerald"
           >
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider overflow-hidden whitespace-nowrap text-ellipsis max-w-[200px]">
+            <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[10px] sm:text-xs lg:text-sm font-bold text-emerald-300 uppercase tracking-wider overflow-hidden whitespace-nowrap text-ellipsis max-w-[200px] sm:max-w-[280px]">
               {activeStoresCount === 1 ? '1 Tienda Activa Ahora' : `${activeStoresCount || 0} Tiendas Activas Ahora`}
             </span>
           </motion.div>
@@ -278,7 +278,7 @@ function AppDock({
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, type: 'spring', stiffness: 300, damping: 25 }}
-        className="flex items-center gap-2 sm:gap-4 px-3 sm:px-4 py-3 rounded-[32px] bg-slate-900/40 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] glass-rim-light"
+        className="flex items-center gap-3 sm:gap-4 lg:gap-6 px-4 sm:px-5 lg:px-8 py-4 sm:py-5 lg:py-6 rounded-[32px] lg:rounded-[48px] bg-slate-900/50 lg:bg-slate-900/60 backdrop-blur-2xl border border-white/10 lg:border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.5)] glass-rim-light"
       >
         {/* Izquierda: Categorías (y Admin Móvil) */}
         {isAdmin && onBannerUpload && (
@@ -289,11 +289,11 @@ function AppDock({
               whileTap={{ scale: 0.95 }}
               onClick={() => mobileInputRef.current?.click()} 
               disabled={isUploadingBanner} 
-              className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/70 hover:text-primary transition-colors focus:outline-none"
+              className="w-14 h-14 sm:w-12 lg:w-16 lg:h-16 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/70 hover:text-primary transition-colors focus:outline-none"
             >
-              {isUploadingBanner ? <Loader2 className="w-5 h-5 animate-spin" /> : <Smartphone className="w-5 h-5" />}
+              {isUploadingBanner ? <Loader2 className="w-5 h-5 lg:w-6 lg:h-6 animate-spin" /> : <Smartphone className="w-5 h-5 lg:w-6 lg:h-6" />}
             </motion.button>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900/90 text-[10px] font-bold text-white rounded opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none border border-white/10 whitespace-nowrap">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900/90 text-[10px] sm:text-xs font-bold text-white rounded opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none border border-white/10 whitespace-nowrap">
               Móvil
             </div>
           </div>
@@ -302,14 +302,14 @@ function AppDock({
           <motion.div
             whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.15)' }}
             whileTap={{ scale: 0.95 }}
-            className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/70 hover:text-white transition-colors"
+            className="w-14 h-14 sm:w-12 lg:w-16 lg:h-16 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/70 hover:text-white transition-colors"
           >
-            <LayoutGrid className="w-5 h-5" />
+            <LayoutGrid className="w-5 h-5 lg:w-6 lg:h-6" />
           </motion.div>
         </Link>
         
         {/* Centro: Solicitar Ahora */}
-        <div className="mx-1 sm:mx-4 shrink-0 relative flex items-center justify-center">
+        <div className="mx-2 sm:mx-4 lg:mx-8 shrink-0 relative flex items-center justify-center">
           <HolographicCTA isOpen={isAnyStoreOpen} onClick={onOpenSolicitation} />
         </div>
 
@@ -318,9 +318,9 @@ function AppDock({
           <motion.div
             whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.15)' }}
             whileTap={{ scale: 0.95 }}
-            className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/70 hover:text-emerald-400 transition-colors group"
+            className="w-14 h-14 sm:w-12 lg:w-16 lg:h-16 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/70 hover:text-emerald-400 transition-colors group"
           >
-            <StoreIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <StoreIcon className="w-5 h-5 lg:w-6 lg:h-6 group-hover:scale-110 transition-transform" />
           </motion.div>
         </button>
 
@@ -333,11 +333,11 @@ function AppDock({
               whileTap={{ scale: 0.95 }}
               onClick={() => desktopInputRef.current?.click()} 
               disabled={isUploadingBanner} 
-              className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/70 hover:text-secondary transition-colors focus:outline-none"
+              className="w-14 h-14 sm:w-12 lg:w-16 lg:h-16 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/70 hover:text-secondary transition-colors focus:outline-none"
             >
-              {isUploadingBanner ? <Loader2 className="w-5 h-5 animate-spin" /> : <Monitor className="w-5 h-5" />}
+              {isUploadingBanner ? <Loader2 className="w-5 h-5 lg:w-6 lg:h-6 animate-spin" /> : <Monitor className="w-5 h-5 lg:w-6 lg:h-6" />}
             </motion.button>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900/90 text-[10px] font-bold text-white rounded opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none border border-white/10 whitespace-nowrap">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900/90 text-[10px] sm:text-xs font-bold text-white rounded opacity-0 group-hover/btn:opacity-100 transition-opacity pointer-events-none border border-white/10 whitespace-nowrap">
               PC
             </div>
           </div>
@@ -374,21 +374,21 @@ function HolographicCTA({
         whileHover={isOpen ? { scale: 1.05 } : {}}
         whileTap={isOpen ? { scale: 0.95 } : {}}
         className={cn(
-          "relative z-10 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full font-black text-[13px] sm:text-[15px] uppercase italic tracking-tighter flex items-center gap-2 sm:gap-3 shadow-[0_10px_30px_rgba(220,38,38,0.4)] transition-all duration-500",
+          "relative z-10 text-white px-8 sm:px-10 lg:px-14 py-4 sm:py-5 lg:py-6 rounded-full font-black text-base sm:text-[15px] lg:text-xl uppercase italic tracking-tighter flex items-center gap-3 sm:gap-3 lg:gap-4 shadow-[0_10px_30px_rgba(220,38,38,0.4)] transition-all duration-500",
           isOpen
             ? "bg-red-600/70 glass-rim-light hover:bg-red-600/90 backdrop-blur-xl border border-red-400/30"
             : "bg-slate-800/80 backdrop-blur-xl border border-white/10 grayscale opacity-60 shadow-none"
         )}
       >
-        <span className="relative z-10 flex items-center gap-2 sm:gap-3">
+        <span className="relative z-10 flex items-center gap-2 sm:gap-3 lg:gap-4">
           {isOpen ? (
             <>
-              <Zap className="w-4 h-4 sm:w-5 sm:h-5 fill-white animate-pulse" />
+              <Zap className="w-5 h-5 sm:w-5 lg:w-7 lg:h-7 fill-white animate-pulse" />
               <span>SOLICITAR <span className="hidden sm:inline">AHORA</span></span>
             </>
           ) : (
             <>
-              <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
+              <Moon className="w-5 h-5 sm:w-5 lg:w-6 lg:h-6 text-slate-400" />
               <span>CERRADO</span>
             </>
           )}
@@ -457,15 +457,15 @@ function SocialProofWidget({ recentOrders }: { recentOrders?: any[] }) {
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.9 }}
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          className="absolute bottom-6 left-6 z-[60] flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-white/10 shadow-depth-md glass-rim-light"
+          className="absolute bottom-6 sm:bottom-10 lg:bottom-20 left-6 lg:left-10 z-[60] flex items-center gap-3 lg:gap-4 px-4 lg:px-6 py-3 lg:py-4 rounded-2xl lg:rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 shadow-depth-md glass-rim-light"
         >
-          <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary relative overflow-hidden">
+          <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary relative overflow-hidden">
              <div className="absolute inset-0 bg-primary/10 animate-pulse" />
-             <UserCheck className="w-5 h-5 relative z-10" />
+             <UserCheck className="w-5 h-5 lg:w-6 lg:h-6 relative z-10" />
           </div>
           <div className="flex flex-col">
-            <span className="text-white text-xs font-semibold">Alquiler exitoso</span>
-            <span className="text-white/60 text-[10px] leading-tight">{data.name} pidió una {data.type}<br/>{data.time}</span>
+            <span className="text-white text-xs lg:text-sm font-semibold">Alquiler exitoso</span>
+            <span className="text-white/60 text-[10px] lg:text-xs leading-tight">{data.name} pidió una {data.type}<br/>{data.time}</span>
           </div>
         </motion.div>
       )}

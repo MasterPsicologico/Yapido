@@ -4,6 +4,8 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { Store, ChevronRight } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, documentId } from 'firebase/firestore';
 
 interface StoreHubProps {
   orders: any[];
@@ -11,8 +13,10 @@ interface StoreHubProps {
 
 export function StoreHub({ orders }: StoreHubProps) {
   const pathname = usePathname();
+  const firestore = useFirestore();
   
-  const uniqueStores = useMemo(() => {
+  // Step 1: Extract unique store IDs from orders
+  const storeDataFromOrders = useMemo(() => {
     const storesMap = new Map();
     orders.forEach(o => {
       if (o.storeId && o.storeName && !storesMap.has(o.storeId)) {
@@ -29,10 +33,32 @@ export function StoreHub({ orders }: StoreHubProps) {
         if (ts > store.lastInteraction) store.lastInteraction = ts;
       }
     });
-    return Array.from(storesMap.values()).sort((a, b) => b.lastInteraction - a.lastInteraction).slice(0, 5); // Top 5 recent stores
+    return Array.from(storesMap.values()).sort((a, b) => b.lastInteraction - a.lastInteraction).slice(0, 5);
   }, [orders]);
 
-  if (uniqueStores.length === 0) return null;
+  // Step 2: Query Firestore to check which stores actually exist
+  const storeIds = useMemo(() => storeDataFromOrders.map(s => s.id), [storeDataFromOrders]);
+  
+  const existingStoresQuery = useMemoFirebase(() => {
+    if (!firestore || storeIds.length === 0) return null;
+    // Firestore 'in' supports up to 10 items — we only have max 5
+    return query(collection(firestore, 'stores'), where(documentId(), 'in', storeIds));
+  }, [firestore, JSON.stringify(storeIds)]);
+
+  const { data: existingStores } = useCollection(existingStoresQuery);
+
+  // Step 3: Filter — only show stores that actually exist in Firestore and are not deleted
+  const validStores = useMemo(() => {
+    if (!existingStores) return [];
+    const existingIds = new Set(
+      existingStores
+        .filter((s: any) => s.isActive !== false && s.isDeleted !== true && s.deleted !== true && s.status !== 'deleted')
+        .map((s: any) => s.id)
+    );
+    return storeDataFromOrders.filter(s => existingIds.has(s.id));
+  }, [storeDataFromOrders, existingStores]);
+
+  if (validStores.length === 0) return null;
 
   return (
     <div className="bg-white/5 backdrop-blur-md rounded-[32px] border border-white/10 p-6 mt-6 shadow-2xl">
@@ -43,7 +69,7 @@ export function StoreHub({ orders }: StoreHubProps) {
         <h3 className="text-sm font-black uppercase tracking-widest text-white italic">Store Hub</h3>
       </div>
       <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-2 px-2">
-        {uniqueStores.map(store => (
+        {validStores.map(store => (
           <Link 
             key={store.id} 
             href={`/stores/${store.id}?from=${pathname}&expandEconomy=true`}

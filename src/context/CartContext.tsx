@@ -36,7 +36,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    const savedCart = localStorage.getItem('vitriniando_cart');
+    const savedCart = localStorage.getItem('yapido_click_cart');
     if (savedCart) {
       try {
         setItems(JSON.parse(savedCart));
@@ -48,7 +48,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem('vitriniando_cart', JSON.stringify(items));
+      localStorage.setItem('yapido_click_cart', JSON.stringify(items));
     }
   }, [items, mounted]);
 

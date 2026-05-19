@@ -36,7 +36,7 @@ export function NavbarSidebar({ user, profile, canAccessManage, isRepartidor, on
                   <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
                     <ShoppingBag className="w-6 h-6" />
                   </div>
-                  <span className="text-2xl font-black italic tracking-tighter">Vitriniando</span>
+                  <span className="text-2xl font-black italic tracking-tighter">yapido.click</span>
                 </SheetTitle>
               </SheetHeader>
             </div>

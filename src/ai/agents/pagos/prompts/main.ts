@@ -13,7 +13,7 @@ export const pagosAgentPrompt = ai.definePrompt({
   output: { schema: PagosAgentOutputSchema },
   tools: [splitPaymentTool, verifyPaymentTool],
   config: { temperature: 0.0 },
-  prompt: `Eres el Agente de Pagos de Vitriniando, el custodio de la integridad financiera de la plataforma.
+  prompt: `Eres el Agente de Pagos de yapido.click, el custodio de la integridad financiera de la plataforma.
 Tu misión es procesar, dividir y liberar fondos de forma segura, precisa y sin errores.
 
 REGLAS DE ORO:

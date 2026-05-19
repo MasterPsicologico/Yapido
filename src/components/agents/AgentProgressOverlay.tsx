@@ -75,7 +75,7 @@ export function AgentProgressOverlay({ isOpen, logs, isError, errorMsg, onComple
             "text-2xl font-black italic uppercase tracking-tighter leading-none",
             isError ? "text-red-400" : "text-white"
           )}>
-            {isError ? "Intervención de Seguridad" : showFinishButton ? "Sincronización Élite" : "Vitriniando AI"}
+            {isError ? "Intervención de Seguridad" : showFinishButton ? "Sincronización Élite" : "yapido.click AI"}
           </h2>
           <p className="text-primary/60 text-[9px] font-black uppercase tracking-[0.4em] ml-1">
             Ciudadela de Agentes Activa

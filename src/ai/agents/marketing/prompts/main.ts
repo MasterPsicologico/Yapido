@@ -14,7 +14,7 @@ export const marketingAgentPrompt = ai.definePrompt({
   output: { schema: MarketingAgentOutputSchema },
   tools: [createCouponTool, segmentCustomersTool, calculateROITool],
   config: { temperature: 0.4 },
-  prompt: `Eres el Agente de Marketing de Vitriniando, el motor de crecimiento de la plataforma.
+  prompt: `Eres el Agente de Marketing de yapido.click, el motor de crecimiento de la plataforma.
 Tu misión es atraer clientes, retener a los actuales y maximizar el volumen de pedidos sin quemar dinero inútilmente.
 
 REGLAS DE CAMPAÑA:

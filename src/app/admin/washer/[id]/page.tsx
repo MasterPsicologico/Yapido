@@ -397,7 +397,7 @@ export default function WasherStoreAdminPage() {
           </TabsContent>
 
           <TabsContent value="hours">
-            <Card className="border-none rounded-[32px] bg-white shadow-xl p-8">
+            <Card className="border-none rounded-[32px] bg-white shadow-xl p-8 overflow-hidden">
               <CardContent className="p-0 space-y-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-black uppercase text-slate-900">Horario de Atención</h3>
@@ -408,27 +408,27 @@ export default function WasherStoreAdminPage() {
                 </div>
                 <div className="grid gap-3">
                   {operatingHours.map((hour, i) => (
-                    <div key={hour.day} className={cn("flex items-center gap-4 p-4 rounded-[16px] bg-slate-50", !hour.enabled && "opacity-50")}>
-                      <div className="w-24">
-                        <span className="font-black text-sm uppercase text-slate-700">{hour.day}</span>
+                    <div key={hour.day} className={cn("flex items-center gap-2 p-3 rounded-[16px] bg-slate-50 min-w-0", !hour.enabled && "opacity-50")}>
+                      <div className="w-[72px] shrink-0 min-w-0">
+                        <span className="font-black text-xs uppercase text-slate-700 truncate block">{hour.day}</span>
                       </div>
                       <Switch checked={hour.enabled} onCheckedChange={(checked) => {
                         const newHours = [...operatingHours];
                         newHours[i].enabled = checked;
                         setOperatingHours(newHours);
                       }} />
-                      <div className="flex items-center gap-2 flex-1">
+                      <div className="flex items-center gap-1 flex-1 min-w-0 overflow-hidden">
                         <Input type="time" value={hour.open} onChange={(e) => {
                           const newHours = [...operatingHours];
                           newHours[i].open = e.target.value;
                           setOperatingHours(newHours);
-                        }} className="w-32 h-10 rounded-[10px] bg-white border-none font-black text-center" disabled={!hour.enabled} />
-                        <span className="text-slate-400 font-black">-</span>
+                        }} className="flex-1 min-w-0 h-9 rounded-[10px] bg-white border-none font-black text-center text-xs px-1" disabled={!hour.enabled} />
+                        <span className="text-slate-400 font-black shrink-0">–</span>
                         <Input type="time" value={hour.close} onChange={(e) => {
                           const newHours = [...operatingHours];
                           newHours[i].close = e.target.value;
                           setOperatingHours(newHours);
-                        }} className="w-32 h-10 rounded-[10px] bg-white border-none font-black text-center" disabled={!hour.enabled} />
+                        }} className="flex-1 min-w-0 h-9 rounded-[10px] bg-white border-none font-black text-center text-xs px-1" disabled={!hour.enabled} />
                       </div>
                     </div>
                   ))}

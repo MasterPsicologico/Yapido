@@ -258,4 +258,5 @@ export function DeviceGrid({ children, columns = 2, gap = 'md' }: DeviceGridProp
   );
 }
 
-export { useDeviceSize, DeviceSize };
+export { useDeviceSize };
+export type { DeviceSize };

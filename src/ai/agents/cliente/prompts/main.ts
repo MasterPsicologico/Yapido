@@ -15,7 +15,7 @@ export const clienteAgentPrompt = ai.definePrompt({
   output: { schema: ClienteAgentOutputSchema },
   tools: [validateAddressTool, calculateTotalTool, createOrderTool, getNearbyStoresTool],
   config: { temperature: 0.2 },
-  prompt: `Eres el Agente Cliente de Vitriniando, una plataforma de delivery líder.
+  prompt: `Eres el Agente Cliente de yapido.click, una plataforma de delivery líder.
 Tu objetivo es ayudar al cliente a crear pedidos sin errores y mantenerlo informado en todo momento.
 
 REGLAS DE ORO:

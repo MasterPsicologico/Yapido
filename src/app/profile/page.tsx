@@ -135,7 +135,7 @@ export default function ProfilePage() {
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
-        <Button variant="ghost" onClick={() => router.back()} className="mb-6 gap-2 text-slate-400 font-bold hover:text-primary p-0 h-auto group transition-colors">
+        <Button variant="ghost" onClick={() => router.push('/')} className="mb-6 gap-2 text-slate-400 font-bold hover:text-primary p-0 h-auto group transition-colors">
           <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
             <ArrowLeft className="w-4 h-4" />
           </div>
@@ -161,20 +161,20 @@ export default function ProfilePage() {
                 </div>
 
                 <Link href={profile.role === 'repartidor' ? '/delivery/dashboard' : `/admin/washer/${profile.linkedStoreId}`} className="block">
-                  <div className="flex items-center justify-between gap-4 p-6 rounded-[32px] bg-white/5 border border-white/10 hover:bg-white/10 transition-all shadow-inner group/card">
-                    <div className="flex items-center gap-5">
-                      <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center text-primary border border-primary/20 shadow-lg">
-                        {loadingLinkedStore ? <Loader2 className="w-7 h-7 animate-spin" /> : <Waves className="w-7 h-7 animate-pulse" />}
+                  <div className="flex items-center justify-between gap-3 p-4 rounded-[24px] bg-white/5 border border-white/10 hover:bg-white/10 transition-all shadow-inner group/card overflow-hidden">
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center text-primary border border-primary/20 shadow-lg shrink-0">
+                        {loadingLinkedStore ? <Loader2 className="w-5 h-5 animate-spin" /> : <Waves className="w-5 h-5 animate-pulse" />}
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] leading-none">EQUIPO DE</p>
-                        <h4 className="text-2xl font-black italic uppercase tracking-tighter leading-none text-white group-hover/card:text-primary transition-colors">{linkedStore?.name || 'Cargando...'}</h4>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                          <MapPin className="w-3 h-3" /> {linkedStore?.address || 'Ubicación vinculada'}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[9px] font-black text-primary uppercase tracking-[0.3em] leading-none mb-1">EQUIPO DE</p>
+                        <h4 className="text-base font-black italic uppercase tracking-tight leading-tight text-white group-hover/card:text-primary transition-colors truncate">{linkedStore?.name || 'Cargando...'}</h4>
+                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1 mt-0.5 truncate">
+                          <MapPin className="w-3 h-3 shrink-0" /> <span className="truncate">{linkedStore?.address || 'Ubicación vinculada'}</span>
                         </p>
                       </div>
                     </div>
-                    <ChevronRight className="w-8 h-8 text-white/20 group-hover/card:text-white group-hover/card:translate-x-1 transition-all" />
+                    <ChevronRight className="w-5 h-5 text-white/20 group-hover/card:text-white group-hover/card:translate-x-1 transition-all shrink-0" />
                   </div>
                 </Link>
 
@@ -201,17 +201,17 @@ export default function ProfilePage() {
             </Card>
           )}
 
-          <Card className="border-none rounded-[48px] shadow-2xl overflow-hidden bg-white p-10 space-y-10">
-            <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nombre Público</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} className="h-16 rounded-[24px] bg-slate-50 border-none font-black text-lg px-6" />
+          <Card className="border-none rounded-[32px] shadow-xl overflow-hidden bg-white p-6 space-y-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Nombre Público</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} className="h-12 rounded-2xl bg-slate-50 border-none font-bold text-sm px-4" />
             </div>
-            <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">WhatsApp de contacto</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="300 000 0000" className="h-16 rounded-[24px] bg-slate-50 border-none font-black text-lg px-6" />
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">WhatsApp de contacto</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="300 000 0000" className="h-12 rounded-2xl bg-slate-50 border-none font-bold text-sm px-4" />
             </div>
-            <Button onClick={handleSave} disabled={isSaving} className="w-full h-20 rounded-[32px] bg-primary text-white text-xl font-black gap-4 shadow-2xl active:scale-95 uppercase italic tracking-tighter">
-              {isSaving ? <Loader2 className="animate-spin" /> : "Actualizar Mi Perfil"}
+            <Button onClick={handleSave} disabled={isSaving} className="w-full h-12 rounded-2xl bg-primary text-white text-xs font-black gap-2 shadow-lg active:scale-95 uppercase tracking-widest">
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Actualizar Mi Perfil"}
             </Button>
           </Card>
         </div>

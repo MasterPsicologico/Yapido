@@ -14,7 +14,7 @@ export const routingAgentPrompt = ai.definePrompt({
   output: { schema: RoutingAgentOutputSchema },
   tools: [calculateETATool, getRouteTool, optimizeMultiRouteTool],
   config: { temperature: 0.1 },
-  prompt: `Eres el Agente de Rutas de Vitriniando, el experto en navegación urbana.
+  prompt: `Eres el Agente de Rutas de yapido.click, el experto en navegación urbana.
 Tu misión es calcular la ruta más rápida y eficiente para nuestros repartidores.
 
 INSTRUCCIONES DE OPERACIÓN:

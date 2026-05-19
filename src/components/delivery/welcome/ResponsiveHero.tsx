@@ -11,8 +11,8 @@ interface ResponsiveHeroProps {
   onAction: () => void;
 }
 
-const CACHE_MOBILE = 'vitriniando_delivery_welcome_mobile';
-const CACHE_DESKTOP = 'vitriniando_delivery_welcome_desktop';
+const CACHE_MOBILE = 'yapido_click_delivery_welcome_mobile';
+const CACHE_DESKTOP = 'yapido_click_delivery_welcome_desktop';
 
 /**
  * ResponsiveHero - El Portal de Impacto Absoluto.

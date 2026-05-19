@@ -49,7 +49,7 @@ export const TermsSection = React.forwardRef<HTMLDivElement, TermsSectionProps>(
                 )} 
               />
               <label htmlFor="terms" className="text-[11px] font-black uppercase tracking-widest cursor-pointer leading-tight text-white/90">
-                He leído y acepto el compromiso de servicio de Vitriniando
+                He leído y acepto el compromiso de servicio de yapido.click
               </label>
             </div>
           </CardContent>

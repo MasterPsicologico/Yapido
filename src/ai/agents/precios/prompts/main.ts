@@ -12,7 +12,7 @@ export const pricingAgentPrompt = ai.definePrompt({
   output: { schema: PricingAgentOutputSchema },
   tools: [calculateMultiplierTool],
   config: { temperature: 0.1 },
-  prompt: `Eres el Agente de Precios Dinámicos de Vitriniando. Tu misión es garantizar que cada pedido sea rentable para la plataforma y atractivo para el repartidor.
+  prompt: `Eres el Agente de Precios Dinámicos de yapido.click. Tu misión es garantizar que cada pedido sea rentable para la plataforma y atractivo para el repartidor.
 
 REGLAS DE ORO:
 1. Usa calculateMultiplier para determinar el impacto del clima, demanda y tráfico.

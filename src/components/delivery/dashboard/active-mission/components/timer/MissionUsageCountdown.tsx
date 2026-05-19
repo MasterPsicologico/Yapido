@@ -23,21 +23,23 @@ interface MissionUsageCountdownProps {
     dropOffTime?: string;
     originalExpiry?: string;
   };
-  onAddHours: (hours: number) => void;
+  onAddHours?: (hours: number) => void;
   onRemoveHour?: () => void;
+  hideControls?: boolean;
+  onSOS?: () => void;
 }
 
 /**
  * MissionUsageCountdown - Orquestador Atómico: Centro de Control de Tiempo.
  * Actualizado a fondo Blanco Élite con contraste Slate-900.
  */
-export function MissionUsageCountdown({ progress, onAddHours, onRemoveHour }: MissionUsageCountdownProps) {
+export function MissionUsageCountdown({ progress, onAddHours, onRemoveHour, hideControls, onSOS = undefined }: MissionUsageCountdownProps) {
   const [pulseColor, setPulseColor] = useState<'none' | 'green' | 'red'>('none');
 
   const handleAction = (isAdd: boolean) => {
     setPulseColor(isAdd ? 'green' : 'red');
-    if (isAdd) onAddHours(1);
-    else if (onRemoveHour) onRemoveHour();
+    if (isAdd && onAddHours) onAddHours(1);
+    else if (!isAdd && onRemoveHour) onRemoveHour();
     
     setTimeout(() => setPulseColor('none'), 1500);
   };
@@ -93,11 +95,25 @@ export function MissionUsageCountdown({ progress, onAddHours, onRemoveHour }: Mi
             pulseColor={pulseColor}
           />
 
-          <TimeAdjustmentControls 
-            onAdd={() => handleAction(true)} 
-            onRemove={() => handleAction(false)}
-            disabled={pulseColor !== 'none'}
-          />
+          {!hideControls && (
+            <TimeAdjustmentControls 
+              onAdd={() => handleAction(true)} 
+              onRemove={() => handleAction(false)}
+              disabled={pulseColor !== 'none'}
+            />
+          )}
+
+          {typeof onSOS === 'function' && (
+            <div className="w-full pt-4 mt-2 border-t border-slate-100">
+              <button 
+                onClick={onSOS}
+                className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-black text-[10px] uppercase tracking-widest py-3 rounded-2xl flex items-center justify-center gap-2 transition-colors border border-red-200"
+              >
+                <AlertCircle className="w-4 h-4" />
+                REPORTAR AVERÍA O PROBLEMA (S.O.S)
+              </button>
+            </div>
+          )}
         </div>
       </Card>
     </section>

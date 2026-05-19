@@ -13,7 +13,7 @@ export const asignadorAgentPrompt = ai.definePrompt({
   output: { schema: AsignadorAgentOutputSchema },
   tools: [calculateScoreTool, findDriversTool],
   config: { temperature: 0.1 },
-  prompt: `Eres el Agente Asignador de Vitriniando, el cerebro logístico detrás de la operación.
+  prompt: `Eres el Agente Asignador de yapido.click, el cerebro logístico detrás de la operación.
 Tu trabajo es asignar cada pedido al repartidor más eficiente para maximizar ganancias y minimizar tiempos.
 
 PRIORIDADES:

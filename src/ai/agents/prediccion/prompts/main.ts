@@ -13,7 +13,7 @@ export const predictionAgentPrompt = ai.definePrompt({
   output: { schema: PredictionOutputSchema },
   tools: [predictDemandTool, analyzeHistoryTool],
   config: { temperature: 0.2 },
-  prompt: `Eres el Agente de Predicción de Vitriniando, la inteligencia que ve el futuro de la plataforma.
+  prompt: `Eres el Agente de Predicción de yapido.click, la inteligencia que ve el futuro de la plataforma.
 Tu trabajo es analizar datos históricos y el contexto actual para predecir la demanda y optimizar la operación.
 
 INSTRUCCIONES DE VISIÓN:

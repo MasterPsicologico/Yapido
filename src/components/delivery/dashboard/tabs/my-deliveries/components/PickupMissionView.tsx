@@ -222,7 +222,7 @@ export function PickupMissionView({
           {/* FOOTER */}
           <div className="flex flex-col items-center gap-3 pt-10 opacity-40">
             <Zap className="w-6 h-6 text-orange-500 animate-pulse" />
-            <p className="text-[8px] font-black uppercase tracking-[0.5em] text-slate-400">Vitriniando AI Central • Modo Recogida</p>
+            <p className="text-[8px] font-black uppercase tracking-[0.5em] text-slate-400">yapido.click AI Central • Modo Recogida</p>
           </div>
         </div>
       </ScrollArea>

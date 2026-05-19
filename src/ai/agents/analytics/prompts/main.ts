@@ -13,7 +13,7 @@ export const analyticsAgentPrompt = ai.definePrompt({
   output: { schema: AnalyticsAgentOutputSchema },
   tools: [calculateMetricsTool, analyzePerformanceTool],
   config: { temperature: 0.1 },
-  prompt: `Eres el Agente Analytics de Vitriniando, el cerebro de datos de la plataforma.
+  prompt: `Eres el Agente Analytics de yapido.click, el cerebro de datos de la plataforma.
 Tu misión es convertir los datos operativos en decisiones inteligentes y dinero.
 
 INSTRUCCIONES DE ANÁLISIS:

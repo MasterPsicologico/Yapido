@@ -27,7 +27,7 @@ export function CategoryCard({ category, onEdit }: CategoryCardProps) {
   const { user } = useUser();
   const [localImage, setLocalImage] = useState<string | null>(null);
   
-  const CACHE_KEY = `vitriniando_cat_img_${category.id}`;
+  const CACHE_KEY = `yapido_click_cat_img_${category.id}`;
 
   // SISTEMA DE CARGA INSTANTÁNEA
   useEffect(() => {

@@ -398,7 +398,7 @@ export default function CategoryPage() {
            <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
               <LayoutGrid className="w-5 h-5 text-white" />
            </div>
-           <span className="text-2xl font-black italic tracking-tighter">Vitriniando</span>
+           <span className="text-2xl font-black italic tracking-tighter">yapido.click</span>
         </div>
         <p className="text-slate-500 text-[10px] uppercase tracking-widest font-bold">Yapido • Colombia • 2024</p>
       </footer>

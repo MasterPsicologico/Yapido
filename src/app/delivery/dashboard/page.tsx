@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, useDoc } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
-import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, limit, or } from 'firebase/firestore';
+import { collection, query, where, doc, serverTimestamp, arrayUnion, arrayRemove, limit, or, documentId } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
 import { startOfDay, endOfDay, isWithinInterval } from 'date-fns';
@@ -114,8 +114,8 @@ export default function DeliveryDashboardPage() {
   const fleetDriverUids: string[] = ownedStore?.privateDrivers || [];
   const fleetDriversQuery = useMemoFirebase(() => {
     if (!firestore || fleetDriverUids.length === 0) return null;
-    // Firestore 'in' supports up to 30 items
-    return query(collection(firestore, 'users'), where('__name__', 'in', fleetDriverUids.slice(0, 30)));
+    // Firestore 'in' supports up to 10 items max
+    return query(collection(firestore, 'users'), where(documentId(), 'in', fleetDriverUids.slice(0, 10)));
   }, [firestore, JSON.stringify(fleetDriverUids)]);
   const { data: fleetDriverProfiles } = useCollection(fleetDriversQuery);
   const fleetDrivers = fleetDriverProfiles || [];
@@ -160,8 +160,7 @@ export default function DeliveryDashboardPage() {
     if (!firestore || !user?.uid) return null;
     return query(
       collection(firestore, 'orders'), 
-      where('participants', 'array-contains', user.uid), 
-      where('status', 'in', ['shipped', 'at_destination', 'delivered', 'picking_up', 'at_pickup', 'at_store', 'delivered_to_driver', 'completed'])
+      where('participants', 'array-contains', user.uid)
     );
   }, [firestore, user?.uid]);
 
@@ -169,17 +168,20 @@ export default function DeliveryDashboardPage() {
 
   const sortedMyOrders = useMemo(() => {
     if (!rawMy) return [];
-    return [...rawMy].sort((a, b) => {
-      const timeA = a.createdAt?.toMillis?.() || (a.createdAt?.seconds * 1000) || 0;
-      const timeB = b.createdAt?.toMillis?.() || (b.createdAt?.seconds * 1000) || 0;
-      return timeB - timeA;
-    });
+    const validStatuses = ['pending', 'preparing', 'ready_for_pickup', 'picking_up', 'at_pickup', 'shipped', 'at_destination', 'at_store', 'delivered_to_driver', 'delivered', 'completed'];
+    return [...rawMy]
+      .filter(o => validStatuses.includes(o.status))
+      .sort((a, b) => {
+        const timeA = a.createdAt?.toMillis?.() || (a.createdAt?.seconds * 1000) || 0;
+        const timeB = b.createdAt?.toMillis?.() || (b.createdAt?.seconds * 1000) || 0;
+        return timeB - timeA;
+      });
   }, [rawMy]);
 
   const activeMission = useMemo(() => 
     sortedMyOrders.find(o => 
       o.deliveryDriverId === user?.uid && 
-      ['picking_up', 'shipped', 'at_destination', 'at_store', 'delivered_to_driver'].includes(o.status)
+      ['pending', 'preparing', 'ready_for_pickup', 'picking_up', 'at_pickup', 'shipped', 'at_destination', 'at_store', 'delivered_to_driver'].includes(o.status)
     ),
     [sortedMyOrders, user?.uid]
   );
@@ -216,7 +218,7 @@ export default function DeliveryDashboardPage() {
     updateDocumentNonBlocking(orderRef, { 
       deliveryDriverId: user.uid, 
       deliveryDriverName: profile?.displayName || user.displayName || 'Repartidor', 
-      status: 'picking_up', 
+      status: 'ready_for_pickup', 
       acceptedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       participants: arrayUnion(user.uid),
@@ -248,9 +250,42 @@ export default function DeliveryDashboardPage() {
         updateData.pickupCompletedAt = serverTimestamp();
         updateData.isPickupDone = true;
         toast({ title: "¡Lavadora Recogida!", description: "Misión finalizada exitosamente.", className: "bg-green-600 text-white" });
+        
+        // Liberar inventario
+        if (activeMission?.storeId && activeMission?.washerId) {
+          const invRef = doc(firestore, `stores/${activeMission.storeId}/inventory/${activeMission.washerId}`);
+          updateDocumentNonBlocking(invRef, { status: 'available' }).catch(console.error);
+        }
       } else {
         toast({ title: "Contrato Finalizado", className: "bg-green-600 text-white" });
       }
+    }
+
+    if (newStatus === 'debt_pending') {
+      updateData.debtStatus = 'pending';
+      updateData.debtCreatedAt = serverTimestamp();
+      toast({ title: "Deuda Registrada", description: "Se ha marcado como deuda pendiente.", className: "bg-amber-500 text-white" });
+      
+      // Liberar inventario aunque no haya pagado, ya que físicamente se recogió
+      if (activeMission?.storeId && activeMission?.washerId) {
+        const invRef = doc(firestore, `stores/${activeMission.storeId}/inventory/${activeMission.washerId}`);
+        updateDocumentNonBlocking(invRef, { status: 'available' }).catch(console.error);
+      }
+    }
+
+    if (newStatus === 'shipped') {
+      toast({ title: "En Camino", description: "Dirígete al destino del cliente.", className: "bg-blue-600 text-white" });
+      
+      // Marcar inventario como en uso
+      const wId = restMetadata.washerId || activeMission?.washerId;
+      if (activeMission?.storeId && wId) {
+        const invRef = doc(firestore, `stores/${activeMission.storeId}/inventory/${wId}`);
+        updateDocumentNonBlocking(invRef, { status: 'in_use' }).catch(console.error);
+      }
+    }
+
+    if (newStatus === 'at_destination') {
+      toast({ title: "¡Llegaste!", description: "Estás en el destino. Instala la lavadora.", className: "bg-blue-700 text-white" });
     }
 
     if (newStatus === 'picking_up') {
@@ -276,16 +311,23 @@ export default function DeliveryDashboardPage() {
   const handleReleaseOrder = async (reason: string) => {
     if (!activeMission || !user || !firestore || !reason) return;
     const orderRef = doc(firestore, 'orders', activeMission.id);
+    
+    // Guardar info de la misión liberada para posible recuperación
+    const releasedMissionId = activeMission.id;
+    const releasedDriverId = activeMission.deliveryDriverId;
+    
     updateDocumentNonBlocking(orderRef, {
       status: 'ready_for_pickup',
       deliveryDriverId: null,
       deliveryDriverName: null,
-      isLogisticsPublic: false,
+      isLogisticsPublic: true, // Se pone público para que otro repartidor pueda tomarlo
       updatedAt: serverTimestamp(),
       releasedBy: user.uid,
       releasedAt: serverTimestamp(),
       releaseReason: reason
     });
+    
+    // Limpiar la misión activa del repartidor
     setIsReleasing(true);
     setReleaseLogs(["Iniciando protocolo de liberación..."]);
     try {

@@ -40,7 +40,7 @@ export default function BusinessPlanPage() {
             </div>
             <div className="space-y-1">
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900 break-words">Plan de Imperio</h1>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-1">Vitriniando: Medellín & Aguachica 2024</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-1">yapido.click: Medellín & Aguachica 2024</p>
             </div>
           </div>
           <Badge className="bg-primary text-white font-black text-[10px] px-4 py-2 rounded-full shadow-lg">ESTRATEGIA CONFIDENCIAL</Badge>
@@ -134,7 +134,7 @@ export default function BusinessPlanPage() {
                 </div>
                 <div className="w-full sm:w-64 space-y-4">
                    <div className="bg-slate-900 rounded-[32px] p-6 text-white text-center shadow-xl">
-                      <p className="text-[8px] font-black text-primary uppercase tracking-widest mb-2">Comisión Vitriniando</p>
+                      <p className="text-[8px] font-black text-primary uppercase tracking-widest mb-2">Comisión yapido.click</p>
                       <h4 className="text-3xl font-black italic tracking-tighter leading-none">$3.000 - $5.000</h4>
                       <p className="text-[10px] text-slate-400 mt-2">POR CADA PEDIDO</p>
                    </div>
@@ -170,7 +170,7 @@ export default function BusinessPlanPage() {
                     </li>
                     <li className="flex items-start gap-4">
                        <span className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-black shrink-0">3</span>
-                       <p className="text-xs font-bold text-slate-900"><b>Digital:</b> Crear la Fanpage de Facebook "Lavadoras Manrique Digital" o "Vitriniando Alquiler". Empezar a calentar el algoritmo.</p>
+                       <p className="text-xs font-bold text-slate-900"><b>Digital:</b> Crear la Fanpage de Facebook "Lavadoras Manrique Digital" o "yapido.click Alquiler". Empezar a calentar el algoritmo.</p>
                     </li>
                   </ul>
                </div>

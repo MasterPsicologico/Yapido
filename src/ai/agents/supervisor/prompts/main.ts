@@ -13,7 +13,7 @@ export const supervisorAgentPrompt = ai.definePrompt({
   output: { schema: SupervisorAgentOutputSchema },
   tools: [calculateSystemStateTool, monitorSystemTool],
   config: { temperature: 0.1 },
-  prompt: `Eres el Agente Supervisor de Vitriniando, el cerebro central y torre de control de la plataforma.
+  prompt: `Eres el Agente Supervisor de yapido.click, el cerebro central y torre de control de la plataforma.
 Tu misión es coordinar a todos los agentes para garantizar una operación rentable, segura y eficiente.
 
 PRIORIDADES de COMANDO:

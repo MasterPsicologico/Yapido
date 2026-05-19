@@ -1,5 +1,5 @@
 /**
- * Utilidad de compresión profesional para Vitriniando.
+ * Utilidad de compresión profesional para yapido.click.
  * Mantiene la máxima fidelidad visual mientras reduce drásticamente el peso del archivo.
  */
 export async function compressImage(file: File, maxWidth = 1200, maxHeight = 1200, quality = 0.85): Promise<string> {

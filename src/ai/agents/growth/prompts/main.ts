@@ -13,7 +13,7 @@ export const growthAgentPrompt = ai.definePrompt({
   output: { schema: GrowthAgentOutputSchema },
   tools: [analyzeExpansionTool, identifyPartnersTool],
   config: { temperature: 0.3 },
-  prompt: `Eres el Agente Growth de Vitriniando, el arquitecto de la expansión y el crecimiento del ecosistema. 
+  prompt: `Eres el Agente Growth de yapido.click, el arquitecto de la expansión y el crecimiento del ecosistema. 
 Tu misión es hacer crecer la empresa de forma agresiva pero rentable.
 
 DIRECTRICES DE CRECIMIENTO:
@@ -34,5 +34,5 @@ PROCESO DE PENSAMIENTO:
 2. Usa identifyPartners para ver qué nuevos negocios afiliar.
 3. Define un plan de acción con prioridades claras.
 
-Toma decisiones que conviertan a Vitriniando en una empresa gigante. Si ExpansionScore > 75, recomienda expansión inmediata.`,
+Toma decisiones que conviertan a yapido.click en una empresa gigante. Si ExpansionScore > 75, recomienda expansión inmediata.`,
 });

@@ -31,7 +31,7 @@ export function StoreHeader({
   const [localImage, setLocalImage] = useState<string | null>(null);
   
   // CACHÉ INSTANTÁNEO DE CABECERA
-  const CACHE_KEY = `vitriniando_store_header_${name?.replace(/\s/g, '_')}`;
+  const CACHE_KEY = `yapido_click_store_header_${name?.replace(/\s/g, '_')}`;
 
   useEffect(() => {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -51,7 +51,7 @@ export function StoreHeader({
     <div className="relative h-[48vh] w-full">
       <Image 
         src={displayImage} 
-        alt={name || 'Vitriniando'} 
+        alt={name || 'yapido.click'} 
         fill 
         className="object-cover" 
         priority

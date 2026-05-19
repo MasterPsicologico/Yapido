@@ -2,6 +2,11 @@
 
 Este archivo sirve como referencia rápida para la inteligencia artificial sobre la estructura, capacidades y estado actual de la aplicación Yapido.
 
+## 🧠 Protocolo de Memoria Evolutiva Continua (MANDATORIO)
+**REGLA CERO SIN EXCEPCIONES**:
+1. **Consulta Inicial**: Ante cualquier tarea, la IA DEBE consultar este archivo y los otros 4 archivos evolutivos (`blueprint.md`, `responsive-design-spec.md`, `EvolutionaryReport.tsx`, `MissionTechSpecs.tsx`) si requiere contexto.
+2. **Actualización Automática**: Si la IA busca una regla, lógica o diseño y **NO la encuentra** en estos 5 archivos, o si la IA **implementa algo nuevo**, DEBE actualizar estos archivos automáticamente antes de dar la tarea por terminada.
+3. **Sincronización Total**: Ningún cambio arquitectónico, visual o de negocio debe existir en el código sin estar reflejado en esta memoria evolutiva.
 ## 🏗️ Estructura de la Aplicación
 
 La aplicación es un **PWA (Progressive Web App)** construida con:
@@ -61,13 +66,43 @@ Aunque es una aplicación web, se distribuye como APK mediante un Wrapper (TWA/W
     - StoreCard redesign completo.
     - Menú administrativo sutil (no intrusivo).
 
+## 🔒 Correcciones de Seguridad Implementadas (MAYO 2026)
+
+- [x] **Firestore Rules**: Reglas seguras con validación de usuarios y roles.
+- [x] **Superadmin desde Firestore**: Los UIDs de superadmin se leen de `appConfig/superAdmins`, no hardcodeados.
+- [x] **API Keys ocultas**: Variables de entorno en `.env.local` (ignorado por git), `.env.example` como plantilla.
+- [x] **PaymentGateway**: Sistema de pagos stub integrable con MercadoPago, PayU, Nequi, Stripe.
+- [x] **Validación GPS**: Validación de coordenadas, velocidad, y timestamp en `use-driver-location.ts`.
+- [x] **Storage Rules**: Habilitado con validaciones de tipo de archivo y tamaño.
+- [x] **Middleware de Seguridad**: Headers de seguridad (X-Frame-Options, X-Content-Type-Options, etc.).
+- [x] **Endpoints Debug Protegidos**: Validación mediante token de Firebase o secret key.
+
 ## 🚀 Lo que le falta / Mejoras Pendientes
 
+- [ ] **Integrar pasarela de pago real**: Configurar `PAYMENT_GATEWAY_ENABLED=true` y credenciales en `.env.local`
 - [ ] **Geofencing Automático**: Validación de dirección ingresada versus zona seleccionada mediante coordenadas.
 - [ ] **Sincronización Total de Notificaciones**: Asegurar que los contadores se limpien globalmente al leer mensajes.
 - [ ] **Refinamiento de UX en Móvil**: Continuar ajustando tamaños de letra para evitar desbordamientos.
 - [ ] **Pruebas de Notificaciones Push**: Verificar la recepción de tokens en dispositivos reales.
 - [ ] **Población de Zonas Geográficas**: Llenar la base de datos con sectores reales (Aranjuez, Manrique en Medellín).
+
+## ⚠️ Requisitos para Producción
+
+Para hacer deploy a producción, necesitas:
+
+1. **Completar `.env.local`**:
+   - Agrega tu `FIREBASE_PRIVATE_KEY` (del JSON de credenciales)
+   - Las otras variables ya están configuradas
+
+2. **Configurar Superadmin**:
+   ```bash
+   # Obtén tu UID de Firebase Auth (inicia sesión y revisa Firestore > users)
+   npx tsx scripts/setup-superadmin.ts TU_UID_AQUI
+   ```
+
+3. **Opcional - Habilitar pagos reales**:
+   - Configurar `PAYMENT_GATEWAY_ENABLED=true` cuando tengas credenciales de pasarela
+   - Configurar `DEBUG_SECRET` y `CRON_SECRET` con valores aleatorios seguros
 
 ## 💡 Ideas Innovadoras
 

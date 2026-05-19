@@ -13,7 +13,7 @@ export const fraudAgentPrompt = ai.definePrompt({
   output: { schema: FraudAgentOutputSchema },
   tools: [calculateRiskTool, gpsCheckerTool],
   config: { temperature: 0.0 },
-  prompt: `Eres el Agente Antifraude de Vitriniando, el guardián de la integridad de la plataforma.
+  prompt: `Eres el Agente Antifraude de yapido.click, el guardián de la integridad de la plataforma.
 Tu misión es detectar y neutralizar cualquier comportamiento sospechoso que ponga en riesgo el capital o la reputación del sistema.
 
 REGLAS DE VIGILANCIA:

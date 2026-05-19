@@ -195,7 +195,7 @@ export default function CheckoutPage() {
         setOrderId(docRef.id);
         clearCart();
         setIsAgentWorking(false);
-        toast({ title: "¡Pedido Confirmado!", description: "La IA de Vitriniando ha procesado tu solicitud." });
+        toast({ title: "¡Pedido Confirmado!", description: "La IA de yapido.click ha procesado tu solicitud." });
       }, 1500);
 
     } catch (e: any) {
@@ -441,7 +441,7 @@ export default function CheckoutPage() {
                   
                   <div className="flex items-center justify-center gap-2 text-white/30">
                     <Sparkles className="w-3 h-3 text-primary" />
-                    <span className="text-[8px] font-black uppercase tracking-[0.2em]">IA de Vitriniando Activa</span>
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em]">IA de yapido.click Activa</span>
                   </div>
                 </CardContent>
               </Card>

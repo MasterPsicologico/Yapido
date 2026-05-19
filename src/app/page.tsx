@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 /**
- * Home - El Portal Unificado de Vitriniando.
+ * Home - El Portal Unificado de yapido.click.
  * DISEÑO ADAPTATIVO: Embudo puro para invitados (sin Navbar), panel completo para registrados.
  */
 export default function Home() {
@@ -24,7 +24,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!isUserLoading && user) {
-      const savedMode = localStorage.getItem('vitriniando_preferred_mode');
+      const savedMode = localStorage.getItem('yapido_click_preferred_mode');
       if (savedMode === 'delivery') {
         router.replace('/delivery/dashboard');
       }

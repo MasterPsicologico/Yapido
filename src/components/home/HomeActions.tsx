@@ -145,8 +145,8 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
       if (!finalDirectStoreData && washerStores) {
         const eligibleStores = washerStores.filter(store => {
           if (!checkIsBusinessOpen(store.openTime, store.closeTime)) return false;
-          if (data.zoneId && store.zoneId && store.zoneId !== data.zoneId) return false;
-          if (data.cityId && store.cityId && store.cityId !== data.cityId) return false;
+          if (data.zoneId && store.zoneId !== data.zoneId) return false;
+          if (data.cityId && store.cityId !== data.cityId) return false;
           if (data.washerType === 'automatica' && !store.hasAutomatic) return false;
           if (data.washerType === 'semiautomatica' && !store.hasSemiautomatic) return false;
           return true;

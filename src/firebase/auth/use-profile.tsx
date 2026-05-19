@@ -3,6 +3,7 @@
 
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { useMemo } from 'react';
 import { Star, Zap, Crown, Target } from 'lucide-react';
 
 export type UserLevel = 'promesa' | 'elite' | 'leyenda';
@@ -43,9 +44,31 @@ export const LEVELS: Record<UserLevel, LevelInfo> = {
   }
 };
 
+const SUPER_ADMINS_CONFIG_DOC = 'appConfig/superAdmins';
+
+function useSuperAdminCheck(userUid: string | undefined, firestore: any, profileData: any) {
+  const superAdminConfigRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, SUPER_ADMINS_CONFIG_DOC);
+  }, [firestore]);
+
+  const { data: superAdminConfig } = useDoc(superAdminConfigRef);
+
+  if (!userUid || !profileData) return false;
+  
+  if (profileData.isSuperAdmin === true) return true;
+  
+  if (superAdminConfig?.adminIds?.[userUid] === true) return true;
+  
+  return false;
+}
+
 /**
  * Hook para obtener el perfil extendido del usuario desde Firestore.
  * Incluye la lógica de niveles basada en el desempeño.
+ * 
+ * SEGURIDAD: Los superadmins se determinan desde Firestore (appConfig/superAdmins),
+ * no desde código hardcodeado.
  */
 export function useProfile() {
   const { user, isUserLoading: isAuthLoading } = useUser();
@@ -60,7 +83,6 @@ export function useProfile() {
 
   const profile = (profileData && profileData.id === user?.uid) ? profileData : null;
 
-  // Lógica de cálculo de nivel (Simplificada para MVP, basada en avgRating del perfil)
   const getLevel = (): UserLevel => {
     const stars = profile?.avgRating || 5.0;
     const count = profile?.completedJobs || 0;
@@ -72,14 +94,14 @@ export function useProfile() {
 
   const currentLevel = getLevel();
 
-  // Hardcoded Superadmin bypass for the master creator accounts
-  const isSuperAdmin = user?.uid === '9qjHXRHfKfS2LrlE6074rR9JOm83' || user?.uid === 'OUeZfonX8AY4YHRI4qLCc1WiVFN2' || user?.uid === 'YohYZ5BLFiUIL9Z4IWrTVlDjwt43' || user?.uid === 'ZfSO1go6agR2owAsDh07GH440QN2';
+  const isSuperAdmin = useSuperAdminCheck(user?.uid, firestore, profileData);
 
   return {
     profile,
     isAdmin: isSuperAdmin || profile?.role === 'admin',
     isOwner: isSuperAdmin || profile?.role === 'dueño' || profile?.role === 'admin',
     isRepartidor: profile?.role === 'repartidor',
+    isSuperAdmin: isSuperAdmin,
     level: LEVELS[currentLevel],
     isLoading: isAuthLoading || isProfileLoading,
     user

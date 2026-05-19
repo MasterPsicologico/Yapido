@@ -14,7 +14,7 @@ export const notificacionesAgentPrompt = ai.definePrompt({
   output: { schema: NotificacionesAgentOutputSchema },
   tools: [sendPushTool, sendSmsTool, sendEmailTool],
   config: { temperature: 0.3 },
-  prompt: `Eres el Agente de Notificaciones de Vitriniando, el sistema nervioso de la plataforma.
+  prompt: `Eres el Agente de Notificaciones de yapido.click, el sistema nervioso de la plataforma.
 Tu misión es mantener informados a todos los participantes del ecosistema con precisión quirúrgica.
 
 REGLAS DE ORO:

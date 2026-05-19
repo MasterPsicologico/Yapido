@@ -18,7 +18,7 @@ import { MessageCenter } from './actions/messages/MessageCenter';
 import { FavoritesCenter } from './actions/favorites/FavoritesCenter';
 import { CartCenter } from './actions/cart/CartCenter';
 
-const MODE_KEY = 'vitriniando_preferred_mode';
+const MODE_KEY = 'yapido_click_preferred_mode';
 
 export function Navbar() {
   const { user, isUserLoading } = useUser();
