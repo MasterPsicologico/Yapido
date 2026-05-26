@@ -1,0 +1,187 @@
+/* ============================================================
+   CINESTREAM - Player Controls Styles
+   ============================================================
+   Descripción: Controles del reproductor (play, volumen, progreso, fullscreen)
+   Ubicación: public/p/css/player-controls.css
+   Importado por: styles.css
+   ============================================================ */
+
+/* Contenedor de controles */
+.player-controls {
+    background: var(--bg-card);
+    padding: 1rem 1.2rem;
+    border-radius: 0 0 var(--card-radius) var(--card-radius);
+    border: 1px solid var(--border-color);
+    border-top: none;
+}
+
+/* Barra de progreso */
+.progress-container {
+    position: relative;
+    height: 5px;
+    background: var(--border-color);
+    border-radius: 3px;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    transition: height var(--transition-fast);
+}
+
+.progress-container:hover {
+    height: 8px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.1s linear;
+    position: relative;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.progress-container:hover .progress-bar::after {
+    opacity: 1;
+}
+
+.progress-buffered {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+    width: 0%;
+}
+
+/* Fila de controles */
+.controls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.controls-left,
+.controls-right {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* Botones de control individuales */
+.control-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+/* Control de volumen */
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.volume-control input[type="range"] {
+    width: 80px;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--border-color);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+.volume-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+}
+
+.volume-control input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.volume-control input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+/* Display de tiempo */
+.time-display {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    margin-left: 0.5rem;
+    font-weight: 500;
+}
+
+/* Selector de calidad */
+.quality-select {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.4rem 1.8rem 0.4rem 0.6rem;
+    border-radius: var(--input-radius);
+    font-size: 0.8rem;
+    cursor: pointer;
+    outline: none;
+    transition: all var(--transition-normal);
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%23b3b3b3' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+}
+
+.quality-select:hover {
+    border-color: var(--border-light);
+}
+
+.quality-select:focus {
+    border-color: var(--primary-color);
+}
+
+.quality-select option {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}

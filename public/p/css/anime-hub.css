@@ -1,0 +1,347 @@
+/* ============================================================
+   CINESTREAM - Anime Hub Styles
+   ============================================================
+   Sección especial para las 50 franquicias de anime más populares
+   ============================================================ */
+
+/* ── Anime Hub Wrapper ────────────────────────────────────── */
+.anime-hub {
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+    background: radial-gradient(ellipse at top, #0d0019 0%, #000000 60%);
+    animation: fadeInHub 0.4s ease;
+}
+
+@keyframes fadeInHub {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Cabecera del hub ─────────────────────────────────────── */
+.anime-hub-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.anime-hub-header h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #a855f7, #ec4899, #6366f1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.4rem;
+}
+
+.anime-hub-header p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* ── Grid de franquicias ──────────────────────────────────── */
+.anime-franchise-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.4rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ── Tarjeta de franquicia ────────────────────────────────── */
+.anime-franchise-card {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--bg-card);
+    border: 1px solid rgba(168, 85, 247, 0.12);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.28s ease,
+                border-color 0.28s ease;
+    aspect-ratio: 2 / 3;
+}
+
+.anime-franchise-card:hover {
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 0 20px 50px rgba(168, 85, 247, 0.35),
+                0 8px 20px rgba(0, 0, 0, 0.7);
+    border-color: rgba(168, 85, 247, 0.6);
+}
+
+.anime-franchise-card:active {
+    transform: translateY(-4px) scale(1.01);
+}
+
+/* Imagen del anime */
+.anime-franchise-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+}
+
+.anime-franchise-card:hover img {
+    transform: scale(1.08);
+}
+
+/* Overlay con gradiente */
+.anime-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.97) 0%,
+        rgba(0, 0, 0, 0.6) 45%,
+        rgba(0, 0, 0, 0.1) 100%
+    );
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1rem 0.85rem;
+}
+
+/* Badge de ranking */
+.anime-rank-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: linear-gradient(135deg, #a855f7, #6366f1);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.5);
+}
+
+/* Badge de popularidad (estrella) */
+.anime-pop-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #ffd700;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+    font-weight: 700;
+}
+
+/* Nombre del anime */
+.anime-card-name {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.3;
+    margin-bottom: 0.3rem;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
+
+/* Botón "Ver películas" */
+.anime-card-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    color: #a855f7;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.anime-franchise-card:hover .anime-card-btn {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ── Vista de películas por anime ─────────────────────────── */
+.anime-movies-section {
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+    background: radial-gradient(ellipse at top, #0d0019 0%, #000000 60%);
+    animation: fadeInHub 0.35s ease;
+}
+
+/* Barra superior: botón volver + título */
+.anime-movies-topbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.anime-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    color: #a855f7;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.55rem 1.2rem;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+    white-space: nowrap;
+}
+
+.anime-back-btn:hover {
+    background: rgba(168, 85, 247, 0.3);
+    transform: translateX(-3px);
+}
+
+.anime-movies-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #a855f7, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Grid de resultados de películas del anime */
+.anime-movies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.4rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ── Estado de carga dentro del anime ─────────────────────── */
+.anime-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--text-secondary);
+}
+
+.anime-loading-spinner {
+    width: 52px;
+    height: 52px;
+    border: 3px solid rgba(168, 85, 247, 0.2);
+    border-top-color: #a855f7;
+    border-radius: 50%;
+    animation: spinAnime 0.75s linear infinite;
+    margin: 0 auto 1.2rem;
+}
+
+@keyframes spinAnime {
+    to { transform: rotate(360deg); }
+}
+
+.anime-loading p {
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+/* Estado vacío */
+.anime-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--text-secondary);
+}
+
+.anime-empty i {
+    font-size: 3rem;
+    color: rgba(168, 85, 247, 0.4);
+    margin-bottom: 1rem;
+    display: block;
+}
+
+/* ── Tarjeta de resultado de película de anime ────────────── */
+.anime-result-card {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--bg-card);
+    border: 1px solid rgba(168, 85, 247, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    aspect-ratio: 2 / 3;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.25s ease,
+                border-color 0.25s ease;
+}
+
+.anime-result-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 16px 40px rgba(168, 85, 247, 0.3), 0 6px 15px rgba(0, 0, 0, 0.7);
+    border-color: rgba(168, 85, 247, 0.5);
+}
+
+.anime-result-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.35s ease;
+}
+
+.anime-result-card:hover img {
+    transform: scale(1.06);
+}
+
+.anime-result-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.97) 0%,
+        rgba(0, 0, 0, 0.5) 50%,
+        transparent 100%
+    );
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0.9rem 0.8rem;
+}
+
+.anime-result-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: white;
+    line-height: 1.3;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+}
+
+.anime-result-play {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 0.4rem;
+    font-size: 0.72rem;
+    color: #a855f7;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.anime-result-card:hover .anime-result-play {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .anime-hub-header h2 { font-size: 1.6rem; }
+    .anime-franchise-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+    .anime-movies-grid     { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+    .anime-movies-title    { font-size: 1.3rem; }
+}
+
+@media (max-width: 480px) {
+    .anime-franchise-grid { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+    .anime-movies-grid     { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+}

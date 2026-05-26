@@ -1,0 +1,48 @@
+/* ============================================================
+   CINESTREAM - Main Stylesheet
+   ============================================================
+   Descripción: Archivo principal que importa todos los módulos CSS
+   Ubicación: public/p/styles.css
+   Orden de importación: Variables → Reset → Componentes → Responsive
+   ============================================================
+   
+   ESTRUCTURA DE ARCHIVOS:
+   ├── styles.css (este archivo - importador principal)
+   └── css/
+       ├── variables.css         - Colores, fuentes, valores globales
+       ├── reset.css             - Reset CSS y estilos base del body
+       ├── header.css            - Logo, navegación, búsqueda
+       ├── filters.css           - Barra de filtros (ordenar, año, tipo)
+       ├── movies-grid.css       - Grid de películas y estados vacíos
+       ├── movie-card.css        - Tarjeta individual de película
+       ├── pagination.css        - Controles de paginación
+       ├── player-modal.css      - Modal del reproductor de video
+       ├── player-controls.css   - Controles del reproductor
+       ├── footer.css            - Pie de página
+       ├── responsive-desktop.css - Estilos desktop (1024px+)
+       ├── responsive-tablet.css  - Estilos tablet (768px-1023px)
+       └── responsive-mobile.css  - Estilos móvil (max 767px)
+   
+   ============================================================ */
+
+/* 1. VARIABLES - Siempre primero */
+@import url('./css/variables.css');
+
+/* 2. RESET & BASE */
+@import url('./css/reset.css');
+
+/* 3. COMPONENTES */
+@import url('./css/header.css');
+@import url('./css/filters.css');
+@import url('./css/movies-grid.css');
+@import url('./css/movie-card.css');
+@import url('./css/pagination.css');
+@import url('./css/player-modal.css');
+@import url('./css/player-controls.css');
+@import url('./css/footer.css');
+@import url('./css/anime-hub.css');
+
+/* 4. RESPONSIVE - Orden: móvil → tablet → desktop */
+@import url('./css/responsive-mobile.css');
+@import url('./css/responsive-tablet.css');
+@import url('./css/responsive-desktop.css');

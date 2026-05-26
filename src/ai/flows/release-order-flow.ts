@@ -18,8 +18,8 @@ const ReleaseOrderInputSchema = z.object({
   reason: z.string(),
   hasProducts: z.boolean().describe('Indica si el repartidor ya recogió los productos en tienda'),
   orderValue: z.number(),
-  storeId: z.string(),
-  storeName: z.string(),
+  storeId: z.string().nullable().optional(),
+  storeName: z.string().nullable().optional(),
 });
 
 export async function releaseOrder(input: z.infer<typeof ReleaseOrderInputSchema>) {
@@ -45,6 +45,35 @@ const releaseOrderFlow = ai.defineFlow(
     const isAlarm = ["pinchado", "gasolina", "accidente"].some(k => input.reason.toLowerCase().includes(k));
 
     try {
+      // 0. Actualizar el pedido en base de datos con permisos de Admin
+      const { getApps, initializeApp, cert } = require('firebase-admin/app');
+      const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+      if (!getApps().length) {
+        initializeApp({
+          credential: cert({
+            project_id: process.env.FIREBASE_PROJECT_ID,
+            client_email: process.env.FIREBASE_CLIENT_EMAIL,
+            private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+          }),
+        });
+      }
+      const db = getFirestore();
+      const orderRef = db.collection('orders').doc(input.orderId);
+      
+      logs.push("Actualizando estado del pedido en la base de datos de forma segura...");
+      await orderRef.update({
+        status: 'ready_for_pickup',
+        deliveryDriverId: null,
+        deliveryDriverName: null,
+        isLogisticsPublic: true,
+        updatedAt: FieldValue.serverTimestamp(),
+        releasedBy: input.driverId,
+        releasedAt: FieldValue.serverTimestamp(),
+        releaseReason: input.reason,
+        participants: FieldValue.arrayRemove(input.driverId)
+      });
+      logs.push("Pedido liberado con éxito en el servidor.");
+
       logs.push("Sincronizando agentes especializados...");
       
       const agentPromises = [
@@ -95,9 +124,9 @@ const releaseOrderFlow = ai.defineFlow(
           event: isAlarm ? "DRIVER_EMERGENCY" : "DRIVER_UNASSIGNED",
           status: "searching",
           recipients: [{
-            userId: input.storeId,
+            userId: input.storeId || "SYSTEM",
             role: "tienda",
-            name: input.storeName,
+            name: input.storeName || "Sistema",
             contactInfo: {}
           }],
           priority: isAlarm ? "urgent" : "high",

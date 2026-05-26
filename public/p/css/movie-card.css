@@ -1,0 +1,135 @@
+/* ============================================================
+   CINESTREAM - Movie Card Styles
+   ============================================================
+   Descripción: Tarjeta individual de película (poster, info, hover)
+   Ubicación: public/p/css/movie-card.css
+   Importado por: styles.css
+   ============================================================ */
+
+/* Tarjeta de película */
+.movie-card {
+    background: var(--bg-card);
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    position: relative;
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border-color);
+}
+
+.movie-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-card-hover);
+    border-color: var(--primary-color);
+    z-index: 2;
+}
+
+/* Contenedor del poster */
+.movie-poster-container {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 2/3;
+    background: var(--bg-card-hover);
+}
+
+/* Imagen del poster */
+.movie-poster {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-normal);
+}
+
+.movie-card:hover .movie-poster {
+    transform: scale(1.08);
+}
+
+/* Badge de calidad (4K, 1080p, 720p) */
+.movie-quality {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    background: var(--primary-color);
+    color: var(--text-primary);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Badge de tipo (Película, Serie, Documental) */
+.movie-type {
+    position: absolute;
+    top: 0.6rem;
+    left: 0.6rem;
+    background: rgba(0, 0, 0, 0.8);
+    color: var(--text-accent);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(5px);
+}
+
+/* Información de la película */
+.movie-info {
+    padding: 0.9rem;
+    background: var(--gradient-card);
+}
+
+/* Título de la película */
+.movie-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-primary);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    line-height: 1.3;
+}
+
+/* Meta información (año, rating) */
+.movie-meta {
+    display: flex;
+    gap: 0.8rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.movie-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* Rating con estrella dorada */
+.movie-rating {
+    color: var(--text-accent) !important;
+    font-weight: 700;
+}
+
+.movie-rating i {
+    font-size: 0.7rem;
+}
+
+/* Género de la película */
+.movie-genre {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.4rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}

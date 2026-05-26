@@ -1,0 +1,76 @@
+/* ============================================================
+   CINESTREAM - Filters Bar Styles
+   ============================================================
+   Descripción: Barra de filtros (ordenar, año, tipo)
+   Ubicación: public/p/css/filters.css
+   Importado por: styles.css
+   ============================================================ */
+
+/* Contenedor principal */
+.main {
+    padding-top: calc(var(--header-height) + 20px);
+    max-width: 1600px;
+    margin: 0 auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+/* Barra de filtros */
+.filters {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+    padding: 1.2rem 1.5rem;
+    background: var(--bg-card);
+    border-radius: var(--card-radius);
+    align-items: center;
+    border: 1px solid var(--border-color);
+}
+
+/* Grupo de filtro individual */
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.filter-group label {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+/* Selects de filtro */
+.filter-group select {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.5rem 2rem 0.5rem 1rem;
+    border-radius: var(--input-radius);
+    font-size: 0.85rem;
+    cursor: pointer;
+    outline: none;
+    transition: all var(--transition-normal);
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23b3b3b3' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+}
+
+.filter-group select:hover {
+    border-color: var(--border-light);
+}
+
+.filter-group select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.2);
+}
+
+.filter-group select option {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    padding: 0.5rem;
+}

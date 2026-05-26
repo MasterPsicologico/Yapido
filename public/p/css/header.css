@@ -1,0 +1,121 @@
+/* ============================================================
+   CINESTREAM - Header Styles
+   ============================================================
+   Descripción: Logo, navegación de categorías y barra de búsqueda
+   Ubicación: public/p/css/header.css
+   Importado por: styles.css
+   ============================================================ */
+
+/* Header principal */
+.header {
+    background: var(--gradient-header);
+    padding: 1rem 2rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-header);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    box-shadow: var(--shadow-header);
+}
+
+/* Contenido del header */
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1600px;
+    margin: 0 auto;
+    gap: 1.5rem;
+}
+
+/* Logo */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    text-decoration: none;
+    white-space: nowrap;
+    letter-spacing: -0.5px;
+}
+
+.logo i {
+    font-size: 1.8rem;
+    filter: drop-shadow(0 0 10px rgba(229, 9, 20, 0.5));
+}
+
+/* Navegación de categorías */
+.nav {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    flex: 1;
+}
+
+/* Botones de navegación */
+.nav-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    border-radius: var(--btn-radius);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all var(--transition-normal);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.nav-btn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.nav-btn.active {
+    background: var(--primary-color);
+    color: var(--text-primary);
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(229, 9, 20, 0.4);
+}
+
+/* Caja de búsqueda */
+.search-box {
+    display: flex;
+    align-items: center;
+    background: var(--bg-input);
+    border-radius: var(--btn-radius);
+    padding: 0.5rem 1rem;
+    gap: 0.5rem;
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-normal);
+    min-width: 220px;
+}
+
+.search-box:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.2);
+    background: var(--bg-card);
+}
+
+.search-box i {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.search-box input {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    width: 100%;
+    min-width: 140px;
+}
+
+.search-box input::placeholder {
+    color: var(--text-muted);
+}

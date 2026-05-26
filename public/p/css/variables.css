@@ -1,0 +1,60 @@
+/* ============================================================
+   CINESTREAM - CSS Variables
+   ============================================================
+   Descripción: Variables globales de colores, fuentes y valores reutilizables
+   Ubicación: public/p/css/variables.css
+   Importado por: styles.css (siempre primero)
+   ============================================================ */
+
+:root {
+    /* Colores principales */
+    --primary-color: #e50914;
+    --primary-hover: #ff1a25;
+    --primary-dark: #b20710;
+    
+    /* Fondos */
+    --bg-dark: #000000;
+    --bg-card: #0a0a0a;
+    --bg-card-hover: #141414;
+    --bg-header: rgba(0, 0, 0, 0.95);
+    --bg-modal: rgba(0, 0, 0, 0.98);
+    --bg-input: #1a1a1a;
+    
+    /* Textos */
+    --text-primary: #ffffff;
+    --text-secondary: #b3b3b3;
+    --text-muted: #666666;
+    --text-accent: #ffd700;
+    
+    /* Bordes y sombras */
+    --border-color: #222222;
+    --border-light: #333333;
+    --shadow-card: 0 4px 15px rgba(0, 0, 0, 0.6);
+    --shadow-card-hover: 0 15px 40px rgba(229, 9, 20, 0.3), 0 5px 15px rgba(0, 0, 0, 0.8);
+    --shadow-header: 0 2px 20px rgba(0, 0, 0, 0.8);
+    
+    /* Gradientes */
+    --gradient-primary: linear-gradient(135deg, #e50914 0%, #ff6b6b 100%);
+    --gradient-header: linear-gradient(to bottom, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.85) 60%, rgba(0,0,0,0) 100%);
+    --gradient-card: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 50%, transparent 100%);
+    
+    /* Fuentes */
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'Courier New', monospace;
+    
+    /* Tamaños */
+    --header-height: 70px;
+    --card-radius: 10px;
+    --btn-radius: 25px;
+    --input-radius: 8px;
+    
+    /* Transiciones */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+    
+    /* Z-index */
+    --z-header: 100;
+    --z-modal: 1000;
+    --z-overlay: 999;
+}

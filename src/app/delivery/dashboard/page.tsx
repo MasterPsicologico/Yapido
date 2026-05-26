@@ -310,35 +310,60 @@ export default function DeliveryDashboardPage() {
 
   const handleReleaseOrder = async (reason: string) => {
     if (!activeMission || !user || !firestore || !reason) return;
-    const orderRef = doc(firestore, 'orders', activeMission.id);
     
-    // Guardar info de la misión liberada para posible recuperación
-    const releasedMissionId = activeMission.id;
-    const releasedDriverId = activeMission.deliveryDriverId;
-    
-    updateDocumentNonBlocking(orderRef, {
-      status: 'ready_for_pickup',
-      deliveryDriverId: null,
-      deliveryDriverName: null,
-      isLogisticsPublic: true, // Se pone público para que otro repartidor pueda tomarlo
-      updatedAt: serverTimestamp(),
-      releasedBy: user.uid,
-      releasedAt: serverTimestamp(),
-      releaseReason: reason
-    });
-    
-    // Limpiar la misión activa del repartidor
+    const orderId = activeMission.id;
+    const storeId = activeMission.storeId || null;
+    const storeName = activeMission.storeName || null;
+    const totalPrice = activeMission.totalPrice || 0;
+
     setIsReleasing(true);
     setReleaseLogs(["Iniciando protocolo de liberación..."]);
+
     try {
+      // 1. Server Action (Admin SDK) — intento principal
       const result = await releaseOrder({
-        orderId: activeMission.id, driverId: user.uid, reason,
-        hasProducts: false, orderValue: activeMission.totalPrice || 0,
-        storeId: activeMission.storeId, storeName: activeMission.storeName
+        orderId, driverId: user.uid, reason,
+        hasProducts: false, orderValue: totalPrice,
+        storeId, storeName
       });
-      setReleaseLogs(prev => [...prev, ...result.agentLogs]);
-    } catch (e) {
-      setIsReleasing(false);
+      
+      if (result.success) {
+        setReleaseLogs(prev => [...prev, ...result.agentLogs, "Pedido liberado exitosamente."]);
+        // Esperar un momento para que el usuario vea los logs, luego redirigir
+        setTimeout(() => {
+          setIsReleasing(false);
+          router.replace('/delivery/release-success');
+        }, 2000);
+      } else {
+        throw new Error(result.message || "Error desconocido en el servidor");
+      }
+
+    } catch (e: any) {
+      setReleaseLogs(prev => [...prev, `Error del servidor: ${e.message}. Intentando vía directa client-side...`]);
+      // Fallback: intentar liberar directamente por client-side si el servidor falló
+      try {
+        const orderRef = doc(firestore, 'orders', orderId);
+        await updateDocumentNonBlocking(orderRef, {
+          deliveryDriverId: null,
+          deliveryDriverName: null,
+          isLogisticsPublic: true,
+          status: 'ready_for_pickup',
+          participants: arrayRemove(user.uid),
+          updatedAt: serverTimestamp(),
+          releasedBy: user.uid,
+          releasedAt: serverTimestamp(),
+          releaseReason: reason
+        });
+        setReleaseLogs(prev => [...prev, "Pedido liberado por vía directa client-side."]);
+        setTimeout(() => {
+          setIsReleasing(false);
+          router.replace('/delivery/release-success');
+        }, 1500);
+      } catch (fallbackErr) {
+        setReleaseLogs(prev => [...prev, `Error vía directa: ${(fallbackErr as Error).message}`]);
+        toast({ title: "Error al liberar", description: "Intenta de nuevo.", variant: "destructive" });
+        setIsReleasing(false);
+      }
     }
   };
 

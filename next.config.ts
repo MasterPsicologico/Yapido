@@ -10,7 +10,18 @@ const nextConfig: NextConfig = {
   },
   outputFileTracingRoot: __dirname,
   async rewrites() {
+    const isDev = process.env.NODE_ENV !== 'production';
     return [
+      ...(isDev ? [
+        {
+          source: '/finanzas',
+          destination: 'http://localhost:9003/finanzas',
+        },
+        {
+          source: '/finanzas/:path*',
+          destination: 'http://localhost:9003/finanzas/:path*',
+        },
+      ] : []),
       {
         source: '/__/auth/:path*',
         destination: `https://studio-4796645076-6f375.firebaseapp.com/__/auth/:path*`,

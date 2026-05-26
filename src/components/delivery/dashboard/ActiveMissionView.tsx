@@ -15,10 +15,11 @@ import { nequiClient } from '@/lib/nequi/nequi-client';
 
 // COMPONENTES ATÓMICOS
 import { MissionHeader } from './active-mission/components/header/MissionHeader';
+import { MissionStatusFooter } from './active-mission/components/footer/MissionStatusFooter';
 import { MissionDeliveryCard } from './active-mission/components/delivery/MissionDeliveryCard';
 import { MissionUsageCountdown } from './active-mission/components/timer/MissionUsageCountdown';
 import { MissionActionOrchestrator } from './active-mission/components/actions/MissionActionOrchestrator';
-import { MissionStatusFooter } from './active-mission/components/footer/MissionStatusFooter';
+
 
 interface ActiveMissionViewProps {
   mission: any;
@@ -154,7 +155,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
   const handleInitialInstallClick = () => {
     setIsConfirmPaymentOpen(true);
   };
-
   const handleFinalConfirmPayment = () => {
     onUpdateStatus('completed');
     setIsConfirmPaymentOpen(false);
@@ -162,17 +162,7 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
   };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-64px)] animate-in slide-in-from-bottom duration-500 overflow-hidden relative z-[40]">
-      <MissionHeader 
-        onReleaseOpen={() => setIsReleaseDialogOpen(true)}
-        onOpenLiveMap={onOpenLiveMap}
-        status={mission.status}
-        isWithDriver={true}
-        isInUse={isInUse}
-        isAtDestination={mission.status === 'at_destination'}
-        currentTime={currentTime}
-      />
-
+    <>
       <main className="flex-1 overflow-y-auto no-scrollbar bg-[#f8fafc]">
         <div className="px-6 py-8 pb-24 space-y-8 max-w-2xl mx-auto">
           
@@ -322,6 +312,6 @@ export function ActiveMissionView({ mission, customerProfile, onUpdateStatus, on
       />
 
       <MissionStatusFooter />
-    </div>
+      </>
   );
 }

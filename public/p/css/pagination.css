@@ -1,0 +1,68 @@
+/* ============================================================
+   CINESTREAM - Pagination Styles
+   ============================================================
+   Descripción: Controles de paginación (anterior, números, siguiente)
+   Ubicación: public/p/css/pagination.css
+   Importado por: styles.css
+   ============================================================ */
+
+/* Contenedor de paginación */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 2rem 0 3rem;
+    flex-wrap: wrap;
+}
+
+/* Botones de paginación */
+.pagination-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    min-width: 40px;
+    height: 40px;
+    padding: 0 0.8rem;
+    border-radius: var(--input-radius);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3);
+}
+
+.pagination-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(229, 9, 20, 0.4);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Separador de páginas (...) */
+.pagination-btn.separator {
+    background: transparent;
+    border: none;
+    cursor: default;
+    color: var(--text-muted);
+}
+
+.pagination-btn.separator:hover {
+    background: transparent;
+    transform: none;
+    box-shadow: none;
+}
