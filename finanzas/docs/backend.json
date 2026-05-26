@@ -1,0 +1,329 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Representa el perfil de un usuario y sus configuraciones generales dentro de la aplicación Finanzas Inteligentes. Toda la información financiera se vincula a un UserProfile.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador único para la entidad UserProfile."
+        },
+        "email": {
+          "type": "string",
+          "description": "Dirección de correo electrónico del usuario, utilizada para comunicación y potencialmente para vincular a un sistema de autenticación externo.",
+          "format": "email"
+        },
+        "preferredCurrency": {
+          "type": "string",
+          "description": "La moneda preferida por el usuario para mostrar los datos financieros (ej. 'MXN', 'USD')."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Marca de tiempo de la creación del perfil de usuario.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Marca de tiempo de la última actualización del perfil de usuario.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "preferredCurrency",
+        "createdAt"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Representa una transacción financiera, ya sea un gasto o un ingreso, registrada por el usuario. Es el corazón del registro de gastos e ingresos.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador único para la entidad Transaction."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Referencia al UserProfile al que pertenece esta transacción. (Relación: UserProfile 1:N Transaction)"
+        },
+        "type": {
+          "type": "string",
+          "description": "El tipo de movimiento financiero: 'income' (ingreso) o 'expense' (gasto)."
+        },
+        "amount": {
+          "type": "number",
+          "description": "El valor monetario de la transacción."
+        },
+        "currency": {
+          "type": "string",
+          "description": "La moneda de la transacción (ej. 'MXN', 'USD')."
+        },
+        "description": {
+          "type": "string",
+          "description": "Una breve descripción de la transacción, introducida por el usuario o inferida por la IA."
+        },
+        "transactionDate": {
+          "type": "string",
+          "description": "La fecha en que ocurrió la transacción.",
+          "format": "date-time"
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Referencia a la Category a la que pertenece esta transacción. (Relación: Category 1:N Transaction)"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "type",
+        "amount",
+        "currency",
+        "description",
+        "transactionDate",
+        "categoryId"
+      ]
+    },
+    "Category": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Category",
+      "type": "object",
+      "description": "Define una categoría para organizar transacciones financieras (ej. 'Comida', 'Transporte', 'Salario'). Puede ser definida por el sistema o por el usuario.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador único para la entidad Category."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Referencia al UserProfile al que pertenece esta categoría. Nulo si es una categoría predefinida del sistema. (Relación: UserProfile 1:N Category)"
+        },
+        "name": {
+          "type": "string",
+          "description": "El nombre de la categoría (ej. 'Alimentos', 'Transporte', 'Entretenimiento')."
+        },
+        "type": {
+          "type": "string",
+          "description": "Indica si la categoría es para 'expense' (gasto), 'income' (ingreso) o 'both' (ambos)."
+        },
+        "iconName": {
+          "type": "string",
+          "description": "Nombre opcional de un icono asociado con la categoría para la visualización en la interfaz de usuario."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type"
+      ]
+    },
+    "CalendarEvent": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CalendarEvent",
+      "type": "object",
+      "description": "Representa un evento o recordatorio creado en el calendario del usuario, a menudo generado a partir de interacciones con el chat de IA.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador único para la entidad CalendarEvent."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Referencia al UserProfile al que pertenece este evento de calendario. (Relación: UserProfile 1:N CalendarEvent)"
+        },
+        "title": {
+          "type": "string",
+          "description": "El título del evento o recordatorio del calendario."
+        },
+        "description": {
+          "type": "string",
+          "description": "Una descripción detallada del evento."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "La fecha y hora de inicio del evento.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "La fecha y hora de finalización del evento (opcional para recordatorios simples).",
+          "format": "date-time"
+        },
+        "isReminder": {
+          "type": "boolean",
+          "description": "Indica si esto es principalmente un recordatorio en lugar de un evento con duración."
+        },
+        "linkedTransactionId": {
+          "type": "string",
+          "description": "Referencia opcional a una entidad Transaction si el evento está relacionado con una transacción financiera (ej. 'Pago de renta'). (Relación: Transaction 1:N CalendarEvent)"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "title",
+        "startTime",
+        "isReminder"
+      ]
+    },
+    "Budget": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Budget",
+      "type": "object",
+      "description": "Permite al usuario definir y seguir límites de gasto para diferentes categorías financieras durante un período específico.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificador único para la entidad Budget."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Referencia al UserProfile al que pertenece este presupuesto. (Relación: UserProfile 1:N Budget)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Un nombre descriptivo para el presupuesto (ej. 'Presupuesto Mensual de Comida')."
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Referencia a la Category a la que se aplica este presupuesto. (Relación: Category 1:N Budget)"
+        },
+        "budgetAmount": {
+          "type": "number",
+          "description": "El monto total presupuestado para el período y la categoría especificados."
+        },
+        "currency": {
+          "type": "string",
+          "description": "La moneda del monto del presupuesto."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "La fecha de inicio del período del presupuesto.",
+          "format": "date"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "La fecha de finalización del período del presupuesto.",
+          "format": "date"
+        },
+        "frequency": {
+          "type": "string",
+          "description": "La frecuencia del presupuesto (ej. 'monthly', 'weekly', 'yearly')."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "categoryId",
+        "budgetAmount",
+        "currency",
+        "startDate",
+        "endDate",
+        "frequency"
+      ]
+    },
+    "AnalysisResult": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AnalysisResult",
+      "type": "object",
+      "description": "Resultados del análisis financiero generado por IA para un usuario.",
+      "properties": {
+        "summary": { "type": "string" },
+        "overspendingAreas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "category": { "type": "string" },
+              "details": { "type": "string" }
+            }
+          }
+        },
+        "savingsOpportunities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "opportunity": { "type": "string" },
+              "suggestion": { "type": "string" }
+            }
+          }
+        },
+        "insights": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "transactionCountAtAnalysis": { "type": "number" },
+        "generatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["summary", "generatedAt"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous",
+      "google.com"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores the profile information for each user."
+        }
+      },
+      {
+        "path": "/users/{userId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Records individual financial transactions."
+        }
+      },
+      {
+        "path": "/users/{userId}/budgets/{budgetId}",
+        "definition": {
+          "entityName": "Budget",
+          "schema": {
+            "$ref": "#/backend/entities/Budget"
+          },
+          "description": "Stores financial budgets defined by a specific user."
+        }
+      },
+      {
+        "path": "/users/{userId}/calendar_events/{eventId}",
+        "definition": {
+          "entityName": "CalendarEvent",
+          "schema": {
+            "$ref": "#/backend/entities/CalendarEvent"
+          },
+          "description": "Stores calendar events and reminders for a specific user."
+        }
+      },
+      {
+        "path": "/users/{userId}/analysis/{analysisId}",
+        "definition": {
+          "entityName": "AnalysisResult",
+          "schema": {
+            "$ref": "#/backend/entities/AnalysisResult"
+          },
+          "description": "Stores the latest AI analysis for the user."
+        }
+      }
+    ]
+  }
+}
