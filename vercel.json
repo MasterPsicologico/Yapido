@@ -1,4 +1,14 @@
 {
+  "rewrites": [
+    {
+      "source": "/finanzas",
+      "destination": "https://finanzas-beige-ten.vercel.app/finanzas"
+    },
+    {
+      "source": "/finanzas/:match*",
+      "destination": "https://finanzas-beige-ten.vercel.app/finanzas/:match*"
+    }
+  ],
   "crons": [
     {
       "path": "/api/stores/purge-trash",

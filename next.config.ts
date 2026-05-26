@@ -11,19 +11,18 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: __dirname,
   async rewrites() {
     const isDev = process.env.NODE_ENV !== 'production';
-    const finanzasBaseUrl = isDev 
-      ? 'http://localhost:9003' 
-      : 'https://finanzas-beige-ten.vercel.app';
-      
     return [
-      {
-        source: '/finanzas',
-        destination: `${finanzasBaseUrl}/finanzas`,
-      },
-      {
-        source: '/finanzas/:path*',
-        destination: `${finanzasBaseUrl}/finanzas/:path*`,
-      },
+      // In dev mode, proxy finanzas to local server (in prod, vercel.json handles this at the edge)
+      ...(isDev ? [
+        {
+          source: '/finanzas',
+          destination: 'http://localhost:9003/finanzas',
+        },
+        {
+          source: '/finanzas/:path*',
+          destination: 'http://localhost:9003/finanzas/:path*',
+        },
+      ] : []),
       {
         source: '/__/auth/:path*',
         destination: `https://studio-4796645076-6f375.firebaseapp.com/__/auth/:path*`,
