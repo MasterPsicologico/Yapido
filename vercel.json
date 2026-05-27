@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/finanzas",
-      "destination": "https://finanzas-beige-ten.vercel.app/finanzas"
+      "destination": "https://finanzas-beige-ten.vercel.app/"
     },
     {
       "source": "/finanzas/:match*",
-      "destination": "https://finanzas-beige-ten.vercel.app/finanzas/:match*"
+      "destination": "https://finanzas-beige-ten.vercel.app/:match*"
     }
   ],
   "crons": [

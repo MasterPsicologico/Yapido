@@ -16,11 +16,11 @@ const nextConfig: NextConfig = {
       ...(isDev ? [
         {
           source: '/finanzas',
-          destination: 'http://localhost:9003/finanzas',
+          destination: 'http://localhost:9003/',
         },
         {
           source: '/finanzas/:path*',
-          destination: 'http://localhost:9003/finanzas/:path*',
+          destination: 'http://localhost:9003/:path*',
         },
       ] : []),
       {
