@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     const isDev = process.env.NODE_ENV !== 'production';
     return [
-      // In dev mode, proxy finanzas to local server (in prod, vercel.json handles this at the edge)
+      // In dev mode, proxy finanzas and nimbus to local servers
       ...(isDev ? [
         {
           source: '/finanzas',
@@ -21,6 +21,14 @@ const nextConfig: NextConfig = {
         {
           source: '/finanzas/:path*',
           destination: 'http://localhost:9003/:path*',
+        },
+        {
+          source: '/nimbus',
+          destination: 'http://localhost:9004/',
+        },
+        {
+          source: '/nimbus/:path*',
+          destination: 'http://localhost:9004/:path*',
         },
       ] : []),
       {

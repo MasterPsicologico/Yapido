@@ -1,0 +1,16 @@
+# Settings to manage and configure a Firebase App Hosting backend.
+# https://firebase.google.com/docs/app-hosting/configure
+runConfig:
+  timeoutSeconds: 120
+  maxInstances: 1
+  cpu: 2
+  memoryMiB: 2048
+  maxRequestSizeMiB: 2
+  environmentVariables:
+    FIREBASE_SERVICE_ACCOUNT_BASE64: ${secret:FIREBASE_SERVICE_ACCOUNT_BASE64}
+buildConfig:
+  cpu: 4
+  memoryMiB: 8192
+build:
+  - name: fetch
+    repo: ''

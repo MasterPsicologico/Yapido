@@ -1,0 +1,186 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 224 71% 4%; /* Azul Marino muy oscuro */
+    --foreground: 210 20% 98%; /* Blanco casi puro */
+    --card: 224 71% 9%; /* Azul ligeramente más claro */
+    --card-foreground: 210 20% 98%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 45 92% 51%; /* Oro Radiante */
+    --primary-foreground: 45 90% 10%;
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 28% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 45 92% 51%; /* Oro Radiante */
+    --accent-foreground: 45 90% 10%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 216 100% 50%;
+    
+    /* Charts Dark */
+    --chart-1: 190 80% 70%;
+    --chart-2: 45 90% 65%;
+    --chart-3: 280 80% 70%;
+    --chart-4: 340 80% 70%;
+    --chart-5: 210 20% 98%;
+
+    /* Sidebar Dark */
+    --sidebar-background: 224 71% 6%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 45 92% 51%;
+    --sidebar-primary-foreground: 45 90% 10%;
+    --sidebar-accent: 224 71% 12%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 224 71% 12%;
+    --sidebar-ring: 45 92% 51%;
+  }
+
+  .dark {
+    --background: 224 71% 4%; /* Azul Marino muy oscuro */
+    --foreground: 210 20% 98%; /* Blanco casi puro */
+    --card: 224 71% 9%; /* Azul ligeramente más claro */
+    --card-foreground: 210 20% 98%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 45 92% 51%; /* Oro Radiante */
+    --primary-foreground: 45 90% 10%;
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 28% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 45 92% 51%; /* Oro Radiante */
+    --accent-foreground: 45 90% 10%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 216 100% 50%;
+    
+    /* Charts Dark */
+    --chart-1: 190 80% 70%;
+    --chart-2: 45 90% 65%;
+    --chart-3: 280 80% 70%;
+    --chart-4: 340 80% 70%;
+    --chart-5: 210 20% 98%;
+
+    /* Sidebar Dark */
+    --sidebar-background: 224 71% 6%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 45 92% 51%;
+    --sidebar-primary-foreground: 45 90% 10%;
+    --sidebar-accent: 224 71% 12%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 224 71% 12%;
+    --sidebar-ring: 45 92% 51%;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    overflow-wrap: break-word;
+  }
+  .scroll-container {
+    @apply h-screen w-full overflow-y-auto overflow-x-hidden snap-y snap-mandatory;
+  }
+  .scroll-section {
+    @apply h-screen w-screen snap-start snap-always flex flex-col items-center justify-center relative overflow-hidden;
+  }
+
+  /* Box-sizing and padding fix */
+  textarea, input, .prose {
+    box-sizing: border-box;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+@layer components {
+  .animated-border {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit; 
+    padding: 3px; 
+    background: conic-gradient(from var(--angle, 0deg), hsl(var(--primary)), hsl(var(--accent)), hsl(var(--chart-1)), hsl(var(--accent)), hsl(var(--primary)));
+    animation: animated-border-spin 4s linear infinite;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude; 
+  }
+
+  .nav-button-premium {
+    @apply relative flex items-center w-full p-3 rounded-lg overflow-hidden;
+    @apply text-white font-semibold transition-all duration-300;
+    background-size: cover;
+    background-position: center;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+  }
+
+  .nav-button-premium::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent transition-opacity duration-300;
+  }
+  
+  .nav-button-premium .nav-content {
+    @apply relative z-10 flex items-center gap-3;
+    color: white !important;
+  }
+
+  .nav-button-premium:hover::before {
+    @apply opacity-70;
+  }
+  
+  .nav-button-premium.active {
+     box-shadow: inset 0 0 0 2px hsl(var(--primary)), inset 0 0 20px rgba(0,0,0,0.5);
+  }
+
+  .nav-button-premium.active::before {
+     @apply bg-gradient-to-r from-black/50 via-black/30 to-transparent;
+  }
+
+  .text-gold-gleam {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(to right, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    -webkit-background-clip: text;
+    background-size: 200% auto;
+    animation: shimmer-gold 8s linear infinite;
+  }
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes animated-border-spin {
+  from {
+    --angle: 0deg;
+  }
+  to {
+    --angle: 360deg;
+  }
+}
+
+@keyframes shimmer-gold {
+  to {
+    background-position: -200% center;
+  }
+}

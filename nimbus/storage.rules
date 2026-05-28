@@ -1,0 +1,31 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Allow read access to public application documents (e.g. professional licenses).
+    // This is for admins to review applications.
+    match /applications/{userId}/{allPaths=**} {
+       allow read: if request.auth != null && (request.auth.uid == userId || request.auth.token.roles.hasAny(['admin']));
+       allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow authenticated professionals to upload session audio for their patients.
+    // The therapist's UID is in the path, and we check it against their auth token.
+    match /patient_sessions/{therapistId}/{patientId}/{sessionId}.webm {
+      allow read, write: if request.auth != null && request.auth.uid == therapistId;
+    }
+
+    // Allow authenticated users to upload their profile pictures.
+    match /profile-pictures/{userId}/{allPaths=**} {
+        allow write: if request.auth != null && request.auth.uid == userId;
+        allow read; // Allow public read for profile pictures
+    }
+
+    // Default deny all other writes unless specified.
+    match /{allPaths=**} {
+      allow read;
+      allow write: if false;
+    }
+  }
+}

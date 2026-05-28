@@ -7,6 +7,14 @@
     {
       "source": "/finanzas/:match*",
       "destination": "https://finanzas-beige-ten.vercel.app/:match*"
+    },
+    {
+      "source": "/nimbus",
+      "destination": "https://nimbus-sepia-alpha.vercel.app/"
+    },
+    {
+      "source": "/nimbus/:match*",
+      "destination": "https://nimbus-sepia-alpha.vercel.app/:match*"
     }
   ],
   "crons": [
