@@ -10,11 +10,11 @@
     },
     {
       "source": "/nimbus",
-      "destination": "https://nimbus-sepia-alpha.vercel.app/"
+      "destination": "https://nimbus-sepia-alpha.vercel.app/nimbus"
     },
     {
       "source": "/nimbus/:match*",
-      "destination": "https://nimbus-sepia-alpha.vercel.app/:match*"
+      "destination": "https://nimbus-sepia-alpha.vercel.app/nimbus/:match*"
     }
   ],
   "crons": [

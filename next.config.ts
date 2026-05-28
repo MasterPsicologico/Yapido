@@ -24,11 +24,11 @@ const nextConfig: NextConfig = {
         },
         {
           source: '/nimbus',
-          destination: 'http://localhost:9004/',
+          destination: 'http://localhost:9004/nimbus',
         },
         {
           source: '/nimbus/:path*',
-          destination: 'http://localhost:9004/:path*',
+          destination: 'http://localhost:9004/nimbus/:path*',
         },
       ] : []),
       {
