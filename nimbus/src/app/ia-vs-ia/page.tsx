@@ -4,7 +4,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, MessageSquare, BarChart2, Sparkles, History, Play, Pause, Box } from 'lucide-react';
+import { ChevronLeft, MessageSquare, BarChart2, Sparkles, History, Play, Pause, Box, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Conversation from '@/components/ia-vs-ia/Conversation';
 import LearningCurve from '@/components/ia-vs-ia/LearningCurve';
@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateNextIAMessage } from './actions';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import IAConversationHistory from '@/components/ia-vs-ia/IAConversationHistory';
+import AuthRequiredPanel from '@/components/chat/AuthRequiredPanel';
 
 // Cargamos el mundo 3D dinámicamente para evitar errores de SSR
 const ArchitectureWorld = dynamic(() => import('@/components/ia-vs-ia/ArchitectureWorld'), {
@@ -27,7 +28,7 @@ const ArchitectureWorld = dynamic(() => import('@/components/ia-vs-ia/Architectu
 type SimulationStatus = 'idle' | 'running' | 'paused' | 'finished';
 
 export default function IaVsIaPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -197,6 +198,22 @@ export default function IaVsIaPage() {
       
       setSimulationStatus(messagesSnap.size < 20 ? 'paused' : 'finished');
       setIsSheetOpen(false);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <AuthRequiredPanel onClose={() => {}} />
+      </div>
+    );
   }
 
   return (
