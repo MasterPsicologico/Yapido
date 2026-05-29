@@ -98,6 +98,20 @@ service cloud.firestore {
       
       allow update: if isAuthenticatedUserOrAdmin(userId);
       allow delete: if isAdmin();
+
+      match /ia-vs-ia-sessions/{sessionId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+
+        match /messages/{messageId} {
+          allow read, write: if isSignedIn() && request.auth.uid == userId;
+        }
+        match /learningStates/{stateId} {
+          allow read, write: if isSignedIn() && request.auth.uid == userId;
+        }
+        match /emergent-chat/{chatId} {
+          allow read, write: if isSignedIn() && request.auth.uid == userId;
+        }
+      }
     }
 
     match /mainCategories/{categoryId} {
