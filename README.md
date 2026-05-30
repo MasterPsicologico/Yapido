@@ -1,26 +1,71 @@
-# Yapido
+# Misty Mountain — Monorepo
 
-> Plataforma multi-rol de comercio y logística con 20 agentes de IA.
+> Ecosistema multi-aplicación: comercio/logística, finanzas inteligentes, chat AI, y streaming de películas.
 
-## 📖 Documentación
+## Proyectos
 
-Para entender el proyecto, empieza por el **manifiesto**:
+| App | Ruta | Puerto | Stack | Descripción |
+|-----|------|--------|-------|-------------|
+| **Yapido** | `/` | 9002 | Next.js 15 + React 19 + Firebase + Genkit | Plataforma multi-rol de comercio y logística con 20 agentes AI |
+| **Finanzas** | `/finanzas` | 9003 | Next.js 15 + React 19 + Genkit + Gemini | Gestión financiera personal con IA |
+| **Nimbus** | `/nimbus` | 9004 | Next.js 15 + React 18 + Genkit + Firebase | Chat AI, sueños, cómics, cursos, IA vs IA |
+| **CineStream** | `/p` | — | Vanilla JS + Firebase Firestore | Streaming de películas con búsqueda y reproductor |
 
-→ **[MANIFEST.md](./MANIFEST.md)** — Índice inteligente de todo el conocimiento del proyecto.
-
-Desde ahí se enlaza a los documentos especializados:
+## Documentación
 
 | Documento | Propósito |
 |-----------|-----------|
-| [docs/blueprint.md](./docs/blueprint.md) | Identidad del producto y guía de diseño |
-| [docs/backend.json](./docs/backend.json) | Esquema de datos y estructura Firestore |
-| [src/APP_KNOWLEDGE.md](./src/APP_KNOWLEDGE.md) | Estado del sistema y funcionalidades |
-| [APK_STRUCTURE.md](./APK_STRUCTURE.md) | Capacidades y roadmap de la APK |
+| [AGENTS.md](./AGENTS.md) | Cerebro central del monorepo — memoria para IA |
+| [docs/blueprint.md](./docs/blueprint.md) | Diseño del producto Yapido |
+| [docs/backend.json](./docs/backend.json) | Esquema Firestore de Yapido |
+| [docs/responsive-design-spec.md](./docs/responsive-design-spec.md) | Sistema de diseño responsive |
+| [src/APP_KNOWLEDGE.md](./src/APP_KNOWLEDGE.md) | Estado del sistema y funcionalidades de Yapido |
+| [finanzas/docs/blueprint.md](./finanzas/docs/blueprint.md) | Diseño de Finanzas Inteligentes |
+| [finanzas/docs/backend.json](./finanzas/docs/backend.json) | Esquema Firestore de Finanzas |
+| [finanzas/AGENTS.md](./finanzas/AGENTS.md) | Cerebro de Finanzas para IA |
+| [nimbus/docs/blueprint.md](./nimbus/docs/blueprint.md) | Diseño de NimbusChat |
+| [nimbus/AGENTS.md](./nimbus/AGENTS.md) | Cerebro de Nimbus para IA |
+| [docs/AGENTS.md](./docs/AGENTS.md) | Cerebro de CineStream para IA |
 
-## 🚀 Desarrollo Local
+## Arquitectura Multi-Zone
+
+```
+                    ┌──────────────┐
+                    │   Yapido     │
+                    │  (puerto 9002)│
+                    └──────┬───────┘
+                           │
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+       ┌──────────┐ ┌──────────┐ ┌──────────┐
+       │ Finanzas │ │  Nimbus  │ │CineStream│
+       │(p. 9003) │ │(p. 9004) │ │(estático)│
+       └──────────┘ └──────────┘ └──────────┘
+```
+
+- **Dev:** Rewrites en `next.config.ts` → servidores locales
+- **Prod:** Rewrites en `vercel.json` → URLs de Vercel
+
+## Desarrollo Local
 
 ```bash
-npm run dev          # http://localhost:9002
-npm run build        # Build de producción
-npm run genkit:dev   # Servidor de agentes AI
+git clone <repo>
+cd misty-mountain
+
+# Yapido (root)
+npm install
+npm run dev              # http://localhost:9002
+
+# Finanzas
+cd finanzas && npm install && npm run dev   # http://localhost:9003
+
+# Nimbus
+cd nimbus && npm install && npm run dev     # http://localhost:9004
+
+# CineStream
+# Estático — solo abrir /p en el navegador
 ```
+
+---
+
+*Monorepo mantenido por Misty Mountain · 29 de Mayo, 2026*

@@ -2,6 +2,8 @@
 
 Este archivo sirve como referencia rápida para la inteligencia artificial sobre la estructura, capacidades y estado actual de la aplicación Yapido.
 
+> **NOTA:** Este monorepo contiene 4 aplicaciones. Consulta [AGENTS.md](../AGENTS.md) para el mapa completo del ecosistema.
+
 ## 🧠 Protocolo de Memoria Evolutiva Continua (MANDATORIO)
 **REGLA CERO SIN EXCEPCIONES**:
 1. **Consulta Inicial**: Ante cualquier tarea, la IA DEBE consultar este archivo y los otros 4 archivos evolutivos (`blueprint.md`, `responsive-design-spec.md`, `EvolutionaryReport.tsx`, `MissionTechSpecs.tsx`) si requiere contexto.
@@ -104,6 +106,17 @@ Para hacer deploy a producción, necesitas:
    - Configurar `PAYMENT_GATEWAY_ENABLED=true` cuando tengas credenciales de pasarela
    - Configurar `DEBUG_SECRET` y `CRON_SECRET` con valores aleatorios seguros
 
+## 🧠 Proyectos Hermanos en el Monorepo
+
+Este proyecto (Yapido) convive con otras 3 aplicaciones en el mismo repositorio:
+
+1. **Finanzas Inteligentes** (`/finanzas`) — Gestión financiera personal con IA (Genkit + Gemini)
+2. **NimbusChat** (`/nimbus`) — Plataforma AI multi-herramienta (chat, sueños, cómics, cursos, etc.)
+3. **CineStream** (`/p`) — Streaming de películas (vanilla JS + Firebase)
+
+**Integración:** Multi-zone routing via Next.js rewrites (dev) y Vercel rewrites (prod).
+**Middleware:** Excluye `/finanzas` y `/nimbus` del procesamiento de seguridad.
+
 ## 💡 Ideas Innovadoras
 
 1.  **Asistente AI de Soporte**: Integrar un agente de AI que responda dudas frecuentes de los clientes directamente en el chat.
@@ -112,4 +125,4 @@ Para hacer deploy a producción, necesitas:
 4.  **Control de Calidad IoT**: (Futuro) Sensores en las lavadoras para reportar estado de funcionamiento automáticamente.
 
 ---
-*Ultima actualización: 3 de Mayo, 2026*
+*Ultima actualización: 29 de Mayo, 2026*

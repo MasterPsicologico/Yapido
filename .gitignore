@@ -59,7 +59,8 @@ firestore-debug.log
 .firebaserc
 .original_*
 scratch/
-MANIFEST.md
-APK_STRUCTURE.md
+# Ya no se ignoran — ahora son parte de la documentación oficial
+# MANIFEST.md
+# APK_STRUCTURE.md
 Yapido_Universal.apk
 project.zip
