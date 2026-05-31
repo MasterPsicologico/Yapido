@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yapido Ecosystem — Premium Zone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/z/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+</head>
+<body>
+  <canvas id="particles"></canvas>
+
+  <div class="cursor-glow" id="cursorGlow"></div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <span class="logo-mark">Y</span>
+        <span class="logo-text">Yapido</span>
+      </a>
+      <div class="nav-links">
+        <a href="#apps" class="nav-link">Apps</a>
+        <a href="#ecosystem" class="nav-link">Ecosistema</a>
+        <a href="#vision" class="nav-link">Visión</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-bg-orbs">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge reveal">
+        <span class="badge-dot"></span>
+        Ecosistema Premium
+      </div>
+      <h1 class="hero-title">
+        <span class="title-line reveal" style="--delay: 0.1s">El futuro del</span>
+        <span class="title-line title-accent reveal" style="--delay: 0.2s">comercio inteligente</span>
+        <span class="title-line reveal" style="--delay: 0.3s">vive aquí.</span>
+      </h1>
+      <p class="hero-sub reveal" style="--delay: 0.45s">
+        Cuatro aplicaciones. Una visión. Un ecosistema que redefine
+        cómo gestionas tu negocio, finanzas, entretenimiento y bienestar.
+      </p>
+      <a href="#apps" class="hero-cta reveal" style="--delay: 0.55s">
+        <span>Explorar apps</span>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 4v12m0 0l4-4m-4 4l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+    <div class="scroll-indicator">
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <section class="apps" id="apps">
+    <div class="section-header">
+      <span class="section-tag reveal">Plataformas</span>
+      <h2 class="section-title reveal">Un ecosistema.<br/>Cuatro experiencias.</h2>
+    </div>
+
+    <div class="bento-grid">
+      <a href="https://yapido.click" class="bento-card bento-main reveal" data-app="yapido">
+        <div class="bento-card-bg"></div>
+        <div class="bento-card-content">
+          <div class="bento-icon">
+            <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2"/><path d="M16 24l6 6 10-12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="bento-label">App Principal</div>
+          <h3 class="bento-title">Yapido</h3>
+          <p class="bento-desc">Plataforma multi-rol de comercio y logística. 20 agentes AI integrados para gestionar tiendas, repartos, lavandería y más.</p>
+          <div class="bento-stats">
+            <div class="stat"><span class="stat-num">20</span><span class="stat-label">Agentes AI</span></div>
+            <div class="stat"><span class="stat-num">Multi</span><span class="stat-label">Roles</span></div>
+            <div class="stat"><span class="stat-num">Real</span><span class="stat-label">Time</span></div>
+          </div>
+          <div class="bento-arrow">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H7M17 7v10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="https://yapido.click/p" class="bento-card bento-movie reveal" data-app="cinestream">
+        <div class="bento-card-bg"></div>
+        <div class="bento-card-content">
+          <div class="bento-icon">
+            <svg viewBox="0 0 48 48" fill="none"><rect x="8" y="12" width="32" height="24" rx="3" stroke="currentColor" stroke-width="2"/><path d="M20 20l8 4-8 4V20z" fill="currentColor"/></svg>
+          </div>
+          <div class="bento-label">Entretenimiento</div>
+          <h3 class="bento-title">CineStream</h3>
+          <p class="bento-desc">Streaming de películas gratis. Catálogo con YouTube + Archive.org, reproducción HD y filtros por género.</p>
+          <div class="bento-arrow">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H7M17 7v10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="https://yapido.click/finanzas" class="bento-card bento-finance reveal" data-app="finanzas">
+        <div class="bento-card-bg"></div>
+        <div class="bento-card-content">
+          <div class="bento-icon">
+            <svg viewBox="0 0 48 48" fill="none"><path d="M24 4v40M16 12h12a6 6 0 010 12H14M18 24h10a6 6 0 010 12H14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="bento-label">Finanzas IA</div>
+          <h3 class="bento-title">Finanzas</h3>
+          <p class="bento-desc">Gestión financiera personal con IA. Análisis inteligente, presupuestos, calendario y chat con Gemini 2.5 Flash.</p>
+          <div class="bento-arrow">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H7M17 7v10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </a>
+
+      <a href="https://yapido.click/nimbus" class="bento-card bento-nimbus reveal" data-app="nimbus">
+        <div class="bento-card-bg"></div>
+        <div class="bento-card-content">
+          <div class="bento-icon">
+            <svg viewBox="0 0 48 48" fill="none"><path d="M8 32c0-6.627 5.373-12 12-12 4.418 0 8.232 2.408 10.274 5.976C32.02 25.784 34.57 26 37 26c5.523 0 10 4.477 10 10s-4.477 10-10 10H12c-7.18 0-13-5.82-13-13 0-6.37 4.61-11.65 10.71-12.76" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="bento-label">Plataforma AI</div>
+          <h3 class="bento-title">Nimbus</h3>
+          <p class="bento-desc">Chat IA multi-herramienta. Sueños, cómics, IA vs IA, perfil psicológico, mercado de terapeutas y más.</p>
+          <div class="bento-arrow">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H7M17 7v10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section class="ecosystem" id="ecosystem">
+    <div class="section-header">
+      <span class="section-tag reveal">Arquitectura</span>
+      <h2 class="section-title reveal">Todo conectado.<br/>Todo con propósito.</h2>
+    </div>
+    <div class="eco-visual">
+      <div class="eco-center reveal">
+        <div class="eco-core">
+          <span>Y</span>
+        </div>
+        <div class="eco-ring ring-1"></div>
+        <div class="eco-ring ring-2"></div>
+        <div class="eco-ring ring-3"></div>
+      </div>
+      <div class="eco-nodes">
+        <div class="eco-node reveal" style="--delay: 0.1s; --angle: 0deg">
+          <div class="eco-node-dot"></div>
+          <span>Finanzas</span>
+        </div>
+        <div class="eco-node reveal" style="--delay: 0.2s; --angle: 90deg">
+          <div class="eco-node-dot"></div>
+          <span>CineStream</span>
+        </div>
+        <div class="eco-node reveal" style="--delay: 0.3s; --angle: 180deg">
+          <div class="eco-node-dot"></div>
+          <span>Nimbus</span>
+        </div>
+        <div class="eco-node reveal" style="--delay: 0.4s; --angle: 270deg">
+          <div class="eco-node-dot"></div>
+          <span>Cloud</span>
+        </div>
+      </div>
+    </div>
+    <div class="eco-features">
+      <div class="eco-feat reveal" style="--delay: 0.1s">
+        <div class="eco-feat-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M16 4v24M8 12l8-8 8 8M8 20l8 8 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h4>Multi-Zone Routing</h4>
+        <p>Next.js rewrites endev y Vercel rewrites en producción. Cada app corre independiente en su puerto.</p>
+      </div>
+      <div class="eco-feat reveal" style="--delay: 0.2s">
+        <div class="eco-feat-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="currentColor" stroke-width="2"/><path d="M12 16l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h4>Firebase Unificado</h4>
+        <p>Un solo proyecto de Firebase para todas las apps. Firestore, Auth y Hosting compartidos.</p>
+      </div>
+      <div class="eco-feat reveal" style="--delay: 0.3s">
+        <div class="eco-feat-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M6 16c0-5.523 4.477-10 10-10s10 4.477 10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16 6V2M26 16h4M6 16H2M22.49 9.51l2.83-2.83M9.51 9.51L6.68 6.68" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <h4>20 Agentes AI</h4>
+        <p>Genkit + Gemini potenciando asistentes inteligentes en cada plataforma del ecosistema.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="vision" id="vision">
+    <div class="vision-inner">
+      <h2 class="vision-title reveal">
+        Construimos el ecosistema<br/>
+        que <span class="vision-highlight">mereces.</span>
+      </h2>
+      <p class="vision-text reveal" style="--delay: 0.15s">
+        No somos otra plataforma más. Somos la infraestructura completa para tu vida digital — desde cómo ganas dinero hasta cómo disfrutas tu tiempo libre.
+      </p>
+      <div class="vision-cta reveal" style="--delay: 0.25s">
+        <a href="#apps" class="btn-primary">
+          <span>Comenzar ahora</span>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="logo-mark">Y</span>
+        <span class="logo-text">Yapido</span>
+      </div>
+      <div class="footer-copy">&copy; 2026 Yapido Ecosystem. Todos los derechos reservados.</div>
+      <div class="footer-links">
+        <a href="https://yapido.click">Yapido</a>
+        <a href="https://yapido.click/p">CineStream</a>
+        <a href="https://yapido.click/finanzas">Finanzas</a>
+        <a href="https://yapido.click/nimbus">Nimbus</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/z/app.js"></script>
+</body>
+</html>
