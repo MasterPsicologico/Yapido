@@ -1,9 +1,5 @@
 /* ============================================================
-   CINESTREAM - Reset & Base Styles
-   ============================================================
-   Descripción: Reset CSS y estilos base del body
-   Ubicación: public/p/css/reset.css
-   Importado por: styles.css (segundo, después de variables)
+   CINESTREAM - Reset & Base Styles (Premium Edition)
    ============================================================ */
 
 /* Reset universal */
@@ -24,30 +20,31 @@ body {
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
-/* Scrollbar personalizado */
+/* Scrollbar refinado */
 ::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--bg-dark);
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--border-light);
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-color);
+    background: rgba(229, 9, 20, 0.5);
 }
 
 /* Selección de texto */
 ::selection {
     background: var(--primary-color);
-    color: var(--text-primary);
+    color: white;
 }
 
 /* Enlaces */
@@ -82,7 +79,7 @@ input, select, textarea {
     outline: none;
 }
 
-/* Contenedor principal de la app */
+/* Contenedor principal */
 .cinestream-app {
     min-height: 100vh;
     background-color: var(--bg-dark) !important;
@@ -91,4 +88,5 @@ input, select, textarea {
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
