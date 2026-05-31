@@ -41,6 +41,8 @@
 @import url('./css/player-controls.css');
 @import url('./css/footer.css');
 @import url('./css/anime-hub.css');
+@import url('./css/hero.css');
+@import url('./css/movie-rows.css');
 
 /* 4. RESPONSIVE - Orden: móvil → tablet → desktop */
 @import url('./css/responsive-mobile.css');

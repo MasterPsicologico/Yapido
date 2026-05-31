@@ -288,4 +288,22 @@
     .movie-genre {
         font-size: 0.6rem;
     }
+
+    /* Hero en móvil */
+    .hero-section { height: 55vh; margin-bottom: -60px; }
+    .hero-content { left: 1.2rem; right: 1.2rem; bottom: 12%; }
+    .hero-title { font-size: 1.8rem; }
+    .hero-description { font-size: 0.82rem; -webkit-line-clamp: 2; margin-bottom: 1rem; }
+    .hero-btn { padding: 0.6rem 1.1rem; font-size: 0.82rem; }
+    .hero-badge { font-size: 0.6rem; padding: 0.2rem 0.6rem; }
+    .hero-meta { font-size: 0.78rem; gap: 0.6rem; }
+
+    /* Filas en móvil */
+    .movie-row-header { padding: 0 1rem; }
+    .movie-row-title { font-size: 1.1rem; }
+    .movie-row-scroll { padding: 0.5rem 1rem 0.8rem; gap: 0.6rem; }
+    .movie-row-card { flex: 0 0 130px; min-width: 130px; }
+    .row-arrow { display: none !important; }
+    .row-card-title { font-size: 0.7rem; }
+    .row-card-year { font-size: 0.6rem; }
 }

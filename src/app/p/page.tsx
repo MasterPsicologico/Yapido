@@ -7,6 +7,28 @@ export default function PeliculasPage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    // Capa 2: Meta robots dinámico (refuerzo client-side)
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow, noarchive, nosnippet, noodp, noimageindex, notranslate';
+    document.head.appendChild(meta);
+
+    const meta2 = document.createElement('meta');
+    meta2.name = 'googlebot';
+    meta2.content = 'noindex, nofollow, noarchive, nosnippet';
+    document.head.appendChild(meta2);
+
+    const meta3 = document.createElement('meta');
+    meta3.name = 'bingbot';
+    meta3.content = 'noindex, nofollow, noarchive';
+    document.head.appendChild(meta3);
+
+    const metaEquiv = document.createElement('meta');
+    metaEquiv.httpEquiv = 'X-Robots-Tag';
+    metaEquiv.content = 'noindex, nofollow, noarchive, nosnippet';
+    document.head.appendChild(metaEquiv);
+
+    // Scripts de CineStream
     let active = true;
     let firebaseScript: HTMLScriptElement | null = null;
     let firestoreScript: HTMLScriptElement | null = null;
@@ -61,7 +83,13 @@ export default function PeliculasPage() {
 
     return () => {
       active = false;
-      
+
+      // Limpiar meta tags de robots
+      if (document.head.contains(meta)) document.head.removeChild(meta);
+      if (document.head.contains(meta2)) document.head.removeChild(meta2);
+      if (document.head.contains(meta3)) document.head.removeChild(meta3);
+      if (document.head.contains(metaEquiv)) document.head.removeChild(metaEquiv);
+
       const w = window as any;
       if (w.CineStreamDB) {
         w.CineStreamDB.cleanup();
@@ -116,6 +144,8 @@ export default function PeliculasPage() {
       </header>
 
       <main className="main">
+        <div id="heroSection" className="hero-skeleton"></div>
+        <div id="movieRows" className="movie-rows-container"></div>
         <section className="filters">
           <div className="filter-group">
             <label>Ordenar por:</label>
@@ -129,6 +159,8 @@ export default function PeliculasPage() {
             <label>Año:</label>
             <select id="yearFilter">
               <option value="all">Todos</option>
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
               <option value="2024">2024</option>
               <option value="2023">2023</option>
               <option value="2022">2022</option>

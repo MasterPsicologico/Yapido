@@ -254,5 +254,11 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if isAdmin();
     }
+
+    // CineStream — colección pública de películas
+    match /cinestream_movies/{movieId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

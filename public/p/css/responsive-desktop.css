@@ -78,4 +78,14 @@
     .volume-control {
         display: flex;
     }
+
+    /* Hero en desktop */
+    .hero-section { height: 80vh; }
+    .hero-content { left: 4rem; max-width: 600px; }
+    .hero-title { font-size: 3.8rem; }
+
+    /* Filas en desktop */
+    .movie-row-header { padding: 0 3rem; }
+    .movie-row-scroll { padding: 0.5rem 3rem 1rem; }
+    .movie-row-card { flex: 0 0 190px; min-width: 190px; }
 }
