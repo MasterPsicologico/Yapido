@@ -3,13 +3,9 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import { generateUserProfile as generateUserProfileFlow } from '@/ai/flows/generate-user-profile';
 import { generateBreakdownExercise as generateBreakdownExerciseFlow } from '@/ai/flows/generate-breakdown-exercise';
-import type { GenerateBreakdownExerciseInput, GenerateBreakdownExerciseOutput, GenerateUserProfileInput } from '@/lib/types';
+import type { GenerateBreakdownExerciseInput, GenerateBreakdownExerciseOutput } from '@/lib/types';
+import type { GenerateUserProfileInput } from '@/ai/flows/generate-user-profile';
 
-
-/**
- * This is the main server action for generating the profile.
- * It now receives the full chat history and an optional context string from the client.
- */
 export async function updatePsychologicalBlueprint(input: GenerateUserProfileInput) {
   noStore();
 
@@ -26,7 +22,6 @@ export async function updatePsychologicalBlueprint(input: GenerateUserProfileInp
     return result;
   } catch (error) {
     console.error('Error during profile generation flow:', error);
-    // Re-throw the error to be caught by the client-side fetch.
     throw error;
   }
 }

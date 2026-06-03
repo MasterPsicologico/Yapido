@@ -161,7 +161,8 @@ function ChatPanel({ chat, appendMessage, updateChat, profile }: ChatPanelProps)
       timestamp: Timestamp.now(),
     };
 
-    await appendMessage(chat.id, userMessage);
+    // Removido await para interfaz optimista instantánea
+    appendMessage(chat.id, userMessage);
     
     // Always get an AI response, even if transcription failed, so the context is not lost.
     await getAIResponseAndUpdate([...(messages || []), { ...userMessage, id: uuidv4() } as any]);

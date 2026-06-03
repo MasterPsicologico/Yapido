@@ -1,17 +1,19 @@
 
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth, useCollection, useFirestore } from '@/firebase';
-import type { Chat, ProfileData, CachedProfile, Message } from '@/lib/types';
+import type { Chat, ProfileData, CachedProfile, Message, ProfileVersion } from '@/lib/types';
+import { loadProfile as loadProfileFromFirestore, saveProfileVersion, loadProfileVersions } from '@/lib/profile-service';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BrainCircuit, UserCheck, ShieldCheck, ListChecks, ChevronLeft, Sparkles, Filter, ShieldQuestion, Info, RefreshCcw, LineChart, Target, Repeat, Star, Shield, AlertTriangle, GitCommit, LayoutDashboard, BarChart3, Search, Cog, BookOpen } from 'lucide-react';
+import { BrainCircuit, UserCheck, ShieldCheck, ListChecks, ChevronLeft, Sparkles, Filter, ShieldQuestion, Info, RefreshCcw, LineChart, Target, Repeat, Star, Shield, AlertTriangle, GitCommit, LayoutDashboard, BarChart3, Search, Cog, BookOpen, History, TrendingUp, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import Link from 'next/link';
 import { Progress } from '@/components/ui/progress';
 import ReactMarkdown from 'react-markdown';
@@ -46,6 +48,9 @@ export default function PsychologicalProfile() {
   const [error, setError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [needsUpdate, setNeedsUpdate] = useState(false);
+  const [currentVersion, setCurrentVersion] = useState<string | null>(null);
+  const [versions, setVersions] = useState<ProfileVersion[]>([]);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
 
   const [diagnosisTextSize, setDiagnosisTextSize] = useState<TextSize>('base');
   const [personalityTextSize, setPersonalityTextSize] = useState<TextSize>('base');
@@ -59,6 +64,72 @@ export default function PsychologicalProfile() {
 
   const { data: chats, loading: chatsLoading } = useCollection<Chat>(chatsQuery);
 
+  // -------------------------------------------------------------------
+  // Load profile from Firestore (primary) → localStorage (fallback cache)
+  // -------------------------------------------------------------------
+  const loadInitialProfile = useCallback(async () => {
+    if (!user || !firestore) return;
+
+    try {
+      // 1. Try Firestore first (source of truth)
+      const profileMain = await loadProfileFromFirestore(firestore, user.uid);
+      if (profileMain) {
+        setProfile(profileMain.latestProfile);
+        setCurrentVersion(profileMain.currentVersion);
+        // Sync to localStorage as a fast cache
+        const cacheData: CachedProfile = {
+          profile: profileMain.latestProfile,
+          lastMessageTimestamp: profileMain.lastMessageTimestamp,
+          currentVersion: profileMain.currentVersion,
+        };
+        localStorage.setItem(storageKey!, JSON.stringify(cacheData));
+        return;
+      }
+
+      // 2. Fallback to localStorage (migration path for old data)
+      const cachedItem = localStorage.getItem(storageKey!);
+      if (cachedItem) {
+        try {
+          const data: CachedProfile = JSON.parse(cachedItem);
+          setProfile(data.profile);
+          setCurrentVersion(data.currentVersion || null);
+        } catch (e) {
+          console.error("Failed to parse cached profile", e);
+          localStorage.removeItem(storageKey!);
+        }
+      }
+    } catch (e) {
+      console.error("Error loading profile from Firestore", e);
+      // Fallback to localStorage if Firestore fails
+      const cachedItem = localStorage.getItem(storageKey!);
+      if (cachedItem) {
+        try {
+          const data: CachedProfile = JSON.parse(cachedItem);
+          setProfile(data.profile);
+          setCurrentVersion(data.currentVersion || null);
+        } catch (parseErr) {
+          console.error("Failed to parse cached profile", parseErr);
+        }
+      }
+    }
+  }, [user, firestore, storageKey]);
+
+  // -------------------------------------------------------------------
+  // Load version history
+  // -------------------------------------------------------------------
+  const loadVersionHistory = useCallback(async () => {
+    if (!user || !firestore) return;
+    try {
+      const allVersions = await loadProfileVersions(firestore, user.uid);
+      setVersions(allVersions);
+    } catch (e) {
+      console.error("Error loading profile versions", e);
+    }
+  }, [user, firestore]);
+
+  // -------------------------------------------------------------------
+  // Generate / regenerate the profile
+  // -------------------------------------------------------------------
   const fetchAndGenerateProfile = useCallback(async () => {
     if (!user || !storageKey || !firestore) {
       setError('Datos insuficientes o no has iniciado sesión.');
@@ -73,10 +144,10 @@ export default function PsychologicalProfile() {
 
     try {
       let fullChatHistory = '';
+      let totalMessagesAnalyzed = 0;
       const chatsRef = collection(firestore, `users/${user.uid}/chats`);
-      const q = query(chatsRef, orderBy('createdAt', 'desc'), limit(30)); // Get the 30 most recent chats
+      const q = query(chatsRef, orderBy('createdAt', 'desc'), limit(30));
       const chatsSnapshot = await getDocs(q);
-
 
       if (chatsSnapshot.empty) {
         throw new Error('Tus conversaciones están vacías. No se puede generar un perfil.');
@@ -85,22 +156,38 @@ export default function PsychologicalProfile() {
       setProgress(30);
       setGenerationStatus('Procesando mensajes...');
 
+      // Build context from previous profile (full JSON for evolutionary comparison)
       let previousProfilesContext = '';
-      const cachedItem = localStorage.getItem(storageKey);
-      if (cachedItem) {
-        try {
-          const data: CachedProfile = JSON.parse(cachedItem);
-          const oldProfile = data.profile;
-          // Extract only key topics instead of the full profile to keep the prompt light.
-          const keyTopics = [
-            ...(oldProfile.emotionalConstellation?.nodes?.map(n => n.id) || []),
-            ...(oldProfile.cognitiveBiases || [])
-          ];
-          if (keyTopics.length > 0) {
-            previousProfilesContext = `Temas clave del último análisis: ${keyTopics.join(', ')}.`;
-          }
-        } catch (e) {
+      let previousFullProfile = '';
+
+      // Load from Firestore (primary)
+      const existingMain = await loadProfileFromFirestore(firestore, user.uid);
+      if (existingMain?.latestProfile) {
+        previousFullProfile = JSON.stringify(existingMain.latestProfile);
+        const keyTopics = [
+          ...(existingMain.latestProfile.emotionalConstellation?.nodes?.map(n => n.id) || []),
+          ...(existingMain.latestProfile.cognitiveBiases || [])
+        ];
+        if (keyTopics.length > 0) {
+          previousProfilesContext = `Temas clave del último análisis (v${existingMain.currentVersion}): ${keyTopics.join(', ')}.`;
+        }
+      } else {
+        // Fallback to localStorage for migration
+        const cachedItem = localStorage.getItem(storageKey);
+        if (cachedItem) {
+          try {
+            const data: CachedProfile = JSON.parse(cachedItem);
+            previousFullProfile = JSON.stringify(data.profile);
+            const keyTopics = [
+              ...(data.profile.emotionalConstellation?.nodes?.map(n => n.id) || []),
+              ...(data.profile.cognitiveBiases || [])
+            ];
+            if (keyTopics.length > 0) {
+              previousProfilesContext = `Temas clave del último análisis: ${keyTopics.join(', ')}.`;
+            }
+          } catch (e) {
             console.warn("Could not parse cached profile for context, generating from scratch.", e);
+          }
         }
       }
 
@@ -114,6 +201,7 @@ export default function PsychologicalProfile() {
         messagesSnapshot.forEach(doc => {
           const msg = doc.data() as Message;
           const ts = msg.timestamp;
+          totalMessagesAnalyzed++;
           
           // Robust timestamp handling
           let date: Date | null = null;
@@ -135,21 +223,50 @@ export default function PsychologicalProfile() {
       setProgress(50);
       setGenerationStatus('Enviando al servidor de IA...');
       
-      const result = await updatePsychologicalBlueprint({ fullChatHistory, previousProfilesContext });
+      const payload: any = { fullChatHistory };
+      if (previousProfilesContext) payload.previousProfilesContext = previousProfilesContext;
+      if (previousFullProfile) payload.previousFullProfile = previousFullProfile;
+
+      const result = await updatePsychologicalBlueprint(payload);
       
-      setProgress(90);
-      setGenerationStatus('Finalizando el informe...');
+      setProgress(80);
+      setGenerationStatus('Guardando en la nube...');
 
       if (!result) {
         throw new Error('La generación del perfil falló en el servidor.');
       }
       
-      const newCachedData: CachedProfile = { profile: result, lastMessageTimestamp: Date.now() };
+      // Save to Firestore with versioning
+      const newVersion = await saveProfileVersion(
+        firestore,
+        user.uid,
+        result,
+        totalMessagesAnalyzed,
+      );
+
+      // Sync to localStorage as cache
+      const newCachedData: CachedProfile = {
+        profile: result,
+        lastMessageTimestamp: Date.now(),
+        currentVersion: newVersion,
+      };
       localStorage.setItem(storageKey, JSON.stringify(newCachedData));
       
       setProfile(result);
+      setCurrentVersion(newVersion);
       setNeedsUpdate(false);
       setProgress(100);
+      setGenerationStatus('¡Completado!');
+
+      toast({
+        title: `Perfil v${newVersion} generado`,
+        description: newVersion === '1.0'
+          ? 'Tu primer Cianotipo Psicológico ha sido creado y guardado.'
+          : 'Tu perfil ha sido actualizado con un informe evolutivo comparativo.',
+      });
+
+      // Refresh version history
+      loadVersionHistory();
 
     } catch (e: any) {
       console.error('Error in fetchAndGenerateProfile:', e);
@@ -162,7 +279,7 @@ export default function PsychologicalProfile() {
     } finally {
       setTimeout(() => setGenerating(false), 500);
     }
-  }, [user, storageKey, firestore, toast]);
+  }, [user, storageKey, firestore, toast, loadVersionHistory]);
 
 
   useEffect(() => {
@@ -180,52 +297,42 @@ export default function PsychologicalProfile() {
       return;
     }
 
-    const loadInitialProfile = () => {
-        const cachedItem = localStorage.getItem(storageKey!);
-        if (cachedItem) {
-            try {
-                const data: CachedProfile = JSON.parse(cachedItem);
-                setProfile(data.profile);
-            } catch (e) {
-                console.error("Failed to parse cached profile", e);
-                localStorage.removeItem(storageKey!);
-            }
-        }
-        setLoading(false);
+    const init = async () => {
+      await loadInitialProfile();
+      setLoading(false);
     };
+    init();
     
-    loadInitialProfile();
-    
-  }, [user, storageKey, isClient, authLoading]);
+  }, [user, isClient, authLoading, loadInitialProfile]);
   
   useEffect(() => {
     if (chatsLoading || !isClient || !chats) return;
 
-    const cachedProfileItem = localStorage.getItem(storageKey!);
-    if (!cachedProfileItem) {
-        if(chats.length > 0) setNeedsUpdate(true);
+    const checkNeedsUpdate = async () => {
+      if (!user || !firestore) return;
+
+      // Check if there's a profile at all
+      const profileMain = await loadProfileFromFirestore(firestore, user.uid);
+      if (!profileMain) {
+        if (chats.length > 0) setNeedsUpdate(true);
         return;
-    }
+      }
 
-    try {
-        const cachedProfile: CachedProfile = JSON.parse(cachedProfileItem);
-        const lastProfileUpdate = cachedProfile.lastMessageTimestamp || 0;
+      const lastProfileUpdate = profileMain.lastMessageTimestamp || 0;
+      const lastMessageTimestamp = chats.reduce((latest, chat) => {
+        const time = chat.latestMessageAt?.toMillis() || chat.createdAt?.toMillis() || 0;
+        return time > latest ? time : latest;
+      }, 0);
+      
+      if (lastMessageTimestamp > lastProfileUpdate) {
+        setNeedsUpdate(true);
+      } else {
+        setNeedsUpdate(false);
+      }
+    };
 
-        const lastMessageTimestamp = chats.reduce((latest, chat) => {
-            const time = chat.latestMessageAt?.toMillis() || chat.createdAt?.toMillis() || 0;
-            return time > latest ? time : latest;
-        }, 0);
-        
-        if (lastMessageTimestamp > lastProfileUpdate) {
-            setNeedsUpdate(true);
-        } else {
-            setNeedsUpdate(false);
-        }
-
-    } catch (e) {
-        console.error("Error checking for profile update", e);
-    }
-  }, [chats, chatsLoading, storageKey, isClient]);
+    checkNeedsUpdate();
+  }, [chats, chatsLoading, isClient, user, firestore]);
 
 
   if (loading) {
@@ -343,19 +450,37 @@ export default function PsychologicalProfile() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-wrap justify-between items-center gap-2 mb-6">
            <Button asChild variant="ghost" className='-ml-4 text-muted-foreground hover:bg-accent/10 hover:text-foreground'>
                 <Link href="/">
                     <ChevronLeft className="h-4 w-4 mr-2" />
                     Volver al Chat
                 </Link>
             </Button>
-             {needsUpdate && (
+            <div className="flex items-center gap-2">
+              {currentVersion && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs gap-1.5"
+                  onClick={() => {
+                    setShowVersionHistory(!showVersionHistory);
+                    if (!showVersionHistory && versions.length === 0) {
+                      loadVersionHistory();
+                    }
+                  }}
+                >
+                  <History className="h-3.5 w-3.5" />
+                  v{currentVersion}
+                </Button>
+              )}
+              {needsUpdate && (
                 <Button onClick={() => fetchAndGenerateProfile()} size="sm">
                    <RefreshCcw className='mr-2 h-4 w-4'/>
                    Actualizar ahora
                 </Button>
-             )}
+              )}
+            </div>
         </div>
         
         <header className="mb-8">
@@ -364,28 +489,100 @@ export default function PsychologicalProfile() {
                 Un análisis integral generado por IA basado en tu historial. Esto no reemplaza un diagnóstico profesional.
             </p>
         </header>
+
+        {/* Version History Panel */}
+        {showVersionHistory && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-6"
+          >
+            <Card className="bg-card/50 border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <History className="w-5 h-5 text-accent" />
+                  Historial de Versiones
+                </CardTitle>
+                <CardDescription>
+                  Cada generación de perfil se guarda como una versión.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {versions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Cargando historial...</p>
+                ) : (
+                  <div className="space-y-3">
+                    {versions.map((v) => (
+                      <div
+                        key={v.version}
+                        className={cn(
+                          "flex items-center justify-between p-3 rounded-lg border transition-colors",
+                          v.version === currentVersion
+                            ? "bg-primary/5 border-primary/20"
+                            : "bg-background/50 border-border/30 hover:bg-accent/5"
+                        )}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className={cn(
+                            "font-mono text-sm font-semibold px-2 py-0.5 rounded",
+                            v.version === currentVersion ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                          )}>
+                            v{v.version}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm truncate">
+                              {v.chatMessagesAnalyzed} mensajes analizados
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {v.createdAt?.toDate ? v.createdAt.toDate().toLocaleDateString('es-ES', {
+                                day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                              }) : 'Fecha no disponible'}
+                            </p>
+                          </div>
+                        </div>
+                        {v.version === currentVersion && (
+                          <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full shrink-0">
+                            Actual
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
         
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 md:inline-flex md:w-auto mb-6 bg-card/50">
+          <TabsList className="grid w-full grid-cols-5 md:inline-flex md:w-auto mb-6 bg-card/50">
             <TabsTrigger value="overview" className="gap-2">
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden md:inline">Resumen</span>
-                <span className="md:hidden">Resumen</span>
+                <span className="md:hidden text-[10px]">Resumen</span>
             </TabsTrigger>
+            {profile.evolutionSummary && (
+              <TabsTrigger value="evolution" className="gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="hidden md:inline">Evolución</span>
+                  <span className="md:hidden text-[10px]">Evolución</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="metrics" className="gap-2" data-tour-id="profile-metrics">
                 <BarChart3 className="h-4 w-4" />
                 <span className="hidden md:inline">Métricas</span>
-                <span className="md:hidden">Métricas</span>
+                <span className="md:hidden text-[10px]">Métricas</span>
             </TabsTrigger>
             <TabsTrigger value="deep-dive" className="gap-2">
                 <Search className="h-4 w-4" />
                 <span className="hidden md:inline">Análisis Profundo</span>
-                <span className="md:hidden">Análisis</span>
+                <span className="md:hidden text-[10px]">Análisis</span>
             </TabsTrigger>
              <TabsTrigger value="oracle" className="gap-2" data-tour-id="profile-oracle">
                 <BookOpen className="h-4 w-4" />
                 <span className="hidden md:inline">Oráculo</span>
-                <span className="md:hidden">Oráculo</span>
+                <span className="md:hidden text-[10px]">Oráculo</span>
             </TabsTrigger>
           </TabsList>
 
@@ -487,6 +684,31 @@ export default function PsychologicalProfile() {
                 </Card>
               )}
           </TabsContent>
+
+          {/* Evolution Tab */}
+          {profile.evolutionSummary && (
+            <TabsContent value="evolution" className="mt-6 space-y-6">
+              <Card className="bg-gradient-to-br from-card/80 to-card/50 border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <TrendingUp className="w-6 h-6 text-accent" />
+                    Informe Evolutivo
+                    {currentVersion && (
+                      <span className="text-sm font-normal text-muted-foreground ml-2">v{currentVersion}</span>
+                    )}
+                  </CardTitle>
+                  <CardDescription>
+                    Análisis comparativo con versiones anteriores — progreso, retroceso y cambios en cada dimensión de tu perfil.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ReactMarkdown className="prose dark:prose-invert max-w-none text-foreground/80 leading-relaxed">
+                    {profile.evolutionSummary}
+                  </ReactMarkdown>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           <TabsContent value="metrics" className="mt-6 space-y-6">
               {profile.emotionalJourney?.length > 0 && (
@@ -666,5 +888,4 @@ export default function PsychologicalProfile() {
     </div>
   );
 }
-
     

@@ -78,7 +78,6 @@ export async function getAIResponse(history: Message[], userId: string, currentA
     ? JSON.stringify(profile, null, 2) 
     : 'Aún no hay un cianotipo psicológico. Esta es nuestra primera interacción. Sé cálido y haz una pregunta abierta.';
 
-
   const expertAgentSystemPrompt = `Eres un asistente de IA conversacional llamado Nimbus. Tu propósito es ser un confidente y psicólogo virtual, un espejo perspicaz que revela profundidades. Respondes de manera empática, profunda y transformadora.
 Tu identidad principal para ESTA RESPUESTA es **${roleToUse}**. Debes adoptar su voz y perspectiva.
 
@@ -113,8 +112,8 @@ Asistente:`;
   try {
     const { text } = await ai.generate({ prompt: expertAgentSystemPrompt });
     return { response: text || "No pude generar una respuesta en este momento.", newRole };
-  } catch (error) {
-    console.error("Error getting AI response:", error);
+  } catch (error: any) {
+    console.error("[Nimbus] Error getting AI response:", error?.message || error);
     return { response: "Lo siento, estoy teniendo problemas para responder en este momento. Por favor, inténtalo de nuevo más tarde." };
   }
 }
@@ -136,7 +135,6 @@ export async function getInitialPrompts(): Promise<PromptSuggestion[]> {
       return snapshot.docs.map(doc => doc.data() as PromptSuggestion);
     }
     
-    // DB is empty, generate initial prompts and save them
     const { prompts } = await initialPromptSuggestionFlow('generate 100 initial prompts');
     if (!prompts || prompts.length === 0) {
       return SUGGESTIONS_FALLBACK;
@@ -209,5 +207,4 @@ export async function analyzeVoiceMessageAction(input: AnalyzeVoiceInput): Promi
   }
 }
 
-// Actions for Image Whiteboard
 export { generateImagePrompt, generateImageX };

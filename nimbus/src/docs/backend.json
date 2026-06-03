@@ -209,6 +209,30 @@
         "description": { "type": "string" },
         "timeline": { "type": "array", "items": { "type": "object", "properties": { "step": { "type": "number" }, "title": { "type": "string" }, "description": { "type": "string" }, "icon": { "type": "string" } }, "required": ["step", "title", "description", "icon"] } }
       }
+    },
+    "profileMain": {
+      "title": "Profile Main",
+      "description": "The main profile document pointing to the latest version of the user's psychological profile.",
+      "type": "object",
+      "properties": {
+        "currentVersion": { "type": "string", "description": "The current version string, e.g. '1.0', '1.1'." },
+        "latestProfile": { "$ref": "#/entities/userProfile" },
+        "lastMessageTimestamp": { "type": "number", "description": "Epoch timestamp of last message when profile was generated." }
+      },
+      "required": ["currentVersion", "latestProfile", "lastMessageTimestamp"]
+    },
+    "profileVersion": {
+      "title": "Profile Version",
+      "description": "A versioned snapshot of the user's psychological profile for evolutionary comparison.",
+      "type": "object",
+      "properties": {
+        "version": { "type": "string", "description": "Semantic version string, e.g. '1.0', '1.1'." },
+        "profile": { "$ref": "#/entities/userProfile" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "chatMessagesAnalyzed": { "type": "number", "description": "Total messages analyzed for this version." },
+        "evolutionSummary": { "type": "string", "description": "Narrative comparison with previous versions." }
+      },
+      "required": ["version", "profile", "createdAt"]
     }
   },
   "auth": {
@@ -219,7 +243,8 @@
     "/users/{userId}/chats/{chatId}": { "schema": { "$ref": "#/entities/chat" }, "description": "Chat sessions for a user." },
     "/users/{userId}/chats/{chatId}/messages/{messageId}": { "schema": { "$ref": "#/entities/message" }, "description": "Messages within a chat." },
     "/users/{userId}/chatbotState/main": { "schema": { "$ref": "#/entities/chatbotState" }, "description": "Chatbot state for a user." },
-    "/users/{userId}/profile/main": { "schema": { "$ref": "#/entities/userProfile" }, "description": "User's psychological profile." },
+    "/users/{userId}/profile/main": { "schema": { "$ref": "#/entities/profileMain" }, "description": "Main profile document with current version pointer and latest profile data." },
+    "/users/{userId}/profile/main/versions/{versionId}": { "schema": { "$ref": "#/entities/profileVersion" }, "description": "Versioned snapshots of the user's psychological profile for evolutionary comparison." },
     "/users/{userId}/gymSessions/{sessionId}": { "schema": { "$ref": "#/entities/simulationSession" }, "description": "Emotional Gym sessions." },
     "/users/{userId}/gymSessions/{sessionId}/messages/{messageId}": { "schema": { "$ref": "#/entities/message" }, "description": "Messages within a gym session." },
     "/users/{userId}/dreams/{dreamId}": { "schema": { "$ref": "#/entities/dreamInterpretation" }, "description": "Dream interpretations for a user." },

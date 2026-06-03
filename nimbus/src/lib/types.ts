@@ -166,11 +166,29 @@ export type ProfileData = {
   coreArchetype?: CoreArchetypeData;
   coreConflict?: string;
   habitLoop?: HabitLoopData;
+  evolutionSummary?: string;
+};
+
+/** A versioned snapshot of the user's psychological profile stored in Firestore. */
+export type ProfileVersion = {
+  version: string;
+  profile: ProfileData;
+  createdAt: Timestamp;
+  chatMessagesAnalyzed: number;
+  evolutionSummary?: string;
+};
+
+/** The main profile document in Firestore — always points to the latest version. */
+export type ProfileMain = {
+  currentVersion: string;
+  latestProfile: ProfileData;
+  lastMessageTimestamp: number;
 };
 
 export type CachedProfile = {
   profile: ProfileData;
-  lastMessageTimestamp: number; 
+  lastMessageTimestamp: number;
+  currentVersion: string;
 };
 
 

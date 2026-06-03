@@ -8,6 +8,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  serverActions: {
+    bodySizeLimit: '5mb',
+  },
   transpilePackages: ['three'],
   images: {
     remotePatterns: [

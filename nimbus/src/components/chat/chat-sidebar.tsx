@@ -153,7 +153,7 @@ function ChatSidebar({
                 <div className="space-y-1">
                     {navItems.map((item) => (
                     item && (
-                        <Link key={item.href} href={item.href} id={item.id} passHref>
+                        <Link key={item.href} href={item.href} id={item.id} passHref prefetch={true}>
                         <div
                             className={cn(
                             'nav-button-premium',
@@ -192,7 +192,7 @@ function ChatSidebar({
                 <ul className="space-y-1 p-2">
                   {sortedChats.map((chat, i) => (
                     <li key={chat.id} className="relative group/menu-item" ref={i === sortedChats.length - 1 ? ref : null}>
-                      <Link href={chat.path} className={cn(
+                      <Link href={chat.path} prefetch={true} className={cn(
                         "h-auto w-full justify-start text-left flex flex-col items-start p-2 rounded-md min-w-0 transition-colors",
                         activeChatId === chat.id 
                           ? 'bg-sidebar-accent text-sidebar-accent-foreground' 
