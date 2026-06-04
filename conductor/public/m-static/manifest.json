@@ -1,0 +1,14 @@
+{
+  "name": "Yapido Movilidad",
+  "short_name": "Yapido",
+  "description": "Tu viaje en moto o auto, en minutos",
+  "start_url": "/m",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#00b871",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/m-static/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/m-static/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

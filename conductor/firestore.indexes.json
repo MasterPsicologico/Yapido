@@ -1,0 +1,72 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "trips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "passenger.uid", "order": "ASCENDING" },
+        { "fieldPath": "timeline.requestedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "trips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "driver.uid", "order": "ASCENDING" },
+        { "fieldPath": "timeline.requestedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "trips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "cityId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "timeline.requestedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "trips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "timeline.requestedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "driver_profiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "currentCityId", "order": "ASCENDING" },
+        { "fieldPath": "currentGeohash6", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "driver_profiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "currentCityId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "fare_estimates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "pickupGeohash6", "order": "ASCENDING" },
+        { "fieldPath": "dropoffGeohash6", "order": "ASCENDING" },
+        { "fieldPath": "type", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ratings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "toUid", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

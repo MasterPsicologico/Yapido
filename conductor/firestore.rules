@@ -1,0 +1,132 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------- Helpers --------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    function isDriverCity(uid, cityId) {
+      return exists(/databases/$(database)/documents/driver_profiles/$(uid))
+          && get(/databases/$(database)/documents/driver_profiles/$(uid)).data.currentCityId == cityId;
+    }
+
+    // -------- users --------
+    match /users/{uid} {
+      allow read:   if isSignedIn();
+      allow create: if isSelf(uid);
+      allow update: if isSelf(uid)
+                       && request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(['displayName', 'photoURL', 'phone', 'fcmTokens', 'updatedAt', 'locale']);
+      allow delete: if isAdmin();
+    }
+
+    // -------- admins --------
+    match /admins/{uid} {
+      allow read:   if isSignedIn();
+      allow write:  if false;  // sólo desde admin SDK
+    }
+
+    // -------- passenger_profiles --------
+    match /passenger_profiles/{uid} {
+      allow read, write: if isSelf(uid);
+    }
+
+    // -------- driver_profiles --------
+    match /driver_profiles/{uid} {
+      allow read:   if isSignedIn();
+      // Sólo el conductor puede actualizar campos "en caliente" (online, ubicación).
+      allow update: if isSelf(uid)
+                       && request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(['online', 'currentLocation', 'currentGeohash6', 'currentCityId', 'updatedAt', 'flaggedAt']);
+      allow create: if isSelf(uid);
+      // Admin puede aprobar / suspender.
+      allow delete: if isAdmin();
+    }
+
+    // -------- driver_vehicles --------
+    match /driver_vehicles/{vehicleId} {
+      allow read:  if isSignedIn();
+      allow write: if isSelf(resource.data.driverId) || isAdmin();
+    }
+
+    // -------- driver_documents --------
+    match /driver_documents/{uid} {
+      allow read:  if isSelf(uid) || isAdmin();
+      // El conductor puede crear/subir, pero el status lo cambia admin.
+      allow create: if isSelf(uid);
+      allow update: if isAdmin();
+    }
+
+    // -------- cities (config regional) --------
+    match /cities/{cityId} {
+      allow read: if true; // público
+      allow write: if isAdmin();
+    }
+
+    // -------- trips (source of truth) --------
+    match /trips/{tripId} {
+      // Pasajero, conductor asignado o admin pueden leer.
+      allow read: if isSignedIn()
+                   && (request.auth.uid == resource.data.passenger.uid
+                       || request.auth.uid == resource.data.driver.uid
+                       || isAdmin());
+
+      // Crear viaje: el pasajero autenticado crea un doc con su propio uid.
+      allow create: if isSignedIn()
+                     && request.auth.uid == request.resource.data.passenger.uid
+                     && request.resource.data.status == 'searching';
+
+      // Actualizar: pasajero o conductor asignado, con campos permitidos.
+      allow update: if isSignedIn()
+                     && (request.auth.uid == resource.data.passenger.uid
+                         || request.auth.uid == resource.data.driver.uid
+                         || isAdmin());
+
+      allow delete: if isAdmin();
+    }
+
+    // -------- ratings --------
+    match /ratings/{tripId} {
+      allow read:  if isSignedIn();
+      allow create: if isSignedIn()
+                     && request.auth.uid in [
+                       get(/databases/$(database)/documents/trips/$(tripId)).data.passenger.uid,
+                       get(/databases/$(database)/documents/trips/$(tripId)).data.driver.uid
+                     ];
+    }
+
+    // -------- payments --------
+    match /payments/{paymentId} {
+      allow read:  if isSignedIn()
+                    && (request.auth.uid == resource.data.driverId
+                        || request.auth.uid == resource.data.passengerId
+                        || isAdmin());
+      allow write: if isAdmin(); // sólo cloud functions o admin SDK
+    }
+
+    // -------- payouts --------
+    match /payouts/{payoutId} {
+      allow read:  if isSignedIn() && request.auth.uid == resource.data.driverId;
+      allow write: if isAdmin();
+    }
+
+    // -------- fare_estimates (caché) --------
+    match /fare_estimates/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // -------- promo_codes --------
+    match /promo_codes/{code} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

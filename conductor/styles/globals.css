@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ===== Light mode (default) ===== */
+  :root {
+    --background: 248 250 252;      /* slate-50 */
+    --foreground: 15 23 42;         /* slate-900 */
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
+    --primary: 0 184 113;           /* brand-600 */
+    --primary-foreground: 255 255 255;
+    --secondary: 241 245 249;       /* slate-100 */
+    --secondary-foreground: 15 23 42;
+    --muted: 100 116 139;           /* slate-500 */
+    --muted-foreground: 71 85 105;  /* slate-600 */
+    --accent: 124 58 237;           /* violet-600 */
+    --accent-foreground: 255 255 255;
+    --destructive: 220 38 38;       /* red-600 */
+    --destructive-foreground: 255 255 255;
+    --border: 226 232 240;          /* slate-200 */
+    --input: 226 232 240;
+    --ring: 0 184 113;
+    --radius: 0.85rem;
+  }
+
+  /* ===== Dark mode (manual toggle futuro) ===== */
+  .dark {
+    --background: 12 16 36;
+    --foreground: 230 232 240;
+    --card: 17 18 31;
+    --card-foreground: 230 232 240;
+    --primary: 0 217 126;
+    --primary-foreground: 12 16 36;
+    --secondary: 39 46 74;
+    --secondary-foreground: 230 232 240;
+    --muted: 82 92 128;
+    --muted-foreground: 168 176 200;
+    --border: 42 45 69;
+    --input: 42 45 69;
+    --ring: 0 217 126;
+  }
+
+  html, body { background: rgb(var(--background)); color: rgb(var(--foreground)); }
+  body { -webkit-tap-highlight-color: transparent; }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all
+           active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none
+           focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
+           focus:ring-offset-background;
+  }
+  .btn-primary {
+    @apply btn bg-primary text-primary-foreground hover:brightness-110 h-12 px-5 shadow-sm;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent text-foreground hover:bg-secondary h-12 px-5;
+  }
+  .btn-secondary {
+    @apply btn bg-secondary text-secondary-foreground hover:bg-slate-200 h-12 px-5;
+  }
+  .btn-destructive {
+    @apply btn bg-destructive text-destructive-foreground hover:brightness-110 h-12 px-5;
+  }
+  .card {
+    @apply rounded-2xl bg-card text-card-foreground border border-border p-4 shadow-sm;
+  }
+  .input {
+    @apply w-full bg-card border border-input rounded-xl px-4 h-12 text-foreground
+           placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 px-3 h-7 rounded-full text-xs font-medium
+           bg-secondary text-secondary-foreground border border-border;
+  }
+  .label {
+    @apply block text-sm font-medium text-foreground mb-1.5;
+  }
+  .link {
+    @apply text-primary underline-offset-2 hover:underline;
+  }
+  .skeleton {
+    @apply animate-pulse bg-slate-200 rounded;
+  }
+}
+
+/* Splash animation */
+@keyframes yapidoSplash {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.splash-logo {
+  animation: yapidoSplash 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes yapidoPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.1); }
+}
+.splash-pulse { animation: yapidoPulse 1.4s ease-in-out infinite; }
+
+/* Mapbox */
+.mapboxgl-canvas { outline: none; }
+.mapboxgl-ctrl-attrib { display: none !important; }
+.mapboxgl-ctrl-logo { display: none !important; }

@@ -1,0 +1,28 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Fotos de perfil y docs del conductor.
+    match /users/{uid}/{allPaths=**} {
+      allow read:   if request.auth != null;
+      allow write:  if isOwner(uid)
+                      && request.resource.size < 8 * 1024 * 1024  // 8MB máx
+                      && request.resource.contentType.matches('image/.*|application/pdf');
+    }
+
+    // Fotos de daños o disputas del viaje.
+    match /trips/{tripId}/{allPaths=**} {
+      allow read:   if request.auth != null;
+      allow write:  if request.auth != null
+                      && (firestore.exists(/databases/(default)/documents/trips/$(tripId)))
+                      && (request.auth.uid == firestore.get(/databases/(default)/documents/trips/$(tripId)).data.passenger.uid
+                          || request.auth.uid == firestore.get(/databases/(default)/documents/trips/$(tripId)).data.driver.uid)
+                      && request.resource.size < 8 * 1024 * 1024
+                      && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

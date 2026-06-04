@@ -1,0 +1,56 @@
+{
+  "rules": {
+    "cities": {
+      "$cityId": {
+
+        "drivers_online": {
+          ".read": "auth != null",
+          "$driverId": {
+            ".write": "auth != null
+                       && auth.uid === $driverId
+                       && root.child('cities').child($cityId).child('drivers_online').child($driverId).exists() === false
+                          || (root.child('cities').child($cityId).child('drivers_online').child($driverId).child('driverId').val() === auth.uid)",
+            ".validate": "newData.hasChildren(['loc','geo6','vehicleType','status','updatedAt'])",
+            "loc": {
+              ".validate": "newData.hasChildren(['lat','lng','ts'])",
+              "lat": { ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90" },
+              "lng": { ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180" },
+              "ts":  { ".validate": "newData.isNumber()" }
+            },
+            "geo6": { ".validate": "newData.isString() && newData.val().length === 6" },
+            "vehicleType": { ".validate": "newData.isString()" },
+            "status": { ".validate": "newData.isString() && (newData.val() === 'online' || newData.val() === 'on_trip' || newData.val() === 'offline')" },
+            "updatedAt": { ".validate": "newData.isNumber()" },
+            "driverId": { ".validate": "newData.isString() && newData.val() === auth.uid" }
+          }
+        },
+
+        "trips_live": {
+          "$tripId": {
+            ".read": "auth != null
+                      && (root.child('cities').child($cityId).child('trips_live').child($tripId).child('passengerId').val() === auth.uid
+                          || root.child('cities').child($cityId).child('trips_live').child($tripId).child('driverId').val() === auth.uid)",
+            "$other": { ".read": false, ".write": false },
+            "driverId":    { ".write": "auth != null && newData.val() === auth.uid" },
+            "passengerId": { ".write": "auth != null && newData.val() === auth.uid" },
+            "driverLoc": {
+              ".write": "auth != null
+                         && (root.child('cities').child($cityId).child('trips_live').child($tripId).child('driverId').val() === auth.uid)"
+            },
+            "status": { ".write": "auth != null" },
+            "eta":    { ".write": "auth != null" }
+          }
+        },
+
+        "offers": {
+          "$driverId": {
+            "current": {
+              ".read":  "auth != null && auth.uid === $driverId",
+              ".write": "auth != null && auth.uid === $driverId"
+            }
+          }
+        }
+      }
+    }
+  }
+}
