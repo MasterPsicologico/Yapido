@@ -58,10 +58,10 @@ export default function PassengerHomePage() {
             <span className="text-sm font-medium pr-1">Hola, {user?.displayName?.split(' ')[0] ?? 'viajero'}</span>
           </div>
           <div className="flex gap-2">
-            <Link href="/(passenger)/history" className="card !p-3">
+            <Link href="/passenger/history" className="card !p-3">
               <History className="h-5 w-5" />
             </Link>
-            <Link href="/(passenger)/profile" className="card !p-3">
+            <Link href="/passenger/profile" className="card !p-3">
               <User2 className="h-5 w-5" />
             </Link>
           </div>
@@ -81,7 +81,7 @@ export default function PassengerHomePage() {
 
           <Link
             href={{
-              pathname: '/(passenger)/home/search',
+              pathname: '/passenger/home/search',
               query: { pickup: pickup ? `${pickup.lat},${pickup.lng}` : '', pickupAddress },
             }}
             className="flex items-center gap-3 h-14 px-4 rounded-xl bg-secondary border border-border"
@@ -92,11 +92,11 @@ export default function PassengerHomePage() {
           </Link>
 
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <Link href="/(passenger)/home?setHome=1" className="card !p-3 flex items-center gap-2 text-sm">
+            <Link href="/passenger/home?setHome=1" className="card !p-3 flex items-center gap-2 text-sm">
               <MapPin className="h-4 w-4 text-primary" />
               Mi casa
             </Link>
-            <Link href="/(passenger)/home?setWork=1" className="card !p-3 flex items-center gap-2 text-sm">
+            <Link href="/passenger/home?setWork=1" className="card !p-3 flex items-center gap-2 text-sm">
               <MapPin className="h-4 w-4 text-primary" />
               Mi trabajo
             </Link>

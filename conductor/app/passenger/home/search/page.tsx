@@ -84,7 +84,7 @@ export default function SearchDestinationPage() {
       dropoffName: selected.name,
       type: vehicleType,
     });
-    router.push(`/(passenger)/home/confirm?${params.toString()}`);
+    router.push(`/passenger/home/confirm?${params.toString()}`);
   }
 
   return (

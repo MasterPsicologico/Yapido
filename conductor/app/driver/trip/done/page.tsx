@@ -26,8 +26,8 @@ export default function TripDonePage() {
         </div>
       )}
       <div className="w-full max-w-sm mt-6 grid grid-cols-2 gap-2">
-        <Button variant="secondary" onClick={() => router.push('/(driver)/earnings')}>Ver ganancias</Button>
-        <Button onClick={() => router.push('/(driver)/home')}>Listo</Button>
+        <Button variant="secondary" onClick={() => router.push('/driver/earnings')}>Ver ganancias</Button>
+        <Button onClick={() => router.push('/driver/home')}>Listo</Button>
       </div>
     </main>
   );

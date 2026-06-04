@@ -46,7 +46,7 @@ export default function HistoryPage() {
         <ul className="space-y-3">
           {trips.map((t) => (
             <li key={t.tripId} className="card">
-              <Link href={`/(passenger)/trip/${t.tripId}`} className="block">
+              <Link href={`/passenger/trip/${t.tripId}`} className="block">
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-medium truncate">{t.dropoff.address}</p>
                   <StatusPill status={t.status} />

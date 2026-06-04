@@ -30,13 +30,13 @@ export default function Home() {
       </header>
       <div className="grid grid-cols-1 gap-3 mt-6">
         {isPassenger && (
-          <Link href="/(passenger)/home" className="card hover:bg-secondary/50 transition">
+          <Link href="/passenger/home" className="card hover:bg-secondary/50 transition">
             <h2 className="text-lg font-semibold">Pedir un viaje</h2>
             <p className="text-sm text-muted-foreground">Moto o auto, tú eliges.</p>
           </Link>
         )}
         {isDriver && (
-          <Link href="/(driver)/home" className="card hover:bg-secondary/50 transition">
+          <Link href="/driver/home" className="card hover:bg-secondary/50 transition">
             <h2 className="text-lg font-semibold">Conducir</h2>
             <p className="text-sm text-muted-foreground">Empieza a recibir viajes.</p>
           </Link>

@@ -54,8 +54,7 @@ export function useDriverGPS(opts: { driverId: string | null; active: boolean; o
         const id = await Geolocation.watchPosition(
           {
             enableHighAccuracy: true,
-            distanceFilter: 0,    // nosotros hacemos el throttle
-            interval: 3000,
+            timeout: 10_000,
           },
           async (pos) => {
             if (cancelled || !pos) return;
@@ -86,8 +85,7 @@ export function useDriverGPS(opts: { driverId: string | null; active: boolean; o
               // Silenciar errores de RTDB transitorios
               console.warn('[GPS] write failed', e);
             }
-          },
-          { maximumAge: 5_000, timeout: 10_000, enableHighAccuracy: true }
+          }
         );
         watchIdRef.current = id;
       } catch (e: any) {

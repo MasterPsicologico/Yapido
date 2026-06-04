@@ -73,7 +73,7 @@ export default function DriverTripPage() {
     if (!trip) return;
     try {
       await apiCompleteTrip(tripId, { requestId: uuid() });
-      router.push('/(driver)/trip/done');
+      router.push('/driver/trip/done');
     } catch (e: any) {
       alert(e?.message ?? 'No se pudo completar el viaje');
     }
@@ -81,7 +81,7 @@ export default function DriverTripPage() {
 
   const onCancel = async () => {
     if (!confirm('¿Cancelar el viaje?')) return;
-    router.push('/(driver)/home');
+    router.push('/driver/home');
   };
 
   if (!trip) {

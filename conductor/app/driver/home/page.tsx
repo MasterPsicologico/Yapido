@@ -116,7 +116,7 @@ export default function DriverHomePage() {
       await apiAcceptOffer(offer.tripId, { requestId: uuid(), offerId: uuid() });
       await clearDriverOffer(user.uid);
       setTrip(offer.tripId);
-      router.push(`/(driver)/trip/${offer.tripId}`);
+      router.push(`/driver/trip/${offer.tripId}`);
     } catch (e: any) {
       alert(e?.message ?? 'No se pudo aceptar la oferta');
     }
@@ -128,6 +128,8 @@ export default function DriverHomePage() {
     setOffer(null);
   }
 
+  const offer = useDriverStore((s) => s.pendingOffer);
+
   if (!profile) {
     return (
       <main className="min-h-screen flex items-center justify-center p-6">
@@ -135,7 +137,7 @@ export default function DriverHomePage() {
           <Bike className="h-12 w-12 text-primary mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2">Conviértete en conductor</h1>
           <p className="text-muted-foreground mb-6">Empieza a ganar con tu moto o auto.</p>
-          <Link href="/(driver)/onboarding" className="btn-primary w-full">
+          <Link href="/driver/onboarding" className="btn-primary w-full">
             <LogIn className="h-5 w-5" /> Registrarme como conductor
           </Link>
         </div>
@@ -153,8 +155,6 @@ export default function DriverHomePage() {
       </main>
     );
   }
-
-  const offer = useDriverStore((s) => s.pendingOffer);
 
   return (
     <main className="relative h-screen w-screen overflow-hidden">
@@ -174,7 +174,7 @@ export default function DriverHomePage() {
             <span className="text-xs font-medium">{profile.totalTrips} viajes</span>
           </div>
           <div className="flex gap-2">
-            <Link href="/(driver)/earnings" className="card !p-3">
+            <Link href="/driver/earnings" className="card !p-3">
               <Wallet className="h-5 w-5" />
             </Link>
           </div>

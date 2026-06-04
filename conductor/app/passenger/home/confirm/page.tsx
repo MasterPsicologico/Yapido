@@ -66,7 +66,7 @@ export default function ConfirmTripPage() {
         paymentMethod: payment,
         notes: notes.trim() || undefined,
       });
-      router.push(`/(passenger)/trip/${res.tripId}`);
+      router.push(`/passenger/trip/${res.tripId}`);
     } catch (e: any) {
       setError(e?.message ?? 'No se pudo crear el viaje');
     } finally {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Phone, MessageCircle, X, Star, ShieldCheck, CreditCard, Banknote, Loader2, CheckCircle2 } from 'lucide-react';
 import { useMachine } from '@xstate/react';
@@ -84,16 +84,16 @@ export default function TripPage() {
 
   if (state.matches('cancelled')) {
     return (
-      <CenteredMessage title="Viaje cancelado" subtitle="Esperemos a la próxima." action={{ label: 'Volver al inicio', onClick: () => router.push('/(passenger)/home') }} />
+      <CenteredMessage title="Viaje cancelado" subtitle="Esperemos a la próxima." action={{ label: 'Volver al inicio', onClick: () => router.push('/passenger/home') }} />
     );
   }
   if (state.matches('noDrivers')) {
     return (
-      <CenteredMessage title="No encontramos conductores" subtitle="Intenta de nuevo en 1 minuto." action={{ label: 'Reintentar', onClick: () => router.push('/(passenger)/home') }} />
+      <CenteredMessage title="No encontramos conductores" subtitle="Intenta de nuevo en 1 minuto." action={{ label: 'Reintentar', onClick: () => router.push('/passenger/home') }} />
     );
   }
   if (state.matches('completed') || state.matches('rated')) {
-    return <RatingScreen tripId={tripId} fare={trip?.fare.total ?? 0} onSubmitted={() => router.push('/(passenger)/home')} />;
+    return <RatingScreen tripId={tripId} fare={trip?.fare.total ?? 0} onSubmitted={() => router.push('/passenger/home')} />;
   }
 
   return (
@@ -246,7 +246,7 @@ function RatingScreen({ tripId, fare, onSubmitted }: { tripId: string; fare: num
     if (score === 0) return;
     setSubmitting(true);
     try {
-      await apiRateTrip(tripId, { requestId: crypto.randomUUID(), score, tip, comment: comment.trim() || undefined });
+      await apiRateTrip(tripId, { requestId: crypto.randomUUID(), score, tip, tags: [], comment: comment.trim() || undefined });
       onSubmitted();
     } catch (e: any) {
       setError(e?.message ?? 'No se pudo enviar la calificación');

@@ -90,22 +90,47 @@ export const tripMachine = createMachine({
           })),
         },
         NO_DRIVERS: { target: 'noDrivers' },
-        CANCEL: { target: 'cancelled', actions: assignCancel },
-        ERROR: { target: 'error', actions: assignError },
+        CANCEL: {
+          target: 'cancelled',
+          actions: assign({
+            cancelReason: ({ event }: any) => (event.reason as string | undefined) ?? (event.by as string),
+            trip: ({ context, event }: any) =>
+              context.trip
+                ? {
+                    ...context.trip,
+                    status: 'cancelled',
+                    timeline: {
+                      ...context.trip.timeline,
+                      cancelledAt: new Date(),
+                      cancelledBy: event.by === 'passenger' ? 'passenger' : 'system',
+                      cancelReason: (event.reason as string | undefined) ?? null,
+                    },
+                  }
+                : null,
+          }),
+        },
+        ERROR: {
+          target: 'error',
+          actions: assign({ errorMessage: ({ event }: any) => event.message as string }),
+        },
       },
     },
 
     offered: {
-      // El conductor tiene TIMEOUTS.OFFER_TO_DRIVER para aceptar.
       after: {
         12000: { target: 'searching', actions: assign({ errorMessage: () => 'Conductor no respondió, buscando otro...' }) },
       },
       on: {
         DRIVER_LOCATION: { actions: assign({ driverLocation: ({ event }) => event.loc }) },
         ETA_UPDATE: { actions: assign({ eta: ({ event }) => event.eta }) },
-        // El sistema notifica cuando el conductor aceptó:
-        TRIP_STARTED: { target: 'arriving' },  // reusamos TRIP_STARTED para "accepted→arriving"
-        CANCEL: { target: 'cancelled', actions: assignCancel },
+        TRIP_STARTED: { target: 'arriving' },
+        CANCEL: {
+          target: 'cancelled',
+          actions: assign({
+            cancelReason: ({ event }: any) => (event.reason as string | undefined) ?? (event.by as string),
+            trip: ({ context, event }: any) => context.trip ? { ...context.trip, status: 'cancelled' } : null,
+          }),
+        },
       },
     },
 
@@ -114,7 +139,13 @@ export const tripMachine = createMachine({
         DRIVER_LOCATION: { actions: assign({ driverLocation: ({ event }) => event.loc }) },
         ETA_UPDATE: { actions: assign({ eta: ({ event }) => event.eta }) },
         DRIVER_ARRIVED: { target: 'arriving' },
-        CANCEL: { target: 'cancelled', actions: assignCancel },
+        CANCEL: {
+          target: 'cancelled',
+          actions: assign({
+            cancelReason: ({ event }: any) => (event.reason as string | undefined) ?? (event.by as string),
+            trip: ({ context, event }: any) => context.trip ? { ...context.trip, status: 'cancelled' } : null,
+          }),
+        },
       },
     },
 
@@ -123,7 +154,13 @@ export const tripMachine = createMachine({
         DRIVER_LOCATION: { actions: assign({ driverLocation: ({ event }) => event.loc }) },
         ETA_UPDATE: { actions: assign({ eta: ({ event }) => event.eta }) },
         TRIP_STARTED: { target: 'inProgress' },
-        CANCEL: { target: 'cancelled', actions: assignCancel },
+        CANCEL: {
+          target: 'cancelled',
+          actions: assign({
+            cancelReason: ({ event }: any) => (event.reason as string | undefined) ?? (event.by as string),
+            trip: ({ context, event }: any) => context.trip ? { ...context.trip, status: 'cancelled' } : null,
+          }),
+        },
       },
     },
 
@@ -143,7 +180,6 @@ export const tripMachine = createMachine({
         RESET: { target: 'idle', actions: assign(() => initialContext) },
       },
       after: {
-        // Auto-reset tras 5 min si el usuario no calificó
         300_000: { target: 'idle', actions: assign(() => initialContext) },
       },
     },
@@ -178,31 +214,4 @@ export const tripMachine = createMachine({
   },
 });
 
-// Helpers de acciones
-function assignCancel({ event }: AnyEventObject) {
-  return assign({
-    cancelReason: () => (event.reason as string | undefined) ?? (event.by as string),
-    trip: ({ context }: { context: TripContext }) =>
-      context.trip
-        ? {
-            ...context.trip,
-            status: 'cancelled' as const,
-            timeline: {
-              ...context.trip.timeline,
-              cancelledAt: new Date(),
-              cancelledBy: (event.by === 'passenger' ? 'passenger' : 'system') as 'passenger' | 'system',
-              cancelReason: (event.reason as string | undefined) ?? null,
-            },
-          }
-        : null,
-  });
-}
-
-function assignError({ event }: AnyEventObject) {
-  return assign({
-    errorMessage: () => event.message as string,
-  });
-}
-
-// Hook React-friendly (se exporta desde hooks/)
 export type TripMachine = typeof tripMachine;

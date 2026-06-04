@@ -122,7 +122,7 @@ export default function DriverOnboardingPage() {
       await setDoc(doc(firebaseDb(), 'users', uid), { role: 'driver', updatedAt: serverTimestamp() }, { merge: true });
       setUser({ ...user, role: 'driver' });
 
-      router.push('/(driver)/home');
+      router.push('/driver/home');
     } catch (e: any) {
       alert(e?.message ?? 'No se pudo enviar la solicitud');
     } finally {
