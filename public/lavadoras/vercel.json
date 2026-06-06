@@ -1,0 +1,26 @@
+{
+  "rewrites": [
+    {
+      "source": "/finanzas",
+      "destination": "https://finanzas-beige-ten.vercel.app/"
+    },
+    {
+      "source": "/finanzas/:match*",
+      "destination": "https://finanzas-beige-ten.vercel.app/:match*"
+    },
+    {
+      "source": "/nimbus",
+      "destination": "https://nimbus-sepia-alpha.vercel.app/nimbus"
+    },
+    {
+      "source": "/nimbus/:match*",
+      "destination": "https://nimbus-sepia-alpha.vercel.app/nimbus/:match*"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/stores/purge-trash",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

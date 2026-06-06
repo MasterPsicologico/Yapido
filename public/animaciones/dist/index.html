@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🎬</text></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="Motor Integrado de Escenas 3D — Blender + Arte Procedimental" />
+    <title>Motor 3D Procedimental · Misty Mountain</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="/assets/index-B6pajUvj.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/three-1Em7wJc7.js">
+    <link rel="modulepreload" crossorigin href="/assets/gsap-SFc2wnMY.js">
+    <link rel="modulepreload" crossorigin href="/assets/anime-BNELU3II.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-BV6Lwxj9.css">
+  </head>
+  <body>
+    <!-- Lienzo 3D a pantalla completa (z-index 1) -->
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- Capa de escaneo: barras de carga falsas controladas por Anime.js -->
+    <div id="scan-overlay" class="scan-overlay">
+      <div class="scan-grid"></div>
+      <div class="scan-bars">
+        <div class="scan-bar"></div>
+        <div class="scan-bar"></div>
+        <div class="scan-bar"></div>
+        <div class="scan-bar"></div>
+        <div class="scan-bar"></div>
+        <div class="scan-bar"></div>
+        <div class="scan-bar"></div>
+        <div class="scan-bar"></div>
+      </div>
+      <div class="scan-text" id="scan-text">Inicializando motor de renderizado…</div>
+    </div>
+
+    <!-- Panel UI flotante (z-index 10) -->
+    <main id="ui-panel" class="ui-panel">
+      <header class="ui-header">
+        <div class="ui-logo">◆</div>
+        <div>
+          <h1 class="ui-title">Motor 3D Procedimental</h1>
+          <p class="ui-subtitle">Blender · WebGL · GSAP · Anime.js</p>
+        </div>
+      </header>
+
+      <section class="ui-body">
+        <label class="ui-label" for="idea-input">Describe tu escena</label>
+        <textarea
+          id="idea-input"
+          class="ui-textarea"
+          placeholder="Ej: Un templo cyberpunk flotante con luces de neón, partículas de lluvia digital y reflejos metálicos…"
+          rows="4"
+        ></textarea>
+
+        <div class="ui-actions">
+          <button id="btn-render" class="ui-button" type="button">
+            <span class="ui-button-icon">▶</span>
+            <span class="ui-button-label">Comenzar Renderizado</span>
+          </button>
+
+          <button id="btn-download-webm" class="ui-button ui-button--ghost" type="button" disabled>
+            <span class="ui-button-icon">⬇</span>
+            <span class="ui-button-label">Descargar WebM</span>
+          </button>
+
+          <button id="btn-download-png" class="ui-button ui-button--ghost" type="button" disabled>
+            <span class="ui-button-icon">🖼</span>
+            <span class="ui-button-label">Descargar PNG</span>
+          </button>
+
+          <button id="btn-download-json" class="ui-button ui-button--ghost" type="button" disabled>
+            <span class="ui-button-icon">{ }</span>
+            <span class="ui-button-label">Exportar Receta</span>
+          </button>
+        </div>
+      </section>
+
+      <footer class="ui-footer">
+        <div class="ui-stat" id="stat-fps">FPS: --</div>
+        <div class="ui-stat" id="stat-tris">Triángulos: --</div>
+        <div class="ui-stat" id="stat-objects">Objetos: --</div>
+      </footer>
+    </main>
+
+    <!-- Instrucciones de scroll que aparecen tras el renderizado -->
+    <aside id="scroll-hint" class="scroll-hint" aria-hidden="true">
+      <div class="scroll-hint-inner">
+        <span class="scroll-hint-text">Desplázate para alterar la materia</span>
+        <div class="scroll-hint-arrow">↓</div>
+      </div>
+    </aside>
+
+    <!-- Marcador de progreso de descarga -->
+    <div id="download-progress" class="download-progress">
+      <div class="download-progress-bar"></div>
+      <span class="download-progress-text">0%</span>
+    </div>
+
+    <!-- Capa de kinetic typography (palabras animadas sobre el 3D) -->
+    <div id="typo-layer" class="typo-layer" aria-hidden="true"></div>
+
+    <!-- Marcador de scroll extendido para ScrollTrigger -->
+    <div class="scroll-spacer"></div>
+
+  </body>
+</html>

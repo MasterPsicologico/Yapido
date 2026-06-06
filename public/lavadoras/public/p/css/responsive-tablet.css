@@ -1,0 +1,94 @@
+/* ============================================================
+   CINESTREAM - Tablet Responsive Styles
+   ============================================================
+   Descripción: Estilos específicos para tablets (768px - 1023px)
+   Ubicación: public/p/css/responsive-tablet.css
+   Importado por: styles.css
+   Pantalla: min-width: 768px and max-width: 1023px
+   ============================================================ */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    /* Header en tablet */
+    .header {
+        padding: 0.8rem 1.5rem;
+    }
+    
+    .header-content {
+        gap: 1rem;
+    }
+    
+    .logo {
+        font-size: 1.4rem;
+    }
+    
+    .logo i {
+        font-size: 1.5rem;
+    }
+    
+    .nav {
+        gap: 0.2rem;
+    }
+    
+    .nav-btn {
+        padding: 0.45rem 0.8rem;
+        font-size: 0.8rem;
+    }
+    
+    .search-box {
+        min-width: 180px;
+    }
+    
+    .search-box input {
+        min-width: 120px;
+    }
+    
+    /* Main content */
+    .main {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* Grid de películas - columnas medianas */
+    .movies-grid {
+        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+        gap: 1.2rem;
+    }
+    
+    /* Filtros en tablet */
+    .filters {
+        padding: 1rem 1.2rem;
+        gap: 1rem;
+    }
+    
+    .filter-group select {
+        padding: 0.45rem 1.8rem 0.45rem 0.8rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Player en tablet */
+    .player-container {
+        margin: 1.5rem auto;
+        padding: 0 1rem;
+    }
+    
+    .player-header h2 {
+        font-size: 1.2rem;
+    }
+    
+    .close-player {
+        width: 38px;
+        height: 38px;
+    }
+    
+    /* Controles de volumen ocultos en tablet */
+    .volume-control {
+        display: none;
+    }
+    
+    /* Paginación */
+    .pagination-btn {
+        min-width: 36px;
+        height: 36px;
+        font-size: 0.85rem;
+    }
+}

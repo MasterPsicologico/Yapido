@@ -1,0 +1,274 @@
+/* ============================================================
+   CINESTREAM - Movie Rows (Premium Netflix Edition)
+   ============================================================ */
+
+/* ── Contenedor general ─────────────────────────────────── */
+.movie-rows-container {
+    padding: 0 0 3rem;
+    position: relative;
+    z-index: 2;
+}
+
+/* ── Fila individual ────────────────────────────────────── */
+.movie-row {
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+/* ── Encabezado de la fila ──────────────────────────────── */
+.movie-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 3rem;
+    margin-bottom: 0.9rem;
+}
+
+.movie-row-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.4px;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.movie-row-title .row-count {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.04);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    letter-spacing: 0.3px;
+}
+
+.movie-row-title i {
+    color: var(--primary-color);
+    font-size: 1.05rem;
+    filter: drop-shadow(0 0 6px rgba(229, 9, 20, 0.4));
+}
+
+/* ── Contenedor scrollable ──────────────────────────────── */
+.movie-row-scroll {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    padding: 0.6rem 3rem 1.2rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+.movie-row-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* ── Tarjeta de fila horizontal ─────────────────────────── */
+.movie-row-card {
+    flex: 0 0 var(--row-card-width);
+    min-width: var(--row-card-width);
+    border-radius: var(--card-radius-sm);
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    transition:
+        transform 0.4s var(--ease-bounce),
+        box-shadow 0.4s var(--ease-smooth),
+        border-color 0.4s var(--ease-smooth);
+    box-shadow:
+        0 2px 6px rgba(0, 0, 0, 0.4),
+        0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Brillo superior sutil */
+.movie-row-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 15%;
+    right: 15%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+    z-index: 3;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.movie-row-card:hover {
+    transform: scale(1.08) translateY(-10px);
+    box-shadow:
+        0 12px 35px rgba(0, 0, 0, 0.6),
+        0 25px 60px rgba(229, 9, 20, 0.12),
+        0 0 0 1px rgba(229, 9, 20, 0.25);
+    border-color: var(--border-hover);
+    z-index: 5;
+}
+
+.movie-row-card:hover::before {
+    opacity: 1;
+}
+
+.movie-row-card:hover .row-card-poster {
+    transform: scale(1.06);
+}
+
+.movie-row-card:hover .row-card-overlay {
+    opacity: 1;
+}
+
+/* ── Poster ─────────────────────────────────────────────── */
+.row-card-poster {
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s var(--ease-smooth);
+    background: linear-gradient(135deg, #0d0d12 0%, #111118 100%);
+}
+
+/* ── Overlay con info ───────────────────────────────────── */
+.row-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top,
+        rgba(5, 5, 10, 0.98) 0%,
+        rgba(5, 5, 10, 0.5) 45%,
+        transparent 100%
+    );
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0.85rem;
+    opacity: 0;
+    transition: opacity 0.35s var(--ease-smooth);
+}
+
+.row-card-title {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: white;
+    line-height: 1.35;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.95);
+    letter-spacing: -0.1px;
+}
+
+.row-card-year {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+}
+
+/* ── Badge de calidad ───────────────────────────────────── */
+.row-card-quality {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: var(--gradient-primary);
+    color: white;
+    font-size: 0.5rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    z-index: 2;
+}
+
+/* ── Botón play circular ────────────────────────────────── */
+.row-card-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.7);
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.05rem;
+    opacity: 0;
+    transition: all 0.35s var(--ease-bounce);
+    box-shadow:
+        0 4px 15px rgba(229, 9, 20, 0.5),
+        0 0 0 3px rgba(229, 9, 20, 0.2);
+}
+
+.movie-row-card:hover .row-card-play {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* ── Flechas de navegación ──────────────────────────────── */
+.row-arrow {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5, 5, 10, 0.85);
+    color: white;
+    font-size: 1.3rem;
+    cursor: pointer;
+    z-index: 10;
+    border: none;
+    opacity: 0;
+    transition:
+        opacity 0.3s var(--ease-smooth),
+        background 0.3s var(--ease-smooth);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+}
+
+.movie-row:hover .row-arrow {
+    opacity: 1;
+}
+
+.row-arrow:hover {
+    background: rgba(229, 9, 20, 0.65);
+    border-color: rgba(229, 9, 20, 0.3);
+}
+
+.row-arrow-left {
+    left: 0;
+    border-radius: 0 6px 6px 0;
+    border-left: none;
+}
+
+.row-arrow-right {
+    right: 0;
+    border-radius: 6px 0 0 6px;
+    border-right: none;
+}
+
+.row-arrow.hidden {
+    opacity: 0 !important;
+    pointer-events: none;
+}
+
+/* ── Estado vacío ───────────────────────────────────────── */
+.row-empty {
+    padding: 1.5rem 3rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-style: italic;
+}

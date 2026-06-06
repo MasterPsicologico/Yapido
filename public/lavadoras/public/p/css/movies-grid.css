@@ -1,0 +1,79 @@
+/* ============================================================
+   CINESTREAM - Movies Grid Styles
+   ============================================================
+   Descripción: Grid de películas y layout general
+   Ubicación: public/p/css/movies-grid.css
+   Importado por: styles.css
+   ============================================================ */
+
+/* Grid principal de películas */
+.movies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0 2rem;
+}
+
+/* Estado vacío */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    grid-column: 1 / -1;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 3.5rem;
+    margin-bottom: 1.2rem;
+    color: var(--primary-color);
+    opacity: 0.7;
+}
+
+.empty-state h3 {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.empty-state p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
+/* Loading spinner */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 3rem;
+    grid-column: 1 / -1;
+}
+
+.loading-spinner {
+    width: 45px;
+    height: 45px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Scroll loader (indicador sutil al final) */
+#scroll-loader {
+    display: none;
+    justify-content: center;
+    padding: 2rem;
+    grid-column: 1 / -1;
+}
+
+#scroll-loader .loading-spinner {
+    width: 35px;
+    height: 35px;
+    border-width: 2px;
+}

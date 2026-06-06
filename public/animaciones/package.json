@@ -1,0 +1,35 @@
+{
+  "name": "motor-escenas-3d",
+  "version": "1.0.0",
+  "description": "Motor Integrado de Escenas 3D (Blender + Arte Procedimental) con Vite + TypeScript",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "three.js",
+    "blender",
+    "gltf",
+    "gsap",
+    "animejs",
+    "procedural",
+    "webgl",
+    "vite",
+    "typescript"
+  ],
+  "author": "Arquitecto de Software Senior",
+  "license": "MIT",
+  "dependencies": {
+    "animejs": "^3.2.2",
+    "gsap": "^3.13.0",
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.169.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}

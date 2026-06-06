@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+  <meta name="googlebot" content="noindex,nofollow" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="theme-color" content="#06060a" />
+  <title>Yapido · Panel de Objetivos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎯%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body data-theme="dark">
+  <!-- ─── Gate: token de acceso (URL con ?k=...) ─────────── -->
+  <div id="gate" class="gate hidden">
+    <div class="gate-card">
+      <div class="gate-icon">🔒</div>
+      <h1>Acceso restringido</h1>
+      <p>Esta página es privada. Ingresa el token de acceso.</p>
+      <input type="password" id="gateToken" placeholder="Token" autocomplete="off" />
+      <button id="gateSubmit" class="btn-primary">Entrar</button>
+      <div id="gateError" class="gate-error"></div>
+    </div>
+  </div>
+
+  <!-- ─── App principal ───────────────────────────────────── -->
+  <div id="app" class="app hidden">
+
+    <!-- Header -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="brand">
+          <div class="brand-mark">🎯</div>
+          <div class="brand-text">
+            <div class="brand-title">Objetivos</div>
+            <div class="brand-sub">Yapido Ecosystem</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-center">
+        <div class="week-nav" role="navigation" aria-label="Navegación de semana">
+          <button class="week-btn" id="prevWeek" aria-label="Semana anterior">‹</button>
+          <button class="week-current" id="currentWeekBtn">
+            <span class="week-label" id="weekLabel">Semana actual</span>
+            <span class="week-range" id="weekRange">—</span>
+          </button>
+          <button class="week-btn" id="nextWeek" aria-label="Semana siguiente">›</button>
+        </div>
+        <button class="btn-ghost" id="jumpToday">Hoy</button>
+      </div>
+
+      <div class="topbar-right">
+        <div class="filter-chips" id="filterChips">
+          <button class="chip active" data-filter="all">Todos</button>
+          <button class="chip" data-filter="pending">Pendientes</button>
+          <button class="chip" data-filter="completed">Completados</button>
+        </div>
+        <button class="btn-icon" id="btnSettings" title="Configuración" aria-label="Configuración">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile project tabs -->
+    <nav class="project-tabs" id="projectTabs" aria-label="Proyectos">
+      <!-- generado dinámicamente -->
+    </nav>
+
+    <!-- Layout principal -->
+    <div class="layout">
+      <!-- Sidebar (desktop/tablet) -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-title">Proyectos</div>
+          <div class="project-list" id="projectList">
+            <!-- generado dinámicamente -->
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">Estadísticas semana</div>
+          <div class="stats" id="weekStats">
+            <div class="stat-row"><span>Total</span><strong id="statTotal">0</strong></div>
+            <div class="stat-row"><span>Completados</span><strong id="statDone">0</strong></div>
+            <div class="stat-row"><span>En progreso</span><strong id="statProg">0</strong></div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="stat-pct" id="statPct">0%</div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">Acciones</div>
+          <button class="btn-secondary block" id="btnNewGoal">+ Nuevo objetivo</button>
+          <button class="btn-ghost block" id="btnExport">Exportar JSON</button>
+          <button class="btn-ghost block" id="btnImport">Importar JSON</button>
+          <input type="file" id="fileImport" accept="application/json" hidden />
+        </div>
+      </aside>
+
+      <!-- Main content -->
+      <main class="main" id="main">
+        <div class="main-header">
+          <div>
+            <h1 class="main-title" id="mainTitle">Semana actual</h1>
+            <p class="main-sub" id="mainSub">Plan táctico para todos los proyectos</p>
+          </div>
+          <div class="main-actions">
+            <button class="btn-primary" id="btnNewGoal2">+ Objetivo</button>
+          </div>
+        </div>
+
+        <div class="projects-grid" id="projectsGrid">
+          <!-- generado dinámicamente -->
+        </div>
+
+        <div class="empty-state hidden" id="emptyState">
+          <div class="empty-icon">📋</div>
+          <h2>Sin objetivos aquí</h2>
+          <p>Añade un objetivo para esta semana o cambia de filtro.</p>
+          <button class="btn-primary" id="btnNewGoal3">+ Crear primer objetivo</button>
+        </div>
+      </main>
+    </div>
+
+    <!-- Bottom nav (mobile) -->
+    <nav class="bottom-nav" id="bottomNav">
+      <button class="bnav active" data-bnav="project"><span>📂</span><small>Proyectos</small></button>
+      <button class="bnav" data-bnav="stats"><span>📊</span><small>Stats</small></button>
+      <button class="bnav bnav-add" data-bnav="add"><span>＋</span></button>
+      <button class="bnav" data-bnav="filter"><span>🔍</span><small>Filtros</small></button>
+      <button class="bnav" data-bnav="settings"><span>⚙️</span><small>Config</small></button>
+    </nav>
+  </div>
+
+  <!-- ─── Modal: Nuevo/Editar objetivo ─────────────────── -->
+  <div class="modal hidden" id="goalModal" role="dialog" aria-modal="true">
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-card">
+      <header class="modal-head">
+        <h2 id="goalModalTitle">Nuevo objetivo</h2>
+        <button class="btn-icon" data-close-modal aria-label="Cerrar">✕</button>
+      </header>
+      <form id="goalForm" class="modal-body">
+        <div class="form-row">
+          <label>Proyecto</label>
+          <select name="project" id="goalProject" required></select>
+        </div>
+        <div class="form-row">
+          <label>Título</label>
+          <input name="title" id="goalTitle" type="text" required placeholder="Ej: Integrar nuevo socio de lavadoras" />
+        </div>
+        <div class="form-row">
+          <label>Descripción</label>
+          <textarea name="description" id="goalDesc" rows="3" placeholder="Detalle del objetivo, criterios de éxito..."></textarea>
+        </div>
+        <div class="form-row two">
+          <div>
+            <label>Prioridad</label>
+            <select name="priority" id="goalPriority">
+              <option value="low">Baja</option>
+              <option value="medium" selected>Media</option>
+              <option value="high">Alta</option>
+              <option value="critical">Crítica</option>
+            </select>
+          </div>
+          <div>
+            <label>Esfuerzo estimado</label>
+            <select name="effort" id="goalEffort">
+              <option value="15min">15 min</option>
+              <option value="30min">30 min</option>
+              <option value="1h">1 hora</option>
+              <option value="2h">2 horas</option>
+              <option value="half-day">½ día</option>
+              <option value="1day">1 día</option>
+              <option value="3days">3 días</option>
+              <option value="1week">1 semana</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Tipo de objetivo (define qué datos pedir al completar)</label>
+          <select name="type" id="goalType">
+            <option value="generic">Genérico (notas + KPI)</option>
+            <option value="integration_partner">Integración de socio/proveedor</option>
+            <option value="user_acquisition">Adquisición de usuarios/conductores</option>
+            <option value="content_publish">Publicación de contenido</option>
+            <option value="feature_release">Lanzamiento de funcionalidad</option>
+            <option value="app_store_setup">Setup de tienda de apps (Play/App Store)</option>
+            <option value="marketing_campaign">Campaña de marketing</option>
+            <option value="ai_improvement">Mejora de flujo IA</option>
+            <option value="data_migration">Migración / carga de datos</option>
+            <option value="finance">Finanzas / presupuesto</option>
+            <option value="operational">Operativo (reunión, OKR, KPI)</option>
+            <option value="bug_fix">Bug fix / soporte crítico</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label>Etiquetas (separadas por coma)</label>
+          <input name="tags" id="goalTags" type="text" placeholder="mvp, lavadoras, aguachica" />
+        </div>
+
+        <footer class="modal-foot">
+          <button type="button" class="btn-ghost" data-close-modal>Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar objetivo</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <!-- ─── Modal: Confirmar completado ──────────────────── -->
+  <div class="modal hidden" id="completeModal" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <header class="modal-head">
+        <h2>Confirmar objetivo completado</h2>
+        <button class="btn-icon" data-close-complete aria-label="Cerrar">✕</button>
+      </header>
+      <form id="completeForm" class="modal-body">
+        <div class="complete-prompt" id="completePrompt">
+          <div class="complete-icon">⚠️</div>
+          <div>
+            <strong id="completeGoalTitle">—</strong>
+            <p>Vas a marcar este objetivo como completado. Esta acción no se puede deshacer (pero puedes editarlo después).</p>
+            <p class="complete-sub">Se solicitará tu nombre para registrar quién completó este objetivo.</p>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>Tu nombre (administrador)</label>
+          <input name="adminName" id="adminName" type="text" required placeholder="Ej: Dcardenas" />
+        </div>
+
+        <div id="completionDataFields" class="completion-fields">
+          <!-- generado dinámicamente según expectedDataSchema -->
+        </div>
+
+        <div class="form-row">
+          <label>Notas / Retroalimentación libre</label>
+          <textarea name="notes" id="completeNotes" rows="3" placeholder="Aprendizajes, blockers, próximos pasos..."></textarea>
+        </div>
+
+        <footer class="modal-foot">
+          <button type="button" class="btn-ghost" data-close-complete>Cancelar</button>
+          <button type="submit" class="btn-primary">✓ Confirmar completado</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <!-- ─── Modal: Feedback inteligente post-completado ──── -->
+  <div class="modal hidden" id="feedbackModal" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card feedback-card">
+      <header class="modal-head">
+        <h2>🎉 ¡Logro registrado!</h2>
+      </header>
+      <div class="modal-body" id="feedbackBody">
+        <!-- generado dinámicamente -->
+      </div>
+      <footer class="modal-foot">
+        <button type="button" class="btn-ghost" data-close-feedback>Cerrar</button>
+        <button type="button" class="btn-primary" id="feedbackNext">Ver siguientes objetivos →</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ─── Modal: Settings ──────────────────────────────── -->
+  <div class="modal hidden" id="settingsModal" role="dialog" aria-modal="true">
+    <div class="modal-backdrop" data-close-settings></div>
+    <div class="modal-card">
+      <header class="modal-head">
+        <h2>Configuración</h2>
+        <button class="btn-icon" data-close-settings aria-label="Cerrar">✕</button>
+      </header>
+      <div class="modal-body">
+        <div class="form-row">
+          <label>Tu nombre (para registrar quién marca objetivos)</label>
+          <input id="settingsName" type="text" placeholder="Dcardenas" />
+        </div>
+        <div class="form-row">
+          <label>Token de acceso (opcional, protege la URL)</label>
+          <input id="settingsToken" type="text" placeholder="Déjalo vacío para deshabilitar" />
+          <small>Si defines un token, la URL deberá incluir <code>?k=TU_TOKEN</code></small>
+        </div>
+        <div class="form-row">
+          <label>Sincronización Firebase (opcional)</label>
+          <textarea id="settingsFirebase" rows="6" placeholder='Pega aquí el objeto firebaseConfig de la consola. Si está vacío, se usa solo localStorage.'></textarea>
+          <small>
+            Para habilitar sync Firestore pega:
+            <code>{ apiKey: "...", projectId: "...", ... }</code>
+          </small>
+        </div>
+        <div class="form-row">
+          <label>
+            <input type="checkbox" id="settingsSeed" />
+            Re-poblar objetivos por defecto (no borra los ya marcados)
+          </label>
+        </div>
+      </div>
+      <footer class="modal-foot">
+        <button type="button" class="btn-ghost" data-close-settings>Cerrar</button>
+        <button type="button" class="btn-primary" id="settingsSave">Guardar</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ─── Toast container ──────────────────────────────── -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore-compat.js" defer></script>
+  <script src="./app.js" defer></script>
+</body>
+</html>

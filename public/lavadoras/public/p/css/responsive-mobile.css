@@ -1,0 +1,309 @@
+/* ============================================================
+   CINESTREAM - Mobile Responsive Styles
+   ============================================================
+   Descripción: Estilos específicos para celulares (max-width: 767px)
+   Ubicación: public/p/css/responsive-mobile.css
+   Importado por: styles.css (penúltimo, antes de desktop)
+   Pantalla: max-width: 767px
+   ============================================================ */
+
+@media (max-width: 767px) {
+    /* Header en móvil */
+    .header {
+        padding: 0.7rem 1rem;
+        position: relative;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 0.8rem;
+        align-items: stretch;
+    }
+    
+    .logo {
+        font-size: 1.3rem;
+        justify-content: center;
+    }
+    
+    .logo i {
+        font-size: 1.4rem;
+    }
+    
+    /* Navegación en móvil - scroll horizontal */
+    .nav {
+        order: 3;
+        width: 100%;
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 0.5rem;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    
+    .nav::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .nav-btn {
+        padding: 0.4rem 0.9rem;
+        font-size: 0.78rem;
+        flex-shrink: 0;
+    }
+    
+    /* Búsqueda en móvil */
+    .search-box {
+        width: 100%;
+        min-width: unset;
+        order: 2;
+    }
+    
+    .search-box input {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    /* Main content */
+    .main {
+        padding-top: calc(var(--header-height) + 10px);
+        padding-left: 0.8rem;
+        padding-right: 0.8rem;
+    }
+    
+    /* Grid de películas - 2 columnas */
+    .movies-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.8rem;
+    }
+    
+    /* Tarjetas más compactas */
+    .movie-card {
+        border-radius: 8px;
+    }
+    
+    .movie-poster-container {
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .movie-info {
+        padding: 0.6rem;
+    }
+    
+    .movie-title {
+        font-size: 0.78rem;
+        margin-bottom: 0.3rem;
+    }
+    
+    .movie-meta {
+        font-size: 0.7rem;
+        gap: 0.5rem;
+    }
+    
+    .movie-genre {
+        font-size: 0.65rem;
+        margin-top: 0.25rem;
+    }
+    
+    .movie-quality {
+        font-size: 0.55rem;
+        padding: 0.15rem 0.4rem;
+        top: 0.4rem;
+        right: 0.4rem;
+    }
+    
+    .movie-type {
+        font-size: 0.55rem;
+        padding: 0.15rem 0.4rem;
+        top: 0.4rem;
+        left: 0.4rem;
+    }
+    
+    /* Filtros en móvil - apilados */
+    .filters {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem;
+        gap: 0.8rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .filter-group select {
+        flex: 1;
+        max-width: 60%;
+        padding: 0.5rem 1.8rem 0.5rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    
+    .filter-group label {
+        font-size: 0.8rem;
+    }
+    
+    /* Player en móvil */
+    .player-container {
+        margin: 0.5rem auto;
+        padding: 0 0.8rem;
+    }
+    
+    .player-header {
+        margin-bottom: 0.8rem;
+        padding-bottom: 0.8rem;
+    }
+    
+    .player-header h2 {
+        font-size: 1rem;
+    }
+    
+    .close-player {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+    
+    .video-wrapper {
+        border-radius: 8px;
+    }
+    
+    /* Controles en móvil - apilados */
+    .controls-row {
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+    
+    .controls-left,
+    .controls-right {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .volume-control {
+        display: none;
+    }
+    
+    .control-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 0.9rem;
+    }
+    
+    .time-display {
+        font-size: 0.75rem;
+        margin-left: 0.3rem;
+    }
+    
+    .quality-select {
+        font-size: 0.75rem;
+        padding: 0.3rem 1.5rem 0.3rem 0.5rem;
+    }
+    
+    /* Info del player en móvil */
+    .player-info {
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .player-info .movie-meta {
+        font-size: 0.8rem;
+        gap: 0.8rem;
+    }
+    
+    .player-info #playerDescription {
+        font-size: 0.85rem;
+        line-height: 1.6;
+    }
+    
+    /* Paginación en móvil */
+    .pagination {
+        gap: 0.3rem;
+        padding: 1.5rem 0 2rem;
+    }
+    
+    .pagination-btn {
+        min-width: 34px;
+        height: 34px;
+        font-size: 0.8rem;
+        padding: 0 0.6rem;
+    }
+    
+    /* Footer en móvil */
+    .footer {
+        padding: 1.5rem 1rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Estado vacío en móvil */
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+    
+    .empty-state i {
+        font-size: 2.5rem;
+    }
+    
+    .empty-state h3 {
+        font-size: 1.1rem;
+    }
+    
+    .empty-state p {
+        font-size: 0.85rem;
+    }
+}
+
+/* Pantallas muy pequeñas (max 480px) */
+@media (max-width: 480px) {
+    .header {
+        padding: 0.6rem 0.8rem;
+    }
+    
+    .logo {
+        font-size: 1.2rem;
+    }
+    
+    .nav-btn {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.72rem;
+    }
+    
+    .movies-grid {
+        gap: 0.6rem;
+    }
+    
+    .movie-info {
+        padding: 0.5rem;
+    }
+    
+    .movie-title {
+        font-size: 0.72rem;
+    }
+    
+    .movie-meta {
+        font-size: 0.65rem;
+    }
+    
+    .movie-genre {
+        font-size: 0.6rem;
+    }
+
+    /* Hero en móvil */
+    .hero-section { height: 55vh; margin-bottom: -60px; }
+    .hero-content { left: 1.2rem; right: 1.2rem; bottom: 12%; }
+    .hero-title { font-size: 1.8rem; }
+    .hero-description { font-size: 0.82rem; -webkit-line-clamp: 2; margin-bottom: 1rem; }
+    .hero-btn { padding: 0.6rem 1.1rem; font-size: 0.82rem; }
+    .hero-badge { font-size: 0.6rem; padding: 0.2rem 0.6rem; }
+    .hero-meta { font-size: 0.78rem; gap: 0.6rem; }
+
+    /* Filas en móvil */
+    .movie-row-header { padding: 0 1rem; }
+    .movie-row-title { font-size: 1.1rem; }
+    .movie-row-scroll { padding: 0.5rem 1rem 0.8rem; gap: 0.6rem; }
+    .movie-row-card { flex: 0 0 130px; min-width: 130px; }
+    .row-arrow { display: none !important; }
+    .row-card-title { font-size: 0.7rem; }
+    .row-card-year { font-size: 0.6rem; }
+}

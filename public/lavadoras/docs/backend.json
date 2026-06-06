@@ -1,0 +1,581 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "type": "object",
+      "description": "Perfil base de usuario compartido entre apps. Roles posibles: admin, moderador, dueño, repartidor, cliente.",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "moderador", "dueño", "repartidor", "cliente", "passenger", "driver", "both"]
+        },
+        "linkedStoreId": { "type": "string", "description": "ID de la tienda a la que está vinculado el repartidor." },
+        "balance": { "type": "number" },
+        "citiesActive": { "type": "array", "items": { "type": "string" } },
+        "fcmTokens": { "type": "array", "items": { "type": "string" } },
+        "locale": { "type": "string", "default": "es-CO" },
+        "status": { "type": "string", "enum": ["active", "suspended", "banned"], "default": "active" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "email", "role"]
+    },
+    "Store": {
+      "title": "Store",
+      "type": "object",
+      "description": "Tienda dentro del marketplace multi-tienda.",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "logo": { "type": "string" },
+        "cover": { "type": "string" },
+        "address": { "type": "string" },
+        "cityId": { "type": "string" },
+        "zoneId": { "type": "string" },
+        "phone": { "type": "string" },
+        "ratingAvg": { "type": "number", "minimum": 0, "maximum": 5 },
+        "ratingCount": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "name"]
+    },
+    "Product": {
+      "title": "Product",
+      "type": "object",
+      "description": "Producto dentro del catálogo de una tienda.",
+      "properties": {
+        "id": { "type": "string" },
+        "storeId": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string", "description": "Generada opcionalmente por IA." },
+        "price": { "type": "number" },
+        "currency": { "type": "string", "default": "COP" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "stock": { "type": "integer" },
+        "isActive": { "type": "boolean" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "storeId", "name", "price"]
+    },
+    "Category": {
+      "title": "Category",
+      "type": "object",
+      "description": "Categoría/sub-categoría del catálogo.",
+      "properties": {
+        "id": { "type": "string" },
+        "parentId": { "type": "string", "nullable": true },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "icon": { "type": "string" },
+        "order": { "type": "integer" }
+      },
+      "required": ["id", "name"]
+    },
+    "Order": {
+      "title": "Order",
+      "type": "object",
+      "description": "Pedido o solicitud de alquiler (e-commerce, lavadora, delivery).",
+      "properties": {
+        "id": { "type": "string" },
+        "customerId": { "type": "string" },
+        "storeId": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "preparing",
+            "ready_for_pickup",
+            "at_store",
+            "delivered_to_driver",
+            "at_destination",
+            "delivered",
+            "cancelled"
+          ]
+        },
+        "totalPrice": { "type": "number" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "productId": { "type": "string" },
+              "name": { "type": "string" },
+              "qty": { "type": "integer" },
+              "unitPrice": { "type": "number" }
+            }
+          }
+        },
+        "washerType": { "type": "string" },
+        "isLogisticsPublic": { "type": "boolean" },
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "driverId": { "type": "string" },
+        "pickup": { "type": "object" },
+        "dropoff": { "type": "object" },
+        "paymentId": { "type": "string" },
+        "ratingId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "customerId", "status", "participants"]
+    },
+    "WasherRental": {
+      "title": "WasherRental",
+      "type": "object",
+      "description": "Solicitud de alquiler de lavadora.",
+      "properties": {
+        "id": { "type": "string" },
+        "customerId": { "type": "string" },
+        "washerType": { "type": "string", "enum": ["standard", "premium", "industrial"] },
+        "hours": { "type": "integer" },
+        "totalPrice": { "type": "number" },
+        "cityId": { "type": "string" },
+        "zoneId": { "type": "string" },
+        "address": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["waiting", "assigned", "in_transit", "delivered", "in_use", "returned", "cancelled"]
+        },
+        "driverId": { "type": "string" },
+        "washerInventoryId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "customerId", "washerType", "hours", "status"]
+    },
+    "City": {
+      "title": "City",
+      "type": "object",
+      "description": "Ciudad operativa con geofence y serviceArea. Usado por Yapido (zonas de delivery) y Conductor (ride-sharing).",
+      "properties": {
+        "cityId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "region": { "type": "string" },
+        "country": { "type": "string", "default": "CO" },
+        "currency": { "type": "string", "default": "COP" },
+        "timezone": { "type": "string", "default": "America/Bogota" },
+        "geofence": { "type": "array", "description": "Polígono GeoJSON [[lng,lat],...]" },
+        "serviceArea": { "type": "array", "description": "Polígono GeoJSON del área operativa." },
+        "centerLat": { "type": "number" },
+        "centerLng": { "type": "number" },
+        "population": { "type": "integer" },
+        "status": { "type": "string", "enum": ["active", "launching", "paused"] },
+        "supportPhone": { "type": "string" },
+        "supportWhatsapp": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["cityId", "displayName"]
+    },
+    "Zone": {
+      "title": "Zone",
+      "type": "object",
+      "description": "Zona dentro de una ciudad (sector, barrio).",
+      "properties": {
+        "id": { "type": "string" },
+        "cityId": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "polygon": { "type": "array" },
+        "centerLat": { "type": "number" },
+        "centerLng": { "type": "number" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "cityId", "name"]
+    },
+    "DriverProfile": {
+      "title": "DriverProfile",
+      "type": "object",
+      "description": "Perfil de repartidor de la flota Yapido (delivery de e-commerce y lavadoras). NO confundir con el DriverProfile del proyecto Conductor (ride-sharing).",
+      "properties": {
+        "uid": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "blocked", "recycled"] },
+        "vehicleType": { "type": "string", "enum": ["moto", "bici", "auto"] },
+        "vehiclePlate": { "type": "string" },
+        "cityId": { "type": "string" },
+        "ratingAvg": { "type": "number", "minimum": 0, "maximum": 5 },
+        "ratingCount": { "type": "integer" },
+        "totalMissions": { "type": "integer" },
+        "earnings": { "type": "number" },
+        "isOnline": { "type": "boolean" },
+        "currentLocation": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" },
+            "heading": { "type": "number" },
+            "speed": { "type": "number" },
+            "ts": { "type": "integer" }
+          }
+        },
+        "verificationCode": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "status"]
+    },
+    "FleetMission": {
+      "title": "FleetMission",
+      "type": "object",
+      "description": "Misión asignada a un repartidor de la flota (delivery, pickup de lavadora, etc.).",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["delivery", "washer_pickup", "washer_delivery", "pickup"] },
+        "orderId": { "type": "string" },
+        "washerRentalId": { "type": "string" },
+        "driverId": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["assigned", "accepted", "en_route_pickup", "at_pickup", "in_transit", "at_destination", "completed", "cancelled"]
+        },
+        "pickup": { "type": "object" },
+        "dropoff": { "type": "object" },
+        "fare": { "type": "number" },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "type", "driverId", "status"]
+    },
+    "FleetVehicle": {
+      "title": "FleetVehicle",
+      "type": "object",
+      "description": "Vehículo registrado en la flota Yapido.",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["moto", "bici", "auto", "auto_carga"] },
+        "plate": { "type": "string" },
+        "brand": { "type": "string" },
+        "model": { "type": "string" },
+        "year": { "type": "integer" },
+        "color": { "type": "string" },
+        "ownerDriverId": { "type": "string" },
+        "cityId": { "type": "string" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "type", "ownerDriverId"]
+    },
+    "Rating": {
+      "title": "Rating",
+      "type": "object",
+      "description": "Calificación registrada tras completar un pedido/misión.",
+      "properties": {
+        "id": { "type": "string" },
+        "orderId": { "type": "string" },
+        "raterUid": { "type": "string" },
+        "targetUid": { "type": "string" },
+        "targetType": { "type": "string", "enum": ["driver", "store", "product"] },
+        "score": { "type": "number", "minimum": 1, "maximum": 5 },
+        "comment": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "orderId", "score"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "type": "object",
+      "description": "Mensaje en el centro de mensajería vinculado a un pedido.",
+      "properties": {
+        "id": { "type": "string" },
+        "orderId": { "type": "string" },
+        "senderUid": { "type": "string" },
+        "text": { "type": "string" },
+        "attachmentUrl": { "type": "string" },
+        "readBy": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "orderId", "senderUid", "text"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "type": "object",
+      "description": "Notificación in-app (además de FCM push).",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string" },
+        "type": { "type": "string", "enum": ["order", "chat", "mission", "system", "rating", "promo"] },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "data": { "type": "object" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "type", "title"]
+    },
+    "AppConfig": {
+      "title": "AppConfig",
+      "type": "object",
+      "description": "Configuración global de la app. Documento único: appConfig.",
+      "properties": {
+        "id": { "type": "string", "default": "appConfig" },
+        "superAdmins": { "type": "array", "items": { "type": "string" }, "description": "UIDs de superadmin." },
+        "paymentGateway": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "provider": { "type": "string", "enum": ["mercadopago", "payu", "nequi", "stripe"] },
+            "publicKey": { "type": "string" }
+          }
+        },
+        "maintenance": { "type": "boolean" },
+        "cronSecret": { "type": "string" },
+        "debugSecret": { "type": "string" }
+      },
+      "required": ["id"]
+    },
+    "Trip": {
+      "title": "Trip",
+      "type": "object",
+      "description": "Viaje de ride-sharing (Yapido Movilidad / Conductor). Source of truth en Firestore; mirror en RTDB para baja latencia.",
+      "properties": {
+        "tripId": { "type": "string" },
+        "cityId": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": [
+            "searching",
+            "offered",
+            "accepted",
+            "arriving",
+            "in_progress",
+            "completed",
+            "cancelled",
+            "no_drivers",
+            "rated"
+          ]
+        },
+        "type": { "type": "string", "enum": ["moto", "auto", "auto_comfort"] },
+        "passenger": { "type": "object" },
+        "driver": { "type": "object", "nullable": true },
+        "pickup": { "type": "object" },
+        "dropoff": { "type": "object" },
+        "routePolyline": { "type": "string" },
+        "distanceMeters": { "type": "number" },
+        "durationSeconds": { "type": "number" },
+        "fare": { "$ref": "#/entities/TripFare" },
+        "payment": { "$ref": "#/entities/TripPayment" },
+        "timeline": { "$ref": "#/entities/TripTimeline" },
+        "offerLog": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tripId", "cityId", "status"]
+    },
+    "TripFare": {
+      "title": "TripFare",
+      "type": "object",
+      "properties": {
+        "currency": { "type": "string", "default": "COP" },
+        "base": { "type": "number" },
+        "distance": { "type": "number" },
+        "time": { "type": "number" },
+        "surge": { "type": "number", "minimum": 1, "maximum": 3, "default": 1 },
+        "tolls": { "type": "number" },
+        "wait": { "type": "number" },
+        "total": { "type": "number" },
+        "driverEarning": { "type": "number" },
+        "platformFee": { "type": "number" },
+        "tip": { "type": "number" }
+      },
+      "required": ["total", "currency"]
+    },
+    "TripPayment": {
+      "title": "TripPayment",
+      "type": "object",
+      "properties": {
+        "method": { "type": "string", "enum": ["cash", "card", "wompi", "pse"] },
+        "status": { "type": "string", "enum": ["pending", "paid", "failed", "refunded"] },
+        "txId": { "type": "string" },
+        "paidAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "TripTimeline": {
+      "title": "TripTimeline",
+      "type": "object",
+      "properties": {
+        "requestedAt": { "type": "string", "format": "date-time" },
+        "matchedAt": { "type": "string", "format": "date-time" },
+        "acceptedAt": { "type": "string", "format": "date-time" },
+        "arrivedAt": { "type": "string", "format": "date-time" },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "cancelledAt": { "type": "string", "format": "date-time" },
+        "cancelledBy": { "type": "string", "enum": ["passenger", "driver", "system", null] },
+        "cancelReason": { "type": "string" },
+        "ratedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "PassengerProfile": {
+      "title": "PassengerProfile",
+      "type": "object",
+      "description": "Perfil del pasajero (proyecto Conductor).",
+      "properties": {
+        "uid": { "type": "string" },
+        "defaultPaymentMethodId": { "type": "string" },
+        "homeAddress": { "type": "string" },
+        "workAddress": { "type": "string" },
+        "ratingAvg": { "type": "number", "default": 5 },
+        "ratingCount": { "type": "integer" },
+        "totalTrips": { "type": "integer" },
+        "promoCodes": { "type": "array", "items": { "type": "string" } },
+        "defaultCityId": { "type": "string" }
+      },
+      "required": ["uid"]
+    },
+    "DriverVehicle": {
+      "title": "DriverVehicle",
+      "type": "object",
+      "description": "Vehículo del conductor (proyecto Conductor).",
+      "properties": {
+        "vehicleId": { "type": "string" },
+        "driverId": { "type": "string" },
+        "type": { "type": "string", "enum": ["moto", "auto", "auto_comfort"] },
+        "plate": { "type": "string" },
+        "brand": { "type": "string" },
+        "model": { "type": "string" },
+        "year": { "type": "integer" },
+        "color": { "type": "string" },
+        "capacity": { "type": "integer" },
+        "photoFront": { "type": "string" },
+        "photoSide": { "type": "string" },
+        "photoBack": { "type": "string" },
+        "insuranceExpiry": { "type": "string", "format": "date-time" },
+        "soatExpiry": { "type": "string", "format": "date-time" },
+        "verifiedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["vehicleId", "driverId", "type"]
+    },
+    "DriverDocuments": {
+      "title": "DriverDocuments",
+      "type": "object",
+      "description": "Documentos KYC del conductor (proyecto Conductor).",
+      "properties": {
+        "uid": { "type": "string" },
+        "ccFrontUrl": { "type": "string" },
+        "ccBackUrl": { "type": "string" },
+        "licenseUrl": { "type": "string" },
+        "licenseExpiry": { "type": "string", "format": "date-time" },
+        "backgroundCheckUrl": { "type": "string" },
+        "selfieWithCcUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "reviewedBy": { "type": "string" },
+        "reviewedAt": { "type": "string", "format": "date-time" },
+        "rejectionReason": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "status"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "type": "object",
+      "description": "Pago genérico (Yapido e-commerce + Conductor).",
+      "properties": {
+        "id": { "type": "string" },
+        "orderId": { "type": "string" },
+        "tripId": { "type": "string" },
+        "uid": { "type": "string" },
+        "amount": { "type": "number" },
+        "currency": { "type": "string", "default": "COP" },
+        "method": { "type": "string" },
+        "provider": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "paid", "failed", "refunded"] },
+        "txId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "amount", "status"]
+    },
+    "Payout": {
+      "title": "Payout",
+      "type": "object",
+      "description": "Liquidación semanal al conductor.",
+      "properties": {
+        "id": { "type": "string" },
+        "driverUid": { "type": "string" },
+        "amount": { "type": "number" },
+        "currency": { "type": "string", "default": "COP" },
+        "periodStart": { "type": "string", "format": "date-time" },
+        "periodEnd": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "processing", "paid", "failed"] },
+        "txId": { "type": "string" }
+      },
+      "required": ["id", "driverUid", "amount", "status"]
+    },
+    "FareEstimate": {
+      "title": "FareEstimate",
+      "type": "object",
+      "description": "Cache de cotización de tarifa (proyecto Conductor).",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "pickup": { "type": "object" },
+        "dropoff": { "type": "object" },
+        "cityId": { "type": "string" },
+        "fare": { "type": "object" },
+        "distanceMeters": { "type": "number" },
+        "durationSeconds": { "type": "number" },
+        "routePolyline": { "type": "string" },
+        "surge": { "type": "number" },
+        "eta": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "cityId"]
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "phone", "password"]
+  },
+  "firestore": {
+    "structure": [
+      { "path": "/users/{userId}", "definition": { "entityName": "User", "schema": { "$ref": "#/entities/User" } } },
+      { "path": "/stores/{storeId}", "definition": { "entityName": "Store", "schema": { "$ref": "#/entities/Store" } } },
+      { "path": "/products/{productId}", "definition": { "entityName": "Product", "schema": { "$ref": "#/entities/Product" } } },
+      { "path": "/categories/{categoryId}", "definition": { "entityName": "Category", "schema": { "$ref": "#/entities/Category" } } },
+      { "path": "/orders/{orderId}", "definition": { "entityName": "Order", "schema": { "$ref": "#/entities/Order" } } },
+      { "path": "/washerRentals/{rentalId}", "definition": { "entityName": "WasherRental", "schema": { "$ref": "#/entities/WasherRental" } } },
+      { "path": "/cities/{cityId}", "definition": { "entityName": "City", "schema": { "$ref": "#/entities/City" } } },
+      { "path": "/zones/{zoneId}", "definition": { "entityName": "Zone", "schema": { "$ref": "#/entities/Zone" } } },
+      { "path": "/driverProfiles/{uid}", "definition": { "entityName": "DriverProfile", "schema": { "$ref": "#/entities/DriverProfile" } } },
+      { "path": "/fleetMissions/{missionId}", "definition": { "entityName": "FleetMission", "schema": { "$ref": "#/entities/FleetMission" } } },
+      { "path": "/fleetVehicles/{vehicleId}", "definition": { "entityName": "FleetVehicle", "schema": { "$ref": "#/entities/FleetVehicle" } } },
+      { "path": "/ratings/{ratingId}", "definition": { "entityName": "Rating", "schema": { "$ref": "#/entities/Rating" } } },
+      { "path": "/chats/{orderId}/messages/{messageId}", "definition": { "entityName": "ChatMessage", "schema": { "$ref": "#/entities/ChatMessage" } } },
+      { "path": "/notifications/{notificationId}", "definition": { "entityName": "Notification", "schema": { "$ref": "#/entities/Notification" } } },
+      { "path": "/appConfig", "definition": { "entityName": "AppConfig", "schema": { "$ref": "#/entities/AppConfig" } } },
+      { "path": "/trips/{tripId}", "definition": { "entityName": "Trip", "schema": { "$ref": "#/entities/Trip" }, "description": "Yapido Movilidad / Conductor (proyecto Firebase separado yapido-movilidad)." } },
+      { "path": "/passengerProfiles/{uid}", "definition": { "entityName": "PassengerProfile", "schema": { "$ref": "#/entities/PassengerProfile" } } },
+      { "path": "/driverVehicles/{vehicleId}", "definition": { "entityName": "DriverVehicle", "schema": { "$ref": "#/entities/DriverVehicle" } } },
+      { "path": "/driverDocuments/{uid}", "definition": { "entityName": "DriverDocuments", "schema": { "$ref": "#/entities/DriverDocuments" } } },
+      { "path": "/payments/{paymentId}", "definition": { "entityName": "Payment", "schema": { "$ref": "#/entities/Payment" } } },
+      { "path": "/payouts/{payoutId}", "definition": { "entityName": "Payout", "schema": { "$ref": "#/entities/Payout" } } },
+      { "path": "/fareEstimates/{id}", "definition": { "entityName": "FareEstimate", "schema": { "$ref": "#/entities/FareEstimate" } } }
+    ]
+  },
+  "realtimeDb": {
+    "description": "Estructura del Realtime Database (particionada por ciudad en el proyecto Conductor).",
+    "structure": [
+      {
+        "path": "/cities/{cityId}/drivers_online/{driverId}",
+        "fields": ["status", "vehicleType", "loc: {lat, lng, h?, s?, ts}", "geo6", "driverId", "updatedAt"]
+      },
+      {
+        "path": "/cities/{cityId}/trips_live/{tripId}",
+        "fields": ["driverLoc", "status", "eta", "lastUpdate"]
+      },
+      {
+        "path": "/cities/{cityId}/trip_search/{geo6}/{tripId}",
+        "fields": ["tripId", "pickup", "type", "requestedAt"]
+      },
+      {
+        "path": "/cities/{cityId}/offers/{driverId}/current",
+        "fields": ["offerId", "tripId", "pickup", "dropoff", "type", "fareEstimate", "distanceKm", "expiresAt", "createdAt"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,21 @@
+/* ============================================================
+   CINESTREAM - Footer Styles
+   ============================================================
+   Descripción: Pie de página con copyright
+   Ubicación: public/p/css/footer.css
+   Importado por: styles.css
+   ============================================================ */
+
+.footer {
+    text-align: center;
+    padding: 2.5rem 2rem;
+    color: var(--text-muted);
+    margin-top: 2rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    background: var(--bg-card);
+}
+
+.footer p {
+    opacity: 0.7;
+}

@@ -1,0 +1,81 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    function isValidFileType() {
+      let validTypes = [
+        'image/jpeg',
+        'image/png', 
+        'image/webp',
+        'image/gif',
+        'application/pdf'
+      ];
+      return request.resource.contentType in validTypes;
+    }
+    
+    function isValidFileSize() {
+      return request.resource.size <= 5 * 1024 * 1024;
+    }
+    
+    function isValidPath() {
+      return request.path.size() >= 3 && request.path.size() <= 200;
+    }
+    
+    function getUserRole() {
+      return request.auth.token.role;
+    }
+
+    match /users/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn() && 
+        isOwner(userId) && 
+        isValidFileType() && 
+        isValidFileSize() &&
+        isValidPath();
+    }
+    
+    match /stores/{storeId}/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn() && (
+        isOwner(storeId) ||
+        request.auth.token.role == 'admin'
+      ) && isValidFileType() && isValidFileSize();
+    }
+    
+    match /products/{productId}/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidFileType() && isValidFileSize();
+    }
+    
+    match /avatars/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidFileType() && isValidFileSize();
+    }
+    
+    match /documents/{documentId}/{fileName} {
+      allow read: if isSignedIn() && (
+        isOwner(documentId) ||
+        request.auth.token.role == 'admin'
+      );
+      allow write: if isSignedIn() && isValidFileType() && isValidFileSize();
+    }
+    
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

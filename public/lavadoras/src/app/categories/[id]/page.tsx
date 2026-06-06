@@ -1,0 +1,407 @@
+
+"use client";
+
+import { useState, useMemo } from 'react';
+import { Navbar } from '@/components/layout/Navbar';
+import { StoreCard } from '@/components/store/StoreCard';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Store as StoreIcon, LayoutGrid, Loader2, ImageIcon, X, Sparkles, Settings, Edit3, Plus } from 'lucide-react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useProfile } from '@/firebase/auth/use-profile';
+import { collection, doc, query, where, serverTimestamp } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
+import Image from 'next/image';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/hooks/use-toast';
+import { compressImage } from '@/lib/image-compression';
+
+export default function CategoryPage() {
+  const params = useParams();
+  const id = params?.id as string;
+  const { isAdmin, user, profile } = useProfile();
+  const firestore = useFirestore();
+
+  const [openStore, setOpenStore] = useState(false);
+  const [openEditCat, setOpenEditCat] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [base64Image, setBase64Image] = useState<string | null>(null);
+  const [editBase64Image, setEditBase64Image] = useState<string | null>(null);
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
+
+  const catRef = useMemoFirebase(() => {
+    if (!firestore || !id) return null;
+    return doc(firestore, 'mainCategories', id);
+  }, [firestore, id]);
+
+  const { data: category, isLoading: loadingCat } = useDoc(catRef);
+
+  const storesQuery = useMemoFirebase(() => {
+    if (!firestore || !id) return null;
+    // Quitamos el filtro de 'active' para manejar la papelera en memoria
+    return query(collection(firestore, 'stores'), where('mainCategoryId', '==', id));
+  }, [firestore, id]);
+
+  const { data: rawStores, isLoading: loadingStores } = useCollection(storesQuery);
+
+  // Filtrar por ciudad del usuario y manejar lógica de papelera
+  const stores = useMemo(() => {
+    if (!rawStores) return [];
+    let filtered = rawStores;
+
+    // Lógica de Papelera:
+    // 1. Mostrar 'active' a todos.
+    // 2. Mostrar 'trashed' SOLO al dueño o admin, y solo si lleva menos de 24h.
+    filtered = rawStores.filter((s: any) => {
+      const isOwner = user?.uid === s.ownerId;
+      const trashedAt = s.trashedAt?.toDate?.() || (s.trashedAt?.seconds ? new Date(s.trashedAt.seconds * 1000) : null);
+      const isWithin24h = trashedAt ? (Date.now() - trashedAt.getTime()) < (24 * 60 * 60 * 1000) : true;
+
+      if (s.status === 'active') return true;
+      if (s.status === 'trashed') {
+        if (isAdmin || isOwner) {
+          return isWithin24h; // Solo mostrar si está en el periodo de gracia
+        }
+      }
+      return false;
+    });
+
+    // Filtro geográfico
+    if (profile?.cityId) {
+      filtered = filtered.filter((s: any) => s.cityId === profile.cityId || !s.cityId);
+    }
+    
+    // Ordenar por calificación
+    return [...filtered].sort((a: any, b: any) => (b.averageRating || 0) - (a.averageRating || 0));
+  }, [rawStores, profile?.cityId, user?.uid, isAdmin]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsCompressing(true);
+      try {
+        const compressed = await compressImage(file, 1200, 1200, 0.85);
+        if (isEdit) {
+          setEditBase64Image(compressed);
+          setIsImageRemoved(false);
+        } else {
+          setBase64Image(compressed);
+        }
+        toast({ title: "Imagen lista" });
+      } catch (error) {
+        toast({ title: "Error", variant: "destructive" });
+      } finally {
+        setIsCompressing(false);
+      }
+    }
+  };
+
+  const handleEditCategory = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!isAdmin || !catRef) return;
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const description = formData.get('description') as string;
+
+    setIsRegistering(true);
+    try {
+      const data: any = {
+        name,
+        description,
+        updatedAt: serverTimestamp(),
+      };
+      if (editBase64Image) {
+        data.imageUrl = editBase64Image;
+      } else if (isImageRemoved) {
+        data.imageUrl = null;
+      }
+
+      // USO DE SET CON MERGE PARA EVITAR PERMISSION DENIED SI EL DOC NO EXISTE
+      setDocumentNonBlocking(catRef, data, { merge: true });
+      toast({ title: "Categoría actualizada correctamente" });
+      setOpenEditCat(false);
+      setEditBase64Image(null);
+      setIsImageRemoved(false);
+    } catch (e) {
+      toast({ title: "Error al actualizar", variant: "destructive" });
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  const handleRegisterStore = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user) return;
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const address = formData.get('address') as string;
+
+    const isWasherCategory = id === 'category-washer';
+
+    setIsRegistering(true);
+    try {
+      const storeRef = doc(collection(firestore, 'stores'));
+      setDocumentNonBlocking(storeRef, {
+        id: storeRef.id,
+        ownerId: user.uid,
+        mainCategoryId: id,
+        type: isWasherCategory ? 'washer_rental' : undefined,
+        name,
+        address,
+        status: 'active',
+        isOpen: true,
+        openTime: '06:00',
+        closeTime: '22:00',
+        imageUrl: base64Image || `https://picsum.photos/seed/${storeRef.id}/800/600`,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
+      const userRef = doc(firestore, 'users', user.uid);
+      // CORRECCIÓN: No degradar el rol de administrador si ya lo tiene
+      if (profile?.role === 'cliente') {
+        updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
+      }
+
+      toast({ title: "¡Vitrina Lanzada!", description: "Negocio registrado." });
+      setOpenStore(false);
+      setBase64Image(null);
+    } catch (e) {
+      toast({ title: "Error al registrar", variant: "destructive" });
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  const displayCategory = category || (id === 'category-washer' ? {
+    id: 'category-washer',
+    name: 'Alquiler de Lavadoras',
+    description: 'Encuentra el servicio de lavandería más cercano a tu ubicación y solicita tu alquiler instantáneo.',
+    imageUrl: 'https://picsum.photos/seed/wash/1920/1080'
+  } : null);
+
+  if (loadingCat) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <Skeleton className="h-64 w-full" />
+        <div className="w-full p-4 space-y-4">
+          <Skeleton className="h-10 w-1/3" />
+          <div className="flex flex-col gap-6">
+            <Skeleton className="h-80 w-full" />
+            <Skeleton className="h-80 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!displayCategory && !loadingCat) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-50">
+          <LayoutGrid className="w-16 h-16 text-slate-200 mb-4" />
+          <h2 className="text-xl font-bold text-slate-400">Categoría no encontrada</h2>
+          <Link href="/" className="mt-4">
+            <Button variant="default">Volver al Inicio</Button>
+          </Link>
+        </main>
+      </div>
+    );
+  }
+
+  const currentPreviewImage = editBase64Image || (isImageRemoved ? null : displayCategory?.imageUrl);
+
+  return (
+    <div className="flex flex-col min-h-screen bg-white">
+      <Navbar />
+      
+      <main className="flex-1 w-full">
+        <div className="relative h-[40vh] w-full overflow-hidden">
+          {displayCategory?.imageUrl && (
+            <Image 
+              src={displayCategory.imageUrl} 
+              alt={displayCategory.name || "Categoría"} 
+              fill 
+              className="object-cover" 
+              priority 
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+          
+          <div className="absolute top-4 left-4 z-20 flex gap-2">
+            <Link href="/">
+              <Button variant="secondary" size="sm" className="rounded-full bg-white/90 text-slate-800 font-bold border-none text-xs h-9 px-4 shadow-md">
+                <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Inicio
+              </Button>
+            </Link>
+          </div>
+
+          {isAdmin && (
+            <div className="absolute top-4 right-4 z-20">
+              <Dialog open={openEditCat} onOpenChange={(val) => { setOpenEditCat(val); if(!val) setIsImageRemoved(false); }}>
+                <DialogTrigger asChild>
+                  <Button variant="secondary" size="sm" className="rounded-full bg-primary text-white font-bold border-none text-xs h-9 px-4 shadow-lg">
+                    <Settings className="w-3.5 h-3.5 mr-1" /> Editar Categoría
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-black italic">Ajustes Maestro</DialogTitle>
+                    <DialogDescription>Modifica los detalles globales de esta categoría.</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleEditCategory} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label>Nombre de Categoría</Label>
+                      <Input name="name" defaultValue={displayCategory?.name} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Imagen de Banner</Label>
+                      <div className="relative aspect-video rounded-xl bg-slate-100 border-2 border-dashed overflow-hidden">
+                        {currentPreviewImage ? (
+                          <>
+                            <Image src={currentPreviewImage} alt="Preview" fill className="object-cover" />
+                            <Button 
+                              type="button" 
+                              size="icon" 
+                              variant="destructive" 
+                              className="absolute top-2 right-2 h-8 w-8 rounded-full" 
+                              onClick={() => {
+                                setEditBase64Image(null);
+                                setIsImageRemoved(true);
+                              }}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <label className="flex flex-col items-center justify-center h-full cursor-pointer">
+                            <ImageIcon className="w-8 h-8 text-slate-400" />
+                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, true)} />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Descripción</Label>
+                      <Textarea name="description" defaultValue={displayCategory?.description} required />
+                    </div>
+                    <Button type="submit" className="w-full h-12 font-bold" disabled={isRegistering || isCompressing}>
+                      {isRegistering ? <Loader2 className="animate-spin" /> : <Edit3 className="mr-2" />} Guardar Cambios
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
+
+          {/* Se ha eliminado el div que contenía el título y la descripción para dejar el banner limpio */}
+        </div>
+
+        <section className="w-full py-8 px-4 sm:px-8 border-b bg-slate-50/50">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 max-w-6xl mx-auto">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                <LayoutGrid className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-slate-900 leading-none">Vitrinas locales</h2>
+                <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">{stores?.length || 0} Negocios activos</p>
+              </div>
+            </div>
+
+            <Dialog open={openStore} onOpenChange={setOpenStore}>
+              <DialogTrigger asChild>
+                <Button className="rounded-full h-12 px-8 gap-2 bg-secondary hover:bg-secondary/90 text-white font-black shadow-lg shadow-secondary/20 w-full sm:w-auto">
+                  <Plus className="w-4 h-4" /> Unirme a {displayCategory?.name}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black">Tu vitrina en {displayCategory?.name}</DialogTitle>
+                  <DialogDescription>Completa los datos para aparecer en esta sección.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleRegisterStore} className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label>Nombre del Negocio</Label>
+                    <Input name="name" placeholder="Ej: Panadería El Morrocoy" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Foto de Portada</Label>
+                    <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 border-2 border-dashed border-slate-300">
+                      {base64Image ? (
+                        <>
+                          <Image src={base64Image} alt="Preview" fill className="object-cover" />
+                          <Button type="button" size="icon" variant="destructive" className="absolute top-2 right-2 rounded-full h-8 w-8" onClick={() => setBase64Image(null)}>
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center h-full cursor-pointer hover:bg-slate-200 transition-colors">
+                          <ImageIcon className="w-8 h-8 text-slate-400 mb-2" />
+                          <span className="text-xs font-bold text-slate-400 text-center px-4 uppercase tracking-widest">Subir Imagen Real</span>
+                          <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e)} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Dirección</Label>
+                    <Input name="address" placeholder="Ej: Calle 5 con Carrera 20" required />
+                  </div>
+                  <Button type="submit" className="w-full h-14 font-black text-lg bg-primary hover:bg-primary/90 shadow-xl" disabled={isRegistering || isCompressing}>
+                    {isRegistering ? <Loader2 className="animate-spin" /> : <><Sparkles className="mr-2" /> Lanzar Mi Vitrina</>}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </section>
+
+        <section className="w-full p-4 sm:p-12 max-w-4xl mx-auto">
+          {loadingStores ? (
+            <div className="flex flex-col gap-10">
+              {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-80 w-full rounded-[32px]" />)}
+            </div>
+          ) : stores && stores.length > 0 ? (
+            <div className="flex flex-col gap-12">
+              {stores.map((store) => (
+                <StoreCard key={store.id} store={store as any} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-slate-50 border-2 border-dashed border-slate-200 px-6 rounded-[32px]">
+              <StoreIcon className="w-12 h-12 mx-auto text-slate-200 mb-4" />
+              <h3 className="text-lg font-black text-slate-400 italic">No hay negocios registrados.</h3>
+              <p className="text-slate-400 text-xs mt-2 max-w-xs mx-auto">Sé el primero en destacar tu negocio en esta categoría.</p>
+              <Button onClick={() => setOpenStore(true)} variant="outline" className="mt-6 rounded-full h-10 border-primary/30 text-primary font-bold px-6">Registrar ahora</Button>
+            </div>
+          )}
+        </section>
+      </main>
+
+      <footer className="w-full py-12 bg-slate-900 text-center text-white">
+        <div className="flex items-center justify-center gap-2 mb-4">
+           <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
+              <LayoutGrid className="w-5 h-5 text-white" />
+           </div>
+           <span className="text-2xl font-black italic tracking-tighter">yapido.click</span>
+        </div>
+        <p className="text-slate-500 text-[10px] uppercase tracking-widest font-bold">Yapido • Colombia • 2024</p>
+      </footer>
+    </div>
+  );
+}
