@@ -1,0 +1,653 @@
+/* ════════════════════════════════════════════════════════════
+   YAPIDO — MOBILE  (max-width: 767px)
+   Single column. Brutalist at small scale. No overflow.
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── GLOBAL OVERFLOW FIX ────────────────────────────────── */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
+main, section, header, footer, nav {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* ─── ROOT TOKENS — mobile-tuned ─────────────────────────── */
+:root {
+  --gutter: 1rem;
+}
+
+/* ─── LOADER ─────────────────────────────────────────────── */
+.loader {
+  padding: 1rem;
+}
+
+.loader-grid {
+  display: flex !important;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.loader-meta {
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  gap: 0.75rem !important;
+}
+
+.loader-meta-row {
+  flex: 1;
+  min-width: 110px;
+}
+
+.loader-counter-num {
+  font-size: clamp(5rem, 28vw, 9rem) !important;
+  line-height: 0.85;
+}
+
+.loader-counter-bar {
+  width: 90% !important;
+}
+
+.loader-brand {
+  align-items: center !important;
+  text-align: center !important;
+}
+
+.loader-brand-line {
+  font-size: clamp(1.5rem, 8vw, 2.5rem) !important;
+  line-height: 0.95;
+}
+
+/* ─── NAV ────────────────────────────────────────────────── */
+.nav {
+  padding: 0.65rem 0.85rem !important;
+}
+
+.nav-row {
+  grid-template-columns: 1fr auto !important;
+  gap: 0.5rem;
+}
+
+.nav-sections { display: none !important; }
+.nav-brand-text { display: none; }
+.nav-status-text { display: none; }
+
+.nav-brand-mark {
+  width: 28px;
+  height: 28px;
+  font-size: 0.95rem;
+}
+
+/* ─── HERO ───────────────────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 6.5rem 1rem 2.5rem !important;
+}
+
+.hero-meta {
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 2.5rem;
+  font-size: 0.5625rem;
+}
+
+.hero-meta-block--right { text-align: left; }
+
+.hero-headline {
+  font-size: clamp(1.85rem, 9.5vw, 3.25rem) !important;
+  line-height: 0.95;
+  margin-bottom: 2.5rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.hero-line--shift { padding-left: 0.4em; }
+
+.hero-foot {
+  grid-template-columns: 1fr !important;
+  gap: 1.5rem;
+}
+
+.hero-lede {
+  font-size: 0.95rem !important;
+  line-height: 1.55;
+}
+
+.hero-cta {
+  justify-self: start;
+  padding: 0.85rem 1.1rem;
+  font-size: 0.7rem;
+}
+
+/* ─── MARQUEE ────────────────────────────────────────────── */
+.marquee-track {
+  font-size: 1rem !important;
+  gap: 1.5rem;
+}
+
+/* ─── SECTION SHARED ─────────────────────────────────────── */
+section {
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+.section-num {
+  font-size: clamp(2.5rem, 14vw, 4rem) !important;
+}
+
+/* ─── THE SEVEN — fix the overflow bug here ──────────────── */
+.seven {
+  padding-top: 4rem !important;
+  padding-bottom: 4rem !important;
+}
+
+.seven-head {
+  grid-template-columns: 1fr !important;
+  gap: 1rem !important;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.seven-title {
+  font-size: clamp(1.65rem, 9vw, 2.75rem) !important;
+  line-height: 0.95;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  letter-spacing: -0.03em;
+}
+
+.seven-title > span { display: inline-block; }
+
+.seven-sub {
+  margin-top: 1.25rem !important;
+  font-size: 0.95rem !important;
+  line-height: 1.55;
+}
+
+.seven-link {
+  grid-template-columns: 1fr !important;
+  gap: 0.85rem !important;
+  padding: 1.5rem 0 !important;
+}
+
+.seven-item-num {
+  font-size: 2rem !important;
+  margin-bottom: 0.25rem;
+}
+
+.seven-item-label {
+  font-size: 0.5625rem;
+}
+
+.seven-item-title {
+  font-size: clamp(1.85rem, 8.5vw, 2.75rem) !important;
+  line-height: 0.95;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.seven-item-desc {
+  font-size: 0.9rem !important;
+  line-height: 1.5;
+  margin-top: 0.5rem;
+}
+
+.seven-item-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.seven-item-stat {
+  min-width: 0;
+  flex: 1;
+}
+
+.seven-item-stat-num {
+  font-size: 1.15rem !important;
+}
+
+.seven-item-cta {
+  justify-self: start !important;
+  padding: 0.55rem 0.85rem !important;
+  font-size: 0.5625rem;
+}
+
+/* ─── NIMBUS SPOTLIGHT — fix nimbus-title-sub overflow ───── */
+.nimbus {
+  padding: 4rem 1rem !important;
+}
+
+.nimbus-head {
+  grid-template-columns: 1fr !important;
+  gap: 0.75rem !important;
+  margin-bottom: 2rem;
+}
+
+.nimbus-eyebrow { text-align: left !important; }
+
+.nimbus-title {
+  gap: 0.75rem;
+}
+
+.nimbus-title-line {
+  font-size: clamp(3.5rem, 18vw, 6rem) !important;
+  line-height: 0.85;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.nimbus-title-sub {
+  font-size: clamp(1.1rem, 4.5vw, 1.65rem) !important;
+  line-height: 1.1;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.nimbus-body {
+  grid-template-columns: 1fr !important;
+  gap: 1.25rem !important;
+  padding: 1.25rem 0 !important;
+}
+
+.nimbus-col p {
+  font-size: 0.95rem !important;
+  line-height: 1.6;
+  margin-bottom: 0.85rem;
+  max-width: 100%;
+}
+
+.nimbus-features {
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+  padding-top: 1.25rem;
+}
+
+.nimbus-feature {
+  border-left: 0 !important;
+  border-top: 1px solid var(--rule) !important;
+  padding: 1rem 0 !important;
+}
+
+.nimbus-feature:first-child { border-top: 0 !important; padding-top: 0; }
+
+.nimbus-feature h4 {
+  font-size: 1.1rem;
+}
+
+.nimbus-feature p {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.nimbus-cta {
+  padding: 0.85rem 1.1rem !important;
+  font-size: 0.7rem;
+}
+
+/* ─── NUMBERS ────────────────────────────────────────────── */
+.numbers {
+  padding: 4rem 1rem !important;
+}
+
+.numbers-head {
+  grid-template-columns: 1fr !important;
+  gap: 1rem !important;
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+}
+
+.numbers-title {
+  font-size: clamp(1.65rem, 9vw, 2.75rem) !important;
+  line-height: 0.95;
+}
+
+.numbers-grid {
+  grid-template-columns: 1fr !important;
+}
+
+.num {
+  min-height: 180px !important;
+  padding: 1.5rem 1rem !important;
+}
+
+.num-value {
+  font-size: clamp(3rem, 14vw, 5rem) !important;
+  line-height: 0.85;
+}
+
+.num-label {
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+}
+
+/* ─── STACK ──────────────────────────────────────────────── */
+.stack {
+  padding: 4rem 1rem !important;
+}
+
+.stack-head {
+  grid-template-columns: 1fr !important;
+  gap: 1rem !important;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.stack-title {
+  font-size: clamp(1.65rem, 9vw, 2.75rem) !important;
+  line-height: 0.95;
+}
+
+.stack-sub {
+  margin-top: 1.25rem !important;
+  font-size: 0.95rem !important;
+}
+
+.stack-row {
+  grid-template-columns: 32px 1fr !important;
+  grid-template-areas:
+    "num tech"
+    "num layer"
+    "num purpose" !important;
+  row-gap: 0.4rem;
+  padding: 0.85rem 0.5rem !important;
+  font-size: 0.7rem;
+}
+
+.stack-row--head { display: none !important; }
+
+.stack-col--num {
+  grid-area: num;
+  font-size: 0.95rem;
+}
+
+.stack-col--layer {
+  grid-area: layer;
+  font-size: 0.5625rem;
+}
+
+.stack-col--tech {
+  grid-area: tech;
+  font-size: 0.95rem;
+}
+
+.stack-col--purpose {
+  grid-area: purpose;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+/* ─── LONGFORM ───────────────────────────────────────────── */
+.longform {
+  padding: 4rem 1rem !important;
+}
+
+.longform-head {
+  grid-template-columns: 1fr !important;
+  gap: 1rem !important;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+}
+
+.longform-title {
+  font-size: clamp(1.85rem, 9vw, 3rem) !important;
+  line-height: 0.95;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.longform-body {
+  grid-template-columns: 1fr !important;
+  gap: 1.5rem !important;
+  margin-bottom: 2.5rem;
+}
+
+.longform-col p {
+  font-size: 0.95rem !important;
+  line-height: 1.6;
+  max-width: 100%;
+}
+
+.longform-dropcap {
+  font-size: 3em;
+}
+
+.longform-quote {
+  font-size: clamp(1.15rem, 5vw, 1.75rem) !important;
+  padding: 1.5rem 0 !important;
+  line-height: 1.15;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.longform-sign {
+  grid-template-columns: 1fr !important;
+  gap: 0.85rem;
+}
+
+.longform-sign-meta { text-align: left !important; }
+
+/* ─── CTA SECTION ────────────────────────────────────────── */
+.cta-inner {
+  padding: 4rem 1rem !important;
+  gap: 1.5rem;
+}
+
+.cta-title {
+  font-size: clamp(2.25rem, 12vw, 4rem) !important;
+  line-height: 0.92;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.cta-btn {
+  padding: 0.95rem 1.15rem !important;
+  font-size: 0.7rem;
+}
+
+.cta-actions {
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  gap: 0.65rem;
+}
+
+.cta-actions .cta-btn { justify-content: center; }
+
+/* ─── CTA CARDS (in-content) ─────────────────────────────── */
+.cta-card {
+  padding: 1.5rem 1rem !important;
+  margin-top: 2rem !important;
+  gap: 0.85rem;
+}
+
+.cta-card-title {
+  font-size: clamp(1.1rem, 5vw, 1.5rem) !important;
+  line-height: 1.1;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.cta-card-btn {
+  padding: 0.6rem 0.85rem !important;
+  font-size: 0.65rem;
+}
+
+/* ─── FOOTER ─────────────────────────────────────────────── */
+.footer-row {
+  grid-template-columns: 1fr !important;
+  gap: 2rem !important;
+  padding: 3rem 1rem !important;
+}
+
+.footer-brand { flex-direction: column; align-items: flex-start; gap: 0.85rem; }
+
+.footer-brand-mark {
+  width: 48px;
+  height: 48px;
+  font-size: 1.65rem;
+}
+
+.footer-grid {
+  grid-template-columns: 1fr 1fr !important;
+  gap: 1.5rem 1rem;
+}
+
+.footer-col-title { font-size: 0.65rem; }
+.footer-col, .footer-col-meta, .footer-col a { font-size: 0.75rem; }
+
+.footer-base-track {
+  font-size: 0.85rem !important;
+  gap: 1.25rem;
+}
+
+/* ─── FIXED CTA ──────────────────────────────────────────── */
+.fixed-cta {
+  bottom: 0.85rem !important;
+  right: 0.85rem !important;
+  padding: 0.65rem 0.85rem 0.65rem 1.05rem !important;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+}
+
+.fixed-cta-text { display: inline; }
+
+/* ─── JOIN OVERLAY ───────────────────────────────────────── */
+.join-counter {
+  top: 0.85rem !important;
+  left: 0.85rem !important;
+  font-size: 0.5625rem !important;
+}
+
+.join-close {
+  top: 0.85rem !important;
+  right: 0.85rem !important;
+  width: 40px !important;
+  height: 40px !important;
+  font-size: 1.25rem;
+}
+
+.join-stage {
+  padding: 1.5rem 1rem !important;
+  min-height: 75vh;
+}
+
+.join-phrase {
+  padding: 1.5rem 1rem !important;
+}
+
+.join-phrase-text {
+  font-size: clamp(1.35rem, 6vw, 2rem) !important;
+  line-height: 1.1;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.join-final {
+  padding: 0 0.5rem;
+}
+
+.join-final-title {
+  font-size: clamp(1.85rem, 8vw, 2.5rem) !important;
+  line-height: 0.95;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.join-final-text {
+  font-size: 0.9rem !important;
+  line-height: 1.55;
+  max-width: 100%;
+}
+
+.join-progress {
+  left: 1rem !important;
+  right: 1rem !important;
+  bottom: 1rem !important;
+}
+
+/* ─── TIERS (partner cards) ──────────────────────────────── */
+.tiers {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 0.5rem;
+}
+
+.tier {
+  padding: 1.5rem 1.15rem !important;
+  gap: 0.85rem;
+  text-align: left;
+  align-items: stretch !important;
+  width: 100%;
+  max-width: 100%;
+}
+
+.tier-head { gap: 0.4rem; }
+
+.tier-num {
+  font-size: 1.5rem !important;
+}
+
+.tier-name {
+  font-size: 1.5rem !important;
+  letter-spacing: -0.02em;
+}
+
+.tier-tag {
+  font-size: 0.7rem;
+}
+
+.tier-price {
+  font-size: 1.75rem !important;
+  gap: 0.2rem;
+}
+
+.tier-price-val {
+  font-size: 2.5rem !important;
+}
+
+.tier-price-currency, .tier-price-from, .tier-price-when {
+  font-size: 0.75rem;
+}
+
+.tier-sub {
+  font-size: 0.7rem;
+}
+
+.tier-list {
+  margin: 0.5rem 0 !important;
+  padding-left: 0;
+}
+
+.tier-list li {
+  font-size: 0.78rem !important;
+  padding: 0.4rem 0 0.4rem 1.1rem;
+}
+
+.tier-btn {
+  padding: 0.85rem 1rem !important;
+  font-size: 0.7rem;
+  width: 100%;
+  justify-content: center;
+}
+
+.tier-note {
+  font-size: 0.6rem;
+}
+
+.tier-flag {
+  font-size: 0.55rem;
+  padding: 0.25rem 0.65rem;
+  top: -0.65rem;
+  right: 1rem;
+}

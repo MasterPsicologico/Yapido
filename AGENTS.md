@@ -9,14 +9,23 @@
 
 ```
 /
-├── Yapido (app principal)  — Multi-rol comercio/logística con 20 agentes AI
-├── finanzas/               — Gestión financiera personal con IA
-├── nimbus/                 — Plataforma de chat y herramientas potenciada por IA
-├── public/p/ + src/app/p/  — CineStream: app de streaming de películas
-├── docs/                   — Documentación de Yapido (blueprint, backend, responsive)
-├── scripts/                — Utilidades (setup, superadmin, fetch data)
-└── resources/              — Assets adicionales
+├── Yapido (app principal)       — Multi-rol comercio/logística con 20 agentes AI
+├── finanzas/                    — Gestión financiera personal con IA
+├── nimbus/                      — Plataforma de chat y herramientas potenciada por IA
+├── public/p/                    — CineStream: streaming de películas (vanilla JS)
+├── public/objetivos/            — Panel de objetivos / OKR del ecosistema (vanilla JS)
+├── public/animaciones/          — Motor 3D procedimental (Vite + Three.js + GSAP)
+├── public/lavadoras/            — Next.js app para alquiler de lavadoras
+├── public/z/                    — Yapido Premium Zone (landing editorial del ecosistema)
+├── docs/                        — Documentación de Yapido (blueprint, backend, responsive)
+├── scripts/                     — Utilidades (setup, superadmin, fetch data)
+└── resources/                   — Assets adicionales
 ```
+
+> **Convención:** las apps autocontenidas en `public/<slug>/` se despliegan como
+> subdominios de `yapido.click` (`objetivos.yapido.click`, `animaciones.yapido.click`,
+> `lavadoras.yapido.click`). Las apps multi-zone siguen viviendo en paths
+> (`/finanzas`, `/nimbus`).
 
 ---
 
@@ -98,26 +107,132 @@
 
 **Datos:** Firebase Firestore (`cinestream_movies` collection) + anime movies data JSON
 
+**Producción:** `https://yapido.click/p`
+
+---
+
+## 5. Objetivos (`/objetivos`) — Panel de OKR del ecosistema
+
+**App cliente.** — Panel de objetivos semanales (vanilla JS + Firebase opcional)
+
+**Propósito:** Sistema táctico para definir, seguir y marcar como completados objetivos semanales por proyecto. Privado (gate con `?k=TOKEN`), localStorage por defecto, Firestore opcional para sync entre dispositivos.
+
+**Ruta:** `/objetivos`
+
+**Stack:** Vanilla JavaScript, CSS modular, Firebase compat (app + firestore) cargado por CDN
+
+**Características clave:**
+- 12 tipos de objetivo predefinidos (integration_partner, user_acquisition, content_publish, feature_release, app_store_setup, marketing_campaign, ai_improvement, data_migration, finance, operational, bug_fix, generic) — cada uno genera su propio formulario de "completado"
+- Gate de acceso vía token en query string (`?k=...`)
+- Mobile-first con bottom nav, sidebar en desktop
+- Import/Export JSON, sync Firebase opcional
+
+**Producción:** `https://objetivos.yapido.click`
+
+---
+
+## 6. Animaciones (`/animaciones`) — Motor 3D procedimental
+
+**App cliente.** — Motor integrado de escenas 3D
+
+**Propósito:** A partir de una descripción en lenguaje natural, genera y renderiza escenas 3D con geometría procedural + assets Blender, anima la cámara y la materia con scroll, y permite exportar el resultado (WebM, PNG, JSON receta).
+
+**Ruta:** `/animaciones`
+
+**Stack:** Vite + TypeScript + Three.js (0.169) + GSAP (3.13) + Anime.js (3.2)
+- `src/core/` — motor procedural
+- `src/ui/` — capa de interfaz
+- `src/utils/` — exporters y helpers
+
+**Características clave:**
+- Escena WebGL fullscreen con overlay de scan/bars animado
+- Kinetic typography sincronizada con scroll (ScrollTrigger)
+- Exporta a WebM (canvas capture), PNG (frame estático), JSON (receta procedural reproducible)
+- Scroll-driven 3D: hacer scroll altera la geometría/material de la escena
+
+**Puerto dev:** Vite default (5173), configurado para correr standalone
+
+**Producción:** `https://animaciones.yapido.click`
+
+---
+
+## 7. Lavadoras (`/lavadoras`) — Next.js app standalone
+
+**Next.js 15 + React 19 + Firebase + Capacitor** — App dedicada al alquiler de lavadoras.
+
+**Propósito:** Superficie operativa para el módulo de alquiler de lavadoras. Reservas, calendario, tracking de equipos, panel logístico. Es la versión "standalone" del módulo `/washer` de Yapido, pensada como APK móvil vía Capacitor.
+
+**Ruta:** `/lavadoras`
+
+**Stack:** Next.js 15 + React 19 + Radix UI + Tailwind + shadcn/ui + framer-motion + Firebase + Genkit + Mapbox + Recharts + Capacitor 8 (Android)
+
+**Diferencia con `/washer` de Yapido:** Este es un proyecto Next.js independiente (con su propio `package.json` y `next.config.ts`) que replica y extiende la lógica de lavadoras. El módulo `/washer` de Yapido es la versión embebida dentro del monorepo principal.
+
+**Puerto dev:** 9002 (mismo que Yapido raíz — corre como instancia paralela)
+
+**Producción:** `https://lavadoras.yapido.click`
+
+---
+
+## 8. Premium Zone (`/z`) — Landing editorial del ecosistema
+
+**App cliente.** — Landing page que presenta los 7 productos del ecosistema como manifiesto editorial.
+
+**Propósito:** Vitrina pública del ecosistema. Es la "portada" del monorepo y la primera impresión para nuevos usuarios. No es una app productiva, es una pieza de marca.
+
+**Ruta:** `/z`
+
+**Stack:** HTML5 + CSS3 + Vanilla JS (sin build, todo en CDN)
+- **GSAP 3.13** + **ScrollTrigger** — coreografía de scroll, split chars, parallax
+- **Lenis 1.1** — smooth scroll
+- Fuentes: Archivo Black (display), Inter (body), JetBrains Mono (mono)
+
+**Estilo visual:** Editorial Brutalism. Tipografía extrema, números como elementos de diseño, reglas horizontales gruesas, paleta paper/ink/acid yellow. Cursor custom, loader sequence con contador, marquees, número animado de stats, tabla técnica del stack, long-form manifesto.
+
+**Estructura de archivos:**
+- `public/z/index.html` — markup completo
+- `public/z/styles.css` — sistema de tokens + secciones
+- `public/z/app.js` — interacciones
+- `public/z/.gitignore`
+
+**Producción:** `https://yapido.click/z`
+
 ---
 
 ## Arquitectura Multi-Zone
 
 ```
-                    ┌──────────────┐
-                    │   Yapido     │
-                    │  (puerto 9002)│
-                    └──────┬───────┘
-                           │
-              ┌────────────┼────────────┐
-              ▼            ▼            ▼
-       ┌──────────┐ ┌──────────┐ ┌──────────┐
-       │ Finanzas │ │  Nimbus  │ │CineStream│
-       │(p. 9003) │ │(p. 9004) │ │(estático)│
-       └──────────┘ └──────────┘ └──────────┘
+                        ┌──────────────────────┐
+                        │   Yapido (root)      │
+                        │   puerto 9002         │
+                        │   yapido.click        │
+                        └──┬────────┬──────┬────┘
+                           │        │      │
+              ┌────────────┘        │      └────────────┐
+              ▼                     ▼                   ▼
+       ┌─────────────┐      ┌─────────────┐     ┌─────────────┐
+       │  Finanzas   │      │   Nimbus    │     │ CineStream  │
+       │ /finanzas   │      │  /nimbus    │     │     /p      │
+       │  p. 9003    │      │  p. 9004    │     │  estático   │
+       │ (path)      │      │  (path)     │     │  (path)     │
+       └─────────────┘      └─────────────┘     └─────────────┘
+
+       ┌─────────────┐      ┌─────────────┐     ┌─────────────┐
+       │  Objetivos  │      │ Animaciones │     │  Lavadoras  │
+       │ objetivos.  │      │ animaciones.│     │  lavadoras. │
+       │ yapido.click│      │ yapido.click│     │ yapido.click│
+       │  (subdom)   │      │  (subdom)   │     │  (subdom)   │
+       └─────────────┘      └─────────────┘     └─────────────┘
+
+       ┌─────────────────────────────┐
+       │   Premium Zone (landing)    │
+       │   yapido.click/z            │
+       │   editorial brutalism       │
+       └─────────────────────────────┘
 ```
 
 - **Dev:** rewrites en `next.config.ts` apuntan a puertos locales
-- **Prod:** rewrites en `vercel.json` apuntan a URLs de Vercel
+- **Prod:** rewrites en `vercel.json` apuntan a subdominios / paths
 - **Middleware:** excluye `/finanzas`, `/nimbus` de procesamiento
 
 ---
@@ -129,7 +244,9 @@
 3. **No mezclar dependencias** entre proyectos — cada uno tiene su propio `package.json`
 4. **Commits descriptivos** — usar convención de prefijos: `feat:`, `fix:`, `chore:`, `docs:`
 5. **Pull request a `main`** — mantener la rama principal estable
+6. **Subdominios de `yapido.click`:** `objetivos`, `animaciones`, `lavadoras`, `finanzas`, `nimbus`
+7. **Paths legados:** `/finanzas`, `/nimbus`, `/p` se mantienen por retrocompatibilidad
 
 ---
 
-*Última actualización: 29 de Mayo, 2026*
+*Última actualización: 6 de Junio, 2026*

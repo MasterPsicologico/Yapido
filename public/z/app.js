@@ -1,205 +1,588 @@
-/* ============================================================
-   YAPIDO ECOSYSTEM — Interactions & Animations
-   Particles, Magnetic Cursor, Scroll Reveals, Bento Tilt
-   ============================================================ */
+/* ════════════════════════════════════════════════════════════
+   YAPIDO — Editorial Brutalism
+   Interactions: Lenis smooth scroll, custom cursor,
+   GSAP loader, ScrollTrigger choreography, join sequence.
+   ════════════════════════════════════════════════════════════ */
 
 (function () {
   'use strict';
 
-  /* ── Particle Background ──────────────────────────────── */
-  const canvas = document.getElementById('particles');
-  const ctx = canvas.getContext('2d');
-  let particles = [];
-  let w, h;
-  let animFrame;
-
-  function resize() {
-    w = canvas.width = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-  }
-
-  class Particle {
-    constructor() {
-      this.reset();
+  /* ─── libs are loaded with `defer`, so wait for them ─── */
+  const ready = (fn) => {
+    if (window.gsap && window.ScrollTrigger && window.Lenis) {
+      return fn();
     }
-    reset() {
-      this.x = Math.random() * w;
-      this.y = Math.random() * h;
-      this.size = Math.random() * 1.5 + 0.5;
-      this.speedX = (Math.random() - 0.5) * 0.3;
-      this.speedY = (Math.random() - 0.5) * 0.3;
-      this.opacity = Math.random() * 0.5 + 0.1;
-      this.hue = Math.random() > 0.5 ? 255 : 180; // purple or teal tint
-    }
-    update() {
-      this.x += this.speedX;
-      this.y += this.speedY;
-      if (this.x < 0 || this.x > w || this.y < 0 || this.y > h) {
-        this.reset();
+    let tries = 0;
+    const id = setInterval(() => {
+      tries++;
+      if (window.gsap && window.ScrollTrigger && window.Lenis) {
+        clearInterval(id);
+        fn();
+      } else if (tries > 80) {
+        clearInterval(id);
+        fn(true);
       }
-    }
-    draw() {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${this.hue}, ${this.hue === 255 ? 200 : 220}, ${this.hue === 255 ? 255 : 201}, ${this.opacity})`;
-      ctx.fill();
-    }
-  }
+    }, 50);
+  };
 
-  function initParticles() {
-    resize();
-    const count = Math.min(Math.floor((w * h) / 12000), 120);
-    particles = [];
-    for (let i = 0; i < count; i++) {
-      particles.push(new Particle());
-    }
-  }
+  ready((fallback) => {
+    const hasGSAP = !!window.gsap && !!window.ScrollTrigger;
+    const hasLenis = !!window.Lenis;
+    const gsap = window.gsap;
+    const ScrollTrigger = window.ScrollTrigger;
 
-  function drawConnections() {
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 120) {
-          ctx.beginPath();
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(108, 92, 231, ${0.06 * (1 - dist / 120)})`;
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
+    if (hasGSAP) gsap.registerPlugin(ScrollTrigger);
+
+    /* ═══ LENIS (smooth scroll) ════════════════════════════ */
+    let lenis = null;
+    if (hasLenis) {
+      lenis = new Lenis({
+        duration: 1.15,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        smoothTouch: false,
+        touchMultiplier: 1.4,
+      });
+
+      lenis.on('scroll', ScrollTrigger.update);
+      gsap.ticker.add((time) => { lenis.raf(time * 1000); });
+      gsap.ticker.lagSmoothing(0);
+    }
+
+    /* ═══ CUSTOM CURSOR ════════════════════════════════════ */
+    const cursor = document.getElementById('cursor');
+    const cursorDot = document.getElementById('cursorDot');
+    if (cursor && cursorDot && window.matchMedia('(pointer: fine)').matches) {
+      let cx = -100, cy = -100;
+      let dx = -100, dy = -100;
+      let tx = -100, ty = -100;
+      const ringSpeed = 0.18;
+
+      const move = (e) => {
+        tx = e.clientX;
+        ty = e.clientY;
+        dx = e.clientX;
+        dy = e.clientY;
+      };
+      window.addEventListener('mousemove', move, { passive: true });
+
+      const tickCursor = () => {
+        cx += (tx - cx) * ringSpeed;
+        cy += (ty - cy) * ringSpeed;
+        cursor.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`;
+        cursorDot.style.transform = `translate(${dx}px, ${dy}px) translate(-50%, -50%)`;
+        requestAnimationFrame(tickCursor);
+      };
+      tickCursor();
+
+      document.querySelectorAll('[data-cursor="lg"]').forEach((el) => {
+        el.addEventListener('mouseenter', () => cursor.classList.add('is-lg'));
+        el.addEventListener('mouseleave', () => cursor.classList.remove('is-lg'));
+      });
+
+      document.querySelectorAll('a, button').forEach((el) => {
+        el.addEventListener('mousedown', () => cursor.classList.add('is-press'));
+        el.addEventListener('mouseup',   () => cursor.classList.remove('is-press'));
+      });
+    }
+
+    /* ═══ PROGRESS BAR ════════════════════════════════════ */
+    const progressFill = document.getElementById('progressFill');
+    if (progressFill) {
+      const updateProgress = () => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = max > 0 ? (window.scrollY / max) * 100 : 0;
+        progressFill.style.width = pct + '%';
+      };
+      window.addEventListener('scroll', updateProgress, { passive: true });
+      updateProgress();
+    }
+
+    /* ═══ LOADER SEQUENCE ═════════════════════════════════ */
+    const loader = document.getElementById('loader');
+    const loaderNum = document.getElementById('loaderNum');
+    const loaderBar = document.getElementById('loaderBar');
+    const loaderLabel = document.getElementById('loaderLabel');
+    const loaderLines = document.querySelectorAll('[data-loader-line]');
+    const loaderTag = document.querySelector('[data-loader-tag]');
+
+    const labels = [
+      'ABRIENDO LA PUERTA',
+      'PREPARANDO EL ECOSISTEMA',
+      'CALIBRANDO 20 AGENTES',
+      'CONECTANDO NIMBUS',
+      'LISTO',
+    ];
+
+    if (loader) {
+      const counter = { v: 0 };
+      const target = 100;
+      const dur = 1.8;
+      const state = { proxy: counter };
+
+      const tl = gsap.timeline({
+        defaults: { ease: 'power2.out' },
+      });
+
+      tl.to(state.proxy, {
+        v: target,
+        duration: dur,
+        ease: 'power1.inOut',
+        onUpdate: () => {
+          const v = Math.round(state.proxy.v);
+          if (loaderNum) loaderNum.textContent = String(v).padStart(2, '0');
+          if (loaderBar) loaderBar.style.width = v + '%';
+          if (loaderLabel) {
+            const idx = Math.min(labels.length - 1, Math.floor((v / 100) * labels.length));
+            loaderLabel.textContent = labels[idx];
+          }
+        },
+      });
+
+      tl.to(loaderLines, {
+        y: 0,
+        duration: 0.7,
+        ease: 'expo.out',
+        stagger: 0.1,
+      }, '-=0.6');
+
+      tl.to(loaderTag, {
+        opacity: 1,
+        duration: 0.5,
+      }, '-=0.4');
+
+      tl.to(loader, {
+        opacity: 0,
+        duration: 0.5,
+        ease: 'power2.inOut',
+        delay: 0.25,
+        onComplete: () => {
+          loader.classList.add('is-out');
+          document.body.style.overflow = '';
+          startHero();
+        },
+      });
+
+      document.body.style.overflow = 'hidden';
+    } else {
+      startHero();
+    }
+
+    /* ═══ HERO ANIMATION ══════════════════════════════════ */
+    function startHero() {
+      const nav = document.getElementById('nav');
+      if (nav) {
+        setTimeout(() => nav.classList.add('is-in'), 100);
+      }
+
+      const heroLines = document.querySelectorAll('.hero-line');
+      if (heroLines.length && hasGSAP) {
+        gsap.set(heroLines, { opacity: 1 });
+        const allChars = document.querySelectorAll('.hero-line > span');
+        if (allChars.length) {
+          gsap.to(allChars, {
+            y: 0,
+            duration: 1.1,
+            ease: 'expo.out',
+            stagger: { each: 0.04, from: 'start' },
+          });
         }
       }
+
+      const heroMeta = document.querySelectorAll('.hero-meta-block, .hero-lede, .hero-cta');
+      if (heroMeta.length && hasGSAP) {
+        gsap.from(heroMeta, {
+          y: 24,
+          opacity: 0,
+          duration: 0.9,
+          ease: 'power3.out',
+          stagger: 0.1,
+          delay: 0.8,
+        });
+      }
     }
-  }
 
-  function animateParticles() {
-    ctx.clearRect(0, 0, w, h);
-    particles.forEach(p => { p.update(); p.draw(); });
-    drawConnections();
-    animFrame = requestAnimationFrame(animateParticles);
-  }
-
-  window.addEventListener('resize', () => {
-    cancelAnimationFrame(animFrame);
-    initParticles();
-    animateParticles();
-  });
-
-  initParticles();
-  animateParticles();
-
-  /* ── Cursor Glow Follow ───────────────────────────────── */
-  const cursorGlow = document.getElementById('cursorGlow');
-  let mouseX = -300, mouseY = -300;
-  let glowX = -300, glowY = -300;
-
-  document.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-  });
-
-  function updateGlow() {
-    glowX += (mouseX - glowX) * 0.08;
-    glowY += (mouseY - glowY) * 0.08;
-    cursorGlow.style.transform = `translate(${glowX - 300}px, ${glowY - 300}px)`;
-    requestAnimationFrame(updateGlow);
-  }
-  updateGlow();
-
-  /* ── Scroll Reveal (Intersection Observer) ─────────────── */
-  const revealEls = document.querySelectorAll('.reveal');
-
-  const revealObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        revealObserver.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-
-  revealEls.forEach(el => revealObserver.observe(el));
-
-  /* ── Bento Card Tilt Effect ────────────────────────────── */
-  const bentoCards = document.querySelectorAll('.bento-card');
-
-  bentoCards.forEach(card => {
-    card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      const rotateX = ((y - centerY) / centerY) * -4;
-      const rotateY = ((x - centerX) / centerX) * 4;
-
-      card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.01)`;
-
-      const bg = card.querySelector('.bento-card-bg');
-      if (bg) {
-        bg.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(108, 92, 231, 0.08), var(--glass-hover))`;
-      }
-    });
-
-    card.addEventListener('mouseleave', () => {
-      card.style.transform = '';
-      const bg = card.querySelector('.bento-card-bg');
-      if (bg) {
-        bg.style.background = '';
-      }
-    });
-  });
-
-  /* ── Magnetic Hover on CTA Buttons ─────────────────────── */
-  const magneticEls = document.querySelectorAll('.hero-cta, .btn-primary, .eco-feat');
-
-  magneticEls.forEach(el => {
-    el.addEventListener('mousemove', (e) => {
-      const rect = el.getBoundingClientRect();
-      const x = e.clientX - rect.left - rect.width / 2;
-      const y = e.clientY - rect.top - rect.height / 2;
-      el.style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`;
-    });
-
-    el.addEventListener('mouseleave', () => {
-      el.style.transform = '';
-    });
-  });
-
-  /* ── Navbar Background on Scroll ───────────────────────── */
-  const nav = document.querySelector('.nav');
-  let lastScroll = 0;
-
-  window.addEventListener('scroll', () => {
-    const scrollY = window.scrollY;
-    if (scrollY > 80) {
-      nav.style.background = 'rgba(6, 6, 10, 0.85)';
-    } else {
-      nav.style.background = 'rgba(6, 6, 10, 0.6)';
+    /* ═══ SPLIT-WORD REVEAL ════════════════════════════════ */
+    if (hasGSAP) {
+      document.querySelectorAll('[data-split-word]').forEach((word) => {
+        gsap.from(word, {
+          y: '110%',
+          opacity: 0,
+          duration: 1,
+          ease: 'expo.out',
+          scrollTrigger: {
+            trigger: word,
+            start: 'top 92%',
+            once: true,
+          },
+        });
+      });
     }
-    lastScroll = scrollY;
-  }, { passive: true });
 
-  /* ── Smooth anchor scroll ──────────────────────────────── */
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', (e) => {
-      e.preventDefault();
-      const target = document.querySelector(anchor.getAttribute('href'));
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    /* ═══ SECTION REVEAL (generic) ═════════════════════════ */
+    if (hasGSAP) {
+      gsap.utils.toArray('section > header, .longform-body, .longform-quote, .longform-sign, .cta-inner > *, .nimbus-features, .nimbus-cta').forEach((el) => {
+        gsap.from(el, {
+          y: 40,
+          opacity: 0,
+          duration: 0.9,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 88%',
+            once: true,
+          },
+        });
+      });
+    }
+
+    /* ═══ NUMBERS COUNT-UP ═════════════════════════════════ */
+    if (hasGSAP) {
+      document.querySelectorAll('[data-counter]').forEach((el) => {
+        const item = el.closest('.num');
+        if (!item) return;
+        const targetAttr = item.getAttribute('data-counter-target');
+        const target = parseInt(targetAttr, 10);
+        if (isNaN(target)) return;
+        const state = { v: 0 };
+        const isTargetSmall = target < 100;
+        gsap.to(state, {
+          v: target,
+          duration: 1.6,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 85%',
+            once: true,
+          },
+          onUpdate: () => {
+            el.textContent = isTargetSmall
+              ? String(Math.round(state.v)).padStart(2, '0')
+              : String(Math.round(state.v));
+          },
+        });
+      });
+    }
+
+    /* ═══ SEVEN LIST REVEAL ═══════════════════════════════ */
+    if (hasGSAP) {
+      gsap.utils.toArray('.seven-item').forEach((item, i) => {
+        gsap.from(item, {
+          y: 60,
+          opacity: 0,
+          duration: 1,
+          ease: 'expo.out',
+          scrollTrigger: {
+            trigger: item,
+            start: 'top 90%',
+            once: true,
+          },
+          delay: 0.05,
+        });
+      });
+    }
+
+    /* ═══ STACK ROW REVEAL ═════════════════════════════════ */
+    if (hasGSAP) {
+      gsap.utils.toArray('.stack-row:not(.stack-row--head)').forEach((row) => {
+        gsap.from(row, {
+          x: -30,
+          opacity: 0,
+          duration: 0.7,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: row,
+            start: 'top 92%',
+            once: true,
+          },
+        });
+      });
+    }
+
+    /* ═══ CTA CARDS — subtle → highlight on viewport ════════ */
+    if (hasGSAP) {
+      document.querySelectorAll('[data-cta-card]').forEach((card) => {
+        ScrollTrigger.create({
+          trigger: card,
+          start: 'top 80%',
+          once: true,
+          onEnter: () => {
+            card.classList.add('is-active');
+            // a small delayed accent animation when activated
+            if (hasGSAP) {
+              gsap.fromTo(card.querySelector('.cta-card-rule'),
+                { width: 0 },
+                { width: '40%', duration: 0.8, ease: 'expo.out', delay: 0.4 }
+              );
+              gsap.fromTo(card.querySelector('.cta-card-btn'),
+                { x: -12, opacity: 0 },
+                { x: 0, opacity: 1, duration: 0.7, ease: 'power3.out', delay: 0.6 }
+              );
+            }
+          },
+        });
+      });
+    }
+
+    /* ═══ NIMBUS SPOTLIGHT — title + body reveal ═══════════ */
+    if (hasGSAP) {
+      const nimbusTitleLine = document.querySelector('.nimbus-title-line');
+      const nimbusTitleSub  = document.querySelector('.nimbus-title-sub');
+      const nimbusBody      = document.querySelector('.nimbus-body');
+      const nimbusFeatures  = document.querySelectorAll('.nimbus-feature');
+
+      if (nimbusTitleLine) {
+        gsap.from(nimbusTitleLine, {
+          y: 80,
+          opacity: 0,
+          duration: 1.2,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: nimbusTitleLine, start: 'top 85%', once: true },
+        });
       }
+      if (nimbusTitleSub) {
+        gsap.from(nimbusTitleSub, {
+          y: 40,
+          opacity: 0,
+          duration: 0.9,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: nimbusTitleSub, start: 'top 85%', once: true },
+          delay: 0.2,
+        });
+      }
+      if (nimbusBody) {
+        gsap.from(nimbusBody, {
+          y: 40,
+          opacity: 0,
+          duration: 0.9,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: nimbusBody, start: 'top 85%', once: true },
+          delay: 0.3,
+        });
+      }
+      nimbusFeatures.forEach((feat, i) => {
+        gsap.from(feat, {
+          y: 30,
+          opacity: 0,
+          duration: 0.7,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: feat, start: 'top 90%', once: true },
+          delay: 0.1 + i * 0.08,
+        });
+      });
+    }
+
+    /* ═══ NAV ACTIVE SECTION ═══════════════════════════════ */
+    if (hasGSAP) {
+      const navLinks = document.querySelectorAll('.nav-sections a');
+      const sectionIds = Array.from(navLinks).map((a) => a.getAttribute('href').replace('#', ''));
+
+      sectionIds.forEach((id) => {
+        const target = document.getElementById(id);
+        if (!target) return;
+        ScrollTrigger.create({
+          trigger: target,
+          start: 'top 50%',
+          end: 'bottom 50%',
+          onEnter: () => setActive(id),
+          onEnterBack: () => setActive(id),
+        });
+      });
+
+      function setActive(id) {
+        navLinks.forEach((a) => {
+          const target = a.getAttribute('href').replace('#', '');
+          a.classList.toggle('is-active', target === id);
+        });
+      }
+    }
+
+    /* ═══ SMOOTH ANCHOR SCROLL (with Lenis) ════════════════ */
+    document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+      anchor.addEventListener('click', (e) => {
+        const href = anchor.getAttribute('href');
+        if (!href || href === '#' || href.length < 2) return;
+        // #nimbus or other anchors that point to in-page sections still scroll
+        if (anchor.hasAttribute('data-join')) return; // join CTAs handled separately
+        const target = document.querySelector(href);
+        if (!target) return;
+        e.preventDefault();
+        if (lenis) {
+          lenis.scrollTo(target, { offset: -50, duration: 1.4 });
+        } else {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
     });
+
+    /* ═══ JOIN SEQUENCE OVERLAY ════════════════════════════ */
+    const joinOverlay = document.getElementById('joinOverlay');
+    const joinClose   = document.getElementById('joinClose');
+    const joinCounter = document.getElementById('joinCounter');
+    const joinPhrases = document.querySelectorAll('[data-join-phrase]');
+    const joinFinal   = document.querySelector('[data-join-final]');
+    const joinBar     = document.querySelector('.join-progress-bar');
+
+    let joinActive = false;
+    let joinTimers = [];
+    const PHRASE_HOLD = 4000;   // ms each phrase stays visible (slow, deliberate)
+    const PHRASE_TRANSITION = 800; // ms cross-fade
+
+    function clearJoinTimers() {
+      joinTimers.forEach((t) => clearTimeout(t));
+      joinTimers = [];
+    }
+
+    function showPhrase(idx) {
+      if (idx >= joinPhrases.length) {
+        // show final
+        if (joinFinal) {
+          joinFinal.hidden = false;
+          requestAnimationFrame(() => joinFinal.classList.add('is-visible'));
+        }
+        if (joinCounter) joinCounter.textContent = '— LISTO —';
+        if (joinBar) joinBar.style.width = '100%';
+        return;
+      }
+      const phrase = joinPhrases[idx];
+      const num = String(idx + 1).padStart(2, '0');
+      if (joinCounter) joinCounter.textContent = `${num} / ${String(joinPhrases.length).padStart(2, '0')}`;
+      if (joinBar) joinBar.style.width = `${((idx + 1) / joinPhrases.length) * 100}%`;
+
+      // make visible
+      phrase.classList.remove('is-leaving');
+      phrase.classList.add('is-visible');
+
+      const t1 = setTimeout(() => {
+        phrase.classList.remove('is-visible');
+        phrase.classList.add('is-leaving');
+        const t2 = setTimeout(() => {
+          phrase.classList.remove('is-leaving');
+          showPhrase(idx + 1);
+        }, PHRASE_TRANSITION);
+        joinTimers.push(t2);
+      }, PHRASE_HOLD);
+      joinTimers.push(t1);
+    }
+
+    function startJoinSequence() {
+      if (joinActive || !joinOverlay) return;
+      joinActive = true;
+      // reset state
+      joinPhrases.forEach((p) => {
+        p.classList.remove('is-visible', 'is-leaving');
+      });
+      if (joinFinal) {
+        joinFinal.classList.remove('is-visible');
+        joinFinal.hidden = true;
+      }
+      if (joinBar) joinBar.style.width = '0%';
+
+      // open overlay
+      joinOverlay.classList.add('is-opening');
+      joinOverlay.classList.remove('is-closing');
+      joinOverlay.setAttribute('aria-hidden', 'false');
+
+      requestAnimationFrame(() => {
+        joinOverlay.classList.add('is-open');
+        if (lenis) lenis.stop();
+
+        // start phrases AFTER curtains open
+        setTimeout(() => {
+          joinOverlay.classList.remove('is-opening');
+          showPhrase(0);
+        }, 1100);
+      });
+    }
+
+    function closeJoinSequence() {
+      if (!joinActive) return;
+      joinActive = false;
+      clearJoinTimers();
+      if (joinOverlay) {
+        joinOverlay.classList.remove('is-open');
+        joinOverlay.classList.add('is-closing');
+        joinOverlay.setAttribute('aria-hidden', 'true');
+        if (lenis) lenis.start();
+        setTimeout(() => {
+          joinOverlay.classList.remove('is-closing');
+        }, 1000);
+      }
+    }
+
+    // Bind all [data-join] triggers
+    document.querySelectorAll('[data-join]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        startJoinSequence();
+      });
+    });
+
+    if (joinClose) {
+      joinClose.addEventListener('click', closeJoinSequence);
+    }
+
+    // restart button inside the final state
+    const joinRestart = document.querySelector('[data-join-restart]');
+    if (joinRestart) {
+      joinRestart.addEventListener('click', (e) => {
+        e.preventDefault();
+        clearJoinTimers();
+        if (joinFinal) {
+          joinFinal.classList.remove('is-visible');
+          joinFinal.hidden = true;
+        }
+        joinPhrases.forEach((p) => {
+          p.classList.remove('is-visible', 'is-leaving');
+        });
+        setTimeout(() => showPhrase(0), 200);
+      });
+    }
+
+    // ESC to close
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && joinActive) closeJoinSequence();
+    });
+
+    /* ═══ PARALLAX (subtle) ════════════════════════════════ */
+    if (hasGSAP && lenis) {
+      gsap.utils.toArray('.section-num').forEach((el) => {
+        gsap.to(el, {
+          y: -30,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true,
+          },
+        });
+      });
+
+      // Nimbus orbs subtle drift
+      gsap.utils.toArray('.nimbus-bg-orb').forEach((orb, i) => {
+        gsap.to(orb, {
+          y: -60,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '.nimbus',
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true,
+          },
+        });
+      });
+    }
+
+    /* ═══ FOOTER BRAND REVEAL ══════════════════════════════ */
+    if (hasGSAP) {
+      gsap.from('.footer-brand-mark', {
+        scrollTrigger: { trigger: '.footer', start: 'top 80%', once: true },
+        scale: 0,
+        rotation: 90,
+        duration: 0.9,
+        ease: 'back.out(1.4)',
+      });
+    }
   });
-
-  /* ── Parallax on hero orbs ─────────────────────────────── */
-  window.addEventListener('scroll', () => {
-    const scrollY = window.scrollY;
-    const orbs = document.querySelectorAll('.orb');
-    orbs.forEach((orb, i) => {
-      const speed = (i + 1) * 0.08;
-      orb.style.transform = `translateY(${scrollY * speed}px)`;
-    });
-  }, { passive: true });
-
 })();
