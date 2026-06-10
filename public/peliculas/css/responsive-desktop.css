@@ -46,8 +46,12 @@
     
     /* Grid de películas - más columnas */
     .movies-grid {
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 1.8rem;
+        grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .movie-card {
+        animation-delay: calc(var(--card-index, 0) * 0.08s);
     }
     
     /* Tarjetas más grandes */
@@ -87,5 +91,5 @@
     /* Filas en desktop */
     .movie-row-header { padding: 0 3rem; }
     .movie-row-scroll { padding: 0.5rem 3rem 1rem; }
-    .movie-row-card { flex: 0 0 190px; min-width: 190px; }
+    .movie-row-card { flex: 0 0 130px; min-width: 130px; }
 }

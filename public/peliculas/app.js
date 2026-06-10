@@ -1,27 +1,27 @@
 // =====================================================
 // CINESTREAM APP v3
-// Scroll infinito real, búsqueda YouTube, filtrado mejorado
+// Scroll infinito real, b├║squeda YouTube, filtrado mejorado
 // =====================================================
 
 const typeLabels = {
-    pelicula: "Película",
+    pelicula: "Pel├¡cula",
     documental: "Documental"
 };
 
 const genreLabels = {
-    accion: "Acción",
+    accion: "Acci├│n",
     comedia: "Comedia",
     drama: "Drama",
     terror: "Terror",
-    cienciaficcion: "Ciencia Ficción",
+    cienciaficcion: "Ciencia Ficci├│n",
     anime: "Anime",
     romance: "Romance",
     thriller: "Thriller",
     documental: "Documental",
     aventura: "Aventura",
-    fantasia: "Fantasía",
+    fantasia: "Fantas├¡a",
     misterio: "Misterio",
-    busqueda: "Búsqueda"
+    busqueda: "B├║squeda"
 };
 
 // Estado
@@ -47,7 +47,7 @@ let searchTimeout = null;
 const SEARCH_DELAY = 500; // debounce 500ms
 
 /**
- * Inicialización
+ * Inicializaci├│n
  */
 async function init() {
     console.log('CineStream v3: Initializing...');
@@ -67,7 +67,7 @@ async function init() {
             }
         });
 
-        // Iniciar verificación de videos eliminados
+        // Iniciar verificaci├│n de videos eliminados
         window.CineStreamDB.startVerification();
 
         // Carga inicial
@@ -87,7 +87,7 @@ async function init() {
 
     } catch (error) {
         console.error('Init error:', error);
-        showError('Error al cargar. Verifica tu conexión.');
+        showError('Error al cargar. Verifica tu conexi├│n.');
     }
 }
 
@@ -128,7 +128,7 @@ function setupInfiniteScroll() {
                 return;
             }
 
-            // No hacer scroll load si hay búsqueda activa
+            // No hacer scroll load si hay b├║squeda activa
             if (currentFilters.search && currentFilters.search.length >= 2) {
                 ticking = false;
                 return;
@@ -150,7 +150,7 @@ function setupInfiniteScroll() {
 }
 
 /**
- * Carga películas para la categoría actual (botón manual)
+ * Carga pel├¡culas para la categor├¡a actual (bot├│n manual)
  */
 async function loadCategoryMovies() {
     const genre = currentFilters.category;
@@ -160,7 +160,7 @@ async function loadCategoryMovies() {
     grid.innerHTML = `
         <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 3rem;">
             <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
-            <h3>Buscando películas de ${genreLabels[genre]}...</h3>
+            <h3>Buscando pel├¡culas de ${genreLabels[genre]}...</h3>
             <p>Conectando con YouTube API</p>
         </div>
     `;
@@ -187,7 +187,7 @@ async function loadCategoryMovies() {
             <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 3rem;">
                 <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #e50914; margin-bottom: 1rem;"></i>
                 <h3>Error al cargar</h3>
-                <p>${error.message || 'Verifica tu conexión o intenta más tarde'}</p>
+                <p>${error.message || 'Verifica tu conexi├│n o intenta m├ís tarde'}</p>
                 <button onclick="location.reload()" style="margin-top: 1rem; background: var(--primary-color); color: white; border: none; padding: 0.8rem 2rem; border-radius: 8px; cursor: pointer;">
                     Reintentar
                 </button>
@@ -197,7 +197,7 @@ async function loadCategoryMovies() {
 }
 
 /**
- * Carga más películas (scroll infinito)
+ * Carga m├ís pel├¡culas (scroll infinito)
  */
 async function loadMoreMovies() {
     if (isLoadingMore || !hasMoreMovies) return;
@@ -221,7 +221,7 @@ async function loadMoreMovies() {
         const newMovies = await window.CineStreamDB.loadMoreMovies(genre);
 
         if (!newMovies || newMovies.length === 0) {
-            // Intentar otro género si el actual no da resultados
+            // Intentar otro g├®nero si el actual no da resultados
             if (currentFilters.category === 'all') {
                 const genres = ['comedia', 'drama', 'terror', 'anime', 'thriller'];
                 for (const altGenre of genres) {
@@ -300,7 +300,7 @@ function sortMovies(criteria) {
 }
 
 /**
- * Renderiza películas
+ * Renderiza pel├¡culas
  */
 function renderMovies() {
     const grid = document.getElementById('moviesGrid');
@@ -315,7 +315,7 @@ function renderMovies() {
             grid.innerHTML = `
                 <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 3rem;">
                     <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
-                    <h3>Cargando películas...</h3>
+                    <h3>Cargando pel├¡culas...</h3>
                     <p>Conectando con la base de datos</p>
                 </div>
             `;
@@ -323,10 +323,10 @@ function renderMovies() {
             grid.innerHTML = `
                 <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 3rem;">
                     <i class="fas fa-film" style="font-size: 3rem; color: var(--text-secondary); margin-bottom: 1rem;"></i>
-                    <h3>No hay películas en "${genreLabels[currentFilters.category] || currentFilters.category}"</h3>
-                    <p style="margin-bottom: 1.5rem;">Esta categoría aún no tiene películas guardadas</p>
+                    <h3>No hay pel├¡culas en "${genreLabels[currentFilters.category] || currentFilters.category}"</h3>
+                    <p style="margin-bottom: 1.5rem;">Esta categor├¡a a├║n no tiene pel├¡culas guardadas</p>
                     <button onclick="loadCategoryMovies()" style="background: var(--primary-color); color: white; border: none; padding: 0.8rem 2rem; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600;">
-                        <i class="fas fa-download"></i> Cargar películas de ${genreLabels[currentFilters.category] || currentFilters.category}
+                        <i class="fas fa-download"></i> Cargar pel├¡culas de ${genreLabels[currentFilters.category] || currentFilters.category}
                     </button>
                 </div>
             `;
@@ -334,7 +334,7 @@ function renderMovies() {
             grid.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-film"></i>
-                    <h3>No se encontraron películas</h3>
+                    <h3>No se encontraron pel├¡culas</h3>
                     <p>Intenta con otros filtros</p>
                 </div>
             `;
@@ -347,10 +347,10 @@ function renderMovies() {
             <div class="movie-poster-container">
                 <img src="${movie.poster || ''}" alt="${movie.title || ''}" class="movie-poster" loading="lazy" onerror="this.src='https://picsum.photos/400/600?random=${movie.youtubeId}'">
                 <span class="movie-quality">${movie.quality || 'HD'}</span>
-                <span class="movie-type">${typeLabels[movie.type] || 'Película'}</span>
+                <span class="movie-type">${typeLabels[movie.type] || 'Pel├¡cula'}</span>
             </div>
             <div class="movie-info">
-                <h3 class="movie-title">${movie.title || 'Sin título'}</h3>
+                <h3 class="movie-title">${movie.title || 'Sin t├¡tulo'}</h3>
                 <div class="movie-meta">
                     <span>${movie.year || 'N/A'}</span>
                     <span class="movie-rating"><i class="fas fa-star"></i> ${movie.rating || 'N/A'}</span>
@@ -396,7 +396,7 @@ function changePage(page) {
 }
 
 /**
- * Búsqueda con debounce que consulta YouTube
+ * B├║squeda con debounce que consulta YouTube
  */
 async function performSearch(query) {
     const grid = document.getElementById('moviesGrid');
@@ -429,7 +429,7 @@ async function performSearch(query) {
 
             results.forEach(m => {
                 if (!existingIds.has(m.id || m.youtubeId)) {
-                    // Asignar género detectado por keywords
+                    // Asignar g├®nero detectado por keywords
                     m.genre = detectedGenre;
                     allLoadedMovies.push(m);
 
@@ -456,7 +456,7 @@ async function performSearch(query) {
                 }
             });
 
-            // Actualizar hero y filas con las nuevas películas
+            // Actualizar hero y filas con las nuevas pel├¡culas
             renderHeroSection();
             renderGenreRows();
         }
@@ -466,7 +466,7 @@ async function performSearch(query) {
                 <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 3rem;">
                     <i class="fas fa-search" style="font-size: 3rem; color: var(--text-secondary); margin-bottom: 1rem;"></i>
                     <h3>No se encontraron resultados para "${query}"</h3>
-                    <p>Intenta con otros términos</p>
+                    <p>Intenta con otros t├®rminos</p>
                 </div>
             `;
         } else {
@@ -474,20 +474,20 @@ async function performSearch(query) {
         }
     } catch (error) {
         console.error('Search error:', error);
-        // Fallback: buscar solo en caché
+        // Fallback: buscar solo en cach├®
         currentFilters.search = query;
         applyFilters();
     }
 }
 
 // =====================================================
-// HERO SECTION — Película destacada del día
+// HERO SECTION ÔÇö Pel├¡cula destacada del d├¡a
 // =====================================================
 function renderHeroSection() {
     const container = document.getElementById('heroSection');
     if (!container || allLoadedMovies.length === 0) return;
 
-    // Tomar la película más reciente como destacada
+    // Tomar la pel├¡cula m├ís reciente como destacada
     const featured = allLoadedMovies[0];
     if (!featured) return;
 
@@ -498,7 +498,7 @@ function renderHeroSection() {
             <div class="hero-badge">
                 <i class="fas fa-fire"></i> Destacada
             </div>
-            <h1 class="hero-title">${featured.title || 'Sin título'}</h1>
+            <h1 class="hero-title">${featured.title || 'Sin t├¡tulo'}</h1>
             <div class="hero-meta">
                 <span class="hero-rating"><i class="fas fa-star"></i> ${featured.rating || 'N/A'}</span>
                 <span class="hero-dot"></span>
@@ -514,7 +514,7 @@ function renderHeroSection() {
                     <i class="fas fa-play"></i> Ver ahora
                 </button>
                 <button class="hero-btn hero-btn-info" onclick="openPlayer('${featured.id || featured.youtubeId}')">
-                    <i class="fas fa-info-circle"></i> Más info
+                    <i class="fas fa-info-circle"></i> M├ís info
                 </button>
             </div>
         </div>
@@ -522,7 +522,7 @@ function renderHeroSection() {
 }
 
 // =====================================================
-// GENRE ROWS — Filas horizontales tipo Netflix
+// GENRE ROWS ÔÇö Filas horizontales tipo Netflix
 // =====================================================
 const GENRE_ICONS = {
     accion: 'fa-burst',
@@ -549,7 +549,7 @@ function renderGenreRows() {
         return;
     }
 
-    // Agrupar películas por género
+    // Agrupar pel├¡culas por g├®nero
     const genreGroups = {};
     allLoadedMovies.forEach(movie => {
         const genre = movie.genre || 'accion';
@@ -557,7 +557,7 @@ function renderGenreRows() {
         genreGroups[genre].push(movie);
     });
 
-    // Orden: primero los que más tienen, mostrar solo los que tienen >= 2
+    // Orden: primero los que m├ís tienen, mostrar solo los que tienen >= 2
     const sortedGenres = Object.entries(genreGroups)
         .filter(([_, movies]) => movies.length >= 2)
         .sort((a, b) => b[1].length - a[1].length);
@@ -589,7 +589,7 @@ function renderGenreRows() {
                             <span class="row-card-quality">${movie.quality || 'HD'}</span>
                             <div class="row-card-overlay">
                                 <div class="row-card-title">${movie.title || ''}</div>
-                                <div class="row-card-year">${movie.year || ''} · ${genreLabels[movie.genre] || ''}</div>
+                                <div class="row-card-year">${movie.year || ''} ┬À ${genreLabels[movie.genre] || ''}</div>
                             </div>
                             <div class="row-card-play"><i class="fas fa-play"></i></div>
                         </div>
@@ -636,7 +636,7 @@ document.addEventListener('scroll', (e) => {
 }, true);
 
 // =====================================================
-// AUTO-CATEGORIZACIÓN de búsquedas
+// AUTO-CATEGORIZACI├ôN de b├║squedas
 // =====================================================
 const GENRE_KEYWORDS = {
     anime: ['anime', 'dragon ball', 'naruto', 'one piece', 'attack on titan', 'death note', 'demon slayer', 'jujutsu kaisen', 'fullmetal', 'evangelion', 'spirited away', 'your name', 'akira', 'bleach', 'hunter', 'sailor moon', 'pokemon', 'digimon', 'doraemon', 'inuyasha', 'fairy tail', 'one punch', 'tokyo ghoul', 'berserk', 'overlord', 'chainsaw man', 'vinland', 'code geass', 'steins', 're:zero', 'mob psycho', 'haikyuu', 'slam dunk', 'blue lock', 'gurren', 'toradora', 'sword art'],
@@ -711,7 +711,7 @@ function setupEventListeners() {
             currentFilters.category = filter;
             hasMoreMovies = true;
 
-            // "Todo" muestra hero+filas, géneros específicos muestran grilla
+            // "Todo" muestra hero+filas, g├®neros espec├¡ficos muestran grilla
             if (filter === 'all') {
                 showHeroView();
             } else {
@@ -721,7 +721,7 @@ function setupEventListeners() {
         });
     });
 
-    // Búsqueda con debounce - consulta YouTube
+    // B├║squeda con debounce - consulta YouTube
     document.getElementById('searchInput')?.addEventListener('input', (e) => {
         const query = e.target.value.trim();
 
@@ -789,7 +789,7 @@ function openPlayer(movieId) {
         autoplay: 1, controls: 1, rel: 0, modestbranding: 1, iv_load_policy: 3, fs: 1
     });
 
-    embed.innerHTML = `<iframe src="https://www.youtube.com/embed/${movie.youtubeId}?${params}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:100%"></iframe>`;
+    embed.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${movie.youtubeId}?${params}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:100%"></iframe>`;
 
     embed.style.display = 'block';
     placeholder.style.display = 'none';
@@ -907,60 +907,60 @@ function showError(msg) {
 }
 
 // =====================================================
-// ANIME HUB — Top 50 Franquicias de Toda la Historia
+// ANIME HUB ÔÇö Top 50 Franquicias de Toda la Historia
 // =====================================================
 
 const TOP_50_ANIMES = [
-    { rank: 1,  name: 'Dragon Ball',            query: 'Dragon Ball Z pelicula completa español',              img: 'https://upload.wikimedia.org/wikipedia/en/a/a7/Dragon_ball_series_logo.png', color: '#f97316', pop: '9.8' },
-    { rank: 2,  name: 'Naruto',                 query: 'Naruto pelicula completa español subtitulado',         img: 'https://upload.wikimedia.org/wikipedia/en/9/94/NarutoCoverTankobon1.jpg',   color: '#f59e0b', pop: '9.7' },
-    { rank: 3,  name: 'One Piece',              query: 'One Piece pelicula completa español',                  img: 'https://upload.wikimedia.org/wikipedia/en/9/90/One_Piece%2C_Volume_61_Cover_%28Japanese%29.jpg', color: '#3b82f6', pop: '9.6' },
-    { rank: 4,  name: 'Attack on Titan',        query: 'Shingeki no Kyojin pelicula español subtitulado',      img: 'https://upload.wikimedia.org/wikipedia/en/d/d6/Shingeki_no_Kyojin_manga_vol_1.jpg', color: '#6b7280', pop: '9.5' },
-    { rank: 5,  name: 'Death Note',             query: 'Death Note pelicula completa español',                 img: 'https://upload.wikimedia.org/wikipedia/en/6/6b/Death_Note%2C_volume_1.jpg',  color: '#1e1b4b', pop: '9.5' },
-    { rank: 6,  name: 'Fullmetal Alchemist',    query: 'Fullmetal Alchemist pelicula completa español',        img: 'https://upload.wikimedia.org/wikipedia/en/b/b9/Fullmetal_Alchemist_manga_volume_1_cover.jpg', color: '#d97706', pop: '9.4' },
-    { rank: 7,  name: 'Demon Slayer',           query: 'Kimetsu no Yaiba pelicula completa español subtitulado', img: 'https://upload.wikimedia.org/wikipedia/en/8/8c/Kimetsu_no_Yaiba_Volume_1.jpg', color: '#dc2626', pop: '9.4' },
-    { rank: 8,  name: 'Hunter x Hunter',        query: 'Hunter x Hunter pelicula completa español',            img: 'https://upload.wikimedia.org/wikipedia/en/2/2b/HunterXHunter_manga_volume_1.jpg', color: '#7c3aed', pop: '9.3' },
-    { rank: 9,  name: 'Bleach',                 query: 'Bleach pelicula completa español',                     img: 'https://upload.wikimedia.org/wikipedia/en/1/12/Bleach_volume_1_cover.jpg',   color: '#0ea5e9', pop: '9.2' },
-    { rank: 10, name: 'My Hero Academia',        query: 'Boku no Hero Academia pelicula completa español',      img: 'https://upload.wikimedia.org/wikipedia/en/8/84/Boku_no_Hero_Academia_Volume_1.jpg', color: '#2563eb', pop: '9.1' },
-    { rank: 11, name: 'Jujutsu Kaisen',         query: 'Jujutsu Kaisen pelicula completa español subtitulado', img: 'https://upload.wikimedia.org/wikipedia/en/2/2f/Jujutsu_Kaisen_Volume_1.jpg',  color: '#1d4ed8', pop: '9.1' },
-    { rank: 12, name: 'Sword Art Online',       query: 'Sword Art Online pelicula completa español',           img: 'https://upload.wikimedia.org/wikipedia/en/0/05/Sword_Art_Online_light_novel_volume_1_cover.jpg', color: '#16a34a', pop: '9.0' },
-    { rank: 13, name: 'Evangelion',             query: 'Evangelion pelicula completa español rebuild',         img: 'https://upload.wikimedia.org/wikipedia/en/9/98/Neon_Genesis_Evangelion_Volume_1.jpg', color: '#7c3aed', pop: '9.0' },
-    { rank: 14, name: 'Spirited Away',          query: 'El viaje de Chihiro pelicula completa español',        img: 'https://upload.wikimedia.org/wikipedia/en/d/db/Spirited_Away_Japanese_poster.png', color: '#0891b2', pop: '9.0' },
-    { rank: 15, name: 'Your Name',              query: 'Kimi no Na wa pelicula completa español',              img: 'https://upload.wikimedia.org/wikipedia/en/0/0b/Your_Name_poster.png',        color: '#ec4899', pop: '8.9' },
-    { rank: 16, name: 'Cowboy Bebop',           query: 'Cowboy Bebop pelicula completa español',               img: 'https://upload.wikimedia.org/wikipedia/en/c/c0/Cowboy_Bebop_volume_1.jpg',  color: '#b45309', pop: '8.9' },
-    { rank: 17, name: 'Ghost in the Shell',     query: 'Ghost in the Shell pelicula completa español',         img: 'https://upload.wikimedia.org/wikipedia/en/b/be/Githellposter.jpg',           color: '#0f766e', pop: '8.8' },
-    { rank: 18, name: 'Princess Mononoke',      query: 'Princesa Mononoke pelicula completa español',          img: 'https://upload.wikimedia.org/wikipedia/en/4/4e/Mononokehime_poster.jpg',     color: '#15803d', pop: '8.8' },
-    { rank: 19, name: 'Akira',                  query: 'Akira 1988 pelicula completa español',                 img: 'https://upload.wikimedia.org/wikipedia/en/4/4c/Akira_%281988_film%29.jpg', color: '#dc2626', pop: '8.8' },
-    { rank: 20, name: 'JoJo Bizarre Adventure', query: 'JoJo no Kimyou na Bouken pelicula español',            img: 'https://upload.wikimedia.org/wikipedia/en/b/b6/JoJos_Bizarre_Adventure_manga_volume_1.jpg', color: '#d946ef', pop: '8.7' },
-    { rank: 21, name: 'One Punch Man',          query: 'One Punch Man pelicula completa español',              img: 'https://upload.wikimedia.org/wikipedia/en/3/32/One_Punch_Man%2C_Volume_1_Cover.jpg', color: '#facc15', pop: '8.7' },
-    { rank: 22, name: 'Code Geass',             query: 'Code Geass pelicula completa español',                 img: 'https://upload.wikimedia.org/wikipedia/en/0/0e/Code_Geass_Lelouch_of_the_Rebellion_DVD_Vol._1.jpg', color: '#7c3aed', pop: '8.7' },
-    { rank: 23, name: 'Steins;Gate',            query: 'Steins Gate pelicula completa español',                img: 'https://upload.wikimedia.org/wikipedia/en/6/63/Steins_Gate_volume_1.jpg',    color: '#0369a1', pop: '8.6' },
-    { rank: 24, name: 'Re:Zero',                query: 'Re Zero pelicula completa español subtitulado',        img: 'https://upload.wikimedia.org/wikipedia/en/9/9c/Re_Zero_kara_Hajimeru_Isekai_Seikatsu_volume_1.jpg', color: '#be185d', pop: '8.6' },
-    { rank: 25, name: 'Tokyo Ghoul',            query: 'Tokyo Ghoul pelicula completa español',                img: 'https://upload.wikimedia.org/wikipedia/en/f/f6/Tokyo_Ghoul_manga_vol_1.jpg',  color: '#9f1239', pop: '8.5' },
-    { rank: 26, name: 'Fairy Tail',             query: 'Fairy Tail pelicula completa español',                 img: 'https://upload.wikimedia.org/wikipedia/en/9/9b/Fairy_Tail_manga_volume_1.jpg', color: '#1d4ed8', pop: '8.5' },
-    { rank: 27, name: 'Mob Psycho 100',         query: 'Mob Psycho 100 pelicula completa español',             img: 'https://upload.wikimedia.org/wikipedia/en/a/a7/Mob_Psycho_100_volume_1.jpg',  color: '#4f46e5', pop: '8.5' },
-    { rank: 28, name: 'Chainsaw Man',           query: 'Chainsaw Man pelicula completa español subtitulado',   img: 'https://upload.wikimedia.org/wikipedia/en/9/99/Chainsaw_Man_Volume_1.jpg',   color: '#dc2626', pop: '8.4' },
-    { rank: 29, name: 'Vinland Saga',           query: 'Vinland Saga pelicula completa español',               img: 'https://upload.wikimedia.org/wikipedia/en/2/22/VinlandSagaVol1.jpg',        color: '#92400e', pop: '8.4' },
-    { rank: 30, name: 'Berserk',                query: 'Berserk pelicula completa español',                    img: 'https://upload.wikimedia.org/wikipedia/en/a/a9/Berserk_manga_volume_1.jpg', color: '#1c1917', pop: '8.4' },
-    { rank: 31, name: 'Overlord',               query: 'Overlord pelicula completa español anime',             img: 'https://upload.wikimedia.org/wikipedia/en/3/37/Overlord_light_novel_volume_1_cover.jpg', color: '#064e3b', pop: '8.3' },
-    { rank: 32, name: 'Black Clover',           query: 'Black Clover pelicula completa español',               img: 'https://upload.wikimedia.org/wikipedia/en/0/0b/Black_Clover_volume_1.jpg',   color: '#15803d', pop: '8.3' },
-    { rank: 33, name: 'Haikyuu',                query: 'Haikyuu pelicula completa español subtitulado',        img: 'https://upload.wikimedia.org/wikipedia/en/2/2f/Haikyuu_manga_volume_1.jpg',  color: '#f97316', pop: '8.3' },
-    { rank: 34, name: 'Slam Dunk',              query: 'Slam Dunk pelicula completa español',                  img: 'https://upload.wikimedia.org/wikipedia/en/f/fa/Slam_Dunk_volume_1.jpg',     color: '#dc2626', pop: '8.2' },
-    { rank: 35, name: 'Blue Lock',              query: 'Blue Lock pelicula completa español',                  img: 'https://upload.wikimedia.org/wikipedia/en/1/14/Blue_Lock_volume_1.jpg',     color: '#1d4ed8', pop: '8.2' },
-    { rank: 36, name: 'Inuyasha',               query: 'Inuyasha pelicula completa español',                   img: 'https://upload.wikimedia.org/wikipedia/en/6/6a/Inuyasha_volume_1.jpg',      color: '#b91c1c', pop: '8.2' },
-    { rank: 37, name: 'Yu Yu Hakusho',          query: 'Yu Yu Hakusho pelicula completa español',              img: 'https://upload.wikimedia.org/wikipedia/en/f/f4/Yu_Yu_Hakusho_manga_v1.jpg', color: '#7c3aed', pop: '8.1' },
-    { rank: 38, name: 'Sailor Moon',            query: 'Sailor Moon pelicula completa español',                img: 'https://upload.wikimedia.org/wikipedia/en/4/42/Sailor_Moon_volume_1.jpg',    color: '#db2777', pop: '8.1' },
-    { rank: 39, name: 'Hellsing',               query: 'Hellsing Ultimate pelicula completa español',          img: 'https://upload.wikimedia.org/wikipedia/en/a/a6/Hellsing_vol01.jpg',          color: '#7f1d1d', pop: '8.0' },
-    { rank: 40, name: 'Trigun',                 query: 'Trigun pelicula completa español',                     img: 'https://upload.wikimedia.org/wikipedia/en/b/be/Trigun_vol01_cover.jpg',      color: '#ca8a04', pop: '8.0' },
-    { rank: 41, name: 'Pokémon',               query: 'Pokemon pelicula completa español latino',              img: 'https://upload.wikimedia.org/wikipedia/en/c/c5/Pok%C3%A9mon_Yellow_box_art.jpg', color: '#eab308', pop: '9.2' },
-    { rank: 42, name: 'Digimon',               query: 'Digimon pelicula completa español latino',              img: 'https://upload.wikimedia.org/wikipedia/en/4/4e/Digimonlogo.png',             color: '#2563eb', pop: '8.5' },
-    { rank: 43, name: 'Cardcaptor Sakura',      query: 'Cardcaptor Sakura pelicula completa español',          img: 'https://upload.wikimedia.org/wikipedia/en/0/06/Cardcaptor_Sakura_volume_1.jpg', color: '#f472b6', pop: '8.0' },
-    { rank: 44, name: 'Doraemon',              query: 'Doraemon pelicula completa español',                    img: 'https://upload.wikimedia.org/wikipedia/en/b/b9/Doraemon_character.png',      color: '#2563eb', pop: '8.8' },
-    { rank: 45, name: 'Detective Conan',        query: 'Detective Conan pelicula completa español',            img: 'https://upload.wikimedia.org/wikipedia/en/7/7a/Case_Closed_Manga_Volume_1.jpg', color: '#1e40af', pop: '8.6' },
-    { rank: 46, name: 'Dragon Ball Super',      query: 'Dragon Ball Super Broly pelicula completa español',    img: 'https://upload.wikimedia.org/wikipedia/en/6/6a/Dragon_Ball_Super_manga_volume_1.jpg', color: '#f97316', pop: '8.7' },
-    { rank: 47, name: 'Sword Art Online Alicization', query: 'SAO Alicization pelicula completa español',     img: 'https://upload.wikimedia.org/wikipedia/en/0/05/Sword_Art_Online_light_novel_volume_1_cover.jpg', color: '#16a34a', pop: '8.2' },
-    { rank: 48, name: 'Gurren Lagann',          query: 'Gurren Lagann pelicula completa español',              img: 'https://upload.wikimedia.org/wikipedia/en/4/4e/Gurren_Lagann_DVD_vol_1.jpg',  color: '#dc2626', pop: '8.5' },
-    { rank: 49, name: 'Toradora',               query: 'Toradora pelicula completa español',                   img: 'https://upload.wikimedia.org/wikipedia/en/b/bc/Toradora_light_novel_v1.jpg', color: '#f43f5e', pop: '8.3' },
-    { rank: 50, name: 'Sword Art Online Progressive', query: 'SAO Progressive pelicula completa español',     img: 'https://upload.wikimedia.org/wikipedia/en/0/05/Sword_Art_Online_light_novel_volume_1_cover.jpg', color: '#16a34a', pop: '8.1' },
+    { rank: 1,  name: 'Dragon Ball',            query: 'Dragon Ball Z pelicula completa espa├▒ol',              img: 'https://upload.wikimedia.org/wikipedia/en/a/a7/Dragon_ball_series_logo.png', color: '#f97316', pop: '9.8' },
+    { rank: 2,  name: 'Naruto',                 query: 'Naruto pelicula completa espa├▒ol subtitulado',         img: 'https://upload.wikimedia.org/wikipedia/en/9/94/NarutoCoverTankobon1.jpg',   color: '#f59e0b', pop: '9.7' },
+    { rank: 3,  name: 'One Piece',              query: 'One Piece pelicula completa espa├▒ol',                  img: 'https://upload.wikimedia.org/wikipedia/en/9/90/One_Piece%2C_Volume_61_Cover_%28Japanese%29.jpg', color: '#3b82f6', pop: '9.6' },
+    { rank: 4,  name: 'Attack on Titan',        query: 'Shingeki no Kyojin pelicula espa├▒ol subtitulado',      img: 'https://upload.wikimedia.org/wikipedia/en/d/d6/Shingeki_no_Kyojin_manga_vol_1.jpg', color: '#6b7280', pop: '9.5' },
+    { rank: 5,  name: 'Death Note',             query: 'Death Note pelicula completa espa├▒ol',                 img: 'https://upload.wikimedia.org/wikipedia/en/6/6b/Death_Note%2C_volume_1.jpg',  color: '#1e1b4b', pop: '9.5' },
+    { rank: 6,  name: 'Fullmetal Alchemist',    query: 'Fullmetal Alchemist pelicula completa espa├▒ol',        img: 'https://upload.wikimedia.org/wikipedia/en/b/b9/Fullmetal_Alchemist_manga_volume_1_cover.jpg', color: '#d97706', pop: '9.4' },
+    { rank: 7,  name: 'Demon Slayer',           query: 'Kimetsu no Yaiba pelicula completa espa├▒ol subtitulado', img: 'https://upload.wikimedia.org/wikipedia/en/8/8c/Kimetsu_no_Yaiba_Volume_1.jpg', color: '#dc2626', pop: '9.4' },
+    { rank: 8,  name: 'Hunter x Hunter',        query: 'Hunter x Hunter pelicula completa espa├▒ol',            img: 'https://upload.wikimedia.org/wikipedia/en/2/2b/HunterXHunter_manga_volume_1.jpg', color: '#7c3aed', pop: '9.3' },
+    { rank: 9,  name: 'Bleach',                 query: 'Bleach pelicula completa espa├▒ol',                     img: 'https://upload.wikimedia.org/wikipedia/en/1/12/Bleach_volume_1_cover.jpg',   color: '#0ea5e9', pop: '9.2' },
+    { rank: 10, name: 'My Hero Academia',        query: 'Boku no Hero Academia pelicula completa espa├▒ol',      img: 'https://upload.wikimedia.org/wikipedia/en/8/84/Boku_no_Hero_Academia_Volume_1.jpg', color: '#2563eb', pop: '9.1' },
+    { rank: 11, name: 'Jujutsu Kaisen',         query: 'Jujutsu Kaisen pelicula completa espa├▒ol subtitulado', img: 'https://upload.wikimedia.org/wikipedia/en/2/2f/Jujutsu_Kaisen_Volume_1.jpg',  color: '#1d4ed8', pop: '9.1' },
+    { rank: 12, name: 'Sword Art Online',       query: 'Sword Art Online pelicula completa espa├▒ol',           img: 'https://upload.wikimedia.org/wikipedia/en/0/05/Sword_Art_Online_light_novel_volume_1_cover.jpg', color: '#16a34a', pop: '9.0' },
+    { rank: 13, name: 'Evangelion',             query: 'Evangelion pelicula completa espa├▒ol rebuild',         img: 'https://upload.wikimedia.org/wikipedia/en/9/98/Neon_Genesis_Evangelion_Volume_1.jpg', color: '#7c3aed', pop: '9.0' },
+    { rank: 14, name: 'Spirited Away',          query: 'El viaje de Chihiro pelicula completa espa├▒ol',        img: 'https://upload.wikimedia.org/wikipedia/en/d/db/Spirited_Away_Japanese_poster.png', color: '#0891b2', pop: '9.0' },
+    { rank: 15, name: 'Your Name',              query: 'Kimi no Na wa pelicula completa espa├▒ol',              img: 'https://upload.wikimedia.org/wikipedia/en/0/0b/Your_Name_poster.png',        color: '#ec4899', pop: '8.9' },
+    { rank: 16, name: 'Cowboy Bebop',           query: 'Cowboy Bebop pelicula completa espa├▒ol',               img: 'https://upload.wikimedia.org/wikipedia/en/c/c0/Cowboy_Bebop_volume_1.jpg',  color: '#b45309', pop: '8.9' },
+    { rank: 17, name: 'Ghost in the Shell',     query: 'Ghost in the Shell pelicula completa espa├▒ol',         img: 'https://upload.wikimedia.org/wikipedia/en/b/be/Githellposter.jpg',           color: '#0f766e', pop: '8.8' },
+    { rank: 18, name: 'Princess Mononoke',      query: 'Princesa Mononoke pelicula completa espa├▒ol',          img: 'https://upload.wikimedia.org/wikipedia/en/4/4e/Mononokehime_poster.jpg',     color: '#15803d', pop: '8.8' },
+    { rank: 19, name: 'Akira',                  query: 'Akira 1988 pelicula completa espa├▒ol',                 img: 'https://upload.wikimedia.org/wikipedia/en/4/4c/Akira_%281988_film%29.jpg', color: '#dc2626', pop: '8.8' },
+    { rank: 20, name: 'JoJo Bizarre Adventure', query: 'JoJo no Kimyou na Bouken pelicula espa├▒ol',            img: 'https://upload.wikimedia.org/wikipedia/en/b/b6/JoJos_Bizarre_Adventure_manga_volume_1.jpg', color: '#d946ef', pop: '8.7' },
+    { rank: 21, name: 'One Punch Man',          query: 'One Punch Man pelicula completa espa├▒ol',              img: 'https://upload.wikimedia.org/wikipedia/en/3/32/One_Punch_Man%2C_Volume_1_Cover.jpg', color: '#facc15', pop: '8.7' },
+    { rank: 22, name: 'Code Geass',             query: 'Code Geass pelicula completa espa├▒ol',                 img: 'https://upload.wikimedia.org/wikipedia/en/0/0e/Code_Geass_Lelouch_of_the_Rebellion_DVD_Vol._1.jpg', color: '#7c3aed', pop: '8.7' },
+    { rank: 23, name: 'Steins;Gate',            query: 'Steins Gate pelicula completa espa├▒ol',                img: 'https://upload.wikimedia.org/wikipedia/en/6/63/Steins_Gate_volume_1.jpg',    color: '#0369a1', pop: '8.6' },
+    { rank: 24, name: 'Re:Zero',                query: 'Re Zero pelicula completa espa├▒ol subtitulado',        img: 'https://upload.wikimedia.org/wikipedia/en/9/9c/Re_Zero_kara_Hajimeru_Isekai_Seikatsu_volume_1.jpg', color: '#be185d', pop: '8.6' },
+    { rank: 25, name: 'Tokyo Ghoul',            query: 'Tokyo Ghoul pelicula completa espa├▒ol',                img: 'https://upload.wikimedia.org/wikipedia/en/f/f6/Tokyo_Ghoul_manga_vol_1.jpg',  color: '#9f1239', pop: '8.5' },
+    { rank: 26, name: 'Fairy Tail',             query: 'Fairy Tail pelicula completa espa├▒ol',                 img: 'https://upload.wikimedia.org/wikipedia/en/9/9b/Fairy_Tail_manga_volume_1.jpg', color: '#1d4ed8', pop: '8.5' },
+    { rank: 27, name: 'Mob Psycho 100',         query: 'Mob Psycho 100 pelicula completa espa├▒ol',             img: 'https://upload.wikimedia.org/wikipedia/en/a/a7/Mob_Psycho_100_volume_1.jpg',  color: '#4f46e5', pop: '8.5' },
+    { rank: 28, name: 'Chainsaw Man',           query: 'Chainsaw Man pelicula completa espa├▒ol subtitulado',   img: 'https://upload.wikimedia.org/wikipedia/en/9/99/Chainsaw_Man_Volume_1.jpg',   color: '#dc2626', pop: '8.4' },
+    { rank: 29, name: 'Vinland Saga',           query: 'Vinland Saga pelicula completa espa├▒ol',               img: 'https://upload.wikimedia.org/wikipedia/en/2/22/VinlandSagaVol1.jpg',        color: '#92400e', pop: '8.4' },
+    { rank: 30, name: 'Berserk',                query: 'Berserk pelicula completa espa├▒ol',                    img: 'https://upload.wikimedia.org/wikipedia/en/a/a9/Berserk_manga_volume_1.jpg', color: '#1c1917', pop: '8.4' },
+    { rank: 31, name: 'Overlord',               query: 'Overlord pelicula completa espa├▒ol anime',             img: 'https://upload.wikimedia.org/wikipedia/en/3/37/Overlord_light_novel_volume_1_cover.jpg', color: '#064e3b', pop: '8.3' },
+    { rank: 32, name: 'Black Clover',           query: 'Black Clover pelicula completa espa├▒ol',               img: 'https://upload.wikimedia.org/wikipedia/en/0/0b/Black_Clover_volume_1.jpg',   color: '#15803d', pop: '8.3' },
+    { rank: 33, name: 'Haikyuu',                query: 'Haikyuu pelicula completa espa├▒ol subtitulado',        img: 'https://upload.wikimedia.org/wikipedia/en/2/2f/Haikyuu_manga_volume_1.jpg',  color: '#f97316', pop: '8.3' },
+    { rank: 34, name: 'Slam Dunk',              query: 'Slam Dunk pelicula completa espa├▒ol',                  img: 'https://upload.wikimedia.org/wikipedia/en/f/fa/Slam_Dunk_volume_1.jpg',     color: '#dc2626', pop: '8.2' },
+    { rank: 35, name: 'Blue Lock',              query: 'Blue Lock pelicula completa espa├▒ol',                  img: 'https://upload.wikimedia.org/wikipedia/en/1/14/Blue_Lock_volume_1.jpg',     color: '#1d4ed8', pop: '8.2' },
+    { rank: 36, name: 'Inuyasha',               query: 'Inuyasha pelicula completa espa├▒ol',                   img: 'https://upload.wikimedia.org/wikipedia/en/6/6a/Inuyasha_volume_1.jpg',      color: '#b91c1c', pop: '8.2' },
+    { rank: 37, name: 'Yu Yu Hakusho',          query: 'Yu Yu Hakusho pelicula completa espa├▒ol',              img: 'https://upload.wikimedia.org/wikipedia/en/f/f4/Yu_Yu_Hakusho_manga_v1.jpg', color: '#7c3aed', pop: '8.1' },
+    { rank: 38, name: 'Sailor Moon',            query: 'Sailor Moon pelicula completa espa├▒ol',                img: 'https://upload.wikimedia.org/wikipedia/en/4/42/Sailor_Moon_volume_1.jpg',    color: '#db2777', pop: '8.1' },
+    { rank: 39, name: 'Hellsing',               query: 'Hellsing Ultimate pelicula completa espa├▒ol',          img: 'https://upload.wikimedia.org/wikipedia/en/a/a6/Hellsing_vol01.jpg',          color: '#7f1d1d', pop: '8.0' },
+    { rank: 40, name: 'Trigun',                 query: 'Trigun pelicula completa espa├▒ol',                     img: 'https://upload.wikimedia.org/wikipedia/en/b/be/Trigun_vol01_cover.jpg',      color: '#ca8a04', pop: '8.0' },
+    { rank: 41, name: 'Pok├®mon',               query: 'Pokemon pelicula completa espa├▒ol latino',              img: 'https://upload.wikimedia.org/wikipedia/en/c/c5/Pok%C3%A9mon_Yellow_box_art.jpg', color: '#eab308', pop: '9.2' },
+    { rank: 42, name: 'Digimon',               query: 'Digimon pelicula completa espa├▒ol latino',              img: 'https://upload.wikimedia.org/wikipedia/en/4/4e/Digimonlogo.png',             color: '#2563eb', pop: '8.5' },
+    { rank: 43, name: 'Cardcaptor Sakura',      query: 'Cardcaptor Sakura pelicula completa espa├▒ol',          img: 'https://upload.wikimedia.org/wikipedia/en/0/06/Cardcaptor_Sakura_volume_1.jpg', color: '#f472b6', pop: '8.0' },
+    { rank: 44, name: 'Doraemon',              query: 'Doraemon pelicula completa espa├▒ol',                    img: 'https://upload.wikimedia.org/wikipedia/en/b/b9/Doraemon_character.png',      color: '#2563eb', pop: '8.8' },
+    { rank: 45, name: 'Detective Conan',        query: 'Detective Conan pelicula completa espa├▒ol',            img: 'https://upload.wikimedia.org/wikipedia/en/7/7a/Case_Closed_Manga_Volume_1.jpg', color: '#1e40af', pop: '8.6' },
+    { rank: 46, name: 'Dragon Ball Super',      query: 'Dragon Ball Super Broly pelicula completa espa├▒ol',    img: 'https://upload.wikimedia.org/wikipedia/en/6/6a/Dragon_Ball_Super_manga_volume_1.jpg', color: '#f97316', pop: '8.7' },
+    { rank: 47, name: 'Sword Art Online Alicization', query: 'SAO Alicization pelicula completa espa├▒ol',     img: 'https://upload.wikimedia.org/wikipedia/en/0/05/Sword_Art_Online_light_novel_volume_1_cover.jpg', color: '#16a34a', pop: '8.2' },
+    { rank: 48, name: 'Gurren Lagann',          query: 'Gurren Lagann pelicula completa espa├▒ol',              img: 'https://upload.wikimedia.org/wikipedia/en/4/4e/Gurren_Lagann_DVD_vol_1.jpg',  color: '#dc2626', pop: '8.5' },
+    { rank: 49, name: 'Toradora',               query: 'Toradora pelicula completa espa├▒ol',                   img: 'https://upload.wikimedia.org/wikipedia/en/b/bc/Toradora_light_novel_v1.jpg', color: '#f43f5e', pop: '8.3' },
+    { rank: 50, name: 'Sword Art Online Progressive', query: 'SAO Progressive pelicula completa espa├▒ol',     img: 'https://upload.wikimedia.org/wikipedia/en/0/05/Sword_Art_Online_light_novel_volume_1_cover.jpg', color: '#16a34a', pop: '8.1' },
 ];
 
 window._animeHubActive = false;
@@ -982,8 +982,8 @@ function showAnimeHub() {
     grid.className = 'anime-hub';
     grid.innerHTML = `
         <div class="anime-hub-header">
-            <h2>Los 50 Animes Más Populares de la Historia</h2>
-            <p>Selecciona una franquicia para ver sus películas disponibles en español</p>
+            <h2>Los 50 Animes M├ís Populares de la Historia</h2>
+            <p>Selecciona una franquicia para ver sus pel├¡culas disponibles en espa├▒ol</p>
         </div>
         <div class="anime-franchise-grid" id="animeFranchiseGrid"></div>
     `;
@@ -1025,7 +1025,7 @@ function renderAnimeGrid() {
                 </span>
                 <div class="anime-card-name">${anime.name}</div>
                 <span class="anime-card-btn">
-                    <i class="fas fa-film"></i> Ver películas
+                    <i class="fas fa-film"></i> Ver pel├¡culas
                 </span>
             </div>
         </div>
@@ -1071,12 +1071,12 @@ async function openAnimeMovies(rank) {
                 <button class="anime-back-btn" onclick="showAnimeHub()">
                     <i class="fas fa-arrow-left"></i> Volver a Animes
                 </button>
-                <h2 class="anime-movies-title">${anime.name} — Películas</h2>
+                <h2 class="anime-movies-title">${anime.name} ÔÇö Pel├¡culas</h2>
             </div>
             <div class="anime-movies-grid" id="animeMoviesGrid">
                 <div class="anime-loading">
                     <div class="anime-loading-spinner"></div>
-                    <p>Cargando películas de <strong>${anime.name}</strong> en español...</p>
+                    <p>Cargando pel├¡culas de <strong>${anime.name}</strong> en espa├▒ol...</p>
                 </div>
             </div>
         </div>
@@ -1102,9 +1102,9 @@ function decodeHtmlEntities(str) {
 function cleanAnimeTitle(title, animeName) {
     let cleaned = decodeHtmlEntities(title);
     return cleaned
-        .replace(/\s*[\|\-–—]\s*.+/g, '')
+        .replace(/\s*[\|\-ÔÇôÔÇö]\s*.+/g, '')
         .replace(/\[.*?\]/g, '')
-        .replace(/\(.*?(HD|4K|1080p|720p|completa?|subtitulad[ao]|español|latino).*?\)/gi, '')
+        .replace(/\(.*?(HD|4K|1080p|720p|completa?|subtitulad[ao]|espa├▒ol|latino).*?\)/gi, '')
         .replace(/HD|4K|1080p|720p/gi, '')
         .replace(/\s{2,}/g, ' ')
         .trim() || animeName;
@@ -1134,8 +1134,8 @@ async function handleAnimeSearch(query) {
         grid.className = 'anime-hub';
         grid.innerHTML = `
             <div class="anime-hub-header">
-                <h2>Los 50 Animes Más Populares de la Historia</h2>
-                <p>Selecciona una franquicia para ver sus películas disponibles en español</p>
+                <h2>Los 50 Animes M├ís Populares de la Historia</h2>
+                <p>Selecciona una franquicia para ver sus pel├¡culas disponibles en espa├▒ol</p>
             </div>
             <div class="anime-franchise-grid" id="animeFranchiseGrid"></div>
         `;
@@ -1167,8 +1167,8 @@ async function handleAnimeSearch(query) {
 
     let html = `
         <div class="anime-hub-header">
-            <h2>Resultados de búsqueda para "${query}"</h2>
-            <p>Se encontraron ${matchingFranchises.length} franquicias y ${matchingMovies.length} películas</p>
+            <h2>Resultados de b├║squeda para "${query}"</h2>
+            <p>Se encontraron ${matchingFranchises.length} franquicias y ${matchingMovies.length} pel├¡culas</p>
         </div>
     `;
 
@@ -1184,7 +1184,7 @@ async function handleAnimeSearch(query) {
     if (matchingMovies.length > 0) {
         html += `
             <h3 class="anime-section-subtitle" style="margin: 2rem auto 1rem; max-width: 1400px; padding: 0 1rem; color: #ec4899; font-size: 1.4rem;">
-                <i class="fas fa-film"></i> Películas Disponibles
+                <i class="fas fa-film"></i> Pel├¡culas Disponibles
             </h3>
             <div class="anime-movies-grid" id="searchMoviesGrid"></div>
         `;
@@ -1195,7 +1195,7 @@ async function handleAnimeSearch(query) {
             <div class="anime-empty" style="text-align: center; padding: 4rem 1rem;">
                 <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: rgba(168, 85, 247, 0.4); margin-bottom: 1rem; display: block;"></i>
                 <h3>No se encontraron resultados</h3>
-                <p>Prueba con otros términos de búsqueda como "Dragon Ball", "Naruto" o "Mewtwo".</p>
+                <p>Prueba con otros t├®rminos de b├║squeda como "Dragon Ball", "Naruto" o "Mewtwo".</p>
             </div>
         `;
     }
@@ -1214,7 +1214,7 @@ async function handleAnimeSearch(query) {
                         <span class="anime-rank-badge">#${anime.rank}</span>
                         <span class="anime-pop-badge"><i class="fas fa-star"></i>${anime.pop}</span>
                         <div class="anime-card-name">${anime.name}</div>
-                        <span class="anime-card-btn"><i class="fas fa-film"></i> Ver películas</span>
+                        <span class="anime-card-btn"><i class="fas fa-film"></i> Ver pel├¡culas</span>
                     </div>
                 </div>
             `).join('');
@@ -1250,8 +1250,8 @@ function renderAnimeMovies(movies, anime) {
         container.innerHTML = `
             <div class="anime-empty">
                 <i class="fas fa-exclamation-circle"></i>
-                <h3>No se encontraron películas</h3>
-                <p>No hay películas disponibles en español para <strong>${anime.name}</strong>. Intenta más tarde.</p>
+                <h3>No se encontraron pel├¡culas</h3>
+                <p>No hay pel├¡culas disponibles en espa├▒ol para <strong>${anime.name}</strong>. Intenta m├ís tarde.</p>
             </div>
         `;
         return;
@@ -1286,9 +1286,9 @@ function openAnimePlayer(youtubeId, archiveId, title, animeName) {
 
     document.getElementById('playerTitle').textContent  = title || animeName;
     document.getElementById('playerYear').textContent   = '';
-    document.getElementById('playerGenre').textContent  = `Anime · ${animeName}`;
+    document.getElementById('playerGenre').textContent  = `Anime ┬À ${animeName}`;
     document.getElementById('playerRating').innerHTML   = '<i class="fas fa-star"></i> Anime';
-    document.getElementById('playerDescription').textContent = `Película de la franquicia ${animeName}`;
+    document.getElementById('playerDescription').textContent = `Pel├¡cula de la franquicia ${animeName}`;
 
     if (placeholder) placeholder.style.display = 'flex';
     embed.innerHTML = '';
@@ -1300,7 +1300,7 @@ function openAnimePlayer(youtubeId, archiveId, title, animeName) {
         });
 
         embed.innerHTML = `<iframe
-            src="https://www.youtube.com/embed/${youtubeId}?${params}"
+            src="https://www.youtube-nocookie.com/embed/${youtubeId}?${params}"
             frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen
@@ -1320,7 +1320,7 @@ function openAnimePlayer(youtubeId, archiveId, title, animeName) {
             <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);padding:2rem;text-align:center;">
                 <i class="fas fa-exclamation-triangle" style="font-size:3rem;color:var(--primary-color);margin-bottom:1rem;"></i>
                 <h3>No hay reproductor disponible</h3>
-                <p>Esta película no tiene un enlace de reproducción configurado.</p>
+                <p>Esta pel├¡cula no tiene un enlace de reproducci├│n configurado.</p>
             </div>
         `;
     }
@@ -1349,7 +1349,7 @@ if (document.readyState === 'loading') {
 window.loadCategoryMovies = loadCategoryMovies;
 
 // =====================================================
-// EFFECT: Brillo magnético en tarjetas (mouse glow)
+// EFFECT: Brillo magn├®tico en tarjetas (mouse glow)
 // =====================================================
 document.addEventListener('mousemove', (e) => {
     const cards = document.querySelectorAll('.movie-card, .movie-row-card, .anime-franchise-card, .anime-result-card');

@@ -84,8 +84,8 @@
 
     /* ── Movie Rows Netflix Style ── */
     --row-gap: 1.8rem;
-    --row-card-width: 185px;
-    --row-card-width-hover: 225px;
+    --row-card-width: 130px;
+    --row-card-width-hover: 155px;
     --row-padding: 3rem;
 
     /* ── Efectos glow ── */

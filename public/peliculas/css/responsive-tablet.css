@@ -50,7 +50,7 @@
     
     /* Grid de películas - columnas medianas */
     .movies-grid {
-        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
         gap: 1.2rem;
     }
     
@@ -91,4 +91,9 @@
         height: 36px;
         font-size: 0.85rem;
     }
+
+    /* Filas en tablet */
+    .movie-row-header { padding: 0 1.5rem; }
+    .movie-row-scroll { padding: 0.5rem 1.5rem 1rem; }
+    .movie-row-card { flex: 0 0 120px; min-width: 120px; }
 }

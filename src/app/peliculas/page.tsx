@@ -65,10 +65,10 @@ export default function PeliculasPage() {
       firestoreScript = await loadScript('https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js', 'firebase-firestore-compat');
       if (!active) return;
 
-      dbService = await loadScript('/p/firestore-service.js', 'cinestream-db-service');
+      dbService = await loadScript('/peliculas/firestore-service.js', 'cinestream-db-service');
       if (!active) return;
 
-      appScript = await loadScript('/p/app.js', 'cinestream-app-script');
+      appScript = await loadScript('/peliculas/app.js', 'cinestream-app-script');
       if (!active && appScript) {
         if (document.body.contains(appScript)) document.body.removeChild(appScript);
         return;
@@ -113,7 +113,7 @@ export default function PeliculasPage() {
   return (
     <>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" precedence="default" />
-      <link rel="stylesheet" href="/p/styles.css" precedence="default" />
+      <link rel="stylesheet" href="/peliculas/styles.css" precedence="default" />
       <div ref={containerRef} className="cinestream-app">
       <header className="header">
         <div className="header-content">
@@ -121,21 +121,29 @@ export default function PeliculasPage() {
             <i className="fas fa-film"></i>
             <span>CineStream</span>
           </div>
-          <nav className="nav">
-            <button className="nav-btn active" data-filter="all">Todo</button>
-            <button className="nav-btn" data-filter="accion">Acción</button>
-            <button className="nav-btn" data-filter="comedia">Comedia</button>
-            <button className="nav-btn" data-filter="drama">Drama</button>
-            <button className="nav-btn" data-filter="terror">Terror</button>
-            <button className="nav-btn" data-filter="cienciaficcion">Ciencia Ficción</button>
-            <button className="nav-btn" data-filter="anime">Anime</button>
-            <button className="nav-btn" data-filter="romance">Romance</button>
-            <button className="nav-btn" data-filter="thriller">Thriller</button>
-            <button className="nav-btn" data-filter="documental">Documental</button>
-            <button className="nav-btn" data-filter="aventura">Aventura</button>
-            <button className="nav-btn" data-filter="fantasia">Fantasía</button>
-            <button className="nav-btn" data-filter="misterio">Misterio</button>
-          </nav>
+          <div className="nav-wrapper">
+            <button className="nav-arrow nav-arrow-left" id="navArrowLeft" aria-label="Desplazar categorías a la izquierda">
+              <i className="fas fa-chevron-left"></i>
+            </button>
+            <nav className="nav">
+              <button className="nav-btn active" data-filter="all">Todo</button>
+              <button className="nav-btn" data-filter="accion">Acción</button>
+              <button className="nav-btn" data-filter="comedia">Comedia</button>
+              <button className="nav-btn" data-filter="drama">Drama</button>
+              <button className="nav-btn" data-filter="terror">Terror</button>
+              <button className="nav-btn" data-filter="cienciaficcion">Ciencia Ficción</button>
+              <button className="nav-btn" data-filter="anime">Anime</button>
+              <button className="nav-btn" data-filter="romance">Romance</button>
+              <button className="nav-btn" data-filter="thriller">Thriller</button>
+              <button className="nav-btn" data-filter="documental">Documental</button>
+              <button className="nav-btn" data-filter="aventura">Aventura</button>
+              <button className="nav-btn" data-filter="fantasia">Fantasía</button>
+              <button className="nav-btn" data-filter="misterio">Misterio</button>
+            </nav>
+            <button className="nav-arrow nav-arrow-right" id="navArrowRight" aria-label="Desplazar categorías a la derecha">
+              <i className="fas fa-chevron-right"></i>
+            </button>
+          </div>
           <div className="search-box">
             <i className="fas fa-search"></i>
             <input type="text" id="searchInput" placeholder="Buscar películas..." />

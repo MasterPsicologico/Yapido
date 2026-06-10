@@ -26,6 +26,20 @@ function getSecurityHeaders(): Record<string, string> {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const hostname = request.headers.get('host') || '';
+  
+  // Serve Biohacker Lab at root for salud subdomain (no redirect, URL stays clean)
+  if (hostname === 'salud.yapido.click') {
+    return NextResponse.rewrite(new URL(`/salud${pathname === '/' ? '/index.html' : pathname}`, request.url));
+  }
+
+  // Serve CineStream at root for peliculas subdomain
+  if (hostname === 'peliculas.yapido.click') {
+    const url = request.nextUrl.clone();
+    url.pathname = '/peliculas';
+    return NextResponse.rewrite(url);
+  }
+
   const response = NextResponse.next();
 
   Object.entries(getSecurityHeaders()).forEach(([key, value]) => {
@@ -55,8 +69,10 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Explicitly match root so salud and peliculas subdomain rewrites fire
+    '/',
     '/api/:path*',
     '/admin/:path*',
-    '/((?!_next/static|_next/image|favicon.ico|finanzas|nimbus|.*\\..*).*)',
+    '/((?!_next/static|_next/image|favicon.ico|finanzas|nimbus|salud|peliculas|.*\\..*).*)',
   ],
 };
