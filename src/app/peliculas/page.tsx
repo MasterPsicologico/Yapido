@@ -156,6 +156,14 @@ export default function PeliculasPage() {
         <div id="movieRows" className="movie-rows-container"></div>
         <section className="filters">
           <div className="filter-group">
+            <label>Idioma:</label>
+            <select id="languageFilter">
+              <option value="both">Todos</option>
+              <option value="es">Español</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          <div className="filter-group">
             <label>Ordenar por:</label>
             <select id="sortSelect">
               <option value="year">Año (recientes)</option>
