@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0f0a" />
+  <title>Radar de Suplementos y Longevidad — Biohacker Lab</title>
+  <meta name="description" content="Analiza tu stack de suplementos en 60 segundos. Detecta interacciones peligrosas, optimiza horarios y obtén un plan personalizado basado en evidencia. Gratis." />
+  <meta name="keywords" content="suplementos, biohacking, longevidad, nootropicos, magnesio, ashwagandha, NMN, stack personalizado" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Radar de Suplementos — Tu Stack Personalizado en 60s" />
+  <meta property="og:description" content="Detecta interacciones peligrosas, optimiza horarios y descubre qué te falta. Basado en protocolos Huberman, Attia y Sinclair." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://salud.yapido.click" />
+  <meta property="og:image" content="https://salud.yapido.click/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a0f0a'/%3E%3Ccircle cx='16' cy='16' r='6' fill='none' stroke='%23b8ff3c' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23b8ff3c'/%3E%3Cline x1='16' y1='4' x2='16' y2='8' stroke='%23b8ff3c' stroke-width='2'/%3E%3Cline x1='16' y1='24' x2='16' y2='28' stroke='%23b8ff3c' stroke-width='2'/%3E%3Cline x1='4' y1='16' x2='8' y2='16' stroke='%23b8ff3c' stroke-width='2'/%3E%3Cline x1='24' y1='16' x2='28' y2='16' stroke='%23b8ff3c' stroke-width='2'/%3E%3C/svg%3E" />
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#0a0f0a',
+            surface: '#0e1510',
+            'surface-2': '#14201a',
+            'surface-3': '#1a2820',
+            border: '#1f2c25',
+            'border-2': '#2a3a30',
+            ink: '#e8f3eb',
+            dim: '#8aa094',
+            faint: '#5a6e62',
+            lime: '#b8ff3c',
+            cyan: '#00ffd1',
+            'lime-dim': '#3a5018',
+            'cyan-dim': '#0a3a32',
+            danger: '#ff4d4d',
+            'danger-dim': '#3a1414',
+            warn: '#ffb84d',
+            'warn-dim': '#3a2a14',
+            ok: '#4dff7c',
+            'ok-dim': '#0e3a1c',
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            display: ['Archivo', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'fade-in': 'fadeIn 0.4s ease-out',
+            'slide-up': 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+            'slide-in-right': 'slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+            'glow': 'glow 2s ease-in-out infinite',
+            'spin-slow': 'spin 20s linear infinite',
+            'scan': 'scan 8s linear infinite',
+            'shimmer': 'shimmer 2.5s linear infinite',
+          },
+          keyframes: {
+            fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+            slideUp: { '0%': { opacity: 0, transform: 'translateY(20px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+            slideInRight: { '0%': { opacity: 0, transform: 'translateX(20px)' }, '100%': { opacity: 1, transform: 'translateX(0)' } },
+            glow: { '0%, 100%': { boxShadow: '0 0 20px rgba(184, 255, 60, 0.3)' }, '50%': { boxShadow: '0 0 40px rgba(184, 255, 60, 0.6)' } },
+            scan: { '0%': { transform: 'translateY(-100%)' }, '100%': { transform: 'translateY(100vh)' } },
+            shimmer: { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } },
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/salud/styles.css" />
+</head>
+<body class="bg-bg text-ink font-sans antialiased min-h-screen overflow-x-hidden">
+
+  <!-- CANVAS BACKGROUND -->
+  <canvas id="synapse-canvas" class="fixed inset-0 w-full h-full -z-10 opacity-60"></canvas>
+  <div class="fixed inset-0 -z-10 pointer-events-none" style="background: radial-gradient(ellipse at top, rgba(184,255,60,0.05), transparent 60%), radial-gradient(ellipse at bottom right, rgba(0,255,209,0.04), transparent 50%);"></div>
+  <div class="scan-line fixed inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-lime/40 to-transparent -z-10"></div>
+
+  <!-- HEADER -->
+  <header class="relative z-20 border-b border-border/60 bg-bg/60 backdrop-blur-xl">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+      <a href="#" class="flex items-center gap-2.5 group">
+        <div class="relative w-9 h-9">
+          <div class="absolute inset-0 rounded-lg bg-lime/20 blur-md group-hover:bg-lime/40 transition"></div>
+          <div class="relative w-9 h-9 rounded-lg bg-surface-2 border border-border-2 flex items-center justify-center">
+            <svg viewBox="0 0 32 32" class="w-5 h-5">
+              <circle cx="16" cy="16" r="6" fill="none" stroke="#b8ff3c" stroke-width="2" />
+              <circle cx="16" cy="16" r="2" fill="#b8ff3c" />
+              <line x1="16" y1="4" x2="16" y2="8" stroke="#b8ff3c" stroke-width="2" />
+              <line x1="16" y1="24" x2="16" y2="28" stroke="#b8ff3c" stroke-width="2" />
+              <line x1="4" y1="16" x2="8" y2="16" stroke="#b8ff3c" stroke-width="2" />
+              <line x1="24" y1="16" x2="28" y2="16" stroke="#b8ff3c" stroke-width="2" />
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="font-mono text-[10px] text-dim tracking-[0.2em] uppercase">Biohacker Lab</div>
+          <div class="font-display font-black text-lg leading-none">Radar<span class="text-lime">.</span></div>
+        </div>
+      </a>
+      <div class="flex items-center gap-2 sm:gap-4">
+        <div class="hidden sm:flex items-center gap-2 text-[10px] font-mono text-dim uppercase tracking-widest">
+          <span class="w-1.5 h-1.5 rounded-full bg-ok animate-pulse"></span>
+          <span>Engine v1.0</span>
+        </div>
+        <a href="#metodologia" class="hidden md:block text-xs font-mono text-dim hover:text-ink transition uppercase tracking-wider">Metodología</a>
+        <a href="#disclaimer" class="text-xs font-mono text-faint hover:text-dim transition uppercase tracking-wider">Disclaimer</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO (LANDING) -->
+  <section id="hero" class="relative">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-8 sm:pb-12">
+
+      <!-- Status bar -->
+      <div class="flex items-center gap-2 mb-6 animate-fade-in">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan/10 border border-cyan/20 text-cyan text-[10px] font-mono uppercase tracking-widest">
+          <span class="w-1 h-1 rounded-full bg-cyan animate-pulse"></span>
+          Live · IA + Engine Híbrido
+        </span>
+        <span class="text-[10px] font-mono text-faint uppercase tracking-widest">8 preguntas · 60 segundos</span>
+      </div>
+
+      <h1 class="font-display font-black text-4xl sm:text-6xl md:text-7xl leading-[0.95] tracking-tight animate-slide-up">
+        Tu <span class="text-lime">stack de suplementos</span><br />
+        analizado por la <span class="text-cyan">máquina.</span>
+      </h1>
+
+      <p class="mt-6 text-base sm:text-lg text-dim max-w-2xl leading-relaxed animate-slide-up" style="animation-delay: 0.1s">
+        Detecta <span class="text-ink font-medium">interacciones peligrosas</span>, optimiza
+        <span class="text-ink font-medium">horarios de consumo</span>, descubre sinergias que estás dejando en la mesa y obtén
+        un plan personalizado basado en evidencia clínica — protocolo Huberman, Attia & Sinclair.
+      </p>
+
+      <!-- Stats / Trust bar -->
+      <div class="mt-8 grid grid-cols-3 sm:grid-cols-4 gap-px bg-border rounded-xl overflow-hidden border border-border animate-slide-up" style="animation-delay: 0.2s">
+        <div class="bg-surface px-3 sm:px-4 py-3 sm:py-4">
+          <div class="font-display font-black text-2xl sm:text-3xl text-lime">50+</div>
+          <div class="font-mono text-[9px] sm:text-[10px] text-faint uppercase tracking-widest mt-1">Suplementos</div>
+        </div>
+        <div class="bg-surface px-3 sm:px-4 py-3 sm:py-4">
+          <div class="font-display font-black text-2xl sm:text-3xl text-cyan">40+</div>
+          <div class="font-mono text-[9px] sm:text-[10px] text-faint uppercase tracking-widest mt-1">Interacciones</div>
+        </div>
+        <div class="bg-surface px-3 sm:px-4 py-3 sm:py-4">
+          <div class="font-display font-black text-2xl sm:text-3xl">13</div>
+          <div class="font-mono text-[9px] sm:text-[10px] text-faint uppercase tracking-widest mt-1">Objetivos</div>
+        </div>
+        <div class="bg-surface px-3 sm:px-4 py-3 sm:py-4 hidden sm:block">
+          <div class="font-display font-black text-2xl sm:text-3xl">$0</div>
+          <div class="font-mono text-[9px] sm:text-[10px] text-faint uppercase tracking-widest mt-1">Para empezar</div>
+        </div>
+      </div>
+
+      <!-- CTAs -->
+      <div class="mt-8 flex flex-col sm:flex-row gap-3 animate-slide-up" style="animation-delay: 0.3s">
+        <button id="btn-start" class="group relative inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-lime text-bg font-mono font-bold text-sm uppercase tracking-wider hover:scale-[1.02] active:scale-[0.98] transition">
+          <span class="relative z-10">Iniciar análisis</span>
+          <svg class="relative z-10 w-4 h-4 group-hover:translate-x-1 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <path d="M5 12h14M13 5l7 7-7 7" />
+          </svg>
+          <div class="absolute inset-0 rounded-xl bg-lime blur-xl opacity-50 group-hover:opacity-80 transition"></div>
+        </button>
+        <button id="btn-learn" class="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-surface border border-border-2 text-ink font-mono font-medium text-sm uppercase tracking-wider hover:border-lime/40 hover:bg-surface-2 transition">
+          Cómo funciona
+        </button>
+      </div>
+
+      <!-- Mini example -->
+      <div class="mt-12 max-w-2xl animate-slide-up" style="animation-delay: 0.4s">
+        <div class="text-[10px] font-mono text-faint uppercase tracking-widest mb-2">// Lo que descubrirás</div>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div class="flex items-start gap-3 p-3 rounded-lg bg-surface/60 border border-border">
+            <div class="w-8 h-8 rounded-md bg-danger/10 border border-danger/30 flex items-center justify-center text-danger text-sm font-mono flex-shrink-0">!</div>
+            <div>
+              <div class="text-sm font-medium">Interacciones críticas</div>
+              <div class="text-xs text-dim">Hierro + Levotiroxina separadas 4h, etc.</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-3 rounded-lg bg-surface/60 border border-border">
+            <div class="w-8 h-8 rounded-md bg-ok/10 border border-ok/30 flex items-center justify-center text-ok text-sm font-mono flex-shrink-0">+</div>
+            <div>
+              <div class="text-sm font-medium">Synergies ocultas</div>
+              <div class="text-xs text-dim">Vit D + K2, Magnesio + B6, etc.</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-3 rounded-lg bg-surface/60 border border-border">
+            <div class="w-8 h-8 rounded-md bg-cyan/10 border border-cyan/30 flex items-center justify-center text-cyan text-sm font-mono flex-shrink-0">@</div>
+            <div>
+              <div class="text-sm font-medium">Timing óptimo</div>
+              <div class="text-xs text-dim">Cuándo tomar cada uno (sueño / foco / gym)</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3 p-3 rounded-lg bg-surface/60 border border-border">
+            <div class="w-8 h-8 rounded-md bg-lime/10 border border-lime/30 flex items-center justify-center text-lime text-sm font-mono flex-shrink-0">$</div>
+            <div>
+              <div class="text-sm font-medium">Costo mensual</div>
+              <div class="text-xs text-dim">Estimation ajustada a tu presupuesto</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WIZARD (oculto hasta iniciar) -->
+  <section id="wizard" class="hidden">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+
+      <!-- Progress bar -->
+      <div class="mb-6 sm:mb-8">
+        <div class="flex items-center justify-between mb-2">
+          <div class="font-mono text-[10px] uppercase tracking-widest text-dim">
+            Paso <span id="step-current" class="text-lime font-bold">1</span>
+            <span class="text-faint">/</span>
+            <span id="step-total" class="text-faint">8</span>
+          </div>
+          <div class="font-mono text-[10px] uppercase tracking-widest text-faint">
+            <span id="step-percent">0</span>% completado
+          </div>
+        </div>
+        <div class="h-1 bg-surface-2 rounded-full overflow-hidden">
+          <div id="progress-bar" class="h-full bg-gradient-to-r from-lime to-cyan rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Card -->
+      <div id="step-container" class="relative bg-surface/80 backdrop-blur-xl border border-border rounded-2xl p-5 sm:p-8 shadow-2xl">
+
+        <!-- STEP 1: AGE -->
+        <div class="step" data-step="1">
+          <div class="flex items-start gap-3 mb-6">
+            <div class="font-mono text-[10px] text-lime uppercase tracking-widest">/ 01</div>
+            <div>
+              <h2 class="font-display font-black text-2xl sm:text-3xl leading-tight">¿Cuál es tu edad?</h2>
+              <p class="text-dim text-sm mt-1.5">Las necesidades cambian radicalmente después de los 30, 40 y 50.</p>
+            </div>
+          </div>
+          <div class="py-4">
+            <div class="flex items-end justify-between mb-3">
+              <div class="font-mono text-[10px] text-faint uppercase tracking-widest">Edad</div>
+              <div class="font-display font-black text-5xl sm:text-6xl text-lime">
+                <span id="age-display">35</span>
+                <span class="text-base text-dim font-sans font-normal">años</span>
+              </div>
+            </div>
+            <input type="range" id="age" min="18" max="80" value="35" class="lab-slider w-full" />
+            <div class="flex justify-between mt-2 text-[10px] font-mono text-faint uppercase tracking-widest">
+              <span>18</span><span>30</span><span>40</span><span>50</span><span>60</span><span>70+</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: GENDER + WEIGHT -->
+        <div class="step hidden" data-step="2">
+          <div class="flex items-start gap-3 mb-6">
+            <div class="font-mono text-[10px] text-lime uppercase tracking-widest">/ 02</div>
+            <div>
+              <h2 class="font-display font-black text-2xl sm:text-3xl leading-tight">Biología básica</h2>
+              <p class="text-dim text-sm mt-1.5">Necesario para dosificar correctamente y considerar diferencias hormonales.</p>
+            </div>
+          </div>
+
+          <label class="block text-[10px] font-mono text-faint uppercase tracking-widest mb-2">Género biológico</label>
+          <div class="grid grid-cols-3 gap-2 mb-6" id="gender-group">
+            <button type="button" data-value="male" class="chip">Masculino</button>
+            <button type="button" data-value="female" class="chip">Femenino</button>
+            <button type="button" data-value="other" class="chip">Otro</button>
+          </div>
+
+          <label class="block text-[10px] font-mono text-faint uppercase tracking-widest mb-2">Peso aproximado (opcional)</label>
+          <div class="flex items-end justify-between mb-3">
+            <div class="font-mono text-[10px] text-faint uppercase tracking-widest">Peso</div>
+            <div class="font-display font-black text-3xl sm:text-4xl text-cyan">
+              <span id="weight-display">70</span>
+              <span class="text-base text-dim font-sans font-normal">kg</span>
+            </div>
+          </div>
+          <input type="range" id="weight" min="40" max="150" value="70" class="lab-slider lab-slider-cyan w-full" />
+        </div>
+
+        <!-- STEP 3: GOALS -->
+        <div class="step hidden" data-step="3">
+          <div class="flex items-start gap-3 mb-6">
+            <div class="font-mono text-[10px] text-lime uppercase tracking-widest">/ 03</div>
+            <div>
+              <h2 class="font-display font-black text-2xl sm:text-3xl leading-tight">¿Qué quieres optimizar?</h2>
+              <p class="text-dim text-sm mt-1.5">Selecciona hasta <span class="text-ink font-medium">4 objetivos</span>. Más = stack más complejo.</p>
+            </div>
+          </div>
+          <div id="goals-group" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <!-- chips inyectados desde JS -->
+          </div>
+          <div class="mt-3 text-[10px] font-mono text-faint uppercase tracking-widest">
+            <span id="goals-count">0</span> / 4 seleccionados
+          </div>
+        </div>
+
+        <!-- STEP 4: CURRENT STATE -->
+        <div class="step hidden" data-step="4">
+          <div class="flex items-start gap-3 mb-6">
+            <div class="font-mono text-[10px] text-lime uppercase tracking-widest">/ 04</div>
+            <div>
+              <h2 class="font-display font-black text-2xl sm:text-3xl leading-tight">Tu estado actual</h2>
+              <p class="text-dim text-sm mt-1.5">Mide los 3 ejes que más importan para biohacking.</p>
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-[10px] font-mono text-faint uppercase tracking-widest">Calidad de sueño</label>
+                <div class="font-mono text-sm text-lime font-bold"><span id="sleep-display">5</span>/10</div>
+              </div>
+              <input type="range" id="sleep" min="1" max="10" value="5" class="lab-slider w-full" />
+              <div class="flex justify-between text-[9px] font-mono text-faint uppercase"><span>Terrible</span><span>Excelente</span></div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-[10px] font-mono text-faint uppercase tracking-widest">Nivel de energía</label>
+                <div class="font-mono text-sm text-cyan font-bold"><span id="energy-display">5</span>/10</div>
+              </div>
+              <input type="range" id="energy" min="1" max="10" value="5" class="lab-slider lab-slider-cyan w-full" />
+              <div class="flex justify-between text-[9px] font-mono text-faint uppercase"><span>Cansado</span><span>Energético</span></div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-[10px] font-mono text-faint uppercase tracking-widest">Nivel de estrés</label>
+                <div class="font-mono text-sm text-warn font-bold"><span id="stress-display">5</span>/10</div>
+              </div>
+              <input type="range" id="stress" min="1" max="10" value="5" class="lab-slider lab-slider-warn w-full" />
+              <div class="flex justify-between text-[9px] font-mono text-faint uppercase"><span>Zen</span><span>Quemado</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 5: LIFESTYLE -->
+        <div class="step hidden" data-step="5">
+          <div class="flex items-start gap-3 mb-6">
+            <div class="font-mono text-[10px] text-lime uppercase tracking-widest">/ 05</div>
+            <div>
+              <h2 class="font-display font-black text-2xl sm:text-3xl leading-tight">Estilo de vida</h2>
+              <p class="text-dim text-sm mt-1.5">Lo que comes, cómo te mueves y cuánto bebes.</p>
+            </div>
+          </div>
+
+          <label class="block text-[10px] font-mono text-faint uppercase tracking-widest mb-2">Dieta</label>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-5" id="diet-group">
+            <button type="button" data-value="omnivore" class="chip">Omnívoro</button>
+            <button type="button" data-value="mediterranean" class="chip">Mediterránea</button>
+            <button type="button" data-value="vegetarian" class="chip">Vegetariano</button>
+            <button type="button" data-value="vegan" class="chip">Vegano</button>
+            <button type="button" data-value="keto" class="chip">Keto / Low-carb</button>
+            <button type="button" data-value="other" class="chip">Otra</button>
+          </div>
+
+          <label class="block text-[10px] font-mono text-faint uppercase tracking-widest mb-2">Actividad física</label>
+          <div class="grid grid-cols-2 gap-2 mb-5" id="activity-group">
+            <button type="button" data-value="sedentary" class="chip">Sedentario</button>
+            <button type="button" data-value="light" class="chip">Ligero (1-2/sem)</button>
+            <button type="button" data-value="moderate" class="chip">Moderado (3-4/sem)</button>
+            <button type="button" data-value="intense" class="chip">Intenso (5+/sem)</button>
+            <button type="button" data-value="athlete" class="chip">Atleta</button>
+            <button type="button" data-value="other" class="chip">Otra</button>
+          </div>
+
+          <label class="block text-[10px] font-mono text-faint uppercase tracking-widest mb-2">Consumo de alcohol</label>
+          <div class="grid grid-cols-4 gap-2" id="alcohol-group">
+            <button type="button" data-value="none" class="chip">Nada</button>
+            <button type="button" data-value="occasional" class="chip">Ocasional</button>
+            <button type="button" data-value="moderate" class="chip">Moderado</button>
+            <button type="button" data-value="frequent" class="chip">Frecuente</button>
+          </div>
+        </div>
+
+        <!-- STEP 6: CURRENT SUPPLEMENTS -->
+        <div class="step hidden" data-step="6">
+          <div class="flex items-start gap-3 mb-4">
+            <div class="font-mono text-[10px] text-lime uppercase tracking-widest">/ 06</div>
+            <div>
+              <h2 class="font-display font-black text-2xl sm:text-3xl leading-tight">¿Qué tomas hoy?</h2>
+              <p class="text-dim text-sm mt-1.5">Busca y selecciona. Si no tomas nada, sáltalo.</p>
+            </div>
+          </div>
+          <div class="relative mb-3">
+            <input id="supp-search" type="text" placeholder="Buscar suplemento..." class="lab-input w-full pl-9" autocomplete="off" />
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </div>
+          <div id="supp-results" class="max-h-48 overflow-y-auto rounded-lg border border-border bg-bg/50 mb-3"></div>
+          <div id="supp-selected" class="flex flex-wrap gap-2"></div>
+          <button id="btn-skip-supp" type="button" class="mt-3 text-xs font-mono text-faint hover:text-dim transition uppercase tracking-wider">
+            → No tomo ningún suplemento
+          </button>
+        </div>
+
+        <!-- STEP 7: MEDS + CONDITIONS -->
+        <div class="step hidden" data-step="7">
+          <div class="flex items-start gap-3 mb-4">
+            <div class="font-mono text-[10px] text-lime uppercase tracking-widest">/ 07</div>
+            <div>
+              <h2 class="font-display font-black text-2xl sm:text-3xl leading-tight">Medicaciones y condiciones</h2>
+              <p class="text-dim text-sm mt-1.5"><span class="text-warn font-medium">Importante</span> — esto evita recomendaciones peligrosas.</p>
+            </div>
+          </div>
+
+          <label class="block text-[10px] font-mono text-faint uppercase tracking-widest mb-2">Medicaciones actuales</label>
+          <div id="meds-group" class="flex flex-wrap gap-2 mb-5">
+            <button type="button" data-value="none" class="chip">Ninguna</button>
+            <button type="button" data-value="antidepressants" class="chip">Antidepresivos (ISRS)</button>
+            <button type="button" data-value="anticoagulants" class="chip">Anticoagulantes</button>
+            <button type="button" data-value="thyroid" class="chip">Tiroides (Levotiroxina)</button>
+            <button type="button" data-value="birthcontrol" class="chip">Anticonceptivos</button>
+            <button type="button" data-value="bp" class="chip">Presión arterial</button>
+            <button type="button" data-value="statins" class="chip">Estatinas</button>
+            <button type="button" data-value="ppi" class="chip">Antiácidos (IBP)</button>
+            <button type="button" data-value="diabetes" class="chip">Diabetes (Metformina)</button>
+            <button type="button" data-value="immunosuppressants" class="chip">Inmunosupresores</button>
+          </div>
+
+          <label class="block text-[10px] font-mono text-faint uppercase tracking-widest mb-2">Condiciones de salud</label>
+          <div id="conditions-group" class="flex flex-wrap gap-2">
+            <button type="button" data-value="none" class="chip">Ninguna</button>
+            <button type="button" data-value="pregnancy" class="chip">Embarazo / Lactancia</button>
+            <button type="button" data-value="autoimmune" class="chip">Autoinmune</button>
+            <button type="button" data-value="clotting" class="chip">Problemas de coagulación</button>
+            <button type="button" data-value="digestive" class="chip">Sensibilidad digestiva</button>
+            <button type="button" data-value="liver" class="chip">Hígado</button>
+            <button type="button" data-value="kidney" class="chip">Riñón</button>
+            <button type="button" data-value="cancer_history" class="chip">Historial de cáncer</button>
+            <button type="button" data-value="diabetes_t2" class="chip">Diabetes tipo 2</button>
+            <button type="button" data-value="cardiovascular" class="chip">Cardiovascular</button>
+          </div>
+        </div>
+
+        <!-- STEP 8: BUDGET -->
+        <div class="step hidden" data-step="8">
+          <div class="flex items-start gap-3 mb-6">
+            <div class="font-mono text-[10px] text-lime uppercase tracking-widest">/ 08</div>
+            <div>
+              <h2 class="font-display font-black text-2xl sm:text-3xl leading-tight">Presupuesto mensual</h2>
+              <p class="text-dim text-sm mt-1.5">Ajustamos las recomendaciones a tu bolsillo.</p>
+            </div>
+          </div>
+          <div class="grid gap-2" id="budget-group">
+            <button type="button" data-value="under50" class="chip chip-row">
+              <div class="text-left flex-1">
+                <div class="font-display font-bold text-lg">Menos de $50</div>
+                <div class="text-xs text-dim font-sans">Esenciales foundation: Vit D, Magnesio, Omega-3</div>
+              </div>
+              <div class="font-mono text-xs text-faint">$</div>
+            </button>
+            <button type="button" data-value="50to100" class="chip chip-row">
+              <div class="text-left flex-1">
+                <div class="font-display font-bold text-lg">$50 — $100</div>
+                <div class="text-xs text-dim font-sans">Stack core + adaptógenos / nootrópicos</div>
+              </div>
+              <div class="font-mono text-xs text-faint">$$</div>
+            </button>
+            <button type="button" data-value="100to200" class="chip chip-row">
+              <div class="text-left flex-1">
+                <div class="font-display font-bold text-lg">$100 — $200</div>
+                <div class="text-xs text-dim font-sans">Protocolo completo + longevity (NMN, etc.)</div>
+              </div>
+              <div class="font-mono text-xs text-faint">$$$</div>
+            </button>
+            <button type="button" data-value="200plus" class="chip chip-row">
+              <div class="text-left flex-1">
+                <div class="font-display font-bold text-lg">$200+</div>
+                <div class="text-xs text-dim font-sans">Full optimization con marcas premium</div>
+              </div>
+              <div class="font-mono text-xs text-faint">$$$$</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="mt-8 pt-6 border-t border-border flex items-center justify-between gap-3">
+          <button id="btn-back" class="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-dim font-mono text-xs uppercase tracking-wider hover:text-ink hover:bg-surface-2 transition">
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            Atrás
+          </button>
+          <div class="flex items-center gap-3 ml-auto">
+            <span id="nav-hint" class="hidden sm:block text-[10px] font-mono text-faint uppercase tracking-widest">Selecciona para continuar</span>
+            <button id="btn-next" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-lime text-bg font-mono font-bold text-xs uppercase tracking-wider hover:scale-[1.03] active:scale-[0.98] transition disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100" disabled>
+              <span id="btn-next-label">Siguiente</span>
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trust footer -->
+      <div class="mt-4 text-center text-[10px] font-mono text-faint uppercase tracking-widest">
+        100% privado · No guardamos datos · Educación, no consejo médico
+      </div>
+    </div>
+  </section>
+
+  <!-- LOADING (oculto hasta enviar) -->
+  <section id="loading" class="hidden">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-surface border border-border-2 mb-6">
+        <div class="w-8 h-8 border-2 border-lime border-t-transparent rounded-full animate-spin"></div>
+      </div>
+      <h2 class="font-display font-black text-2xl sm:text-3xl mb-3">Analizando tu protocolo...</h2>
+      <p id="loading-status" class="text-dim text-sm font-mono">&gt; Inicializando motor de reglas</p>
+
+      <div class="mt-8 max-w-md mx-auto bg-surface border border-border rounded-xl p-4 text-left">
+        <div class="font-mono text-[10px] text-faint uppercase tracking-widest mb-2">// log</div>
+        <div id="loading-log" class="font-mono text-xs text-dim space-y-1 h-32 overflow-y-auto"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REPORT (oculto hasta completar) -->
+  <section id="report" class="hidden">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+
+      <!-- REPORT HEADER -->
+      <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <div class="font-mono text-[10px] text-lime uppercase tracking-widest mb-1">// Reporte personalizado</div>
+          <h1 class="font-display font-black text-2xl sm:text-4xl">Tu <span class="text-lime">Radar</span> de Suplementos</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-share" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border-2 text-ink font-mono text-xs uppercase tracking-wider hover:border-lime/40 transition">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Compartir
+          </button>
+          <button id="btn-print" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border-2 text-ink font-mono text-xs uppercase tracking-wider hover:border-lime/40 transition">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            PDF
+          </button>
+          <button id="btn-retake" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border-2 text-ink font-mono text-xs uppercase tracking-wider hover:border-lime/40 transition">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+            Repetir
+          </button>
+        </div>
+      </div>
+
+      <!-- HERO: STACK SCORE + SUMMARY -->
+      <div class="grid lg:grid-cols-5 gap-4 mb-6">
+        <!-- Gauge -->
+        <div class="lg:col-span-2 bg-surface border border-border rounded-2xl p-6 flex flex-col items-center justify-center">
+          <div class="font-mono text-[10px] text-faint uppercase tracking-widest mb-3">Stack Score</div>
+          <div class="relative w-48 h-48 sm:w-56 sm:h-56" id="gauge-container">
+            <!-- SVG gauge inyectado por JS -->
+          </div>
+          <div class="mt-4 text-center">
+            <div class="font-mono text-[10px] text-faint uppercase tracking-widest">Calificación global</div>
+            <div id="score-tier" class="font-display font-black text-xl text-lime mt-1">— Cargando —</div>
+          </div>
+        </div>
+
+        <!-- Resumen -->
+        <div class="lg:col-span-3 bg-surface border border-border rounded-2xl p-6">
+          <div class="font-mono text-[10px] text-faint uppercase tracking-widest mb-3">Resumen ejecutivo</div>
+          <div id="exec-summary" class="space-y-3 text-sm text-ink leading-relaxed">
+            <div class="text-dim">Cargando análisis...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INTERACTIONS -->
+      <div class="bg-surface border border-border rounded-2xl p-6 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="font-mono text-[10px] text-warn uppercase tracking-widest">// Interacciones</div>
+            <h2 class="font-display font-black text-xl sm:text-2xl">Semáforo de seguridad</h2>
+          </div>
+          <div id="interactions-counter" class="text-xs font-mono text-dim">—</div>
+        </div>
+        <div id="interactions-list" class="space-y-2">
+          <div class="text-dim text-sm">Cargando...</div>
+        </div>
+      </div>
+
+      <!-- TIMELINE -->
+      <div class="bg-surface border border-border rounded-2xl p-6 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="font-mono text-[10px] text-cyan uppercase tracking-widest">// Timing</div>
+            <h2 class="font-display font-black text-xl sm:text-2xl">Horario óptimo de 24h</h2>
+          </div>
+          <div class="text-[10px] font-mono text-faint uppercase tracking-widest">Hora local</div>
+        </div>
+        <div id="timeline" class="overflow-x-auto pb-2">
+          <div class="text-dim text-sm">Cargando timeline...</div>
+        </div>
+      </div>
+
+      <!-- STACK RECOMMENDATIONS -->
+      <div class="bg-surface border border-border rounded-2xl p-6 mb-4">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div>
+            <div class="font-mono text-[10px] text-lime uppercase tracking-widest">// Stack recomendado</div>
+            <h2 class="font-display font-black text-xl sm:text-2xl">Tu protocolo personalizado</h2>
+          </div>
+          <div id="cost-estimate" class="text-right">
+            <div class="text-[10px] font-mono text-faint uppercase tracking-widest">Costo estimado</div>
+            <div class="font-display font-black text-2xl text-lime">—</div>
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-3 gap-2 mb-5 text-xs font-mono uppercase tracking-widest">
+          <div class="flex items-center gap-2 text-ok"><span class="w-2 h-2 rounded-full bg-ok"></span>Esenciales</div>
+          <div class="flex items-center gap-2 text-warn"><span class="w-2 h-2 rounded-full bg-warn"></span>Opcionales</div>
+          <div class="flex items-center gap-2 text-danger"><span class="w-2 h-2 rounded-full bg-danger"></span>Evitar / Reemplazar</div>
+        </div>
+        <div id="stack-list" class="space-y-3">
+          <div class="text-dim text-sm">Cargando stack...</div>
+        </div>
+      </div>
+
+      <!-- AI INSIGHT -->
+      <div id="ai-insight-section" class="hidden bg-surface border border-border rounded-2xl p-6 mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="font-mono text-[10px] text-cyan uppercase tracking-widest">// AI Insight</div>
+            <h2 class="font-display font-black text-xl sm:text-2xl">Análisis profundo de IA</h2>
+          </div>
+          <span class="text-[10px] font-mono text-faint uppercase tracking-widest">Powered by LLM</span>
+        </div>
+        <div id="ai-insight" class="prose prose-invert max-w-none text-sm leading-relaxed">
+          <div class="text-dim">Cargando insight...</div>
+        </div>
+      </div>
+
+      <!-- AFFILIATE PRODUCTS -->
+      <div id="affiliate-section" class="bg-surface border border-border rounded-2xl p-6 mb-4">
+        <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+          <div>
+            <div class="font-mono text-[10px] text-lime uppercase tracking-widest">// Compra inteligente</div>
+            <h2 class="font-display font-black text-xl sm:text-2xl">Productos verificados</h2>
+            <p class="text-xs text-faint mt-1 max-w-md">Enlaces de afiliado. Si compras, ganamos una comisión sin costo extra para ti.</p>
+          </div>
+          <div class="flex items-center gap-1 text-[10px] font-mono text-faint uppercase tracking-widest">
+            <span>Disclosure:</span>
+            <span class="text-dim">FTC compliant</span>
+          </div>
+        </div>
+        <div id="affiliate-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-5">
+          <div class="text-dim text-sm col-span-full">Cargando productos...</div>
+        </div>
+      </div>
+
+      <!-- EMAIL GATE / SHARE -->
+      <div class="bg-gradient-to-br from-surface-2 to-surface border border-border-2 rounded-2xl p-6 sm:p-8 mb-4 text-center">
+        <div class="font-mono text-[10px] text-lime uppercase tracking-widest mb-2">// Email gate opcional</div>
+        <h3 class="font-display font-black text-xl sm:text-2xl mb-2">Envíame mi reporte completo</h3>
+        <p class="text-sm text-dim max-w-md mx-auto mb-5">Te enviamos un PDF con todo: stack, horarios, links y análisis. 1 email, cero spam.</p>
+        <div class="max-w-md mx-auto flex flex-col sm:flex-row gap-2">
+          <input id="email-input" type="email" placeholder="tu@email.com" class="lab-input flex-1" />
+          <button id="btn-email-send" class="px-5 py-2.5 rounded-lg bg-cyan text-bg font-mono font-bold text-xs uppercase tracking-wider hover:scale-[1.03] active:scale-[0.98] transition">
+            Enviar reporte
+          </button>
+        </div>
+        <div id="email-status" class="mt-3 text-xs font-mono text-dim hidden"></div>
+      </div>
+
+      <!-- DISCLAIMER -->
+      <div id="disclaimer" class="border border-warn/30 bg-warn-dim/30 rounded-xl p-4 mb-8">
+        <div class="flex items-start gap-3">
+          <div class="text-warn text-lg font-mono mt-0.5">!</div>
+          <div class="text-xs text-dim leading-relaxed">
+            <strong class="text-ink">Disclaimer:</strong> Esta herramienta provee información educativa basada en investigación publicada y protocolos de expertos.
+            <strong class="text-ink">No es consejo médico.</strong> Siempre consulta con un profesional de la salud antes de iniciar, suspender o cambiar
+            cualquier suplemento o medicación. Las recomendaciones de compra son enlaces de afiliado.
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <footer class="border-t border-border pt-6 pb-8 text-center text-[10px] font-mono text-faint uppercase tracking-widest">
+        <div class="mb-2">Radar de Suplementos · Biohacker Lab · 2026</div>
+        <div class="text-dim normal-case">Construido con evidencia · Huberman · Attia · Sinclair · Examine.com · PubMed</div>
+      </footer>
+    </div>
+  </section>
+
+  <!-- TOAST -->
+  <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-xl bg-surface border border-border-2 shadow-2xl text-sm font-mono animate-slide-up">
+    <span id="toast-text">Copiado al portapapeles</span>
+  </div>
+
+  <!-- SCRIPTS (orden importa) -->
+  <script src="/salud/data/supplements.js"></script>
+  <script src="/salud/data/interactions.js"></script>
+  <script src="/salud/data/goals.js"></script>
+  <script src="/salud/affiliate.js"></script>
+  <script src="/salud/engine.js"></script>
+  <script src="/salud/ai.js"></script>
+  <script src="/salud/app.js"></script>
+</body>
+</html>

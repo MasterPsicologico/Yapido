@@ -1,0 +1,22 @@
+# Local
+.DS_Store
+Thumbs.db
+.env
+.env.local
+ai-config.js
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build (no aplica, pero por si acaso)
+dist/
+build/
+.vercel/
+.netlify/
