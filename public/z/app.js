@@ -18,7 +18,7 @@ const APPS = [
     installs: "8.4K+",
     price: "Gratis",
     size: "Next.js + Gemini",
-    url: "https://yapido.click/finanzas",
+    url: "https://finanzas.yapido.click",
     accent: "#10B981",
     icon: "finanzas",
   },
@@ -33,7 +33,7 @@ const APPS = [
     installs: "21K+",
     price: "Gratis",
     size: "Genkit multi-tool",
-    url: "https://yapido.click/nimbus",
+    url: "https://nimbus.yapido.click",
     accent: "#8B5CF6",
     icon: "nimbus",
     badge: "Popular",
@@ -160,8 +160,8 @@ const ICON_BG = {
 // --- 3. Estado de salud de las apps (verificación live) -----
 // Mapeamos cada app a su URL raíz para hacer un HEAD check
 const HEALTH_URLS = {
-  finanzas: "https://yapido.click/finanzas",
-  nimbus: "https://yapido.click/nimbus",
+  finanzas: "https://finanzas.yapido.click",
+  nimbus: "https://nimbus.yapido.click",
   cinestream: "https://peliculas.yapido.click",
   objetivos: "https://organizar.yapido.click",
   animaciones: "https://animaciones.yapido.click",
