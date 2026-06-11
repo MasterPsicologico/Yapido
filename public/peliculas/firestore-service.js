@@ -37,104 +37,224 @@ let verificationInterval = null;
 // ── Paginación por género ────────────────────────────────
 const genreTokens = {};
 
-// ── Queries en ESPAÑOL optimizadas por género ────────────
+// ── Estado global de filtro de idioma ──────────────────────
+let currentLanguageFilter = 'both'; // 'es', 'en', 'both'
+
+function setLanguageFilter(lang) {
+    currentLanguageFilter = lang;
+    console.log(`Language filter set to: ${lang}`);
+}
+
+function getLanguageFilter() {
+    return currentLanguageFilter;
+}
+
+// ── Queries en ESPAÑOL/INGLÉS optimizadas por género ───────
 const GENRE_QUERIES = {
-    accion: [
-        'pelicula completa accion en español',
-        'pelicula de accion gratis completo',
-        'movie action completa español latino',
-        'pelicula accion 2024 completa',
-        'pelicula accion 2023 completa español',
-        'thriller accion pelicula completa'
-    ],
-    comedia: [
-        'pelicula completa comedia en español',
-        'comedia romantica pelicula completa',
-        'pelicula comedia gratis español',
-        'movie comedia completa español latino',
-        'pelicula comedia 2024 completa',
-        'comedia familiar pelicula completa'
-    ],
-    drama: [
-        'pelicula completa drama en español',
-        'drama romantico pelicula completa',
-        'pelicula drama español latino',
-        'movie drama completa español',
-        'pelicula drama 2024 completa',
-        'drama familiar pelicula completa'
-    ],
-    terror: [
-        'pelicula completa terror en español',
-        'pelicula de terror gratis completa',
-        'movie terror completa español latino',
-        'pelicula terror 2024 completa',
-        'pelicula suspenso terror completa',
-        'horror movie completa español'
-    ],
-    cienciaficcion: [
-        'pelicula completa ciencia ficcion español',
-        'pelicula sci-fi completa español latino',
-        'pelicula futurista completa español',
-        'movie ciencia ficcion completa',
-        'pelicula aliens completa español',
-        'pelicula fantasia ciencia ficcion'
-    ],
-    anime: [
-        'pelicula anime completa español',
-        'anime pelicula completa latino',
-        'pelicula anime subtitulada completa',
-        'anime movie español completo',
-        'pelicula anime 2024 completa',
-        'anime especial pelicula completa'
-    ],
-    romance: [
-        'pelicula completa romance en español',
-        'pelicula romantica completa español',
-        'movie romance completa español latino',
-        'pelicula amor completa español',
-        'pelicula romance 2024 completa',
-        'romantica pelicula completa gratis'
-    ],
-    thriller: [
-        'pelicula completa thriller español',
-        'pelicula suspenso completa español',
-        'thriller pelicula completa latino',
-        'movie suspense completa español',
-        'pelicula thriller 2024 completa',
-        'policia thriller pelicula completa'
-    ],
-    documental: [
-        'documental completo en español',
-        'documental gratis español latino',
-        'documental naturaleza completo',
-        'documental historia completo español',
-        'documental ciencia completo',
-        'documental 2024 completo español'
-    ],
-    aventura: [
-        'pelicula completa aventura español',
-        'pelicula aventura gratis completa',
-        'movie aventura completa español',
-        'pelicula aventura 2024 completa',
-        'pelicula accion aventura completa',
-        'aventura fantasia pelicula completa'
-    ],
-    fantasia: [
-        'pelicula completa fantasia español',
-        'pelicula fantasia magia completa',
-        'movie fantasia completa español',
-        'pelicula fantasia 2024 completa',
-        'pelicula hadas fantasia completa',
-        'fantasia épica pelicula completa'
-    ],
-    misterio: [
-        'pelicula completa misterio español',
-        'pelicula misterio suspenso completa',
-        'movie misterio completa español',
-        'pelicula misterio 2024 completa',
-        'policia misterio pelicula completa',
-        'pelicula investigacion misterio'
-    ]
+    accion: {
+        es: [
+            'pelicula completa accion en español',
+            'pelicula de accion gratis completo',
+            'movie action completa español latino',
+            'pelicula accion 2024 completa',
+            'pelicula accion 2023 completa español',
+            'thriller accion pelicula completa'
+        ],
+        en: [
+            'action movie full english',
+            'full action movie english 2024',
+            'action film complete english',
+            'best action movies full length english',
+            'action movie 2023 full english hd'
+        ]
+    },
+    comedia: {
+        es: [
+            'pelicula completa comedia en español',
+            'comedia romantica pelicula completa',
+            'pelicula comedia gratis español',
+            'movie comedia completa español latino',
+            'pelicula comedia 2024 completa',
+            'comedia familiar pelicula completa'
+        ],
+        en: [
+            'comedy movie full english',
+            'full comedy movie english 2024',
+            'comedy film complete english',
+            'romantic comedy full movie english',
+            'best comedy movies full length english'
+        ]
+    },
+    drama: {
+        es: [
+            'pelicula completa drama en español',
+            'drama romantico pelicula completa',
+            'pelicula drama español latino',
+            'movie drama completa español',
+            'pelicula drama 2024 completa',
+            'drama familiar pelicula completa'
+        ],
+        en: [
+            'drama movie full english',
+            'full drama movie english 2024',
+            'drama film complete english',
+            'best drama movies full length english',
+            'emotional drama movie full english'
+        ]
+    },
+    terror: {
+        es: [
+            'pelicula completa terror en español',
+            'pelicula de terror gratis completa',
+            'movie terror completa español latino',
+            'pelicula terror 2024 completa',
+            'pelicula suspenso terror completa',
+            'horror movie completa español'
+        ],
+        en: [
+            'horror movie full english',
+            'full horror movie english 2024',
+            'scary movie complete english',
+            'best horror movies full length english',
+            'horror film 2023 full english'
+        ]
+    },
+    cienciaficcion: {
+        es: [
+            'pelicula completa ciencia ficcion español',
+            'pelicula sci-fi completa español latino',
+            'pelicula futurista completa español',
+            'movie ciencia ficcion completa',
+            'pelicula aliens completa español',
+            'pelicula fantasia ciencia ficcion'
+        ],
+        en: [
+            'sci-fi movie full english',
+            'science fiction movie full english 2024',
+            'sci fi film complete english',
+            'best sci fi movies full length english',
+            'space movie full english hd'
+        ]
+    },
+    anime: {
+        es: [
+            'pelicula anime completa español',
+            'anime pelicula completa latino',
+            'pelicula anime subtitulada completa',
+            'anime movie español completo',
+            'pelicula anime 2024 completa',
+            'anime especial pelicula completa'
+        ],
+        en: [
+            'anime movie full english',
+            'anime film complete english dubbed',
+            'anime movie english sub 2024',
+            'best anime movies full english',
+            'anime feature film english'
+        ]
+    },
+    romance: {
+        es: [
+            'pelicula completa romance en español',
+            'pelicula romantica completa español',
+            'movie romance completa español latino',
+            'pelicula amor completa español',
+            'pelicula romance 2024 completa',
+            'romantica pelicula completa gratis'
+        ],
+        en: [
+            'romance movie full english',
+            'romantic movie full english 2024',
+            'love story movie complete english',
+            'best romantic movies full length english',
+            'romance film 2023 full english'
+        ]
+    },
+    thriller: {
+        es: [
+            'pelicula completa thriller español',
+            'pelicula suspenso completa español',
+            'thriller pelicula completa latino',
+            'movie suspense completa español',
+            'pelicula thriller 2024 completa',
+            'policia thriller pelicula completa'
+        ],
+        en: [
+            'thriller movie full english',
+            'suspense movie full english 2024',
+            'thriller film complete english',
+            'best thriller movies full length english',
+            'psychological thriller full english'
+        ]
+    },
+    documental: {
+        es: [
+            'documental completo en español',
+            'documental gratis español latino',
+            'documental naturaleza completo',
+            'documental historia completo español',
+            'documental ciencia completo',
+            'documental 2024 completo español'
+        ],
+        en: [
+            'documentary full english',
+            'full documentary english 2024',
+            'documentary film complete english',
+            'best documentaries full length english',
+            'nature documentary english hd'
+        ]
+    },
+    aventura: {
+        es: [
+            'pelicula completa aventura español',
+            'pelicula aventura gratis completa',
+            'movie aventura completa español',
+            'pelicula aventura 2024 completa',
+            'pelicula accion aventura completa',
+            'aventura fantasia pelicula completa'
+        ],
+        en: [
+            'adventure movie full english',
+            'action adventure movie full english',
+            'adventure film complete english 2024',
+            'best adventure movies full length english',
+            'fantasy adventure movie full english'
+        ]
+    },
+    fantasia: {
+        es: [
+            'pelicula completa fantasia español',
+            'pelicula fantasia magia completa',
+            'movie fantasia completa español',
+            'pelicula fantasia 2024 completa',
+            'pelicula hadas fantasia completa',
+            'fantasia epica pelicula completa'
+        ],
+        en: [
+            'fantasy movie full english',
+            'fantasy film complete english 2024',
+            'magic movie full english',
+            'best fantasy movies full length english',
+            'fantasy adventure full english hd'
+        ]
+    },
+    misterio: {
+        es: [
+            'pelicula completa misterio español',
+            'pelicula misterio suspenso completa',
+            'movie misterio completa español',
+            'pelicula misterio 2024 completa',
+            'policia misterio pelicula completa',
+            'pelicula investigacion misterio'
+        ],
+        en: [
+            'mystery movie full english',
+            'mystery film complete english 2024',
+            'detective movie full english',
+            'best mystery movies full length english',
+            'crime mystery full english'
+        ]
+    }
 };
 
 function canMakeRequest() {
@@ -176,37 +296,64 @@ function isRealMovie(title, description) {
     const d = (description || '').toLowerCase();
     const combined = t + ' ' + d;
 
-    // Excluir episodios, capítulos, partes
-    if (/\b(episode|episodio|capitulo|capítulo|part\s*\d|parte\s*\d|ep\d+|eps\d+|\d+\s*of\s*\d+|temporada|season)\b/i.test(title)) {
+    // Excluir episodios, capítulos, partes - PATRONES ESTRICTOS
+    const episodePatterns = [
+        /\b(episode|episodio|capitulo|capítulo|cap\.?\s*\d+)\b/i,
+        /\b(part\s*\d+|parte\s*\d+)\b/i,
+        /\b(ep\s*\d+|eps\s*\d+)\b/i,
+        /\b(\d+\s*(x|x)\s*\d+)\b/i,  // S01E01, 1x01
+        /\b(temporada|season|s\d+e\d+|s\d+)\b/i,
+        /\b(chapter|cap\.)\b/i,
+        /(episodio|capítulo)\s*\d+/i,
+        /\b\d+\s*of\s*\d+\b/i,  // "1 of 10", "Episode 1 of 10"
+    ];
+    for (const pattern of episodePatterns) {
+        if (pattern.test(title)) return false;
+    }
+
+    // Excluir trailers, teasers, clips, resúmenes, reviews
+    const nonMoviePatterns = [
+        /\b(trailer|teaser|clip|resumen|summary|recap|review|behind the scenes|making of|entrevista|interview)\b/i,
+        /\b(top\s*\d+|best\s*\d+|mejores\s*\d+|ranking|countdown)\b/i,
+        /\b(gameplay|videojuego|game\s*play|fortnite|minecraft|gta|roblox)\b/i,
+        /\b(shorts?|tiktok|instagram|reels?)\b/i,
+        /\b(preview|sneak peek|featurette|deleted scene)\b/i,
+        /\b(opening|ending|credits|soundtrack|ost|theme song)\b/i,
+        /\b(compilation|recopilatorio|mix|playlist)\b/i,
+    ];
+    for (const pattern of nonMoviePatterns) {
+        if (pattern.test(title)) return false;
+    }
+
+    // Excluir series completas (títulos que indican serie completa no película)
+    const seriesIndicators = [
+        /\b(serie\s*completa|complete\s*series|all\s*episodes|todos\s*los\s*episodios)\b/i,
+        /\b(temporada\s*completa|full\s*season|season\s*\d+)\b/i,
+    ];
+    for (const pattern of seriesIndicators) {
+        if (pattern.test(title)) return false;
+    }
+
+    // Requerir indicadores de película completa
+    const movieIndicators = [
+        /\b(pelicula|película|movie|film)\b/i,
+        /\b(completa|complete|full|entera)\b/i,
+        /\b(largo|feature|feature\s*film)\b/i,
+    ];
+    const hasMovieIndicator = movieIndicators.some(p => p.test(combined));
+    
+    // Si no tiene indicador de película pero parece serie, rechazar
+    if (!hasMovieIndicator && /(temporada|season|episode|episodio|capitulo|capítulo)/i.test(combined)) {
         return false;
     }
 
-    // Excluir trailers, teasers, clips, resúmenes
-    if (/\b(trailer|teaser|clip|resumen|summary|recap|review|behind the scenes|making of|entrevista|interview)\b/i.test(title)) {
-        return false;
-    }
-
-    // Excluir top lists, rankings
-    if (/\b(top\s*\d|best\s*\d|mejores\s*\d|ranking|countdown)\b/i.test(title)) {
-        return false;
-    }
-
-    // Excluir gameplay, videojuegos
-    if (/\b(gameplay|videojuego|game\s*play|fortnite|minecraft|gta)\b/i.test(title)) {
-        return false;
-    }
-
-    // Excluir shorts y videos muy cortos (no son películas)
-    if (/\b(shorts?|tiktok|instagram)\b/i.test(title)) {
-        return false;
-    }
-
-    // Excluir contenido claramente en inglés (sin palabras en español)
-    const hasSpanishIndicator = /\b(pelicula|película|completa|español|latino|castellano|subtitul|doblaje|dubbed|full\s*movie|peliculas)\b/i.test(combined);
-    const isPureEnglish = /^[a-z\s\d\-':!?.]+$/i.test(title.trim()) && !hasSpanishIndicator;
-    if (isPureEnglish && title.length > 10) {
-        return false;
-    }
+    // Filtrar por idioma: requerir español O inglés explícito
+    const hasSpanish = /\b(español|spanish|latino|castellano|subtitulado|subtitled|doblado|dubbed)\b/i.test(combined);
+    const hasEnglish = /\b(english|ingles|inglés)\b/i.test(combined);
+    
+    // Si es claramente contenido en otro idioma sin indicadores, rechazar
+    const nonTargetLangs = /\b(francais|francés|deutsch|italiano|portugues|portugués|polski|русский|日本語|中文|한국어)\b/i.test(combined);
+    if (nonTargetLangs && !hasSpanish && !hasEnglish) return false;
 
     return true;
 }
@@ -312,16 +459,20 @@ async function getAllMovies() {
 }
 
 // ── Fetch de YouTube API con next page token ─────────────
-async function fetchFromYouTube(query, pageToken) {
+async function fetchFromYouTube(query, pageToken, language = 'es') {
+    const langCode = language === 'en' ? 'en' : 'es';
+    const regionCode = language === 'en' ? 'US' : 'ES';
+    
     const params = new URLSearchParams({
         part: 'snippet',
         q: query,
         type: 'video',
         videoDuration: 'long',
+        videoDefinition: 'high',  // Solo HD/4K
         maxResults: '20',
         order: 'relevance',
-        relevanceLanguage: 'es',
-        regionCode: 'ES',
+        relevanceLanguage: langCode,
+        regionCode: regionCode,
         key: YOUTUBE_API_KEY
     });
 
@@ -341,12 +492,67 @@ async function fetchFromYouTube(query, pageToken) {
     return response.json();
 }
 
+// ── Obtener duración de videos (YouTube Videos API) ───────
+async function fetchVideoDurations(videoIds) {
+    if (!videoIds.length) return {};
+    
+    try {
+        const params = new URLSearchParams({
+            part: 'contentDetails',
+            id: videoIds.join(','),
+            key: YOUTUBE_API_KEY
+        });
+        
+        const url = `https://www.googleapis.com/youtube/v3/videos?${params}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            handleApiError(response.status);
+            return {};
+        }
+        
+        recordRequest();
+        const data = await response.json();
+        
+        const durations = {};
+        for (const item of data.items || []) {
+            const duration = item.contentDetails.duration; // ISO 8601 format: PT1H30M15S
+            durations[item.id] = parseISO8601Duration(duration);
+        }
+        
+        return durations;
+    } catch (error) {
+        console.error('Error fetching durations:', error);
+        return {};
+    }
+}
+
+// ── Parsear duración ISO 8601 a minutos ───────────────────
+function parseISO8601Duration(duration) {
+    // PT1H30M15S -> 90 minutes
+    const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!match) return 0;
+    
+    const hours = parseInt(match[1] || 0);
+    const minutes = parseInt(match[2] || 0);
+    const seconds = parseInt(match[3] || 0);
+    
+    return hours * 60 + minutes + (seconds / 60);
+}
+
 // ── Buscar y guardar películas en Firestore ───────────────
-async function fetchAndSaveMovies(query, genre, pageToken) {
+async function fetchAndSaveMovies(genre, language = 'es', pageToken) {
     if (!canMakeRequest()) return { movies: [], nextPageToken: null };
 
+    // Obtener queries para el género e idioma
+    const genreQueries = GENRE_QUERIES[genre] || GENRE_QUERIES.accion;
+    const queries = genreQueries[language] || genreQueries.es;
+    
+    // Si no hay token de paginación, usar query aleatoria
+    let query = queries[Math.floor(Math.random() * queries.length)];
+    
     try {
-        const data = await fetchFromYouTube(query, pageToken);
+        const data = await fetchFromYouTube(query, pageToken, language);
 
         if (!data.items || data.items.length === 0) {
             return { movies: [], nextPageToken: null };
@@ -355,16 +561,32 @@ async function fetchAndSaveMovies(query, genre, pageToken) {
         const existingIds = new Set(moviesCache.map(m => m.youtubeId));
         const newMovies = [];
 
+        // Obtener todos los video IDs para consultar duraciones
+        const videoIds = data.items
+            .filter(item => !existingIds.has(item.id.videoId))
+            .map(item => item.id.videoId);
+
+        // Consultar duraciones de los videos (filtrar < 60 min)
+        const durations = await fetchVideoDurations(videoIds);
+
         for (const item of data.items) {
             const title = item.snippet.title;
+            const videoId = item.id.videoId;
+
+            // Filtrar duplicados
+            if (existingIds.has(videoId)) continue;
 
             // Filtrar contenido que no es película real
             if (!isRealMovie(title, item.snippet.description)) {
                 continue;
             }
 
-            // Filtrar duplicados
-            if (existingIds.has(item.id.videoId)) continue;
+            // Filtrar por duración: solo películas >= 60 minutos
+            const durationMinutes = durations[videoId] || 0;
+            if (durationMinutes < 60) {
+                console.log(`Filtrado por duración (${durationMinutes.toFixed(1)} min): ${title}`);
+                continue;
+            }
 
             const movieData = {
                 youtubeId: item.id.videoId,
@@ -378,7 +600,8 @@ async function fetchAndSaveMovies(query, genre, pageToken) {
                 poster: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url || '',
                 addedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 lastChecked: firebase.firestore.FieldValue.serverTimestamp(),
-                isActive: true
+                isActive: true,
+                language: language
             };
 
             try {
@@ -390,7 +613,7 @@ async function fetchAndSaveMovies(query, genre, pageToken) {
             }
         }
 
-        console.log(`Saved ${newMovies.length} movies for "${query}" [${genre}]`);
+        console.log(`Saved ${newMovies.length} movies for "${query}" [${genre}/${language}]`);
         return { movies: newMovies, nextPageToken: data.nextPageToken || null };
 
     } catch (error) {
@@ -400,24 +623,26 @@ async function fetchAndSaveMovies(query, genre, pageToken) {
 }
 
 // ── Carga más películas (scroll infinito) ─────────────────
-async function loadMoreMovies(genre) {
+async function loadMoreMovies(genre, language = 'es') {
     if (!canMakeRequest()) {
         console.log('No quota - showing cached movies only');
         return [];
     }
 
-    const queries = GENRE_QUERIES[genre] || GENRE_QUERIES.accion;
+    const genreQueries = GENRE_QUERIES[genre] || GENRE_QUERIES.accion;
+    const queries = genreQueries[language] || genreQueries.es;
 
-    // Usar token de paginación si existe para este género, sino query aleatoria
-    if (!genreTokens[genre]) {
-        genreTokens[genre] = {
+    // Usar token de paginación si existe para este género+idioma, sino query aleatoria
+    const tokenKey = `${genre}_${language}`;
+    if (!genreTokens[tokenKey]) {
+        genreTokens[tokenKey] = {
             queryIndex: Math.floor(Math.random() * queries.length),
             token: null,
             roundsSinceNewQuery: 0
         };
     }
 
-    const state = genreTokens[genre];
+    const state = genreTokens[tokenKey];
     let query = queries[state.queryIndex];
 
     // Si no hay token, buscar una query que no se haya usado
@@ -428,7 +653,7 @@ async function loadMoreMovies(genre) {
     }
 
     try {
-        const result = await fetchAndSaveMovies(query, genre, state.token);
+        const result = await fetchAndSaveMovies(genre, language, state.token);
         state.token = result.nextPageToken;
         state.roundsSinceNewQuery++;
 
@@ -450,11 +675,12 @@ async function loadMoreMovies(genre) {
 }
 
 // ── Búsqueda en YouTube (para el buscador) ───────────────
-async function searchMoviesYouTube(query) {
+async function searchMoviesYouTube(query, language = 'es') {
     if (!query || query.length < 2) return [];
 
-    // Primero buscar en caché local
+    // Primero buscar en caché local con filtro de idioma
     const localResults = moviesCache.filter(m => {
+        if (language !== 'both' && m.language && m.language !== language) return false;
         const t = (m.title || '').toLowerCase();
         const d = (m.description || '').toLowerCase();
         return t.includes(query.toLowerCase()) || d.includes(query.toLowerCase());
@@ -463,16 +689,32 @@ async function searchMoviesYouTube(query) {
     // Luego buscar en YouTube si tenemos cuota
     if (canMakeRequest()) {
         try {
-            const searchQuery = `${query} pelicula completa español`;
-            const data = await fetchFromYouTube(searchQuery);
+            const langSuffix = language === 'en' ? 'full movie english' : 'pelicula completa español';
+            const searchQuery = `${query} ${langSuffix}`;
+            const data = await fetchFromYouTube(searchQuery, null, language);
 
             if (data.items) {
                 const existingIds = new Set(localResults.map(m => m.youtubeId));
                 const remoteResults = [];
 
+                // Obtener video IDs para consultar duraciones
+                const videoIds = data.items
+                    .filter(item => !existingIds.has(item.id.videoId))
+                    .map(item => item.id.videoId);
+
+                // Consultar duraciones
+                const durations = await fetchVideoDurations(videoIds);
+
                 for (const item of data.items) {
                     if (existingIds.has(item.id.videoId)) continue;
                     if (!isRealMovie(item.snippet.title, item.snippet.description)) continue;
+
+                    // Filtrar por duración: solo >= 60 minutos
+                    const durationMinutes = durations[item.id.videoId] || 0;
+                    if (durationMinutes < 60) {
+                        console.log(`Filtrado búsqueda por duración (${durationMinutes.toFixed(1)} min): ${item.snippet.title}`);
+                        continue;
+                    }
 
                     remoteResults.push({
                         id: item.id.videoId,
@@ -485,7 +727,8 @@ async function searchMoviesYouTube(query) {
                         rating: (Math.random() * 2 + 7).toFixed(1),
                         quality: 'HD',
                         poster: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url || '',
-                        source: 'youtube'
+                        source: 'youtube',
+                        language: language
                     });
                 }
 
@@ -540,6 +783,9 @@ function getFilteredMovies(filters) {
     }
     if (filters.type && filters.type !== 'all' && filters.type !== 'serie') {
         filtered = filtered.filter(m => m.type === filters.type);
+    }
+    if (filters.language && filters.language !== 'both') {
+        filtered = filtered.filter(m => m.language === filters.language);
     }
     if (filters.search && filters.search.length >= 2) {
         const q = filters.search.toLowerCase();
@@ -637,6 +883,8 @@ window.CineStreamDB = {
     cleanup: cleanupFirestore,
     getCache: () => moviesCache,
     startVerification: startVideoVerification,
+    setLanguageFilter,
+    getLanguageFilter,
     getRateLimitStatus: () => ({
         canMakeRequest: canMakeRequest(),
         requestsThisMinute: RATE_LIMIT.requests.length,

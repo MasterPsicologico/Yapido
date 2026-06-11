@@ -8,7 +8,7 @@
 
 /* Contenedor principal */
 .main {
-    padding-top: calc(var(--header-height) + 20px);
+    padding-top: calc(var(--header-height) + 8px);
     max-width: 1600px;
     margin: 0 auto;
     padding-left: 1.5rem;
