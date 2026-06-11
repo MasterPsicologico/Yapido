@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orion Link Directory — Deep Web Scanner</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #111118;
+            --surface2: #16161f;
+            --border: #1e1e2a;
+            --accent: #7c3aed;
+            --accent2: #a78bfa;
+            --accent-glow: #4c1d95;
+            --text: #e2e2e9;
+            --text2: #a1a1b0;
+            --text3: #6b6b7d;
+            --green: #22c55e;
+            --red: #ef4444;
+            --amber: #f59e0b;
+            --blue: #3b82f6;
+            --cyan: #06b6d4;
+            --font: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            --mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* === STARFIELD CANVAS === */
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.7;
+        }
+
+        /* === MAIN LAYOUT === */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            min-height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* === SIDEBAR === */
+        .sidebar {
+            width: 260px;
+            min-width: 260px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 8px;
+            margin-bottom: 4px;
+        }
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, var(--accent2), var(--accent) 60%, #2d1065 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 24px var(--accent-glow);
+            animation: logo-pulse 3s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        @keyframes logo-pulse {
+            0%,
+            100% {
+                box-shadow: 0 0 24px var(--accent-glow);
+            }
+            50% {
+                box-shadow: 0 0 40px var(--accent2), 0 0 60px var(--accent-glow);
+            }
+        }
+        .logo-text {
+            font-weight: 700;
+            font-size: 1.3rem;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #e2e2e9, #c4b5fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .logo-sub {
+            font-size: 0.65rem;
+            color: var(--text3);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .sidebar-nav button {
+            all: unset;
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text2);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            position: relative;
+        }
+        .sidebar-nav button:hover {
+            background: var(--surface2);
+            color: var(--text);
+        }
+        .sidebar-nav button.active {
+            background: rgba(124, 58, 237, 0.15);
+            color: var(--accent2);
+            box-shadow: inset 3px 0 0 var(--accent);
+            font-weight: 600;
+        }
+        .sidebar-nav button .badge {
+            margin-left: auto;
+            background: var(--surface2);
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text2);
+            min-width: 22px;
+            text-align: center;
+        }
+        .sidebar-nav button.active .badge {
+            background: rgba(124, 58, 237, 0.3);
+            color: var(--accent2);
+        }
+        .nav-icon {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 0.7rem;
+            color: var(--text3);
+            text-align: center;
+        }
+
+        /* === MAIN CONTENT === */
+        .main-content {
+            flex: 1;
+            padding: 24px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+            overflow-y: auto;
+            max-height: 100vh;
+        }
+
+        /* === HEADER === */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+        }
+        .header-stats {
+            display: flex;
+            gap: 16px;
+            margin-left: auto;
+            flex-wrap: wrap;
+        }
+        .stat-pill {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            color: var(--text2);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .stat-pill .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .dot.green {
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
+        .dot.red {
+            background: var(--red);
+            box-shadow: 0 0 8px var(--red);
+        }
+        .dot.amber {
+            background: var(--amber);
+            box-shadow: 0 0 8px var(--amber);
+        }
+
+        /* === SCAN BAR === */
+        .scan-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-wrapper {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+        .search-wrapper input {
+            width: 100%;
+            padding: 12px 18px 12px 44px;
+            border-radius: 30px;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 0.95rem;
+            font-family: var(--font);
+            transition: var(--transition);
+            outline: none;
+        }
+        .search-wrapper input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
+        }
+        .search-wrapper .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text3);
+            pointer-events: none;
+            font-size: 1.1rem;
+        }
+        .btn {
+            all: unset;
+            cursor: pointer;
+            padding: 12px 22px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.2px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            font-family: var(--font);
+            user-select: none;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+        }
+        .btn-primary:hover {
+            background: #6d28d9;
+            box-shadow: 0 6px 24px rgba(124, 58, 237, 0.5);
+            transform: translateY(-1px);
+        }
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+        .btn-outline {
+            border: 2px solid var(--border);
+            color: var(--text2);
+            background: transparent;
+        }
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--text);
+            background: rgba(124, 58, 237, 0.05);
+        }
+        .btn-sm {
+            padding: 7px 14px;
+            font-size: 0.78rem;
+            border-radius: 20px;
+        }
+        .btn-danger {
+            border-color: transparent;
+            color: var(--red);
+        }
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        /* === SCAN ANIMATION OVERLAY === */
+        .scan-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        .scan-overlay.active {
+            display: flex;
+        }
+        .scan-terminal {
+            background: #0a0a0f;
+            border: 2px solid var(--accent);
+            border-radius: var(--radius);
+            padding: 28px 32px;
+            width: 90%;
+            max-width: 600px;
+            font-family: var(--mono);
+            font-size: 0.82rem;
+            color: var(--cyan);
+            box-shadow: 0 0 60px rgba(124, 58, 237, 0.3);
+            max-height: 350px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+        .scan-terminal .line {
+            opacity: 0;
+            animation: line-in 0.15s forwards;
+        }
+        @keyframes line-in {
+            to {
+                opacity: 1;
+            }
+        }
+        .scan-terminal .highlight {
+            color: var(--accent2);
+            font-weight: 700;
+        }
+        .scan-terminal .success {
+            color: var(--green);
+        }
+        .scan-terminal .warn {
+            color: var(--amber);
+        }
+        .scan-progress {
+            width: 90%;
+            max-width: 600px;
+            height: 6px;
+            background: var(--surface2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .scan-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .scan-cancel {
+            color: var(--text2);
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 8px 20px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: transparent;
+            transition: var(--transition);
+            font-family: var(--font);
+        }
+        .scan-cancel:hover {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        /* === CATEGORY CHIPS === */
+        .category-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .chip {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: var(--transition);
+            background: var(--surface);
+            color: var(--text2);
+            user-select: none;
+            white-space: nowrap;
+        }
+        .chip:hover {
+            border-color: var(--accent2);
+            color: var(--text);
+        }
+        .chip.active {
+            background: rgba(124, 58, 237, 0.2);
+            border-color: var(--accent);
+            color: var(--accent2);
+            font-weight: 600;
+        }
+
+        /* === LINKS GRID === */
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 14px;
+        }
+        .link-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .link-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px);
+        }
+        .link-card::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.08), transparent 70%);
+            pointer-events: none;
+        }
+        .link-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .link-favicon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--surface2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--accent2);
+            flex-shrink: 0;
+            border: 2px solid var(--border);
+        }
+        .link-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text);
+            word-break: break-all;
+        }
+        .link-url {
+            font-size: 0.72rem;
+            color: var(--text3);
+            font-family: var(--mono);
+            word-break: break-all;
+            background: var(--surface2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-top: 2px;
+        }
+        .link-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .tag {
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        .tag-cat {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--blue);
+        }
+        .tag-status {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--green);
+        }
+        .tag-status.offline {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--red);
+        }
+        .tag-status.unknown {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--amber);
+        }
+        .link-description {
+            font-size: 0.78rem;
+            color: var(--text2);
+            line-height: 1.4;
+        }
+        .link-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 2px;
+        }
+        .link-actions .btn-sm {
+            font-size: 0.7rem;
+            padding: 5px 10px;
+        }
+
+        /* === EMPTY STATE === */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text3);
+        }
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+        .empty-state h3 {
+            color: var(--text2);
+            margin-bottom: 6px;
+        }
+
+        /* === TOAST === */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .toast {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            animation: slide-in 0.35s ease;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            color: var(--text);
+            max-width: 380px;
+            pointer-events: auto;
+        }
+        @keyframes slide-in {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* === MODAL === */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 150;
+            background: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            width: 90%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+        .modal-box h3 {
+            margin: 0;
+            font-size: 1.15rem;
+            color: var(--text);
+        }
+        .modal-box input,
+        .modal-box select {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 0.9rem;
+            outline: none;
+            transition: var(--transition);
+        }
+        .modal-box input:focus,
+        .modal-box select:focus {
+            border-color: var(--accent);
+        }
+        .modal-box .url-input {
+            font-family: var(--mono);
+            font-size: 0.8rem;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 4px;
+        }
+        .storage-indicator {
+            font-size: 0.65rem;
+            color: var(--text3);
+            margin-top: 2px;
+            text-align: center;
+        }
+        .storage-indicator.memory {
+            color: var(--amber);
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 900px) {
+            .sidebar {
+                width: 200px;
+                min-width: 200px;
+                padding: 16px 10px;
+            }
+            .links-grid {
+                grid-template-columns: 1fr;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .header-stats {
+                margin-left: 0;
+            }
+            .scan-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+        @media (max-width: 640px) {
+            .app-container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                min-width: 100%;
+                height: auto;
+                position: relative;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 12px;
+                overflow-y: visible;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .sidebar-nav {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .sidebar-nav button {
+                font-size: 0.75rem;
+                padding: 8px 10px;
+                gap: 4px;
+            }
+            .sidebar-footer {
+                display: none;
+            }
+            .logo {
+                margin-bottom: 0;
+            }
+            .main-content {
+                padding: 16px;
+                max-height: none;
+            }
+            .links-grid {
+                grid-template-columns: 1fr;
+            }
+            .header-stats {
+                gap: 6px;
+            }
+            .stat-pill {
+                font-size: 0.7rem;
+                padding: 6px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- STARFIELD CANVAS -->
+    <canvas id="starfield"></canvas>
+
+    <!-- SCAN OVERLAY -->
+    <div class="scan-overlay" id="scanOverlay">
+        <div class="scan-terminal" id="scanTerminal"></div>
+        <div class="scan-progress"><div class="scan-progress-fill" id="scanProgressFill"></div></div>
+        <button class="scan-cancel" id="scanCancelBtn">⏹ Cancelar escaneo</button>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ADD LINK MODAL -->
+    <div class="modal-overlay" id="addLinkModal">
+        <div class="modal-box">
+            <h3>➕ Añadir Nuevo Enlace</h3>
+            <input type="text" id="newLinkTitle" placeholder="Título del enlace" autocomplete="off">
+            <input type="text" id="newLinkUrl" class="url-input" placeholder="URL (ej: http://example.onion)" autocomplete="off">
+            <input type="text" id="newLinkDesc" placeholder="Descripción breve" autocomplete="off">
+            <select id="newLinkCat">
+                <option value="marketplace">🛒 Marketplace</option>
+                <option value="forum">💬 Foro</option>
+                <option value="tools">🛠️ Herramientas</option>
+                <option value="library">📚 Biblioteca</option>
+                <option value="service">⚙️ Servicio</option>
+                <option value="other">📦 Otro</option>
+            </select>
+            <div class="modal-actions">
+                <button class="btn btn-outline btn-sm" id="cancelAddBtn">Cancelar</button>
+                <button class="btn btn-primary btn-sm" id="confirmAddBtn">✅ Añadir Enlace</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP -->
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">🌌</div>
+                <div>
+                    <div class="logo-text">Orion</div>
+                    <div class="logo-sub">Link Directory</div>
+                </div>
+            </div>
+            <nav class="sidebar-nav" id="sidebarNav">
+                <button class="active" data-category="all">
+                    <span class="nav-icon">📋</span> Todos <span class="badge" id="badgeAll">0</span>
+                </button>
+                <button data-category="marketplace">
+                    <span class="nav-icon">🛒</span> Marketplaces <span class="badge" id="badgeMarketplace">0</span>
+                </button>
+                <button data-category="forum">
+                    <span class="nav-icon">💬</span> Foros <span class="badge" id="badgeForum">0</span>
+                </button>
+                <button data-category="tools">
+                    <span class="nav-icon">🛠️</span> Herramientas <span class="badge" id="badgeTools">0</span>
+                </button>
+                <button data-category="library">
+                    <span class="nav-icon">📚</span> Bibliotecas <span class="badge" id="badgeLibrary">0</span>
+                </button>
+                <button data-category="service">
+                    <span class="nav-icon">⚙️</span> Servicios <span class="badge" id="badgeService">0</span>
+                </button>
+                <button data-category="other">
+                    <span class="nav-icon">📦</span> Otros <span class="badge" id="badgeOther">0</span>
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                🔒 Conexión cifrada<br>Orion v2.4 · 2025
+                <div class="storage-indicator" id="storageIndicator"></div>
+            </div>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main-content">
+            <!-- HEADER -->
+            <div class="header">
+                <h1 class="header-title">🔗 Directorio de Enlaces</h1>
+                <div class="header-stats">
+                    <span class="stat-pill"><span class="dot green"></span> Online: <strong id="statOnline">0</strong></span>
+                    <span class="stat-pill"><span class="dot amber"></span> Desconocido: <strong id="statUnknown">0</strong></span>
+                    <span class="stat-pill"><span class="dot red"></span> Offline: <strong id="statOffline">0</strong></span>
+                    <span class="stat-pill">📊 Total: <strong id="statTotal">0</strong></span>
+                </div>
+            </div>
+
+            <!-- SCAN BAR -->
+            <div class="scan-bar">
+                <div class="search-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="Buscar en el directorio... (nombre, URL, categoría)" autocomplete="off">
+                </div>
+                <button class="btn btn-primary" id="scanBtn">
+                    🚀 Escanear Red Profunda
+                </button>
+                <button class="btn btn-outline" id="addLinkBtn">
+                    ➕ Añadir
+                </button>
+                <button class="btn btn-outline btn-sm" id="exportBtn" title="Exportar enlaces como CSV">
+                    📥 Exportar
+                </button>
+            </div>
+
+            <!-- CATEGORY CHIPS -->
+            <div class="category-chips" id="categoryChips">
+                <span class="chip active" data-category="all">📍 Todos</span>
+                <span class="chip" data-category="marketplace">🛒 Marketplaces</span>
+                <span class="chip" data-category="forum">💬 Foros</span>
+                <span class="chip" data-category="tools">🛠️ Herramientas</span>
+                <span class="chip" data-category="library">📚 Bibliotecas</span>
+                <span class="chip" data-category="service">⚙️ Servicios</span>
+                <span class="chip" data-category="other">📦 Otros</span>
+            </div>
+
+            <!-- LINKS GRID -->
+            <div class="links-grid" id="linksGrid"></div>
+            <div class="empty-state" id="emptyState" style="display:none;">
+                <div class="icon">🪐</div>
+                <h3>No se encontraron enlaces</h3>
+                <p>Prueba a escanear la red o ajusta los filtros de búsqueda.</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function() {
+            // ============ SAFE STORAGE (handles sandboxed iframes) ============
+            const STORAGE_KEY = 'orion_link_directory';
+            let storageAvailable = false;
+            let memoryStore = null;
+
+            function detectStorage() {
+                try {
+                    const test = '__orion_test__';
+                    localStorage.setItem(test, test);
+                    localStorage.removeItem(test);
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            storageAvailable = detectStorage();
+            if (!storageAvailable) {
+                memoryStore = new Map();
+                console.warn('⚠️ localStorage no disponible (sandbox). Usando almacenamiento en memoria.');
+            }
+
+            function safeGetItem(key) {
+                if (storageAvailable) {
+                    try {
+                        return localStorage.getItem(key);
+                    } catch (e) {
+                        return null;
+                    }
+                }
+                return memoryStore ? memoryStore.get(key) || null : null;
+            }
+
+            function safeSetItem(key, value) {
+                if (storageAvailable) {
+                    try {
+                        localStorage.setItem(key, value);
+                        return true;
+                    } catch (e) {
+                        return false;
+                    }
+                }
+                if (memoryStore) {
+                    memoryStore.set(key, value);
+                    return true;
+                }
+                return false;
+            }
+
+            function safeRemoveItem(key) {
+                if (storageAvailable) {
+                    try {
+                        localStorage.removeItem(key);
+                    } catch (e) { /* ignore */ }
+                }
+                if (memoryStore) {
+                    memoryStore.delete(key);
+                }
+            }
+
+            // Show storage mode
+            const storageIndicator = document.getElementById('storageIndicator');
+            if (storageAvailable) {
+                storageIndicator.textContent = '💾 Persistente (localStorage)';
+                storageIndicator.className = 'storage-indicator';
+            } else {
+                storageIndicator.textContent = '⚠️ Memoria (no persistente)';
+                storageIndicator.className = 'storage-indicator memory';
+            }
+
+            // ============ STARFIELD ============
+            const canvas = document.getElementById('starfield');
+            const ctx = canvas.getContext('2d');
+            let stars = [];
+            const STAR_COUNT = 180;
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resizeCanvas();
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                initStars();
+            });
+
+            function initStars() {
+                stars = [];
+                for (let i = 0; i < STAR_COUNT; i++) {
+                    stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        r: Math.random() * 1.6 + 0.3,
+                        alpha: Math.random(),
+                        alphaSpeed: (Math.random() - 0.5) * 0.015,
+                        twinkleSpeed: Math.random() * 0.02 + 0.005,
+                    });
+                }
+            }
+            initStars();
+
+            function drawStars() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                stars.forEach(s => {
+                    s.alpha += s.twinkleSpeed;
+                    if (s.alpha > 1) { s.alpha = 1;
+                        s.twinkleSpeed = -Math.abs(s.twinkleSpeed); }
+                    if (s.alpha < 0.15) { s.alpha = 0.15;
+                        s.twinkleSpeed = Math.abs(s.twinkleSpeed); }
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(180,170,220,${s.alpha})`;
+                    ctx.fill();
+                    if (s.r > 1.1 && s.alpha > 0.6) {
+                        ctx.beginPath();
+                        ctx.arc(s.x, s.y, s.r * 2.5, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(140,120,200,${s.alpha*0.15})`;
+                        ctx.fill();
+                    }
+                });
+                requestAnimationFrame(drawStars);
+            }
+            drawStars();
+
+            // ============ DATA STORE ============
+            let links = [];
+            let currentCategory = 'all';
+            let searchQuery = '';
+            let isScanning = false;
+            let scanAbortFlag = false;
+
+            // Default seed data
+            const defaultLinks = [
+                { id: '1', title: 'Hidden Wiki Mirror', url: 'http://zqktlwiuavvvqqt4ybvgvi7tyo4hjl5xgfuvpdf6otjiycgwqbym2qad.onion',
+                    description: 'Directorio principal con índice de servicios y recursos de la red profunda.',
+                    category: 'library', status: 'online', added: Date.now() - 86400000 * 3 },
+                { id: '2', title: 'Dread Forum',
+                    url: 'http://dreadytofatroptsdj6io7l3xptbetj5ljovnt3avx5idcbf3kq.onion',
+                    description: 'Foro de discusión comunitaria estilo Reddit para la darknet.', category: 'forum',
+                    status: 'online', added: Date.now() - 86400000 * 5 },
+                { id: '3', title: 'Torch Search Engine',
+                    url: 'http://xmh57jrknzkhv6y3ls3ubitn5vrwx6b7kg6r2o2cj4u5m6jv5vc.b32.i2p',
+                    description: 'Motor de búsqueda indexado para servicios onion e I2P.', category: 'tools',
+                    status: 'online', added: Date.now() - 86400000 * 7 },
+                { id: '4', title: 'ProPublica Onion',
+                    url: 'http://p53lf57qovyuvwsc6xnrppyply3vtqm7l6pcobkmyqsiofyeznfu5uqd.onion',
+                    description: 'Versión onion del medio periodístico independiente ProPublica.', category: 'library',
+                    status: 'online', added: Date.now() - 86400000 * 10 },
+                { id: '5', title: 'SecureDrop', url: 'http://secrdrop5wyphb5x.onion',
+                    description: 'Plataforma para filtraciones seguras y envío anónimo de documentos.',
+                    category: 'service', status: 'unknown', added: Date.now() - 86400000 * 12 },
+                { id: '6', title: 'DarkNetLive', url: 'http://darknetlidvrsli.onion',
+                    description: 'Noticias y actualizaciones sobre mercados y servicios de la darknet.', category: 'forum',
+                    status: 'offline', added: Date.now() - 86400000 * 14 },
+                { id: '7', title: 'CryptoMixer Service', url: 'http://cryptomixns23.onion',
+                    description: 'Servicio de mezcla de criptomonedas para transacciones anónimas.',
+                    category: 'service', status: 'unknown', added: Date.now() - 86400000 * 16 },
+                { id: '8', title: 'OnionMail', url: 'http://onionmaildx63.onion',
+                    description: 'Proveedor de correo electrónico cifrado accesible vía Tor.', category: 'tools',
+                    status: 'online', added: Date.now() - 86400000 * 18 },
+                { id: '9', title: 'The Book Bazaar', url: 'http://bookbazaarrt.onion',
+                    description: 'Mercado de libros digitales raros y documentos académicos.',
+                    category: 'marketplace', status: 'online', added: Date.now() - 86400000 * 20 },
+                { id: '10', title: 'PrivacyTools', url: 'http://privacytoolsio.onion',
+                    description: 'Guía de herramientas para proteger la privacidad en línea.', category: 'tools',
+                    status: 'online', added: Date.now() - 86400000 * 22 },
+                { id: '11', title: 'Galaxy Research Lab', url: 'http://galaxyreslab.onion',
+                    description: 'Repositorio de investigaciones sobre ciberseguridad y criptografía.',
+                    category: 'library', status: 'unknown', added: Date.now() - 86400000 * 25 },
+                { id: '12', title: 'Shadow Auction', url: 'http://shadowauct.onion',
+                    description: 'Plataforma de subastas anónimas para bienes digitales.', category: 'marketplace',
+                    status: 'offline', added: Date.now() - 86400000 * 28 },
+            ];
+
+            function loadLinks() {
+                const stored = safeGetItem(STORAGE_KEY);
+                if (stored) {
+                    try {
+                        const parsed = JSON.parse(stored);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            links = parsed;
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn('Error parsing stored links, using defaults');
+                    }
+                }
+                // Fallback to defaults
+                links = defaultLinks.map(l => ({ ...l })); // deep clone
+                saveLinks();
+            }
+
+            function saveLinks() {
+                try {
+                    const json = JSON.stringify(links);
+                    safeSetItem(STORAGE_KEY, json);
+                } catch (e) {
+                    console.warn('Could not save links:', e.message);
+                }
+            }
+
+            function getFilteredLinks() {
+                let filtered = links;
+                if (currentCategory !== 'all') {
+                    filtered = filtered.filter(l => l.category === currentCategory);
+                }
+                if (searchQuery.trim()) {
+                    const q = searchQuery.toLowerCase().trim();
+                    filtered = filtered.filter(l =>
+                        l.title.toLowerCase().includes(q) ||
+                        l.url.toLowerCase().includes(q) ||
+                        l.description.toLowerCase().includes(q) ||
+                        l.category.toLowerCase().includes(q)
+                    );
+                }
+                const statusOrder = { 'online': 0, 'unknown': 1, 'offline': 2 };
+                filtered.sort((a, b) => (statusOrder[a.status] || 1) - (statusOrder[b.status] || 1));
+                return filtered;
+            }
+
+            function updateStats() {
+                const allLinks = links;
+                const setText = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = val;
+                };
+                setText('statOnline', allLinks.filter(l => l.status === 'online').length);
+                setText('statUnknown', allLinks.filter(l => l.status === 'unknown').length);
+                setText('statOffline', allLinks.filter(l => l.status === 'offline').length);
+                setText('statTotal', allLinks.length);
+                setText('badgeAll', allLinks.length);
+                setText('badgeMarketplace', allLinks.filter(l => l.category === 'marketplace').length);
+                setText('badgeForum', allLinks.filter(l => l.category === 'forum').length);
+                setText('badgeTools', allLinks.filter(l => l.category === 'tools').length);
+                setText('badgeLibrary', allLinks.filter(l => l.category === 'library').length);
+                setText('badgeService', allLinks.filter(l => l.category === 'service').length);
+                setText('badgeOther', allLinks.filter(l => l.category === 'other').length);
+            }
+
+            function renderLinks() {
+                const grid = document.getElementById('linksGrid');
+                const empty = document.getElementById('emptyState');
+                const filtered = getFilteredLinks();
+                grid.innerHTML = '';
+
+                if (filtered.length === 0) {
+                    empty.style.display = 'block';
+                    grid.style.display = 'none';
+                } else {
+                    empty.style.display = 'none';
+                    grid.style.display = 'grid';
+
+                    filtered.forEach(link => {
+                        const card = document.createElement('div');
+                        card.className = 'link-card';
+                        card.innerHTML = `
+                  <div class="link-card-header">
+                    <div class="link-favicon">${escapeHTML(link.title.charAt(0).toUpperCase())}</div>
+                    <div>
+                      <div class="link-title">${escapeHTML(link.title)}</div>
+                      <div class="link-url">${escapeHTML(link.url)}</div>
+                    </div>
+                  </div>
+                  <div class="link-description">${escapeHTML(link.description)}</div>
+                  <div class="link-meta">
+                    <span class="tag tag-cat">${getCategoryLabel(link.category)}</span>
+                    <span class="tag tag-status ${link.status}">${getStatusLabel(link.status)}</span>
+                  </div>
+                  <div class="link-actions">
+                    <button class="btn btn-outline btn-sm copy-btn" data-url="${escapeHTML(link.url)}">📋 Copiar</button>
+                    <button class="btn btn-outline btn-sm visit-btn" data-url="${escapeHTML(link.url)}">🔗 Visitar</button>
+                    <button class="btn btn-outline btn-sm btn-danger delete-btn" data-id="${link.id}">🗑</button>
+                  </div>
+                `;
+                        grid.appendChild(card);
+                    });
+
+                    // Event delegation for card actions
+                    grid.querySelectorAll('.copy-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const url = btn.dataset.url;
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                                navigator.clipboard.writeText(url).then(() => {
+                                    showToast('✅ URL copiada al portapapeles');
+                                }).catch(() => {
+                                    fallbackCopy(url);
+                                });
+                            } else {
+                                fallbackCopy(url);
+                            }
+                        });
+                    });
+
+                    grid.querySelectorAll('.visit-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const url = btn.dataset.url;
+                            showToast('🔗 Abriendo: ' + url +
+                                ' (Requiere Tor Browser para .onion)');
+                            try {
+                                window.open(url, '_blank', 'noopener,noreferrer');
+                            } catch (err) {
+                                showToast('⚠️ El navegador bloqueó la apertura. Copia la URL manualmente.');
+                            }
+                        });
+                    });
+
+                    grid.querySelectorAll('.delete-btn').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const id = btn.dataset.id;
+                            deleteLink(id);
+                        });
+                    });
+
+                    grid.querySelectorAll('.link-card').forEach(card => {
+                        card.addEventListener('click', (e) => {
+                            // Don't trigger if clicking a button
+                            if (e.target.closest('button')) return;
+                            const visitBtn = card.querySelector('.visit-btn');
+                            if (visitBtn) visitBtn.click();
+                        });
+                    });
+                }
+                updateStats();
+            }
+
+            function fallbackCopy(text) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('✅ URL copiada al portapapeles');
+                } catch (e) {
+                    showToast('⚠️ No se pudo copiar la URL');
+                }
+                document.body.removeChild(ta);
+            }
+
+            function deleteLink(id) {
+                links = links.filter(l => l.id !== id);
+                saveLinks();
+                renderLinks();
+                updateAllUI();
+                showToast('🗑 Enlace eliminado');
+            }
+
+            function escapeHTML(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            function getCategoryLabel(cat) {
+                const map = {
+                    'marketplace': 'Marketplace',
+                    'forum': 'Foro',
+                    'tools': 'Herramientas',
+                    'library': 'Biblioteca',
+                    'service': 'Servicio',
+                    'other': 'Otro'
+                };
+                return map[cat] || cat;
+            }
+
+            function getStatusLabel(status) {
+                const map = {
+                    'online': 'Online',
+                    'offline': 'Offline',
+                    'unknown': 'Desconocido'
+                };
+                return map[status] || status;
+            }
+
+            function updateAllUI() {
+                renderLinks();
+                updateStats();
+                // Sync sidebar
+                document.querySelectorAll('#sidebarNav button').forEach(b => b.classList.remove('active'));
+                const sidebarBtn = document.querySelector(`#sidebarNav button[data-category="${currentCategory}"]`);
+                if (sidebarBtn) sidebarBtn.classList.add('active');
+                // Sync chips
+                document.querySelectorAll('#categoryChips .chip').forEach(c => c.classList.remove('active'));
+                const chip = document.querySelector(`#categoryChips .chip[data-category="${currentCategory}"]`);
+                if (chip) chip.classList.add('active');
+            }
+
+            // ============ SCAN SIMULATION ============
+            function simulateScan() {
+                if (isScanning) return;
+                isScanning = true;
+                scanAbortFlag = false;
+                const overlay = document.getElementById('scanOverlay');
+                const terminal = document.getElementById('scanTerminal');
+                const progressFill = document.getElementById('scanProgressFill');
+                const cancelBtn = document.getElementById('scanCancelBtn');
+
+                overlay.classList.add('active');
+                terminal.innerHTML = '';
+                progressFill.style.width = '0%';
+
+                const lines = [
+                    { text: '🌌 Iniciando Orion Scanner v2.4...', delay: 200, cls: '' },
+                    { text: '🔐 Estableciendo circuito Tor...', delay: 400, cls: '' },
+                    { text: '🔗 Nodo de entrada.............. OK', delay: 500, cls: 'success' },
+                    { text: '🔗 Nodo intermedio.............. OK', delay: 400, cls: 'success' },
+                    { text: '🔗 Nodo de salida............... OK', delay: 400, cls: 'success' },
+                    { text: '📡 Rastreando servicios onion activos...', delay: 600, cls: '' },
+                    { text: '🔍 Escaneando puertos comunes (80, 443, 8080)...', delay: 500, cls: '' },
+                    { text: '📋 Consultando directorios conocidos...', delay: 700, cls: '' },
+                    { text: '🔄 Comparando con base de datos local...', delay: 400, cls: '' },
+                    { text: '✅ <span class="highlight">' + links.length +
+                            ' enlaces</span> verificados en el directorio.', delay: 300, cls: 'success' },
+                    { text: '⚠️ 2 servicios responden con latencia alta.', delay: 300, cls: 'warn' },
+                    { text: '❌ 1 servicio no responde (offline).', delay: 300, cls: '' },
+                    { text: '📊 Organizando por categorías...', delay: 400, cls: '' },
+                    { text: '✨ <span class="highlight">Escaneo completado.</span> Directorio actualizado.',
+                        delay: 200, cls: 'success' },
+                ];
+
+                const totalTime = lines.reduce((sum, l) => sum + l.delay, 0) + 600;
+
+                function addLine(index) {
+                    if (scanAbortFlag) {
+                        terminal.innerHTML +=
+                            '<div class="line" style="color:#ef4444;">⏹ Escaneo cancelado por el usuario.</div>';
+                        finishScan(overlay, progressFill);
+                        return;
+                    }
+                    if (index >= lines.length) {
+                        progressFill.style.width = '100%';
+                        setTimeout(() => {
+                            finishScan(overlay, progressFill);
+                            refreshLinkStatuses();
+                            renderLinks();
+                            updateAllUI();
+                            showToast('🚀 Escaneo completado. Directorio actualizado con ' + links
+                                .length + ' enlaces.');
+                        }, 500);
+                        return;
+                    }
+                    const line = lines[index];
+                    const color =
+                        line.cls === 'success' ? 'var(--green)' :
+                        line.cls === 'warn' ? 'var(--amber)' :
+                        'var(--cyan)';
+                    terminal.innerHTML +=
+                        `<div class="line" style="color:${color}">${line.text}</div>`;
+                    terminal.scrollTop = terminal.scrollHeight;
+                    const elapsed = lines.slice(0, index + 1).reduce((s, l) => s + l.delay, 0);
+                    progressFill.style.width = Math.min(95, (elapsed / totalTime) * 100) + '%';
+                    setTimeout(() => addLine(index + 1), line.delay);
+                }
+
+                addLine(0);
+
+                cancelBtn.onclick = () => {
+                    scanAbortFlag = true;
+                };
+            }
+
+            function finishScan(overlay, progressFill) {
+                overlay.classList.remove('active');
+                progressFill.style.width = '0%';
+                isScanning = false;
+                scanAbortFlag = false;
+                document.getElementById('scanTerminal').innerHTML = '';
+            }
+
+            function refreshLinkStatuses() {
+                const statuses = ['online', 'online', 'online', 'unknown', 'offline'];
+                links.forEach(link => {
+                    if (Math.random() < 0.35) {
+                        link.status = statuses[Math.floor(Math.random() * statuses.length)];
+                    }
+                });
+                saveLinks();
+            }
+
+            // ============ TOAST ============
+            function showToast(msg) {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.textContent = msg;
+                container.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transition = 'opacity 0.4s';
+                    setTimeout(() => {
+                        if (toast.parentNode) toast.remove();
+                    }, 400);
+                }, 2800);
+            }
+
+            // ============ ADD LINK MODAL ============
+            const addLinkModal = document.getElementById('addLinkModal');
+
+            function openAddModal() {
+                addLinkModal.classList.add('active');
+                document.getElementById('newLinkTitle').value = '';
+                document.getElementById('newLinkUrl').value = '';
+                document.getElementById('newLinkDesc').value = '';
+                document.getElementById('newLinkCat').value = 'marketplace';
+                setTimeout(() => document.getElementById('newLinkTitle').focus(), 100);
+            }
+
+            function closeAddModal() {
+                addLinkModal.classList.remove('active');
+            }
+
+            document.getElementById('addLinkBtn').addEventListener('click', openAddModal);
+            document.getElementById('cancelAddBtn').addEventListener('click', closeAddModal);
+            addLinkModal.addEventListener('click', (e) => {
+                if (e.target === addLinkModal) closeAddModal();
+            });
+
+            document.getElementById('confirmAddBtn').addEventListener('click', () => {
+                const title = document.getElementById('newLinkTitle').value.trim();
+                const url = document.getElementById('newLinkUrl').value.trim();
+                const desc = document.getElementById('newLinkDesc').value.trim();
+                const cat = document.getElementById('newLinkCat').value;
+                if (!title || !url) {
+                    showToast('⚠️ Título y URL son obligatorios');
+                    return;
+                }
+                const newLink = {
+                    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                    title,
+                    url,
+                    description: desc || 'Sin descripción',
+                    category: cat,
+                    status: 'unknown',
+                    added: Date.now(),
+                };
+                links.unshift(newLink);
+                saveLinks();
+                renderLinks();
+                updateAllUI();
+                closeAddModal();
+                showToast('✅ Enlace "' + title + '" añadido correctamente');
+            });
+
+            // ============ EXPORT ============
+            document.getElementById('exportBtn').addEventListener('click', () => {
+                const filtered = getFilteredLinks();
+                if (filtered.length === 0) {
+                    showToast('⚠️ No hay enlaces para exportar');
+                    return;
+                }
+                let csv = 'Título,URL,Descripción,Categoría,Estado\n';
+                filtered.forEach(l => {
+                    const escapedTitle = '"' + l.title.replace(/"/g, '""') + '"';
+                    const escapedUrl = '"' + l.url.replace(/"/g, '""') + '"';
+                    const escapedDesc = '"' + l.description.replace(/"/g, '""') + '"';
+                    csv +=
+                        `${escapedTitle},${escapedUrl},${escapedDesc},"${getCategoryLabel(l.category)}","${getStatusLabel(l.status)}"\n`;
+                });
+                const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = 'orion_links_' + new Date().toISOString().slice(0, 10) + '.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                showToast('📥 ' + filtered.length + ' enlaces exportados como CSV');
+            });
+
+            // ============ EVENT LISTENERS ============
+            document.getElementById('scanBtn').addEventListener('click', simulateScan);
+            document.getElementById('scanCancelBtn').addEventListener('click', () => {
+                scanAbortFlag = true;
+            });
+
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                renderLinks();
+                updateAllUI();
+            });
+
+            // Sidebar nav
+            document.getElementById('sidebarNav').addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (!btn || !btn.dataset.category) return;
+                currentCategory = btn.dataset.category;
+                updateAllUI();
+                document.getElementById('searchInput').value = '';
+                searchQuery = '';
+            });
+
+            // Category chips
+            document.getElementById('categoryChips').addEventListener('click', (e) => {
+                const chip = e.target.closest('.chip');
+                if (!chip || !chip.dataset.category) return;
+                currentCategory = chip.dataset.category;
+                updateAllUI();
+                document.getElementById('searchInput').value = '';
+                searchQuery = '';
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                // Ctrl+K / Cmd+K → focus search
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    document.getElementById('searchInput').focus();
+                }
+                // Escape → cancel scan, close modal, blur search
+                if (e.key === 'Escape') {
+                    if (isScanning) {
+                        scanAbortFlag = true;
+                    }
+                    if (addLinkModal.classList.contains('active')) {
+                        closeAddModal();
+                    }
+                    document.getElementById('searchInput').blur();
+                }
+                // Ctrl+N / Cmd+N → add new link
+                if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                    e.preventDefault();
+                    openAddModal();
+                }
+            });
+
+            // ============ INIT ============
+            loadLinks();
+            updateAllUI();
+
+            console.log('🌌 Orion Link Directory — Inicializado correctamente');
+            console.log('   📋 ' + links.length + ' enlaces cargados');
+            console.log('   💾 Almacenamiento: ' + (storageAvailable ? 'localStorage' : 'memoria (sandbox)'));
+            console.log('   ⌨️  Atajos: Ctrl+K buscar | Ctrl+N añadir | Esc cancelar');
+            console.log('   🚀 Haz clic en "Escanear Red Profunda" para simular un escaneo');
+
+            // Expose API for debugging / external use
+            window.orionAPI = {
+                getLinks: () => links,
+                addLink: (link) => {
+                    if (!link.id) link.id = Date.now().toString(36) + Math.random().toString(36).slice(2,
+                        6);
+                    if (!link.status) link.status = 'unknown';
+                    if (!link.added) link.added = Date.now();
+                    links.unshift(link);
+                    saveLinks();
+                    updateAllUI();
+                    return link;
+                },
+                scan: simulateScan,
+                reset: () => {
+                    links = defaultLinks.map(l => ({ ...l }));
+                    saveLinks();
+                    updateAllUI();
+                    showToast('🔄 Directorio restablecido a valores por defecto');
+                },
+                clearAll: () => {
+                    links = [];
+                    saveLinks();
+                    updateAllUI();
+                    showToast('🗑 Todos los enlaces eliminados');
+                },
+                getStorageMode: () => storageAvailable ? 'localStorage' : 'memory',
+                exportCSV: () => document.getElementById('exportBtn').click(),
+            };
+        })();
+    </script>
+</body>
+</html>

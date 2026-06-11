@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Link Vault — Organizador de Enlaces</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a25;--surface3:#22222f;
+  --border:#2a2a3a;--text:#e8e8f0;--text2:#9999aa;--text3:#666678;
+  --accent:#6c5ce7;--accent2:#a29bfe;--accent-bg:rgba(108,92,231,.1);
+  --danger:#ff6b6b;--danger-bg:rgba(255,107,107,.1);
+  --success:#51cf66;--success-bg:rgba(81,207,102,.1);
+  --warn:#ffd43b;--warn-bg:rgba(255,212,59,.1);
+  --info:#4dabf7;--info-bg:rgba(77,171,247,.1);
+  --radius:12px;--radius-sm:8px;
+}
+html{font-size:15px}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;line-height:1.5}
+a{color:var(--accent2);text-decoration:none;transition:color .15s}
+a:hover{color:var(--accent);text-decoration:underline}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+.app{max-width:960px;margin:0 auto;padding:20px 16px 80px}
+
+/* HEADER */
+.header{text-align:center;padding:30px 0 20px}
+.header h1{font-size:1.8rem;font-weight:800;letter-spacing:-.03em;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:var(--text3);font-size:.85rem;margin-top:4px}
+.stats-bar{display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:.75rem;color:var(--text2);display:flex;align-items:center;gap:5px}
+.stat strong{color:var(--accent2);font-weight:700}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.status-dot.online{background:var(--success);box-shadow:0 0 6px var(--success)}
+.status-dot.offline{background:var(--danger);box-shadow:0 0 6px var(--danger)}
+
+/* SEARCH */
+.search-wrap{position:sticky;top:0;z-index:100;background:var(--bg);padding:12px 0;border-bottom:1px solid var(--border);margin:0 -16px;padding-left:16px;padding-right:16px}
+.search-box{display:flex;gap:8px;align-items:center}
+.search-box input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;color:var(--text);font-size:.9rem;outline:none;transition:border-color .2s}
+.search-box input:focus{border-color:var(--accent)}
+.search-box input::placeholder{color:var(--text3)}
+.search-count{color:var(--text3);font-size:.78rem;white-space:nowrap}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:var(--radius-sm);font-size:.82rem;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#5b4bd5;transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border:1px solid transparent}
+.btn-danger:hover{border-color:var(--danger)}
+.btn-sm{padding:5px 10px;font-size:.75rem}
+.btn-icon{width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border);color:var(--text3);cursor:pointer;transition:all .15s;font-size:.85rem}
+.btn-icon:hover{background:var(--surface2);color:var(--text);border-color:var(--text3)}
+
+/* ADD LINK FORM */
+.add-section{margin:16px 0}
+.add-toggle{width:100%;background:var(--surface);border:2px dashed var(--border);border-radius:var(--radius);padding:14px;color:var(--text3);font-size:.88rem;cursor:pointer;transition:all .2s;text-align:center;font-family:inherit;font-weight:600}
+.add-toggle:hover{border-color:var(--accent);color:var(--accent2);background:var(--accent-bg)}
+.add-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:none;animation:slideUp .2s ease}
+.add-form.open{display:block}
+@keyframes slideUp{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.form-row{display:flex;gap:10px;margin-bottom:12px;align-items:end}
+.form-group{flex:1;display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:.72rem;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.form-group input,.form-group select,.form-group textarea{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:.85rem;outline:none;font-family:inherit;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-group select{cursor:pointer}
+.form-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.fetch-btn{background:var(--accent-bg);color:var(--accent2);border:1px solid var(--accent);font-size:.78rem;padding:9px 14px;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s;white-space:nowrap}
+.fetch-btn:hover{background:var(--accent);color:#fff}
+.fetch-btn:disabled{opacity:.5;cursor:wait}
+.url-row{display:flex;gap:8px;align-items:end}
+.url-row .form-group{flex:1}
+
+/* CATEGORIES HEADER */
+.categories-header{display:flex;justify-content:space-between;align-items:center;margin:24px 0 12px;flex-wrap:wrap;gap:8px}
+.categories-header h2{font-size:1rem;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:6px}
+.cat-pills{display:flex;gap:6px;flex-wrap:wrap}
+.cat-pill{padding:5px 12px;border-radius:20px;font-size:.73rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .15s;white-space:nowrap}
+.cat-pill:hover,.cat-pill.active{background:var(--accent-bg);color:var(--accent2);border-color:var(--accent)}
+.cat-pill .count{margin-left:3px;opacity:.5;font-size:.7rem}
+
+/* CATEGORY SECTION */
+.category-section{margin-bottom:16px}
+.category-header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;user-select:none;transition:all .15s}
+.category-header:hover{background:var(--surface2)}
+.category-header .arrow{color:var(--text3);transition:transform .2s;font-size:.65rem;width:14px;text-align:center}
+.category-header.open .arrow{transform:rotate(90deg)}
+.category-header .cat-icon{font-size:1.05rem}
+.category-header .cat-name{font-weight:700;font-size:.88rem;flex:1}
+.category-header .cat-count{font-size:.72rem;color:var(--text3);background:var(--surface2);padding:2px 8px;border-radius:10px;font-weight:600}
+.category-header .cat-actions{display:flex;gap:3px}
+.category-links{padding:6px 0 6px 18px;display:none}
+.category-links.open{display:block;animation:slideUp .2s ease}
+
+/* LINK CARD — RICH */
+.link-card{display:grid;grid-template-columns:auto 1fr auto;gap:12px;padding:12px 14px;border-radius:var(--radius-sm);transition:all .15s;border:1px solid var(--border);margin-bottom:6px;background:var(--surface)}
+.link-card:hover{border-color:var(--accent);background:var(--surface2);transform:translateX(2px)}
+
+.link-card .lc-left{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:44px}
+.lc-favicon{width:40px;height:40px;border-radius:var(--radius-sm);background:var(--surface3);display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--border)}
+.lc-favicon img{width:22px;height:22px;object-fit:contain}
+.lc-favicon .lc-emoji{font-size:1.2rem}
+.lc-status{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.lc-status.ok{background:var(--success);box-shadow:0 0 6px var(--success)}
+.lc-status.dead{background:var(--danger);box-shadow:0 0 6px var(--danger)}
+.lc-status.checking{background:var(--warn);animation:pulse 1s infinite}
+.lc-status.unknown{background:var(--text3)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.link-card .lc-main{min-width:0;display:flex;flex-direction:column;gap:3px}
+.lc-title-row{display:flex;align-items:center;gap:6px;min-width:0}
+.lc-title{font-weight:600;font-size:.88rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lc-title a{color:inherit}
+.lc-title a:hover{color:var(--accent2);text-decoration:none}
+.lc-badges{display:flex;gap:4px;flex-shrink:0}
+.lc-badge{font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.03em;line-height:1.4}
+.lc-badge.https{background:var(--success-bg);color:var(--success)}
+.lc-badge.http{background:var(--warn-bg);color:var(--warn)}
+.lc-badge.broken{background:var(--danger-bg);color:var(--danger)}
+.lc-badge.fresh{background:var(--info-bg);color:var(--info)}
+.lc-desc{font-size:.78rem;color:var(--text3);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4}
+.lc-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px}
+.lc-domain{font-size:.7rem;color:var(--text3);opacity:.7;display:flex;align-items:center;gap:3px}
+.lc-domain svg{width:10px;height:10px;opacity:.5}
+.lc-date{font-size:.65rem;color:var(--text3);opacity:.5}
+.lc-category-tag{font-size:.6rem;font-weight:600;padding:1px 6px;border-radius:3px;background:var(--accent-bg);color:var(--accent2)}
+
+.link-card .lc-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.lc-actions{display:flex;gap:3px;opacity:0;transition:opacity .15s}
+.link-card:hover .lc-actions{opacity:1}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:100%;max-width:440px;animation:slideUp .2s ease}
+.modal h3{font-size:1.05rem;margin-bottom:16px;font-weight:700}
+.modal .form-group{margin-bottom:12px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:30px;color:var(--text3);font-size:.85rem}
+.empty-state .icon{font-size:2rem;margin-bottom:8px;opacity:.4}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 18px;font-size:.82rem;color:var(--text);z-index:300;animation:slideUp .2s ease;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.toast.success{border-color:var(--success);color:var(--success)}
+.toast.error{border-color:var(--danger);color:var(--danger)}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .form-row{flex-direction:column}
+  .url-row{flex-direction:column}
+  .categories-header{flex-direction:column;align-items:stretch}
+  .cat-pills{justify-content:center}
+  .lc-actions{opacity:1}
+  .header h1{font-size:1.4rem}
+  .link-card{grid-template-columns:auto 1fr auto;gap:8px;padding:10px 12px}
+  .lc-favicon{width:34px;height:34px}
+}
+.loading-bar{height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);position:fixed;top:0;left:0;right:0;z-index:999;display:none;animation:loadPulse 1s infinite}
+.loading-bar.active{display:block}
+@keyframes loadPulse{0%,100%{opacity:.3}50%{opacity:1}}
+</style>
+</head>
+<body>
+<div class="loading-bar" id="loadingBar"></div>
+<div class="app">
+  <header class="header">
+    <h1>Link Vault</h1>
+    <p>Tu organizador de enlaces en la nube</p>
+    <div class="stats-bar">
+      <span class="stat"><span class="status-dot" id="statusDot"></span><strong id="statLinks">0</strong> enlaces</span>
+      <span class="stat"><strong id="statCats">0</strong> categorías</span>
+      <span class="stat"><strong id="statAlive">0</strong> activos</span>
+      <span class="stat"><strong id="statDead" style="color:var(--danger)">0</strong> rotos</span>
+    </div>
+  </header>
+
+  <div class="search-wrap">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Buscar enlaces..." autocomplete="off">
+      <span class="search-count" id="searchCount"></span>
+    </div>
+  </div>
+
+  <div class="add-section">
+    <button class="add-toggle" id="addToggle" onclick="toggleAddForm()">+ Agregar enlace</button>
+    <div class="add-form" id="addForm">
+      <div class="url-row">
+        <div class="form-group">
+          <label>URL</label>
+          <input type="url" id="linkUrl" placeholder="https://ejemplo.com" onkeydown="if(event.key==='Enter')fetchMeta()">
+        </div>
+        <button class="fetch-btn" id="fetchBtn" onclick="fetchMeta()" type="button">Obtener info</button>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Título</label>
+          <input type="text" id="linkTitle" placeholder="Nombre del enlace">
+        </div>
+        <div class="form-group">
+          <label>Categoría</label>
+          <select id="linkCategory"></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Descripción (opcional)</label>
+        <textarea id="linkDesc" placeholder="Breve descripción..." rows="2"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="toggleAddForm(false)">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveLink()">Guardar enlace</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="categories-header">
+    <h2>Categorías <button class="btn-icon" title="Nueva categoría" onclick="addCategory()">+</button></h2>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <div class="cat-pills" id="catPills"></div>
+      <button class="btn btn-ghost btn-sm" onclick="exportData()" title="Backup JSON">Backup</button>
+      <button class="btn btn-ghost btn-sm" onclick="importData()" title="Importar JSON">Importar</button>
+    </div>
+  </div>
+
+  <div id="categoriesContainer"></div>
+</div>
+
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3>Editar enlace</h3>
+    <input type="hidden" id="editId">
+    <div class="form-group"><label>URL</label><input type="url" id="editUrl"></div>
+    <div class="form-group"><label>Título</label><input type="text" id="editTitle"></div>
+    <div class="form-group"><label>Categoría</label><select id="editCategory"></select></div>
+    <div class="form-group"><label>Descripción</label><textarea id="editDesc" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('editModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="updateLink()">Actualizar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="catModal">
+  <div class="modal">
+    <h3 id="catModalTitle">Nueva categoría</h3>
+    <input type="hidden" id="editCatId">
+    <div class="form-group"><label>Nombre</label><input type="text" id="catName" placeholder="Nombre de la categoría"></div>
+    <div class="form-group"><label>Icono (emoji)</label><input type="text" id="catIcon" placeholder="📁" maxlength="4"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="catDeleteBtn" onclick="deleteCategory()" style="margin-right:auto;display:none">Eliminar</button>
+      <button class="btn btn-ghost" onclick="closeModal('catModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCategory()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PROJECT_ID = 'studio-4796645076-6f375';
+const API_KEY = 'AIzaSyB3UPA2BTY-BT6YripgFmf5VX_BT9XIwGo';
+const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+
+let dbReady = false;
+let links = [];
+let categories = [];
+let linkStatus = {};
+let activeFilter = null;
+let editingCatId = null;
+
+const DEFAULT_CATEGORIES = [
+  { id: 'tech', name: 'Tecnología', icon: '💻', order: 0 },
+  { id: 'ai', name: 'Inteligencia Artificial', icon: '🤖', order: 1 },
+  { id: 'news', name: 'Noticias', icon: '📰', order: 2 },
+  { id: 'social', name: 'Redes Sociales', icon: '💬', order: 3 },
+  { id: 'tools', name: 'Herramientas', icon: '🔧', order: 4 },
+  { id: 'finance', name: 'Finanzas', icon: '💰', order: 5 },
+  { id: 'health', name: 'Salud', icon: '🏥', order: 6 },
+  { id: 'education', name: 'Educación', icon: '📚', order: 7 },
+  { id: 'entertainment', name: 'Entretenimiento', icon: '🎬', order: 8 },
+  { id: 'design', name: 'Diseño', icon: '🎨', order: 9 },
+  { id: 'devops', name: 'DevOps', icon: '⚙️', order: 10 },
+  { id: 'shopping', name: 'Compras', icon: '🛒', order: 11 },
+  { id: 'recipes', name: 'Recetas', icon: '🍳', order: 12 },
+  { id: 'travel', name: 'Viajes', icon: '✈️', order: 13 },
+  { id: 'productivity', name: 'Productividad', icon: '📋', order: 14 },
+  { id: 'other', name: 'Otros', icon: '📁', order: 15 }
+];
+
+// ── Firestore REST helpers ───────────────────────────────────
+function fsUrl(collection, docId) {
+  let u = `${BASE}/${collection}`;
+  if (docId) u += `/${docId}`;
+  return u + `?key=${API_KEY}`;
+}
+
+function fsDocToObj(doc) {
+  if (!doc || !doc.fields) return null;
+  const obj = { id: doc.name.split('/').pop() };
+  for (const [k, v] of Object.entries(doc.fields)) {
+    if (v.stringValue !== undefined) obj[k] = v.stringValue;
+    else if (v.integerValue !== undefined) obj[k] = Number(v.integerValue);
+    else if (v.doubleValue !== undefined) obj[k] = v.doubleValue;
+    else if (v.booleanValue !== undefined) obj[k] = v.booleanValue;
+    else if (v.timestampValue !== undefined) obj[k] = v.timestampValue;
+    else if (v.arrayValue) obj[k] = (v.arrayValue.values || []).map(x => x.stringValue || x.integerValue || x);
+    else if (v.nullValue !== undefined) obj[k] = null;
+  }
+  return obj;
+}
+
+function objToFsFields(obj) {
+  const fields = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (k === 'id') continue;
+    if (v === null || v === undefined) { fields[k] = { nullValue: null }; continue; }
+    if (typeof v === 'string') fields[k] = { stringValue: v };
+    else if (typeof v === 'number') fields[k] = Number.isInteger(v) ? { integerValue: v } : { doubleValue: v };
+    else if (typeof v === 'boolean') fields[k] = { booleanValue: v };
+    else if (Array.isArray(v)) fields[k] = { arrayValue: { values: v.map(i => ({ stringValue: String(i) })) } };
+  }
+  return fields;
+}
+
+async function fsGet(collection) {
+  const resp = await fetch(fsUrl(collection));
+  if (!resp.ok) throw new Error(`GET ${collection} failed: ${resp.status}`);
+  const data = await resp.json();
+  return (data.documents || []).map(fsDocToObj);
+}
+
+async function fsAdd(collection, data) {
+  const resp = await fetch(fsUrl(collection) + '&documentId=' + encodeURIComponent(data.id), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: objToFsFields(data) })
+  });
+  if (!resp.ok) throw new Error(`POST ${collection}: ${resp.status}`);
+  return fsDocToObj(await resp.json());
+}
+
+async function fsUpdate(collection, docId, data) {
+  const fields = objToFsFields(data);
+  const mask = Object.keys(fields).map(k => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+  const resp = await fetch(fsUrl(collection, docId) + '&' + mask, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields })
+  });
+  if (!resp.ok) throw new Error(`PATCH ${collection}/${docId} failed`);
+  return fsDocToObj(await resp.json());
+}
+
+async function fsDelete(collection, docId) {
+  const resp = await fetch(fsUrl(collection, docId), { method: 'DELETE' });
+  if (!resp.ok) throw new Error(`DELETE ${collection}/${docId} failed`);
+}
+
+// ── Init ─────────────────────────────────────────────────────
+async function init() {
+  try {
+    await fsGet('vault_links');
+    dbReady = true;
+  } catch(e) {
+    console.warn('Firestore REST unavailable, using localStorage', e);
+    dbReady = false;
+  }
+  document.getElementById('statusDot').className = 'status-dot ' + (dbReady ? 'online' : 'offline');
+  document.getElementById('statusDot').title = dbReady ? 'Conectado a la nube' : 'Modo local';
+
+  if (dbReady) {
+    await Promise.all([loadCategories(), loadLinks()]);
+  } else {
+    loadLocal();
+  }
+  render();
+  checkAllLinks();
+}
+
+function loadLocal() {
+  const sl = localStorage.getItem('vv_links');
+  const sc = localStorage.getItem('vv_categories');
+  links = sl ? JSON.parse(sl) : [];
+  categories = sc ? JSON.parse(sc) : [...DEFAULT_CATEGORIES];
+  const ss = localStorage.getItem('vv_status');
+  linkStatus = ss ? JSON.parse(ss) : {};
+}
+
+function saveLocal() {
+  localStorage.setItem('vv_links', JSON.stringify(links));
+  localStorage.setItem('vv_categories', JSON.stringify(categories));
+  localStorage.setItem('vv_status', JSON.stringify(linkStatus));
+}
+
+async function loadCategories() {
+  try {
+    const docs = await fsGet('vault_categories');
+    if (docs.length === 0) {
+      for (const c of DEFAULT_CATEGORIES) await fsAdd('vault_categories', { ...c });
+      categories = [...DEFAULT_CATEGORIES];
+    } else {
+      categories = docs;
+    }
+  } catch(e) {
+    loadLocal();
+  }
+}
+
+async function loadLinks() {
+  try {
+    links = (await fsGet('vault_links')).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  } catch(e) {
+    loadLocal();
+  }
+}
+
+// ── Link Health Check ────────────────────────────────────────
+async function checkLinkStatus(id, url) {
+  linkStatus[id] = { status: 'checking', checkedAt: new Date().toISOString() };
+  renderLinkStatus(id);
+
+  try {
+    const domain = getDomain(url);
+    const resp = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {
+      signal: AbortSignal.timeout(8000)
+    });
+    if (resp.ok) {
+      linkStatus[id] = { status: 'ok', checkedAt: new Date().toISOString() };
+    } else {
+      linkStatus[id] = { status: 'dead', checkedAt: new Date().toISOString(), httpCode: resp.status };
+    }
+  } catch(e) {
+    linkStatus[id] = { status: 'dead', checkedAt: new Date().toISOString(), error: e.message };
+  }
+
+  renderLinkStatus(id);
+  saveLocal();
+  updateStats();
+}
+
+function checkAllLinks() {
+  links.forEach(l => {
+    if (!linkStatus[l.id] || !linkStatus[l.id].checkedAt) {
+      checkLinkStatus(l.id, l.url);
+    } else {
+      const age = Date.now() - new Date(linkStatus[l.id].checkedAt).getTime();
+      if (age > 3600000) checkLinkStatus(l.id, l.url);
+    }
+  });
+}
+
+function renderLinkStatus(id) {
+  const el = document.querySelector(`[data-link-id="${id}"] .lc-status`);
+  if (!el) return;
+  const s = linkStatus[id];
+  if (!s) { el.className = 'lc-status unknown'; return; }
+  el.className = 'lc-status ' + (s.status === 'checking' ? 'checking' : s.status === 'ok' ? 'ok' : 'dead');
+  el.title = s.status === 'ok' ? 'Enlace activo' : s.status === 'dead' ? 'Enlace roto o inaccesible' : 'Verificando...';
+}
+
+function updateStats() {
+  let alive = 0, dead = 0;
+  links.forEach(l => {
+    const s = linkStatus[l.id];
+    if (s && s.status === 'ok') alive++;
+    else if (s && s.status === 'dead') dead++;
+  });
+  document.getElementById('statAlive').textContent = alive;
+  document.getElementById('statDead').textContent = dead;
+}
+
+// ── Render ───────────────────────────────────────────────────
+function render() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  let filtered = links;
+  if (q) {
+    filtered = links.filter(l =>
+      (l.title||'').toLowerCase().includes(q) ||
+      (l.url||'').toLowerCase().includes(q) ||
+      (l.desc||'').toLowerCase().includes(q) ||
+      getCategoryName(l.category).toLowerCase().includes(q)
+    );
+  }
+
+  document.getElementById('statLinks').textContent = links.length;
+  document.getElementById('statCats').textContent = categories.length;
+  document.getElementById('searchCount').textContent = q ? `${filtered.length} resultado${filtered.length!==1?'s':''}` : '';
+
+  renderCatPills();
+  renderCategories(filtered);
+  populateSelects();
+  updateStats();
+}
+
+function renderCatPills() {
+  const c = document.getElementById('catPills');
+  c.innerHTML = `<button class="cat-pill ${!activeFilter?'active':''}" onclick="setFilter(null)">Todos<span class="count">${links.length}</span></button>`;
+  categories.forEach(cat => {
+    const count = links.filter(l => l.category === cat.id).length;
+    c.innerHTML += `<button class="cat-pill ${activeFilter===cat.id?'active':''}" onclick="setFilter('${cat.id}')">${cat.icon} ${cat.name}<span class="count">${count}</span></button>`;
+  });
+}
+
+function renderCategories(filteredLinks) {
+  const container = document.getElementById('categoriesContainer');
+  const cats = activeFilter ? categories.filter(c => c.id === activeFilter) : categories;
+  let html = '';
+
+  cats.forEach(cat => {
+    const catLinks = filteredLinks.filter(l => l.category === cat.id);
+    if (activeFilter === null && catLinks.length === 0) return;
+
+    html += `<div class="category-section">
+      <div class="category-header ${catLinks.length > 0 ? 'open' : ''}" onclick="toggleCategory(this)">
+        <span class="arrow">&#9654;</span>
+        <span class="cat-icon">${cat.icon}</span>
+        <span class="cat-name">${escHtml(cat.name)}</span>
+        <span class="cat-count">${catLinks.length}</span>
+        <div class="cat-actions" onclick="event.stopPropagation()">
+          <button class="btn-icon" title="Editar categoría" onclick="editCategory('${cat.id}')">&#9998;</button>
+        </div>
+      </div>
+      <div class="category-links ${catLinks.length > 0 ? 'open' : ''}">`;
+
+    if (catLinks.length === 0) {
+      html += `<div class="empty-state">No hay enlaces en esta categoría</div>`;
+    }
+
+    catLinks.forEach(link => {
+      const domain = getDomain(link.url);
+      const isHttps = link.url.startsWith('https');
+      const s = linkStatus[link.id];
+      const statusClass = s ? (s.status === 'ok' ? 'ok' : s.status === 'dead' ? 'dead' : s.status === 'checking' ? 'checking' : 'unknown') : 'unknown';
+      const statusTitle = s ? (s.status === 'ok' ? 'Enlace activo' : s.status === 'dead' ? 'Enlace roto' : 'Verificando...') : 'Sin verificar';
+
+      const catObj = categories.find(c => c.id === link.category);
+      const catName = catObj ? catObj.name : '';
+
+      const date = link.createdAt ? timeAgo(link.createdAt) : '';
+
+      html += `<div class="link-card" data-link-id="${link.id}">
+        <div class="lc-left">
+          <div class="lc-favicon">
+            <img src="https://www.google.com/s2/favicons?domain=${escHtml(domain)}&sz=64" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="">
+            <span class="lc-emoji" style="display:none">${getFaviconEmoji(domain)}</span>
+          </div>
+          <div class="lc-status ${statusClass}" title="${statusTitle}"></div>
+        </div>
+        <div class="lc-main">
+          <div class="lc-title-row">
+            <span class="lc-title"><a href="${escHtml(link.url)}" target="_blank" rel="noopener">${escHtml(link.title)}</a></span>
+            <div class="lc-badges">
+              <span class="lc-badge ${isHttps ? 'https' : 'http'}">${isHttps ? 'HTTPS' : 'HTTP'}</span>
+              ${statusClass === 'dead' ? '<span class="lc-badge broken">ROTO</span>' : ''}
+              ${isFresh(link.createdAt) ? '<span class="lc-badge fresh">NUEVO</span>' : ''}
+            </div>
+          </div>
+          ${link.desc ? `<div class="lc-desc">${escHtml(link.desc)}</div>` : ''}
+          <div class="lc-meta">
+            <span class="lc-domain">
+              <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm.5 4.5v3.793l2.146 2.147a.5.5 0 01-.708.708l-2.5-2.5A.5.5 0 017.5 8.5v-4a.5.5 0 011 0z"/></svg>
+              ${escHtml(domain)}
+            </span>
+            ${date ? `<span class="lc-date">${date}</span>` : ''}
+            ${catName ? `<span class="lc-category-tag">${escHtml(catName)}</span>` : ''}
+          </div>
+        </div>
+        <div class="lc-right">
+          <div class="lc-actions">
+            <button class="btn-icon" title="Verificar enlace" onclick="event.stopPropagation();checkLinkStatus('${link.id}','${escHtml(link.url)}')">&#8635;</button>
+            <button class="btn-icon" title="Editar" onclick="editLink('${link.id}')">&#9998;</button>
+            <button class="btn-icon" title="Eliminar" onclick="deleteLink('${link.id}')">&#128465;</button>
+          </div>
+        </div>
+      </div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  if (!html) {
+    html = `<div class="empty-state"><div class="icon">&#128204;</div>No hay enlaces aún. ¡Agrega uno!</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function populateSelects() {
+  const opts = categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+  document.getElementById('linkCategory').innerHTML = opts;
+  document.getElementById('editCategory').innerHTML = opts;
+}
+
+// ── UI Actions ───────────────────────────────────────────────
+function toggleAddForm(force) {
+  const f = document.getElementById('addForm');
+  const t = document.getElementById('addToggle');
+  const open = force !== undefined ? force : !f.classList.contains('open');
+  f.classList.toggle('open', open);
+  t.style.display = open ? 'none' : 'block';
+  if (open) document.getElementById('linkUrl').focus();
+}
+
+function toggleCategory(el) {
+  el.classList.toggle('open');
+  el.nextElementSibling.classList.toggle('open');
+}
+
+function setFilter(catId) {
+  activeFilter = catId;
+  render();
+}
+
+// ── Fetch Metadata ───────────────────────────────────────────
+async function fetchMeta() {
+  const url = document.getElementById('linkUrl').value.trim();
+  if (!url) return;
+
+  const btn = document.getElementById('fetchBtn');
+  btn.disabled = true;
+  btn.textContent = 'Buscando...';
+  showLoading(true);
+
+  try {
+    let fullUrl = url;
+    if (!url.startsWith('http')) fullUrl = 'https://' + url;
+    document.getElementById('linkUrl').value = fullUrl;
+
+    const domain = getDomain(fullUrl);
+    document.getElementById('linkTitle').value = domain;
+
+    try {
+      const resp = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(fullUrl)}`, { signal: AbortSignal.timeout(6000) });
+      const data = await resp.json();
+      if (data.contents) {
+        const doc = new DOMParser().parseFromString(data.contents, 'text/html');
+        const title = doc.querySelector('meta[property="og:title"]')?.content || doc.querySelector('title')?.textContent || '';
+        const desc = doc.querySelector('meta[property="og:description"]')?.content || doc.querySelector('meta[name="description"]')?.content || '';
+        if (title.trim()) document.getElementById('linkTitle').value = title.trim().substring(0, 120);
+        if (desc.trim()) document.getElementById('linkDesc').value = desc.trim().substring(0, 300);
+      }
+    } catch(e) {
+      console.log('Meta fetch failed');
+    }
+  } catch(e) { console.error(e); }
+
+  btn.disabled = false;
+  btn.textContent = 'Obtener info';
+  showLoading(false);
+}
+
+// ── Save Link ────────────────────────────────────────────────
+async function saveLink() {
+  const url = document.getElementById('linkUrl').value.trim();
+  const title = document.getElementById('linkTitle').value.trim();
+  const category = document.getElementById('linkCategory').value;
+  const desc = document.getElementById('linkDesc').value.trim();
+
+  if (!url) return toast('Ingresa una URL', 'error');
+  if (!title) return toast('Ingresa un título', 'error');
+
+  let fullUrl = url;
+  if (!fullUrl.startsWith('http')) fullUrl = 'https://' + fullUrl;
+
+  const docId = 'lnk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  const linkData = { id: docId, url: fullUrl, title: title.substring(0, 120), category, desc: desc.substring(0, 300), createdAt: new Date().toISOString() };
+
+  try {
+    if (dbReady) { await fsAdd('vault_links', linkData); await loadLinks(); }
+    else { links.unshift(linkData); saveLocal(); }
+
+    document.getElementById('linkUrl').value = '';
+    document.getElementById('linkTitle').value = '';
+    document.getElementById('linkDesc').value = '';
+    toggleAddForm(false);
+    toast('Enlace guardado', 'success');
+    render();
+    checkLinkStatus(docId, fullUrl);
+  } catch(e) {
+    links.unshift(linkData);
+    saveLocal();
+    toggleAddForm(false);
+    toast('Guardado localmente', 'success');
+    render();
+  }
+}
+
+// ── Edit Link ────────────────────────────────────────────────
+function editLink(id) {
+  const link = links.find(l => l.id === id);
+  if (!link) return;
+  document.getElementById('editId').value = id;
+  document.getElementById('editUrl').value = link.url;
+  document.getElementById('editTitle').value = link.title;
+  document.getElementById('editCategory').value = link.category;
+  document.getElementById('editDesc').value = link.desc || '';
+  document.getElementById('editModal').classList.add('open');
+}
+
+async function updateLink() {
+  const id = document.getElementById('editId').value;
+  const url = document.getElementById('editUrl').value.trim();
+  const title = document.getElementById('editTitle').value.trim();
+  const category = document.getElementById('editCategory').value;
+  const desc = document.getElementById('editDesc').value.trim();
+
+  if (!url || !title) return toast('URL y título son requeridos', 'error');
+
+  let fullUrl = url;
+  if (!fullUrl.startsWith('http')) fullUrl = 'https://' + fullUrl;
+
+  const data = { url: fullUrl, title: title.substring(0,120), category, desc: desc.substring(0,300) };
+
+  try {
+    if (dbReady) await fsUpdate('vault_links', id, data);
+    const idx = links.findIndex(l => l.id === id);
+    if (idx >= 0) links[idx] = { ...links[idx], ...data };
+    saveLocal();
+    closeModal('editModal');
+    toast('Enlace actualizado', 'success');
+    render();
+    checkLinkStatus(id, fullUrl);
+  } catch(e) { toast('Error al actualizar', 'error'); }
+}
+
+// ── Delete Link ──────────────────────────────────────────────
+async function deleteLink(id) {
+  if (!confirm('¿Eliminar este enlace?')) return;
+  try {
+    if (dbReady) await fsDelete('vault_links', id);
+    links = links.filter(l => l.id !== id);
+    delete linkStatus[id];
+    saveLocal();
+    toast('Enlace eliminado', 'success');
+    render();
+  } catch(e) { toast('Error al eliminar', 'error'); }
+}
+
+// ── Categories CRUD ──────────────────────────────────────────
+function editCategory(id) {
+  const cat = categories.find(c => c.id === id);
+  if (!cat) return;
+  editingCatId = id;
+  document.getElementById('catModalTitle').textContent = 'Editar categoría';
+  document.getElementById('editCatId').value = id;
+  document.getElementById('catName').value = cat.name;
+  document.getElementById('catIcon').value = cat.icon;
+  document.getElementById('catDeleteBtn').style.display = id === 'other' ? 'none' : 'inline-flex';
+  document.getElementById('catModal').classList.add('open');
+}
+
+function addCategory() {
+  editingCatId = null;
+  document.getElementById('catModalTitle').textContent = 'Nueva categoría';
+  document.getElementById('editCatId').value = '';
+  document.getElementById('catName').value = '';
+  document.getElementById('catIcon').value = '📁';
+  document.getElementById('catDeleteBtn').style.display = 'none';
+  document.getElementById('catModal').classList.add('open');
+  document.getElementById('catName').focus();
+}
+
+async function saveCategory() {
+  const name = document.getElementById('catName').value.trim();
+  const icon = document.getElementById('catIcon').value.trim() || '📁';
+  if (!name) return toast('Ingresa un nombre', 'error');
+
+  if (editingCatId) {
+    try {
+      if (dbReady) await fsUpdate('vault_categories', editingCatId, { name, icon });
+      const cat = categories.find(c => c.id === editingCatId);
+      if (cat) { cat.name = name; cat.icon = icon; }
+      saveLocal();
+      toast('Categoría actualizada', 'success');
+    } catch(e) { toast('Error', 'error'); }
+  } else {
+    const id = name.toLowerCase().replace(/[^a-z0-9]/g,'_') + '_' + Date.now();
+    const catData = { id, name, icon, order: categories.length };
+    try {
+      if (dbReady) await fsAdd('vault_categories', catData);
+      categories.push(catData);
+      saveLocal();
+      toast('Categoría creada', 'success');
+    } catch(e) { toast('Error', 'error'); }
+  }
+  closeModal('catModal');
+  render();
+}
+
+async function deleteCategory() {
+  if (!editingCatId) return;
+  const catLinks = links.filter(l => l.category === editingCatId).length;
+  if (catLinks > 0) return toast(`Hay ${catLinks} enlaces en esta categoría. Muévelos primero.`, 'error');
+  if (!confirm('¿Eliminar esta categoría?')) return;
+  try {
+    if (dbReady) await fsDelete('vault_categories', editingCatId);
+    categories = categories.filter(c => c.id !== editingCatId);
+    saveLocal();
+    closeModal('catModal');
+    toast('Categoría eliminada', 'success');
+    render();
+  } catch(e) { toast('Error', 'error'); }
+}
+
+// ── Utilities ────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function getDomain(url) { try { return new URL(url).hostname.replace('www.',''); } catch { return url; } }
+
+function getFaviconEmoji(domain) {
+  if (domain.includes('github')) return '🐙';
+  if (domain.includes('youtube')) return '▶️';
+  if (domain.includes('twitter') || domain.includes('x.com')) return '🐦';
+  if (domain.includes('reddit')) return '🔴';
+  if (domain.includes('google')) return '🔍';
+  if (domain.includes('amazon')) return '📦';
+  if (domain.includes('netflix')) return '🎬';
+  if (domain.includes('spotify')) return '🎵';
+  if (domain.includes('linkedin')) return '💼';
+  if (domain.includes('instagram')) return '📸';
+  return '🔗';
+}
+
+function getCategoryName(id) { const c = categories.find(x => x.id === id); return c ? c.name : id; }
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function timeAgo(dateStr) {
+  const d = dateStr.includes('T') ? new Date(dateStr) : new Date(dateStr);
+  const diff = Date.now() - d.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'ahora';
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 4) return `${weeks}sem`;
+  return d.toLocaleDateString('es');
+}
+
+function isFresh(dateStr) {
+  if (!dateStr) return false;
+  const diff = Date.now() - new Date(dateStr).getTime();
+  return diff < 86400000;
+}
+
+function toast(msg, type = '') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+function showLoading(on) { document.getElementById('loadingBar').classList.toggle('active', on); }
+
+// ── Events ───────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', () => render());
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); document.getElementById('searchInput').focus(); }
+});
+
+// ── Export/Import ────────────────────────────────────────────
+function exportData() {
+  const data = { links, categories, linkStatus, exported: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `link-vault-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('Backup descargado', 'success');
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (data.links && data.categories) {
+        if (dbReady) {
+          for (const l of data.links) { l.id = l.id || 'lnk_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); try { await fsAdd('vault_links', l); } catch(_) {} }
+          for (const c of data.categories) { try { await fsAdd('vault_categories', c); } catch(_) {} }
+          await loadCategories(); await loadLinks();
+        } else {
+          links = [...data.links, ...links]; categories = data.categories; if (data.linkStatus) linkStatus = data.linkStatus;
+          saveLocal();
+        }
+        render(); checkAllLinks();
+        toast(`${data.links.length} enlaces importados`, 'success');
+      }
+    } catch(e) { toast('Error al importar', 'error'); }
+  };
+  input.click();
+}
+
+init();
+</script>
+</body>
+</html>
