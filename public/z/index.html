@@ -1,949 +1,296 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YAPIDO — Mejora todo lo que haces</title>
-  <meta name="description" content="Yapido es un ecosistema completo para mejorar tu vida: dinero, mente, semana, descanso, creatividad, tiempo y operación. Un solo sistema, en constante evolución." />
-  <meta name="theme-color" content="#0a0a0a" />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
-  <link rel="stylesheet" href="./styles.css" />
-  <link rel="stylesheet" href="./mobile.css" media="(max-width: 767px)" />
-  <link rel="stylesheet" href="./tablet.css" media="(min-width: 768px) and (max-width: 1023px)" />
-  <link rel="stylesheet" href="./desktop.css" media="(min-width: 1024px)" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text x='50' y='75' font-size='80' text-anchor='middle' fill='%23e8ff00' font-family='Archivo Black'>Y</text></svg>" />
-</head>
-<body data-theme="dark">
-
-  <!-- ═══ CURSOR ═══ -->
-  <div class="cursor" id="cursor" aria-hidden="true"></div>
-  <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
-
-  <!-- ═══ PROGRESS BAR ═══ -->
-  <div class="progress" id="progress" aria-hidden="true">
-    <div class="progress-fill" id="progressFill"></div>
-  </div>
-
-  <!-- ═══ LOADER ═══ -->
-  <div class="loader" id="loader" aria-hidden="true">
-    <div class="loader-grid">
-      <div class="loader-meta">
-        <div class="loader-meta-row">
-          <span class="loader-meta-key">SISTEMA</span>
-          <span class="loader-meta-val">YPD-CORE</span>
-        </div>
-        <div class="loader-meta-row">
-          <span class="loader-meta-key">ESTADO</span>
-          <span class="loader-meta-val">EN EVOLUCIÓN</span>
-        </div>
-        <div class="loader-meta-row">
-          <span class="loader-meta-key">AÑO</span>
-          <span class="loader-meta-val">2026</span>
-        </div>
-      </div>
-
-      <div class="loader-counter">
-        <div class="loader-counter-num" id="loaderNum">00</div>
-        <div class="loader-counter-bar">
-          <div class="loader-counter-bar-fill" id="loaderBar"></div>
-        </div>
-        <div class="loader-counter-label" id="loaderLabel">ABRIENDO LA PUERTA</div>
-      </div>
-
-      <div class="loader-brand">
-        <div class="loader-brand-line" data-loader-line>YAPIDO</div>
-        <div class="loader-brand-line loader-brand-line--accent" data-loader-line>BIENVENIDO A</div>
-        <div class="loader-brand-tag" data-loader-tag>TU PRÓXIMA VERSIÓN.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══ NAV ═══ -->
-  <nav class="nav" id="nav" aria-label="Principal">
-    <div class="nav-row">
-      <a href="#top" class="nav-brand" data-cursor="lg">
-        <span class="nav-brand-mark">Y</span>
-        <span class="nav-brand-text">YAPIDO<em>·</em>EVOLUCIÓN</span>
-      </a>
-
-      <div class="nav-sections" id="navSections">
-        <a href="#manifesto" data-section="01">01/ MANIFIESTO</a>
-        <a href="#ecosistema" data-section="02">02/ ECOSISTEMA</a>
-        <a href="#numeros" data-section="03">03/ NÚMEROS</a>
-        <a href="#pila" data-section="04">04/ PILA</a>
-        <a href="#ensayo" data-section="05">05/ ENSAYO</a>
-      </div>
-
-      <div class="nav-status">
-        <span class="nav-status-dot"></span>
-        <span class="nav-status-text">ACTIVO / 2026.06</span>
-      </div>
-    </div>
-  </nav>
-
-  <!-- ═══ MAIN ═══ -->
-  <main id="top" data-scroll-container>
-
-    <!-- ─── HERO / MANIFIESTO ──────────────────────────────── -->
-    <section class="hero" id="manifesto" data-section="01">
-      <div class="hero-rule hero-rule--top" aria-hidden="true"></div>
-
-      <div class="hero-meta">
-        <div class="hero-meta-block">
-          <span class="hero-meta-key">EDICIÓN</span>
-          <span class="hero-meta-val">VOL. 07 / VERANO 2026</span>
-        </div>
-        <div class="hero-meta-block">
-          <span class="hero-meta-key">PARA TI</span>
-          <span class="hero-meta-val">QUIENES CONSTRUYEN</span>
-        </div>
-        <div class="hero-meta-block hero-meta-block--right">
-          <span class="hero-meta-key">DESPLÁZATE PARA ENTRAR ↓</span>
-        </div>
-      </div>
-
-      <div class="hero-headline">
-        <div class="hero-line">
-          <span data-split-char>M</span><span data-split-char>Á</span><span data-split-char>S</span>
-          <span data-split-char>&nbsp;</span>
-          <span data-split-char>Q</span><span data-split-char>U</span><span data-split-char>E</span>
-        </div>
-        <div class="hero-line hero-line--shift">
-          <span data-split-char>S</span><span data-split-char>O</span><span data-split-char>F</span><span data-split-char>T</span><span data-split-char>W</span><span data-split-char>A</span><span data-split-char>R</span><span data-split-char>E</span>
-        </div>
-        <div class="hero-line">
-          <span data-split-char>M</span><span data-split-char>E</span><span data-split-char>J</span><span data-split-char>O</span><span data-split-char>R</span>
-          <span data-split-char>&nbsp;</span>
-          <span data-split-char>Q</span><span data-split-char>U</span><span data-split-char>E</span>
-        </div>
-        <div class="hero-line hero-line--invert">
-          <span data-split-char>P</span><span data-split-char>R</span><span data-split-char>O</span><span data-split-char>M</span><span data-split-char>E</span><span data-split-char>S</span><span data-split-char>A</span><span data-split-char>S</span>
-        </div>
-      </div>
-
-      <div class="hero-foot">
-        <div class="hero-foot-left">
-          <p class="hero-lede">
-            <span class="hero-lede-mark">¶</span>
-            Bienvenido a la versión de tu vida que se organiza de verdad.
-            <strong>Yapido</strong> es una arquitectura completa — diseñada para que tu
-            dinero, tu mente, tu tiempo, tu semana y tu descanso trabajen a tu favor.
-            Aquí no consumes software. Accedes a un sistema que mejora contigo, todos
-            los días, sin pedirte que seas experto en nada. Solo necesitas decidir empezar.
-          </p>
-        </div>
-        <div class="hero-foot-right">
-          <a href="#ecosistema" class="hero-cta" data-cursor="lg">
-            <span>ENTRAR AL ECOSISTEMA</span>
-            <span class="hero-cta-arrow">→</span>
-          </a>
-        </div>
-      </div>
-
-      <div class="hero-rule hero-rule--bottom" aria-hidden="true"></div>
-    </section>
-
-    <!-- ─── MARQUEE ──────────────────────────────────────── -->
-    <div class="marquee" aria-hidden="true">
-      <div class="marquee-track">
-        <span>EL PRIVILEGIO DE EVOLUCIONAR</span><span class="marquee-dot">●</span>
-        <span>UNA ARQUITECTURA EN CONSTANTE CRECIMIENTO</span><span class="marquee-dot">●</span>
-        <span>PARA QUIENES CONSTRUYEN</span><span class="marquee-dot">●</span>
-        <span>NO PARA TODOS</span><span class="marquee-dot">●</span>
-        <span>EST. 2026</span><span class="marquee-dot">●</span>
-        <span>EL PRIVILEGIO DE EVOLUCIONAR</span><span class="marquee-dot">●</span>
-        <span>UNA ARQUITECTURA EN CONSTANTE CRECIMIENTO</span><span class="marquee-dot">●</span>
-        <span>PARA QUIENES CONSTRUYEN</span><span class="marquee-dot">●</span>
-        <span>NO PARA TODOS</span><span class="marquee-dot">●</span>
-        <span>EST. 2026</span><span class="marquee-dot">●</span>
-      </div>
-    </div>
-
-    <!-- ─── EL ECOSISTEMA ───────────────────────────────── -->
-    <section class="seven" id="ecosistema" data-section="02">
-      <header class="seven-head">
-        <div class="seven-head-left">
-          <span class="section-num">02</span>
-          <span class="section-tag">// LO QUE CONSTRUIMOS</span>
-        </div>
-        <h2 class="seven-title">
-          <span data-split-word>MEJORA</span><br/>
-          <span data-split-word>TODO LO QUE</span><br/>
-          <span data-split-word class="seven-title--accent">HACES.</span>
-        </h2>
-        <p class="seven-sub">
-          Tu dinero. Tu mente. Tu semana. Tu descanso. Tu creatividad. Tu tiempo.
-          Tu operación. Siete áreas que probablemente hoy resuelves a medias — y un
-          solo ecosistema que las conecta para que cada una deje de exigirte energía
-          a cambio de muy poco. Lo que ves aquí es el comienzo. Y lo que viene es
-          todavía mejor.
-        </p>
-      </header>
-
-      <ol class="seven-list">
-
-        <li class="seven-item" data-app="yapido">
-          <a href="https://yapido.click" class="seven-link" data-cursor="lg">
-            <div class="seven-item-num">01</div>
-            <div class="seven-item-body">
-              <div class="seven-item-label">PARA TU OPERACIÓN</div>
-              <h3 class="seven-item-title">YAPIDO</h3>
-              <p class="seven-item-desc">
-                Tu operación comercial, desatendida pero siempre bajo control.
-                Tiendas, repartos, lavandería, conductores — todo coordinado por
-                20 agentes de IA que trabajan mientras tú descansas.
-              </p>
-            </div>
-            <div class="seven-item-meta">
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">20</span>
-                <span class="seven-item-stat-label">AGENTES IA</span>
-              </div>
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">24/7</span>
-                <span class="seven-item-stat-label">SIEMPRE ACTIVO</span>
-              </div>
-            </div>
-            <div class="seven-item-cta">
-              <span>CONOCER</span>
-              <span class="seven-item-cta-arrow">↗</span>
-            </div>
-            <div class="seven-item-bg" aria-hidden="true"></div>
-          </a>
-        </li>
-
-        <li class="seven-item" data-app="finanzas">
-          <a href="https://yapido.click/finanzas" class="seven-link" data-cursor="lg">
-            <div class="seven-item-num">02</div>
-            <div class="seven-item-body">
-              <div class="seven-item-label">PARA TU DINERO</div>
-              <h3 class="seven-item-title">FINANZAS</h3>
-              <p class="seven-item-desc">
-                Tu dinero, por fin, trabajando a tu favor. Gastos, ingresos,
-                presupuestos y un asesor de IA que audita cada movimiento
-                y te dice exactamente qué cambiar para mejorar.
-              </p>
-            </div>
-            <div class="seven-item-meta">
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">IA</span>
-                <span class="seven-item-stat-label">AUDITOR 24/7</span>
-              </div>
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">4</span>
-                <span class="seven-item-stat-label">ÁREAS</span>
-              </div>
-            </div>
-            <div class="seven-item-cta">
-              <span>CONOCER</span>
-              <span class="seven-item-cta-arrow">↗</span>
-            </div>
-            <div class="seven-item-bg" aria-hidden="true"></div>
-          </a>
-        </li>
-
-        <li class="seven-item seven-item--nimbus-preview" data-app="nimbus">
-          <a href="#nimbus" class="seven-link" data-cursor="lg">
-            <div class="seven-item-num">03</div>
-            <div class="seven-item-body">
-              <div class="seven-item-label">PARA TU MENTE</div>
-              <h3 class="seven-item-title">NIMBUS</h3>
-              <p class="seven-item-desc">
-                Tu mente, por primera vez, verdaderamente acompañada.
-                Un sistema inteligente psicológico que ofrece ayuda profesional
-                para enriquecer tu vida desde adentro. <em>Ver detalle ↓</em>
-              </p>
-            </div>
-            <div class="seven-item-meta">
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">PSIC</span>
-                <span class="seven-item-stat-label">AYUDA PROFESIONAL</span>
-              </div>
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">24/7</span>
-                <span class="seven-item-stat-label">DISPONIBLE</span>
-              </div>
-            </div>
-            <div class="seven-item-cta">
-              <span>VER DETALLE</span>
-              <span class="seven-item-cta-arrow">↓</span>
-            </div>
-            <div class="seven-item-bg" aria-hidden="true"></div>
-          </a>
-        </li>
-
-        <li class="seven-item" data-app="cinestream">
-          <a href="https://yapido.click/p" class="seven-link" data-cursor="lg">
-            <div class="seven-item-num">04</div>
-            <div class="seven-item-body">
-              <div class="seven-item-label">PARA TU DESCANSO</div>
-              <h3 class="seven-item-title">CINESTREAM</h3>
-              <p class="seven-item-desc">
-                Tu descanso, curado a tu medida. Catálogo curado, filtros que
-                entienden tu estado de ánimo, y un reproductor que se adapta a ti.
-                Porque parar bien también es avanzar.
-              </p>
-            </div>
-            <div class="seven-item-meta">
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">HD</span>
-                <span class="seven-item-stat-label">REPRODUCCIÓN</span>
-              </div>
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">∞</span>
-                <span class="seven-item-stat-label">CATÁLOGO</span>
-              </div>
-            </div>
-            <div class="seven-item-cta">
-              <span>CONOCER</span>
-              <span class="seven-item-cta-arrow">↗</span>
-            </div>
-            <div class="seven-item-bg" aria-hidden="true"></div>
-          </a>
-        </li>
-
-        <li class="seven-item seven-item--alt" data-app="objetivos">
-          <a href="https://objetivos.yapido.click" class="seven-link" data-cursor="lg">
-            <div class="seven-item-num">05</div>
-            <div class="seven-item-body">
-              <div class="seven-item-label">PARA TU DIRECCIÓN</div>
-              <h3 class="seven-item-title">OBJETIVOS</h3>
-              <p class="seven-item-desc">
-                Tu semana, con dirección. Define tus objetivos por área, márcalos
-                como completados, captura evidencia. Porque lo que no se mide,
-                no se mejora.
-              </p>
-            </div>
-            <div class="seven-item-meta">
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">SEM</span>
-                <span class="seven-item-stat-label">CADENCIA</span>
-              </div>
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">SYNC</span>
-                <span class="seven-item-stat-label">FIREBASE</span>
-              </div>
-            </div>
-            <div class="seven-item-cta">
-              <span>CONOCER</span>
-              <span class="seven-item-cta-arrow">↗</span>
-            </div>
-            <div class="seven-item-bg" aria-hidden="true"></div>
-          </a>
-        </li>
-
-        <li class="seven-item" data-app="animaciones">
-          <a href="https://animaciones.yapido.click" class="seven-link" data-cursor="lg">
-            <div class="seven-item-num">06</div>
-            <div class="seven-item-body">
-              <div class="seven-item-label">PARA TU CREATIVIDAD</div>
-              <h3 class="seven-item-title">ANIMACIONES</h3>
-              <p class="seven-item-desc">
-                Tu creatividad, sin ataduras. Describe una escena y observa cómo
-                cobra vida en 3D. Porque imaginar es el primer paso para crear,
-                y crear es el primer paso para transformar.
-              </p>
-            </div>
-            <div class="seven-item-meta">
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">3D</span>
-                <span class="seven-item-stat-label">WEBGL</span>
-              </div>
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">PROC</span>
-                <span class="seven-item-stat-label">RENDERIZADO</span>
-              </div>
-            </div>
-            <div class="seven-item-cta">
-              <span>CONOCER</span>
-              <span class="seven-item-cta-arrow">↗</span>
-            </div>
-            <div class="seven-item-bg" aria-hidden="true"></div>
-          </a>
-        </li>
-
-        <li class="seven-item seven-item--alt" data-app="lavadoras">
-          <a href="https://lavadoras.yapido.click" class="seven-link" data-cursor="lg">
-            <div class="seven-item-num">07</div>
-            <div class="seven-item-body">
-              <div class="seven-item-label">PARA TU TIEMPO</div>
-              <h3 class="seven-item-title">LAVADORAS</h3>
-              <p class="seven-item-desc">
-                Tu tiempo, recuperado. Reservas, calendario, seguimiento —
-                alquiler de lavadoras sin fricción. Para que solo te preocupes
-                por vivir, no por coordinar.
-              </p>
-            </div>
-            <div class="seven-item-meta">
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">N15</span>
-                <span class="seven-item-stat-label">NEXT.JS</span>
-              </div>
-              <div class="seven-item-stat">
-                <span class="seven-item-stat-num">R19</span>
-                <span class="seven-item-stat-label">REACT</span>
-              </div>
-            </div>
-            <div class="seven-item-cta">
-              <span>CONOCER</span>
-              <span class="seven-item-cta-arrow">↗</span>
-            </div>
-            <div class="seven-item-bg" aria-hidden="true"></div>
-          </a>
-        </li>
-
-      </ol>
-
-      <!-- CTA intermedio 1 -->
-      <aside class="cta-card" data-cta-card>
-        <div class="cta-card-rule"></div>
-        <p class="cta-card-eyebrow">// Y LO QUE SIGUE</p>
-        <h3 class="cta-card-title">
-          Esto es solo el comienzo.<br/>
-          Lo mejor <em>está por venir.</em>
-        </h3>
-        <a href="#nimbus" class="cta-card-btn" data-cursor="lg">
-          <span>QUIERO VER MÁS</span>
-          <span class="cta-card-btn-arrow">→</span>
-        </a>
-      </aside>
-    </section>
-
-    <!-- ─── NIMBUS SPOTLIGHT ──────────────────────────────── -->
-    <section class="nimbus" id="nimbus">
-      <div class="nimbus-bg" aria-hidden="true">
-        <div class="nimbus-bg-orb nimbus-bg-orb--1"></div>
-        <div class="nimbus-bg-orb nimbus-bg-orb--2"></div>
-      </div>
-
-      <header class="nimbus-head">
-        <div class="nimbus-head-left">
-          <span class="section-num section-num--mint">★</span>
-          <span class="section-tag section-tag--mint">// DESTACADO DEL ECOSISTEMA</span>
-        </div>
-        <p class="nimbus-eyebrow">Nuestro sistema más avanzado</p>
-      </header>
-
-      <div class="nimbus-stage">
-        <h2 class="nimbus-title">
-          <span class="nimbus-title-line">NIMBUS.</span>
-          <span class="nimbus-title-sub">
-            Tu mente, por fin,<br/>
-            <em>acompañada</em> de verdad.
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yapido Store — Ecosistema de Apps</title>
+    <meta
+      name="description"
+      content="Tienda de aplicaciones del ecosistema Yapido: 9 productos, 8 categorías, una sola cuenta."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23F2FF00'/%3E%3Ctext x='50' y='66' text-anchor='middle' font-family='Archivo Black,sans-serif' font-size='56' fill='%23111'%3EY%3C/text%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <header class="nav" id="nav">
+      <div class="nav__inner">
+        <a class="nav__brand" href="#top" aria-label="Yapido">
+          <svg
+            class="nav__logo"
+            viewBox="0 0 40 40"
+            fill="none"
+            aria-hidden="true"
+          >
+            <rect width="40" height="40" rx="8" fill="var(--accent)" />
+            <text
+              x="20"
+              y="27"
+              text-anchor="middle"
+              font-family="Archivo Black, sans-serif"
+              font-size="22"
+              fill="var(--ink)"
+            >Y</text>
+          </svg>
+          <span class="nav__name">
+            <strong>Yapido</strong>
+            <span class="nav__sub">yapido.click</span>
           </span>
-        </h2>
-
-        <div class="nimbus-body">
-          <div class="nimbus-col">
-            <p>
-              Nimbus no es un chat. No es un asistente. Es un <strong>sistema
-              inteligente psicológico</strong> creado para acompañarte de verdad —
-              con la profundidad de la ayuda profesional y la disponibilidad de la
-              mejor tecnología. Disponible cuando lo necesites. Sin cita previa.
-              Sin juicio.
-            </p>
-            <p>
-              Tu perfil cognitivo, tu mapa emocional, tu gimnasio mental, tu acceso
-              a terapeutas certificados — todo conectado en un solo lugar, pensado
-              para que cuidar de ti deje de ser un pendiente más.
-            </p>
-          </div>
-          <div class="nimbus-col">
-            <p>
-              Creemos que mejorar tu vida digital no sirve de mucho si no mejora
-              también tu vida interior. Por eso cada socio de Yapido accede a
-              Nimbus como parte del privilegio de pertenecer. Sin costo extra.
-              Sin paquetes escondidos. <em>Es parte de lo que ya tienes.</em>
-            </p>
-            <p>
-              La tecnología más avanzada, al servicio de lo que más importa:
-              <strong>tú</strong>.
-            </p>
-          </div>
-        </div>
-
-        <div class="nimbus-features">
-          <div class="nimbus-feature">
-            <span class="nimbus-feature-num">01</span>
-            <h4>Perfil cognitivo profundo</h4>
-            <p>Análisis multidimensional de cómo piensas, decides y creces.</p>
-          </div>
-          <div class="nimbus-feature">
-            <span class="nimbus-feature-num">02</span>
-            <h4>Ayuda profesional</h4>
-            <p>Acceso a terapeutas certificados, en cualquier momento.</p>
-          </div>
-          <div class="nimbus-feature">
-            <span class="nimbus-feature-num">03</span>
-            <h4>Seguimiento emocional</h4>
-            <p>Tu mapa emocional, semana a semana, con interpretaciones claras.</p>
-          </div>
-          <div class="nimbus-feature">
-            <span class="nimbus-feature-num">04</span>
-            <h4>Gimnasio mental</h4>
-            <p>Ejercicios diarios diseñados por profesionales para entrenar tu mente.</p>
-          </div>
-        </div>
-
-        <a href="https://yapido.click/nimbus" class="nimbus-cta" data-cursor="lg">
-          <span>ACCEDER A NIMBUS</span>
-          <span class="nimbus-cta-arrow">↗</span>
         </a>
-      </div>
 
-      <!-- CTA intermedio 2 -->
-      <aside class="cta-card cta-card--mint" data-cta-card>
-        <div class="cta-card-rule"></div>
-        <p class="cta-card-eyebrow">// ¿LISTO PARA EMPEZAR?</p>
-        <h3 class="cta-card-title">
-          Esto no es una demo.<br/>
-          Es <em>el acceso que pocos tienen.</em>
-        </h3>
-        <a href="#" class="cta-card-btn" data-join data-cursor="lg">
-          <span>SÍ, QUIERO ENTRAR</span>
-          <span class="cta-card-btn-arrow">→</span>
-        </a>
-      </aside>
-    </section>
+        <nav class="nav__links" aria-label="Principal">
+          <a href="#apps">Apps</a>
+          <a href="#categorias">Categorías</a>
+          <a href="#organizer">Ecosistema</a>
+        </nav>
 
-    <!-- ─── NÚMEROS ──────────────────────────────────────── -->
-    <section class="numbers" id="numeros" data-section="03">
-      <header class="numbers-head">
-        <div class="numbers-head-left">
-          <span class="section-num">03</span>
-          <span class="section-tag">// EN NÚMEROS</span>
-        </div>
-        <h2 class="numbers-title">
-          Lo que <em>hoy</em><br/>
-          ya funciona.
-        </h2>
-      </header>
-
-      <div class="numbers-grid">
-        <div class="num" data-counter-target="07">
-          <div class="num-value"><span class="num-num" data-counter>00</span><sup class="num-sup">+</sup></div>
-          <div class="num-label">HERRAMIENTAS ACTIVAS — Y EN CRECIMIENTO</div>
-          <div class="num-rule"></div>
-        </div>
-        <div class="num" data-counter-target="20">
-          <div class="num-value"><span class="num-num" data-counter>00</span></div>
-          <div class="num-label">AGENTES DE IA TRABAJANDO PARA TI</div>
-          <div class="num-rule"></div>
-        </div>
-        <div class="num" data-counter-target="04">
-          <div class="num-value"><span class="num-num" data-counter>00</span></div>
-          <div class="num-label">INSTANCIAS DESPLEGADAS EN VERCEL</div>
-          <div class="num-rule"></div>
-        </div>
-        <div class="num" data-counter-target="01">
-          <div class="num-value"><span class="num-num" data-counter>00</span></div>
-          <div class="num-label">FIREBASE UNIFICADO — UNA SOLA CUENTA</div>
-          <div class="num-rule"></div>
-        </div>
-        <div class="num" data-counter-target="infinite">
-          <div class="num-value"><span class="num-num num-num--infinite" data-counter>∞</span></div>
-          <div class="num-label">LA AMBICIÓN NO SE CUENTA, SE CONSTRUYE</div>
-          <div class="num-rule"></div>
-        </div>
-        <div class="num" data-counter-target="2026">
-          <div class="num-value"><span class="num-num" data-counter>0000</span></div>
-          <div class="num-label">AÑO DE EDICIÓN — Y LO QUE SIGUE</div>
-          <div class="num-rule"></div>
+        <div class="nav__cta">
+          <button class="iconbtn" id="themeToggle" aria-label="Cambiar tema">
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="4" />
+              <path
+                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+              />
+            </svg>
+          </button>
+          <button class="btn btn--primary btn--sm">
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+            Iniciar sesión
+          </button>
         </div>
       </div>
-    </section>
+    </header>
 
-    <!-- ─── PILA TÉCNICA ─────────────────────────────────── -->
-    <section class="stack" id="pila" data-section="04">
-      <header class="stack-head">
-        <div class="stack-head-left">
-          <span class="section-num">04</span>
-          <span class="section-tag">// LA PILA TÉCNICA</span>
+    <main id="top">
+      <!-- ============ STORE HEADER ============ -->
+      <section class="storehead" id="categorias">
+        <div class="container">
+          <div class="storehead__row">
+            <div class="storehead__left">
+              <span class="eyebrow">
+                <span class="dot"></span>
+                yapido.click / tienda
+              </span>
+              <h1 class="display display--sm">
+                Catálogo
+                <span class="display--accent">del ecosistema</span>
+              </h1>
+            </div>
+            <div class="storehead__right">
+              <div class="kpi">
+                <span class="kpi__num mono" data-count="9">0</span>
+                <span class="kpi__lbl">Apps</span>
+              </div>
+              <div class="kpi">
+                <span class="kpi__num mono" data-count="8">0</span>
+                <span class="kpi__lbl">Categorías</span>
+              </div>
+              <div class="kpi">
+                <span class="kpi__num mono" data-count="20">0</span>
+                <span class="kpi__lbl">Agentes IA</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <h2 class="stack-title">
-          Construido con<br/>
-          <span class="stack-title--accent">lo mejor</span> de<br/>
-          la industria.
-        </h2>
-        <p class="stack-sub">
-          No usamos lo que está de moda. Usamos lo que ya está probado a escala
-          mundial. Cada decisión de la pila pasa tres filtros: que sea tipado
-          estricto, que tenga un ecosistema maduro, y que se pueda desplegar sin
-          sorpresas. Lo demás sobra.
-        </p>
-      </header>
+      </section>
 
-      <div class="stack-table">
-        <div class="stack-row stack-row--head">
-          <div class="stack-col stack-col--num">#</div>
-          <div class="stack-col stack-col--layer">CAPA</div>
-          <div class="stack-col stack-col--tech">TECNOLOGÍA</div>
-          <div class="stack-col stack-col--purpose">PROPÓSITO</div>
-        </div>
-        <div class="stack-row">
-          <div class="stack-col stack-col--num">01</div>
-          <div class="stack-col stack-col--layer">FRAMEWORK</div>
-          <div class="stack-col stack-col--tech">Next.js 15 · React 19</div>
-          <div class="stack-col stack-col--purpose">SSR, enrutado, multi-zona, server actions</div>
-        </div>
-        <div class="stack-row">
-          <div class="stack-col stack-col--num">02</div>
-          <div class="stack-col stack-col--layer">ORQUESTACIÓN IA</div>
-          <div class="stack-col stack-col--tech">Genkit + Gemini 2.5</div>
-          <div class="stack-col stack-col--purpose">20 agentes de IA, flujos, uso de herramientas</div>
-        </div>
-        <div class="stack-row">
-          <div class="stack-col stack-col--num">03</div>
-          <div class="stack-col stack-col--layer">BACKEND</div>
-          <div class="stack-col stack-col--tech">Firebase · Firestore · Auth</div>
-          <div class="stack-col stack-col--purpose">Datos, autenticación, hosting compartido</div>
-        </div>
-        <div class="stack-row">
-          <div class="stack-col stack-col--num">04</div>
-          <div class="stack-col stack-col--layer">3D / ANIMACIÓN</div>
-          <div class="stack-col stack-col--tech">Three.js · GSAP · Anime.js</div>
-          <div class="stack-col stack-col--purpose">Motor procedural, escenas WebGL</div>
-        </div>
-        <div class="stack-row">
-          <div class="stack-col stack-col--num">05</div>
-          <div class="stack-col stack-col--layer">MÓVIL</div>
-          <div class="stack-col stack-col--tech">Capacitor 8 · Android</div>
-          <div class="stack-col stack-col--purpose">APK nativo desde el mismo código fuente</div>
-        </div>
-        <div class="stack-row">
-          <div class="stack-col stack-col--num">06</div>
-          <div class="stack-col stack-col--layer">ESTILOS</div>
-          <div class="stack-col stack-col--tech">Tailwind · Radix · shadcn/ui</div>
-          <div class="stack-col stack-col--purpose">Sistema de diseño basado en tokens</div>
-        </div>
-        <div class="stack-row">
-          <div class="stack-col stack-col--num">07</div>
-          <div class="stack-col stack-col--layer">DATOS / MAPAS</div>
-          <div class="stack-col stack-col--tech">Mapbox · Recharts · date-fns</div>
-          <div class="stack-col stack-col--purpose">Visualización espacial y temporal</div>
-        </div>
-        <div class="stack-row">
-          <div class="stack-col stack-col--num">08</div>
-          <div class="stack-col stack-col--layer">DESPLIEGUE</div>
-          <div class="stack-col stack-col--tech">Vercel · Rewrites multi-zona</div>
-          <div class="stack-col stack-col--purpose">Red edge, despliegues atómicos</div>
-        </div>
-      </div>
+      <!-- ============ SEARCH + FILTERS ============ -->
+      <section class="toolbar">
+        <div class="container">
+          <div class="search">
+            <svg
+              class="search__icon"
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              type="search"
+              id="search"
+              placeholder="Busca una app, una función, una palabra…"
+              autocomplete="off"
+            />
+            <kbd>Esc</kbd>
+          </div>
 
-      <!-- CTA intermedio 3 -->
-      <aside class="cta-card" data-cta-card>
-        <div class="cta-card-rule"></div>
-        <p class="cta-card-eyebrow">// LA PUERTA ESTÁ ABIERTA</p>
-        <h3 class="cta-card-title">
-          La tecnología ya está lista.<br/>
-          La decisión <em>es tuya.</em>
-        </h3>
-        <a href="#" class="cta-card-btn" data-join data-cursor="lg">
-          <span>QUIERO ENTRAR YA</span>
-          <span class="cta-card-btn-arrow">→</span>
-        </a>
-      </aside>
-    </section>
-
-    <!-- ─── ENSAYO / MANIFIESTO LARGO ────────────────────── -->
-    <section class="longform" id="ensayo" data-section="05">
-      <header class="longform-head">
-        <div class="longform-head-left">
-          <span class="section-num">05</span>
-          <span class="section-tag">// ENSAYO</span>
+          <div class="chips" id="chips" role="tablist">
+            <button class="chip chip--active" data-cat="all" role="tab">
+              <span class="chip__count" id="count-all">09</span>
+              Todas
+            </button>
+            <button class="chip" data-cat="organizador" role="tab">
+              <span class="chip__count" id="count-organizador">01</span>
+              Organizador
+            </button>
+            <button class="chip" data-cat="comercio" role="tab">
+              <span class="chip__count" id="count-comercio">01</span>
+              Comercio
+            </button>
+            <button class="chip" data-cat="ia" role="tab">
+              <span class="chip__count" id="count-ia">01</span>
+              IA & Chat
+            </button>
+            <button class="chip" data-cat="finanzas" role="tab">
+              <span class="chip__count" id="count-finanzas">01</span>
+              Finanzas
+            </button>
+            <button class="chip" data-cat="entretenimiento" role="tab">
+              <span class="chip__count" id="count-entretenimiento">01</span>
+              Entretenimiento
+            </button>
+            <button class="chip" data-cat="bienestar" role="tab">
+              <span class="chip__count" id="count-bienestar">01</span>
+              Bienestar
+            </button>
+            <button class="chip" data-cat="creatividad" role="tab">
+              <span class="chip__count" id="count-creatividad">01</span>
+              Creatividad
+            </button>
+            <button class="chip" data-cat="productividad" role="tab">
+              <span class="chip__count" id="count-productividad">01</span>
+              Productividad
+            </button>
+            <button class="chip" data-cat="media" role="tab">
+              <span class="chip__count" id="count-media">01</span>
+              Media
+            </button>
+          </div>
         </div>
-        <h2 class="longform-title">
-          El privilegio<br/>
-          de mejorar<br/>
-          con <span class="longform-title--accent">dirección.</span>
-        </h2>
-      </header>
+      </section>
 
-      <div class="longform-body">
-        <div class="longform-col">
-          <p>
-            <span class="longform-dropcap">L</span>a mayoría del software te da una
-            herramienta y te deja solo. Yapido hace lo contrario. <strong>Te da un
-            sistema completo</strong> y se queda contigo, aprendiendo cómo vives,
-            cómo trabajas, qué te funciona, qué te frena. Y cada semana, un poco mejor.
-          </p>
-          <p>
-            Tu dinero, tu mente, tu semana, tu descanso, tu creatividad, tu tiempo,
-            tu operación — son siete áreas que probablemente hoy resuelves a medias.
-            Con Yapido, esas siete áreas empiezan a hablar el mismo idioma. Y tú
-            dejas de saltar entre veinte pestañas para vivir tu vida.
-          </p>
+      <!-- ============ APPS GRID ============ -->
+      <section class="section" id="apps">
+        <div class="container">
+          <div class="grid" id="grid" role="list"></div>
+
+          <div class="empty" id="empty" hidden>
+            <svg
+              viewBox="0 0 24 24"
+              width="48"
+              height="48"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <h3 class="h3">Sin resultados</h3>
+            <p>Prueba con otra palabra o cambia la categoría.</p>
+          </div>
         </div>
-        <div class="longform-col">
-          <p>
-            No es magia. Es arquitectura. Es la suma de decisiones técnicas correctas,
-            datos que aprenden, y un compromiso firme con el método. Una relación
-            sana y constante entre tú y tus herramientas, con el ánimo permanente
-            de mejorar.
-          </p>
-          <p>
-            Por eso el ecosistema es para quienes ya decidieron mejorar. No para
-            quienes esperan. No para quienes dudan. Para quienes entienden que
-            <strong>la mejor inversión es la que se hace en uno mismo</strong> —
-            con método, con constancia, con dirección.
-          </p>
+      </section>
+
+      <!-- ============ ORGANIZADOR ============ -->
+      <section class="organizer" id="organizer">
+        <div class="container">
+          <div class="organizer__card">
+            <div class="organizer__art" aria-hidden="true">
+              <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <radialGradient id="og" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#F2FF00"/>
+                    <stop offset="60%" stop-color="#F2FF00" stop-opacity="0.6"/>
+                    <stop offset="100%" stop-color="#F2FF00" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+                <circle cx="100" cy="100" r="90" fill="url(#og)"/>
+                <g stroke="#111" stroke-width="2" fill="none" stroke-linecap="round">
+                  <circle cx="100" cy="100" r="36"/>
+                  <path d="M100 64 v-12 M100 136 v12 M64 100 h-12 M136 100 h12 M74 74 l-8-8 M126 126 l8 8 M126 74 l8-8 M74 126 l-8 8"/>
+                </g>
+                <g fill="#111">
+                  <circle cx="100" cy="40" r="6"/>
+                  <circle cx="100" cy="160" r="6"/>
+                  <circle cx="40" cy="100" r="6"/>
+                  <circle cx="160" cy="100" r="6"/>
+                  <circle cx="58" cy="58" r="5"/>
+                  <circle cx="142" cy="58" r="5"/>
+                  <circle cx="58" cy="142" r="5"/>
+                  <circle cx="142" cy="142" r="5"/>
+                </g>
+              </svg>
+            </div>
+            <div class="organizer__body">
+              <span class="eyebrow eyebrow--accent">
+                <span class="dot"></span>
+                App organizadora
+              </span>
+              <h2 class="organizer__h">
+                Yapido es el<br />
+                <span class="organizer__h--accent">cerebro del ecosistema.</span>
+              </h2>
+              <p class="organizer__desc">
+                Autenticación unificada, orquestador de agentes IA y panel de
+                control para todos los productos bajo <strong>yapido.click</strong>.
+                Un solo login, una sola cuenta, nueve universos conectados.
+              </p>
+              <div class="organizer__actions">
+                <a href="https://yapido.click/" class="btn btn--accent btn--lg">
+                  Abrir Yapido
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </a>
+                <span class="organizer__meta">
+                  <span class="status-dot"></span>
+                  En línea · 20 agentes activos
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+    </main>
 
-      <div class="longform-quote">
-        <span class="longform-quote-mark">"</span>
-        Mejora todo lo que haces. Con método. Con constancia. Con dirección.
-      </div>
-
-      <div class="longform-sign">
-        <div class="longform-sign-line"></div>
-        <div class="longform-sign-meta">
-          <span>— YAPIDO</span>
-          <span>2026 / AGUACHICA · COLOMBIA</span>
+    <!-- ============ FOOTER ============ -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <div class="footer__brand">
+          <span class="mono">© 2026 yapido.click</span>
+          <span class="footer__sep">·</span>
+          <span>Hecho con cuidado en LATAM</span>
         </div>
-      </div>
-    </section>
-
-    <!-- ─── CTA FINAL ────────────────────────────────────── -->
-    <section class="cta" id="cta">
-      <div class="cta-rule cta-rule--top" aria-hidden="true"></div>
-
-      <div class="cta-inner">
-        <div class="cta-eyebrow">// ¿LISTO PARA EMPEZAR?</div>
-        <h2 class="cta-title">
-          El primer paso<br/>
-          es <span class="cta-title--accent">decidir.</span><br/>
-          ¿Listo?
-        </h2>
-
-        <div class="cta-actions">
-          <a href="#" class="cta-btn cta-btn--primary" data-join data-cursor="lg">
-            <span>SÍ, QUIERO ENTRAR</span>
-            <span class="cta-btn-arrow">→</span>
-          </a>
-          <a href="#ecosistema" class="cta-btn cta-btn--ghost" data-cursor="lg">
-            <span>VER DE NUEVO</span>
-            <span class="cta-btn-arrow">↑</span>
-          </a>
-        </div>
-      </div>
-
-      <div class="cta-rule cta-rule--bottom" aria-hidden="true"></div>
-    </section>
-
-  </main>
-
-  <!-- ═══ FOOTER ═══ -->
-  <footer class="footer">
-    <div class="footer-row">
-      <div class="footer-brand">
-        <span class="footer-brand-mark">Y</span>
-        <div class="footer-brand-text">
-          <span class="footer-brand-name">YAPIDO</span>
-          <span class="footer-brand-sub">UNA ARQUITECTURA EN EVOLUCIÓN</span>
-        </div>
-      </div>
-
-      <div class="footer-grid">
-        <div class="footer-col">
-          <div class="footer-col-title">PRODUCTOS</div>
-          <a href="https://yapido.click">Yapido</a>
-          <a href="https://yapido.click/finanzas">Finanzas</a>
-          <a href="https://yapido.click/nimbus">Nimbus</a>
-          <a href="https://yapido.click/p">CineStream</a>
-          <a href="https://objetivos.yapido.click">Objetivos</a>
-          <a href="https://animaciones.yapido.click">Animaciones</a>
-          <a href="https://lavadoras.yapido.click">Lavadoras</a>
-        </div>
-        <div class="footer-col">
-          <div class="footer-col-title">CONTACTO</div>
-          <a href="mailto:hola@yapido.click">hola@yapido.click</a>
-          <a href="https://github.com/yapido">GitHub</a>
-          <a href="https://yapido.click">yapido.click</a>
-        </div>
-        <div class="footer-col">
-          <div class="footer-col-title">LEGAL</div>
-          <a href="#">Términos</a>
+        <nav class="footer__links" aria-label="Footer">
+          <a href="https://yapido.click/">Yapido</a>
+          <a href="#apps">Apps</a>
           <a href="#">Privacidad</a>
-          <a href="#">Cookies</a>
-        </div>
-        <div class="footer-col">
-          <div class="footer-col-title">INFO</div>
-          <span class="footer-col-meta">v.2026.06</span>
-          <span class="footer-col-meta">Aguachica · CO</span>
-          <span class="footer-col-meta">© 2026</span>
-        </div>
+          <a href="#">Términos</a>
+          <a href="#">Contacto</a>
+        </nav>
       </div>
-    </div>
+    </footer>
 
-    <div class="footer-base">
-      <div class="footer-base-marquee" aria-hidden="true">
-        <div class="footer-base-track">
-          <span>YAPIDO</span><span>●</span>
-          <span>EL PRIVILEGIO DE EVOLUCIONAR</span><span>●</span>
-          <span>UNA ARQUITECTURA EN CONSTANTE CRECIMIENTO</span><span>●</span>
-          <span>PARA QUIENES CONSTRUYEN</span><span>●</span>
-          <span>YAPIDO</span><span>●</span>
-          <span>EL PRIVILEGIO DE EVOLUCIONAR</span><span>●</span>
-          <span>UNA ARQUITECTURA EN CONSTANTE CRECIMIENTO</span><span>●</span>
-          <span>PARA QUIENES CONSTRUYEN</span><span>●</span>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <!-- ═══ FIXED CTA (bottom-right, siempre visible) ═══ -->
-  <button class="fixed-cta" data-join data-cursor="lg" aria-label="Unirse al ecosistema">
-    <span class="fixed-cta-pulse" aria-hidden="true"></span>
-    <span class="fixed-cta-text">ÚNETE</span>
-    <span class="fixed-cta-arrow">→</span>
-  </button>
-
-  <!-- ═══ JOIN OVERLAY (secuencia de frases motivadoras) ═══ -->
-  <div class="join-overlay" id="joinOverlay" aria-hidden="true">
-    <div class="join-curtain join-curtain--top" aria-hidden="true"></div>
-    <div class="join-curtain join-curtain--bottom" aria-hidden="true"></div>
-
-    <button class="join-close" id="joinClose" data-cursor="lg" aria-label="Cerrar">×</button>
-
-    <div class="join-stage" id="joinStage">
-      <div class="join-counter" id="joinCounter">01 / 06</div>
-
-      <div class="join-phrase" data-join-phrase>
-        <div class="join-phrase-num">01</div>
-        <p class="join-phrase-text">No viniste aquí por casualidad.</p>
-      </div>
-      <div class="join-phrase" data-join-phrase>
-        <div class="join-phrase-num">02</div>
-        <p class="join-phrase-text">Viniste porque algo en tu vida pide mejorar.</p>
-      </div>
-      <div class="join-phrase" data-join-phrase>
-        <div class="join-phrase-num">03</div>
-        <p class="join-phrase-text">Tu dinero, tu mente, tu tiempo, tu semana, tu descanso.</p>
-      </div>
-      <div class="join-phrase" data-join-phrase>
-        <div class="join-phrase-num">04</div>
-        <p class="join-phrase-text">Yapido los conecta. Para que dejes de operar a medias.</p>
-      </div>
-      <div class="join-phrase" data-join-phrase>
-        <div class="join-phrase-num">05</div>
-        <p class="join-phrase-text">Un ecosistema. Siete áreas. Un método que funciona.</p>
-      </div>
-      <div class="join-phrase" data-join-phrase>
-        <div class="join-phrase-num">06</div>
-        <p class="join-phrase-text">Elige cómo quieres entrar.</p>
-      </div>
-
-      <div class="join-final" data-join-final hidden>
-        <p class="join-final-eyebrow">// HAZTE SOCIO O INVIERTE</p>
-        <h2 class="join-final-title">Tres formas de entrar.</h2>
-        <p class="join-final-text">
-          Empieza gratis, súmate como socio del ecosistema, o invierte en la arquitectura
-          que está redefiniendo cómo las personas mejoran su vida con software. Tú decides
-          a qué nivel quieres estar.
-        </p>
-
-        <div class="tiers">
-
-          <article class="tier" data-tier="explorer">
-            <div class="tier-head">
-              <span class="tier-num">01</span>
-              <h3 class="tier-name">EXPLORADOR</h3>
-              <p class="tier-tag">Para conocer el ecosistema</p>
-            </div>
-            <div class="tier-price">
-              <span class="tier-price-val">GRATIS</span>
-              <span class="tier-price-when">para siempre</span>
-            </div>
-            <ul class="tier-list">
-              <li>Acceso al manifiesto completo</li>
-              <li>Lectura del roadmap público</li>
-              <li>Newsletter mensual de avance</li>
-              <li>Acceso a Yapido en modo lectura</li>
-            </ul>
-            <a href="https://yapido.click" class="tier-btn" data-cursor="lg">
-              <span>EMPEZAR GRATIS</span>
-              <span class="tier-btn-arrow">→</span>
-            </a>
-          </article>
-
-          <article class="tier tier--featured" data-tier="socio">
-            <div class="tier-flag">RECOMENDADO</div>
-            <div class="tier-head">
-              <span class="tier-num">02</span>
-              <h3 class="tier-name">SOCIO</h3>
-              <p class="tier-tag">El acceso completo al ecosistema</p>
-            </div>
-            <div class="tier-price">
-              <span class="tier-price-currency">$</span>
-              <span class="tier-price-val">29</span>
-              <span class="tier-price-when">/ mes</span>
-            </div>
-            <p class="tier-sub">o $290 al año (2 meses gratis)</p>
-            <ul class="tier-list">
-              <li><strong>Acceso completo</strong> a los 7 productos del ecosistema</li>
-              <li><strong>Nimbus</strong> incluido — tu sistema psicológico</li>
-              <li>Soporte prioritario por chat</li>
-              <li>Comunidad privada de socios</li>
-              <li>Voto en el roadmap trimestral</li>
-              <li>Onboarding personal de 30 minutos</li>
-            </ul>
-            <a href="https://yapido.click/hazte-socio" class="tier-btn tier-btn--primary" data-cursor="lg">
-              <span>QUIERO SER SOCIO</span>
-              <span class="tier-btn-arrow">→</span>
-            </a>
-            <p class="tier-note">Cancela cuando quieras. Sin permanencia.</p>
-          </article>
-
-          <article class="tier" data-tier="inversor">
-            <div class="tier-head">
-              <span class="tier-num">03</span>
-              <h3 class="tier-name">INVERSOR</h3>
-              <p class="tier-tag">Para creer en la arquitectura</p>
-            </div>
-            <div class="tier-price">
-              <span class="tier-price-from">DESDE</span>
-              <span class="tier-price-currency">$</span>
-              <span class="tier-price-val">5.000</span>
-              <span class="tier-price-when">USD</span>
-            </div>
-            <p class="tier-sub">ronda semilla · equity + revenue share</p>
-            <ul class="tier-list">
-              <li>Participación equity en la arquitectura</li>
-              <li>Revenue share mensual desde el mes 1</li>
-              <li>Acceso de por vida como Socio VIP</li>
-              <li>Co-propiedad de módulos a elección</li>
-              <li>Reporte financiero trimestral</li>
-              <li>Línea directa con el equipo fundador</li>
-            </ul>
-            <a href="mailto:inversion@yapido.click?subject=Interés%20en%20invertir%20en%20Yapido" class="tier-btn" data-cursor="lg">
-              <span>SOLICITAR DOSSIER</span>
-              <span class="tier-btn-arrow">→</span>
-            </a>
-            <p class="tier-note">Cupos limitados por ronda. Evaluación en 5 días hábiles.</p>
-          </article>
-
-        </div>
-
-        <button class="join-final-secondary" data-join-restart data-cursor="lg">
-          <span>← VOLVER A LEER LAS FRASES</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="join-progress" id="joinProgress" aria-hidden="true">
-      <div class="join-progress-bar"></div>
-    </div>
-  </div>
-
-  <!-- ═══ SCRIPTS ═══ -->
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js" defer></script>
-  <script src="./app.js" defer></script>
-</body>
+    <script src="app.js" defer></script>
+  </body>
 </html>
