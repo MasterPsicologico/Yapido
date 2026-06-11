@@ -4,23 +4,9 @@
    ========================================================== */
 
 // --- 1. Catálogo de apps ------------------------------------
+// Nota: La app Yapido (hub principal) se muestra en la sección Organizer abajo,
+// no aquí como tarjeta para evitar que la página se llame a sí misma.
 const APPS = [
-  {
-    id: "yapido",
-    name: "Yapido",
-    cat: "organizador",
-    catLabel: "Organizador",
-    tagline: "El cerebro del ecosistema.",
-    desc: "Autenticación unificada, orquestador de 20 agentes IA y panel de control para todo yapido.click.",
-    rating: 4.9,
-    installs: "12K+",
-    price: "Gratis",
-    size: "Next.js · 20 agentes AI",
-    url: "https://yapido.click/",
-    accent: "#F2FF00",
-    icon: "yapido",
-    organizer: true,
-  },
   {
     id: "finanzas",
     name: "Finanzas",
@@ -32,7 +18,7 @@ const APPS = [
     installs: "8.4K+",
     price: "Gratis",
     size: "Next.js + Gemini",
-    url: "https://finanzas.yapido.click",
+    url: "https://yapido.click/finanzas",
     accent: "#10B981",
     icon: "finanzas",
   },
@@ -47,7 +33,7 @@ const APPS = [
     installs: "21K+",
     price: "Gratis",
     size: "Genkit multi-tool",
-    url: "https://nimbus.yapido.click",
+    url: "https://yapido.click/nimbus",
     accent: "#8B5CF6",
     icon: "nimbus",
     badge: "Popular",
@@ -78,7 +64,7 @@ const APPS = [
     installs: "1.1K+",
     price: "Gratis",
     size: "Vanilla JS · Privado",
-    url: "https://objetivos.yapido.click",
+    url: "https://organizar.yapido.click",
     accent: "#F59E0B",
     icon: "objetivos",
     badge: "Nuevo",
@@ -136,7 +122,7 @@ const APPS = [
     cat: "media",
     catLabel: "Media & Brand",
     tagline: "La portada del ecosistema.",
-    desc: "Landing editorial que presenta los 9 productos del ecosistema como manifiesto de marca.",
+    desc: "Landing editorial que presenta los productos del ecosistema como manifiesto de marca.",
     rating: 4.9,
     installs: "—",
     price: "Gratis",
@@ -150,7 +136,6 @@ const APPS = [
 
 // --- 2. Iconos SVG (inline) ---------------------------------
 const ICONS = {
-  yapido: `<svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18l-2 12H5L3 7z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>`,
   finanzas: `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
   nimbus: `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>`,
   cinestream: `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m10 9 5 3-5 3V9z" fill="#fff"/></svg>`,
@@ -162,7 +147,6 @@ const ICONS = {
 };
 
 const ICON_BG = {
-  yapido: "#F2FF00",
   finanzas: "#10B981",
   nimbus: "#8B5CF6",
   cinestream: "#EF4444",
@@ -173,21 +157,72 @@ const ICON_BG = {
   z: "#F2FF00",
 };
 
-// --- 3. Estado -----------------------------------------------
+// --- 3. Estado de salud de las apps (verificación live) -----
+// Mapeamos cada app a su URL raíz para hacer un HEAD check
+const HEALTH_URLS = {
+  finanzas: "https://yapido.click/finanzas",
+  nimbus: "https://yapido.click/nimbus",
+  cinestream: "https://peliculas.yapido.click",
+  objetivos: "https://organizar.yapido.click",
+  animaciones: "https://animaciones.yapido.click",
+  lavadoras: "https://lavadoras.yapido.click",
+  salud: "https://salud.yapido.click",
+  z: "https://yapido.click/z",
+};
+
+// Caché de resultados de salud
+const healthStatus = {};
+
+async function checkHealth(id, url) {
+  try {
+    // Usamos no-cors para evitar bloqueos de CORS — si llega (opaque), está online
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch(url, { method: "HEAD", mode: "no-cors", signal: ctrl.signal });
+    clearTimeout(timer);
+    // En modo no-cors, fetch siempre "resuelve" si el servidor responde, type === "opaque"
+    healthStatus[id] = "online";
+  } catch {
+    healthStatus[id] = "offline";
+  }
+  // Update badge on already-rendered cards
+  const badge = document.querySelector(`[data-health="${id}"]`);
+  if (badge) {
+    badge.className = `card__status card__status--${healthStatus[id]}`;
+    badge.innerHTML = `<span class="card__status-dot"></span>${healthStatus[id] === "online" ? "En línea" : "Sin conexión"}`;
+  }
+}
+
+function initHealthChecks() {
+  APPS.forEach((app) => {
+    healthStatus[app.id] = "checking";
+    checkHealth(app.id, HEALTH_URLS[app.id] || app.url);
+  });
+}
+
+// --- 4. Estado local ----------------------------------------
 const state = {
   cat: "all",
   query: "",
   sort: "rating",
 };
 
-// --- 4. Helpers ----------------------------------------------
+// --- 5. Helpers ----------------------------------------------
 const star = () =>
   `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`;
 
 const arrowOut = () =>
   `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>`;
 
-// --- 5. Render -----------------------------------------------
+function getStatusBadge(id) {
+  const s = healthStatus[id];
+  if (!s || s === "checking") {
+    return `<span class="card__status" data-health="${id}" style="background:#f1f5f9;color:#94a3b8"><span class="card__status-dot" style="background:#94a3b8;animation:none"></span>Verificando…</span>`;
+  }
+  return `<span class="card__status card__status--${s}" data-health="${id}"><span class="card__status-dot"></span>${s === "online" ? "En línea" : "Sin conexión"}</span>`;
+}
+
+// --- 6. Render -----------------------------------------------
 function renderChips() {
   const counts = { all: APPS.length };
   APPS.forEach((a) => {
@@ -215,7 +250,7 @@ function renderCards() {
     .map(
       (app, i) => `
       <a
-        class="card ${app.organizer ? "card--organizer" : ""}"
+        class="card"
         href="${app.url}"
         target="_blank"
         rel="noopener noreferrer"
@@ -225,16 +260,17 @@ function renderCards() {
       >
         <div class="card__top">
           <div class="card__icon" style="background:${ICON_BG[app.icon] || "#111"}">
-            ${ICONS[app.icon] || ICONS.yapido}
+            ${ICONS[app.icon] || ICONS.finanzas}
           </div>
           <div class="card__heading">
             <div class="card__name">
               ${app.name}
-              ${app.organizer ? `<span class="badge badge--organizer">Organizador</span>` : app.badge ? `<span class="badge ${app.badge === "Nuevo" ? "badge--new" : app.badge === "Beta" ? "badge--beta" : ""}">${app.badge}</span>` : ""}
+              ${app.badge ? `<span class="badge ${app.badge === "Nuevo" ? "badge--new" : app.badge === "Beta" ? "badge--beta" : ""}">${app.badge}</span>` : ""}
             </div>
             <div class="card__cat">${app.catLabel}</div>
           </div>
         </div>
+        ${getStatusBadge(app.id)}
         <p class="card__desc">${app.desc}</p>
         <div class="card__meta">
           <span class="card__rating">${star()} ${app.rating.toFixed(1)}</span>
@@ -281,10 +317,7 @@ function filterAndSort() {
       list.sort((a, b) => a.name.localeCompare(b.name));
       break;
     case "new":
-      list.sort(
-        (a, b) =>
-          (b.badge === "Nuevo" ? 1 : 0) - (a.badge === "Nuevo" ? 1 : 0)
-      );
+      list.sort((a, b) => (b.badge === "Nuevo" ? 1 : 0) - (a.badge === "Nuevo" ? 1 : 0));
       break;
     case "rating":
     default:
@@ -297,7 +330,7 @@ function render() {
   renderCards();
 }
 
-// --- 6. Motion engine ---------------------------------------
+// --- 7. Motion engine ---------------------------------------
 function initMotion() {
   // Tilt 3D sutil en hover (mouse position -> CSS vars)
   document.addEventListener("mousemove", (e) => {
@@ -376,7 +409,7 @@ function animateKpis() {
   });
 }
 
-// --- 7. Interacciones ----------------------------------------
+// --- 8. Interacciones ----------------------------------------
 document.getElementById("chips").addEventListener("click", (e) => {
   const btn = e.target.closest(".chip");
   if (!btn) return;
@@ -432,7 +465,8 @@ themeBtn.addEventListener("click", () => {
   localStorage.setItem("mm-theme", next);
 });
 
-// --- 8. Init -------------------------------------------------
+// --- 9. Init -------------------------------------------------
 renderChips();
 render();
 initMotion();
+initHealthChecks();
