@@ -10,7 +10,8 @@
 - **Nombre:** Finanzas Inteligentes (Smart Finances)
 - **Propósito:** Asistente financiero personal con IA — registro de gastos/ingresos, presupuestos, calendario financiero, alertas y análisis
 - **Stack:** Next.js 15, React 19, TypeScript 5, Genkit 1.28 + Gemini 2.5 Flash, Firebase 11, shadcn/ui
-- **ID Firebase:** `studio-6573252921-70d23`
+- **ID Firebase (compartido con el ecosistema):** `studio-4796645076-6f375`
+- **Custom auth domain (SSO cross-subdomain):** `auth.yapido.click`
 - **URL Prod:** `https://finanzas-beige-ten.vercel.app`
 
 ---
@@ -89,7 +90,7 @@ finanzas/
 ## Reglas Específicas
 
 1. **assetPrefix:** `/finanzas` — todas las rutas de assets usan este prefijo
-2. **Firebase:** Usa proyecto propio (`studio-6573252921-70d23`) — NO compartir con Yapido
+2. **Firebase compartido:** Usa el mismo proyecto que el resto del ecosistema (`studio-4796645076-6f375` — Lavadoras, Yapido, Nimbus, CineStream) con custom auth domain `auth.yapido.click`. Un usuario registrado en cualquier app queda autenticado en todas (SSO cross-subdomain vía cookies en `.yapido.click`).
 3. **Auth providers:** password, anonymous, google.com
 4. **Seguridad:** Firestore rules validan ownership por userId
 5. **Multi-zone:** Integrado via rewrites desde Yapido (root)

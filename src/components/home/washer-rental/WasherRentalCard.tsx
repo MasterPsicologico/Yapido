@@ -313,16 +313,7 @@ function AppDock({
           <HolographicCTA isOpen={isAnyStoreOpen} onClick={onOpenSolicitation} />
         </div>
 
-        {/* Derecha: Crear Tienda / Mi Negocio */}
-        <button onClick={onOpenStoreCreation} className="shrink-0">
-          <motion.div
-            whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.15)' }}
-            whileTap={{ scale: 0.95 }}
-            className="w-14 h-14 sm:w-12 lg:w-16 lg:h-16 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-white/70 hover:text-emerald-400 transition-colors group"
-          >
-            <StoreIcon className="w-5 h-5 lg:w-6 lg:h-6 group-hover:scale-110 transition-transform" />
-          </motion.div>
-        </button>
+
 
         {/* Derecha Extrema: Admin PC */}
         {isAdmin && onBannerUpload && (

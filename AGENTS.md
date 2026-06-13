@@ -12,10 +12,11 @@
 ├── Yapido (app principal)       — Multi-rol comercio/logística con 20 agentes AI
 ├── finanzas/                    — Gestión financiera personal con IA
 ├── nimbus/                      — Plataforma de chat y herramientas potenciada por IA
-├── public/p/                    — CineStream: streaming de películas (vanilla JS)
+├── public/peliculas/            — CineStream: streaming de películas (vanilla JS)
 ├── public/objetivos/            — Panel de objetivos / OKR del ecosistema (vanilla JS)
 ├── public/animaciones/          — Motor 3D procedimental (Vite + Three.js + GSAP)
 ├── public/lavadoras/            — Next.js app para alquiler de lavadoras
+├── public/salud/                — Radar de Suplementos: biohacking + longevidad (vanilla JS)
 ├── public/z/                    — Yapido Premium Zone (landing editorial del ecosistema)
 ├── docs/                        — Documentación de Yapido (blueprint, backend, responsive)
 ├── scripts/                     — Utilidades (setup, superadmin, fetch data)
@@ -34,6 +35,8 @@
 **Ruta raíz** — Next.js 15 + React 19 + Firebase + Genkit (20 agentes AI)
 
 **Propósito:** Plataforma multi-rol de comercio y logística (lavandería, alquiler de lavadoras, delivery).
+
+**Firebase (compartido con el ecosistema):** proyecto `studio-4796645076-6f375` con custom auth domain `auth.yapido.click` — una sola sesión activa se comparte entre `yapido.click`, `lavadoras.yapido.click`, `finanzas.yapido.click` y todos los subdominios del ecosistema.
 
 **Rutas principales:**
 - `/` — Dashboard multi-rol (Cliente/Admin/Repartidor)
@@ -95,19 +98,19 @@
 
 ---
 
-## 4. CineStream (`/p`)
+## 4. CineStream (`/peliculas`)
 
 **App cliente.** — Streaming de películas (Firebase + vanilla JS)
 
 **Propósito:** Plataforma de streaming con búsqueda, filtros por género/año/tipo, reproductor de video personalizado con control de calidad y volumen.
 
-**Ruta:** `/p` — Catálogo y reproductor de películas
+**Ruta:** `/peliculas` — Catálogo y reproductor de películas
 
-**Stack:** Vanilla JavaScript (app.js), Firebase Firestore (firestore-service.js), CSS modular (public/p/css/), Font Awesome
+**Stack:** Vanilla JavaScript (app.js), Firebase Firestore (firestore-service.js), CSS modular (public/peliculas/css/), Font Awesome
 
 **Datos:** Firebase Firestore (`cinestream_movies` collection) + anime movies data JSON
 
-**Producción:** `https://yapido.click/p`
+**Producción:** `https://peliculas.yapido.click`
 
 ---
 
@@ -199,6 +202,37 @@
 
 ---
 
+## 9. Salud (`/salud`) — Radar de Suplementos
+
+**App cliente.** — Analizador de stacks de suplementación con motor de reglas local.
+
+**Propósito:** SPA que analiza la rutina de suplementos del usuario en 8 pasos (edad, género, objetivos, estado, lifestyle, suplementos actuales, medicaciones, presupuesto), detecta interacciones peligrosas, genera un horario óptimo de 24h y recomienda un stack personalizado. Monetiza vía afiliación Amazon/iHerb + email marketing.
+
+**Ruta:** `/salud` → subdominio `salud.yapido.click`
+
+**Stack:** HTML5 + CSS3 + Tailwind CDN + Vanilla JS (sin build step)
+- `index.html` — SPA principal (3 vistas: hero / wizard / report)
+- `styles.css` — Custom CSS (chips, sliders, gauge, timeline, print)
+- `app.js` — UI controller: wizard, transiciones, render del reporte
+- `engine.js` — Motor de reglas LOCAL (análisis instantáneo, sin API)
+- `ai.js` — Wrapper IA opcional (Gemini / OpenAI-compatible)
+- `affiliate.js` — Generador de URLs Amazon/iHerb con tags
+- `data/supplements.js` — 36+ suplementos curados
+- `data/interactions.js` — 40+ interacciones peligrosas
+- `data/goals.js` — 13 objetivos de salud mapeados
+
+**Características clave:**
+- Motor de reglas 100% local (sin backend, sin API keys requeridas)
+- IA opcional vía `ai-config.js` (no commitear — está en .gitignore)
+- Gauge SVG animado con Stack Score
+- Timeline de 24h con pills de timing
+- Email gate + affiliate disclosure FTC-compliant
+- Print/PDF mode con CSS @media print
+
+**Producción:** `https://salud.yapido.click`
+
+---
+
 ## Arquitectura Multi-Zone
 
 ```
@@ -212,9 +246,9 @@
               ▼                     ▼                   ▼
        ┌─────────────┐      ┌─────────────┐     ┌─────────────┐
        │  Finanzas   │      │   Nimbus    │     │ CineStream  │
-       │ /finanzas   │      │  /nimbus    │     │     /p      │
-       │  p. 9003    │      │  p. 9004    │     │  estático   │
-       │ (path)      │      │  (path)     │     │  (path)     │
+       │ /finanzas   │      │  /nimbus    │     │ peliculas.  │
+       │  p. 9003    │      │  p. 9004    │     │ yapido.click│
+       │ (path)      │      │  (path)     │     │  (subdom)   │
        └─────────────┘      └─────────────┘     └─────────────┘
 
        ┌─────────────┐      ┌─────────────┐     ┌─────────────┐
@@ -224,11 +258,12 @@
        │  (subdom)   │      │  (subdom)   │     │  (subdom)   │
        └─────────────┘      └─────────────┘     └─────────────┘
 
-       ┌─────────────────────────────┐
-       │   Premium Zone (landing)    │
-       │   yapido.click/z            │
-       │   editorial brutalism       │
-       └─────────────────────────────┘
+       ┌─────────────┐      ┌─────────────────────────────┐
+       │   Salud     │      │   Premium Zone (landing)    │
+       │  salud.     │      │   yapido.click/z            │
+       │ yapido.click│      │   editorial brutalism       │
+       │  (subdom)   │      └─────────────────────────────┘
+       └─────────────┘
 ```
 
 - **Dev:** rewrites en `next.config.ts` apuntan a puertos locales
@@ -244,9 +279,9 @@
 3. **No mezclar dependencias** entre proyectos — cada uno tiene su propio `package.json`
 4. **Commits descriptivos** — usar convención de prefijos: `feat:`, `fix:`, `chore:`, `docs:`
 5. **Pull request a `main`** — mantener la rama principal estable
-6. **Subdominios de `yapido.click`:** `objetivos`, `animaciones`, `lavadoras`, `finanzas`, `nimbus`
+6. **Subdominios de `yapido.click`:** `objetivos`, `animaciones`, `lavadoras`, `finanzas`, `nimbus`, `salud`
 7. **Paths legados:** `/finanzas`, `/nimbus`, `/p` se mantienen por retrocompatibilidad
 
 ---
 
-*Última actualización: 6 de Junio, 2026*
+*Última actualización: 7 de Junio, 2026*

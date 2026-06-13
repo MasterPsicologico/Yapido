@@ -1,8 +1,8 @@
 export const firebaseConfig = {
-  "projectId": "studio-6573252921-70d23",
-  "appId": "1:342432269363:web:4f7eae20a2faebde684f46",
-  "apiKey": "AIzaSyA9MYrOY68w466BPvex7DSVppRtkqKZKlY",
-  "authDomain": "studio-6573252921-70d23.firebaseapp.com",
+  "projectId": "studio-4796645076-6f375",
+  "appId": "1:294212274372:web:57e201d54dc62a72152191",
+  "apiKey": "AIzaSyB3UPA2BTY-BT6YripgFmf5VX_BT9XIwGo",
+  "authDomain": "auth.yapido.click",
   "measurementId": "",
-  "messagingSenderId": "342432269363"
+  "messagingSenderId": "294212274372"
 };

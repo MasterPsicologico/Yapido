@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Guía completa y honesta sobre cómo se hace un videojuego. Las capas, las fases, las herramientas, los costos y los errores que nadie te cuenta." />
+  <title>Cómo se hace un juego — Guía completa</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ============================================ -->
+  <!-- TOP BAR                                       -->
+  <!-- ============================================ -->
+  <header class="topbar" id="topbar">
+    <div class="topbar__inner">
+      <a href="#top" class="brand">
+        <span class="brand__mark">./</span>
+        <span class="brand__name">guía-de-juegos</span>
+      </a>
+      <nav class="nav">
+        <a href="#capas">capas</a>
+        <a href="#fases">fases</a>
+        <a href="#stack">stack</a>
+        <a href="#fighting">pelea 2d</a>
+        <a href="#roadmap">roadmap</a>
+        <a href="#equipo">costos</a>
+        <a href="#errores">errores</a>
+      </nav>
+      <div class="topbar__meta">
+        <span class="topbar__date">v.1.0</span>
+        <span class="topbar__lang">es-mx</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================ -->
+  <!-- LOADER                                        -->
+  <!-- ============================================ -->
+  <div class="loader" id="loader">
+    <div class="loader__num" id="loaderNum">000</div>
+    <div class="loader__label">cargando guía</div>
+    <div class="loader__bar"><span></span></div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- HERO                                          -->
+  <!-- ============================================ -->
+  <main id="top">
+    <section class="hero">
+      <div class="hero__meta">
+        <span class="tag tag--accent">guía educativa</span>
+        <span class="tag">~25 min de lectura</span>
+        <span class="tag">11 secciones</span>
+      </div>
+
+      <h1 class="hero__title">
+        <span class="word" data-reveal>Cómo</span>
+        <span class="word" data-reveal>se</span>
+        <span class="word" data-reveal>hace</span><br/>
+        <span class="word hero__title--accent" data-reveal>un juego</span>
+      </h1>
+
+      <p class="hero__lede">
+        Las capas, las fases de producción, las herramientas, los costos
+        reales, los errores que nadie te cuenta y el roadmap concreto para
+        tu proyecto de <strong>Naruto Clash</strong>. Una guía honesta, sin
+        humo.
+      </p>
+
+      <div class="hero__cta">
+        <a href="#mito" class="btn btn--primary">empezar a leer</a>
+        <a href="#roadmap" class="btn btn--ghost">ir al roadmap</a>
+      </div>
+
+      <div class="hero__scroll" aria-hidden="true">
+        <span>scroll</span>
+        <span class="hero__scroll-arrow">↓</span>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- MITO VS REALIDAD                              -->
+    <!-- ============================================ -->
+    <section class="section" id="mito">
+      <div class="section__head">
+        <span class="section__num">01</span>
+        <h2 class="section__title">Mito vs realidad</h2>
+        <p class="section__sub">Lo que la gente cree vs lo que realmente pasa</p>
+      </div>
+
+      <div class="grid grid--2">
+        <div class="card card--vs" data-reveal>
+          <div class="card__corner">MITO</div>
+          <p class="card__big">"Hacer un juego es programar"</p>
+          <p class="card__small">Falso. Programar es solo el 30% del trabajo. El 70% restante es arte, audio, diseño y pulir.</p>
+        </div>
+        <div class="card card--vs card--alt" data-reveal>
+          <div class="card__corner">REALIDAD</div>
+          <p class="card__big">Programar es la parte más fácil de un juego</p>
+          <p class="card__small">Lo difícil es el contenido: 800-2000 sprites por personaje, audio coherente, balance de daño entre moves, UX de menús.</p>
+        </div>
+
+        <div class="card card--vs" data-reveal>
+          <div class="card__corner">MITO</div>
+          <p class="card__big">"Con Unity ya tengo medio juego hecho"</p>
+          <p class="card__small">Unity es la herramienta, no el juego. Es como decir "con Photoshop ya tengo medio cuadro hecho".</p>
+        </div>
+        <div class="card card--vs card--alt" data-reveal>
+          <div class="card__corner">REALIDAD</div>
+          <p class="card__big">El motor resuelve el 10-15% del trabajo</p>
+          <p class="card__small">El otro 85% son assets, contenido, decisiones de diseño y horas de pulir bugs.</p>
+        </div>
+
+        <div class="card card--vs" data-reveal>
+          <div class="card__corner">MITO</div>
+          <p class="card__big">"Si lo hago solo, lo termino en 6 meses"</p>
+          <p class="card__small">Para una persona, un juego indie serio toma 2-5 años. Los game jams de 48h son prototipos, no juegos.</p>
+        </div>
+        <div class="card card--vs card--alt" data-reveal>
+          <div class="card__corner">REALIDAD</div>
+          <p class="card__big">1 persona = 2-5 años para un juego comercial</p>
+          <p class="card__small">Undertale: 2.5 años (1 persona). Stardew Valley: 5 años (1 persona). Hollow Knight: 3 años (3 personas).</p>
+        </div>
+
+        <div class="card card--vs" data-reveal>
+          <div class="card__corner">MITO</div>
+          <p class="card__big">"La IA me va a generar todos los assets"</p>
+          <p class="card__small">Falso en 2026. La IA generativa todavía no produce assets consistentes para juegos (cambia de estilo entre frames).</p>
+        </div>
+        <div class="card card--vs card--alt" data-reveal>
+          <div class="card__corner">REALIDAD</div>
+          <p class="card__big">Vas a contratar o hacer tú mismo el arte</p>
+          <p class="card__small">Opciones: hacerlo tú (gratis + meses de práctica), contratar artista ($3-15k USD por personaje), o esperar a que la IA madure.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- LA REGLA 30/30/20/20                          -->
+    <!-- ============================================ -->
+    <section class="section section--rule" id="regla">
+      <div class="section__head">
+        <span class="section__num">02</span>
+        <h2 class="section__title">La regla del 30/30/20/20</h2>
+        <p class="section__sub">Cómo se divide realmente el trabajo en un juego comercial</p>
+      </div>
+
+      <div class="rule">
+        <div class="rule__bar" data-pct="30" data-reveal>
+          <div class="rule__bar-fill" style="--pct:30%"></div>
+          <div class="rule__bar-label"><span class="rule__pct">30%</span><span class="rule__name">CÓDIGO</span></div>
+        </div>
+        <div class="rule__desc" data-reveal>
+          <h3>30% Código</h3>
+          <p>El motor del juego. Mecánicas, IA, físicas, menús, guardado, red, tools internos. <strong>Es la parte más visible en GitHub pero la menos costosa en tiempo real.</strong> Un programador senior implementa el 80% de un sistema en 2-3 semanas; pulirlo lleva 2-3 meses más.</p>
+          <p class="rule__example">En Naruto Clash: ya tienes el 90% del código listo (estado, combate, IA, input, VFX, UI). El otro 10% es pulir.</p>
+        </div>
+
+        <div class="rule__bar" data-pct="30" data-reveal>
+          <div class="rule__bar-fill rule__bar-fill--alt" style="--pct:30%"></div>
+          <div class="rule__bar-label"><span class="rule__pct">30%</span><span class="rule__name">ARTE</span></div>
+        </div>
+        <div class="rule__desc" data-reveal>
+          <h3>30% Arte</h3>
+          <p>Sprites, animaciones, fondos, UI, iconos, VFX, portadas, marketing visual. <strong>Es la capa que define si tu juego se ve "indie amateur" o "indie profesional".</strong> Un personaje de juego de lucha con calidad decente son 800-2000 sprites a 60 FPS.</p>
+          <p class="rule__example">En Naruto Clash: el código está. Faltan TODOS los sprites, animaciones, fondos y VFX.</p>
+        </div>
+
+        <div class="rule__bar" data-pct="20" data-reveal>
+          <div class="rule__bar-fill rule__bar-fill--warn" style="--pct:20%"></div>
+          <div class="rule__bar-label"><span class="rule__pct">20%</span><span class="rule__name">DISEÑO</span></div>
+        </div>
+        <div class="rule__desc" data-reveal>
+          <h3>20% Diseño / Game Design</h3>
+          <p>Decisiones de gameplay: ¿cuánto daño hace el Rasengan? ¿Cuántas cargas de sustitución? ¿Cuánto dura el round? ¿Cómo se balancea Naruto vs Sasuke? <strong>Esta capa define si el juego es divertido o no.</strong> Es la más subestimada: la gente la hace "al ojo" y termina con juegos rotos.</p>
+          <p class="rule__example">¿Por qué Street Fighter lleva 35 años? Porque Capcom itera el frame data de cada move hasta que se siente "justo".</p>
+        </div>
+
+        <div class="rule__bar" data-pct="20" data-reveal>
+          <div class="rule__bar-fill rule__bar-fill--accent" style="--pct:20%"></div>
+          <div class="rule__bar-label"><span class="rule__pct">20%</span><span class="rule__name">AUDIO</span></div>
+        </div>
+        <div class="rule__desc" data-reveal>
+          <h3>20% Audio</h3>
+          <p>Música de fondo, efectos de sonido (kunais, hits, jutsus), voces de personajes, ambientación. <strong>La capa que la gente olvida hasta el final y luego se nota ausente.</strong> Un juego sin audio se siente vacío aunque el código sea perfecto.</p>
+          <p class="rule__example">El "thump" de un golpe, el "whoosh" del Rasengan, la voz diciendo "KAGE BUNSHIN" — eso es 20% del "feel".</p>
+        </div>
+      </div>
+
+      <aside class="callout" data-reveal>
+        <div class="callout__head">
+          <span class="callout__badge">BONUS QUE NADIE CUENTA</span>
+        </div>
+        <p class="callout__big">El 30% invisible: QA, testing, balance, pulir bugs, soporte post-lanzamiento.</p>
+        <p>Un juego no termina cuando se "compila". Termina cuando alguien lo juega 30 horas seguidas sin encontrar un bug, sin un crash, sin un desequilibrio ridículo. Eso se llama <strong>QA</strong> y se lleva el 30% del tiempo total. Planéalo desde el día uno.</p>
+      </aside>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- LAS 5 CAPAS                                   -->
+    <!-- ============================================ -->
+    <section class="section" id="capas">
+      <div class="section__head">
+        <span class="section__num">03</span>
+        <h2 class="section__title">Las 5 capas de un juego</h2>
+        <p class="section__sub">Anatomía completa de lo que tienes que producir</p>
+      </div>
+
+      <div class="layers">
+
+        <article class="layer" data-reveal>
+          <div class="layer__num">i</div>
+          <div class="layer__body">
+            <h3 class="layer__title">Capa 1 — Lógica del juego</h3>
+            <p class="layer__sub">"¿Qué pasa cuando presiono este botón?"</p>
+            <ul class="layer__list">
+              <li><strong>Gameplay core:</strong> movimiento, combate, físicas, colisiones</li>
+              <li><strong>State machine:</strong> idle, walk, jump, attack, hit, KO</li>
+              <li><strong>IA:</strong> decisiones del rival, dificultad, comportamiento</li>
+              <li><strong>Reglas:</strong> vida, chakra, sustitución, combos,胜负条件</li>
+              <li><strong>Progresión:</strong> rondas, marcador, ranking, save/load</li>
+            </ul>
+            <div class="layer__tools">
+              <span class="layer__tools-label">Stack:</span>
+              <span class="chip">Unity + C#</span>
+              <span class="chip">Godot + GDScript</span>
+              <span class="chip">Unreal + C++/Blueprints</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="layer" data-reveal>
+          <div class="layer__num">ii</div>
+          <div class="layer__body">
+            <h3 class="layer__title">Capa 2 — Visual</h3>
+            <p class="layer__sub">"¿Qué ve el jugador?"</p>
+            <ul class="layer__list">
+              <li><strong>Sprites 2D / modelos 3D:</strong> personajes, props, fondos</li>
+              <li><strong>Animaciones:</strong> idle, caminar, atacar, reaccionar, KO (a 60 FPS)</li>
+              <li><strong>VFX / partículas:</strong> jutsus, explosiones, humo, fuego</li>
+              <li><strong>Iluminación:</strong> 2D lights, shaders, normal maps</li>
+              <li><strong>UI / HUD:</strong> barras de vida, menús, botones, transiciones</li>
+              <li><strong>Cinematográficas:</strong> intros, victorias, cámara lenta</li>
+            </ul>
+            <div class="layer__tools">
+              <span class="layer__tools-label">Stack:</span>
+              <span class="chip">Aseprite</span>
+              <span class="chip">Photoshop</span>
+              <span class="chip">Blender</span>
+              <span class="chip">VFX Graph</span>
+              <span class="chip">Spine 2D</span>
+              <span class="chip">Figma</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="layer" data-reveal>
+          <div class="layer__num">iii</div>
+          <div class="layer__body">
+            <h3 class="layer__title">Capa 3 — Audio</h3>
+            <p class="layer__sub">"¿Qué escucha el jugador?"</p>
+            <ul class="layer__list">
+              <li><strong>Música de fondo (BGM):</strong> menú, versus, victoria, derrota</li>
+              <li><strong>Efectos de sonido (SFX):</strong> kunais, hits, blocks, saltos</li>
+              <li><strong>Voces de personajes (VOX):</strong> "KAGE BUNSHIN!", "CHIDORI!"</li>
+              <li><strong>Ambientación:</strong> viento, agua, grillos en el stage</li>
+              <li><strong>UI sounds:</strong> clicks, confirmaciones, errores</li>
+            </ul>
+            <div class="layer__tools">
+              <span class="layer__tools-label">Stack:</span>
+              <span class="chip">FMOD</span>
+              <span class="chip">Wwise</span>
+              <span class="chip">Audacity</span>
+              <span class="chip">BFXR</span>
+              <span class="chip">FL Studio</span>
+              <span class="chip">LMMS</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="layer" data-reveal>
+          <div class="layer__num">iv</div>
+          <div class="layer__body">
+            <h3 class="layer__title">Capa 4 — Diseño / Game Design</h3>
+            <p class="layer__sub">"¿Es divertido? ¿Es justo? ¿Es re-jugable?"</p>
+            <ul class="layer__list">
+              <li><strong>Game design document (GDD):</strong> las reglas escritas</li>
+              <li><strong>Frame data:</strong> startup, active, recovery de cada move</li>
+              <li><strong>Balance:</strong> Naruto vs Sasuke: ¿quién gana? ¿por qué?</li>
+              <li><strong>Curva de dificultad:</strong> IA fácil → media → difícil</li>
+              <li><strong>Progresión:</strong> rondas, ladder, desbloqueables</li>
+              <li><strong>UX / flow:</strong> cómo navega el jugador entre pantallas</li>
+            </ul>
+            <div class="layer__tools">
+              <span class="layer__tools-label">Herramientas:</span>
+              <span class="chip">Notion</span>
+              <span class="chip">Google Sheets (frame data)</span>
+              <span class="chip">Miro</span>
+              <span class="chip">Tests con jugadores reales</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="layer" data-reveal>
+          <div class="layer__num">v</div>
+          <div class="layer__body">
+            <h3 class="layer__title">Capa 5 — Producción / Negocio</h3>
+            <p class="layer__sub">"¿Cómo se llega al público?"</p>
+            <ul class="layer__list">
+              <li><strong>Marketing:</strong> trailer, screenshots, devlogs, redes sociales</li>
+              <li><strong>Publicación:</strong> App Store, Google Play, Steam,itch.io</li>
+              <li><strong>Legal:</strong> copyright, EULA, privacidad, rating (ESRB/PEGI)</li>
+              <li><strong>Comunidad:</strong> Discord, Twitter/X, TikTok, YouTube</li>
+              <li><strong>Soporte:</strong> parches, bugfixes, balance post-lanzamiento</li>
+              <li><strong>Monetización:</strong> premium, F2P, ads, cosméticos</li>
+            </ul>
+            <div class="layer__tools">
+              <span class="layer__tools-label">Herramientas:</span>
+              <span class="chip">Steamworks</span>
+              <span class="chip">Google Play Console</span>
+              <span class="chip">App Store Connect</span>
+              <span class="chip">Discord</span>
+              <span class="chip">Buffer / Hootsuite</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- LAS 7 FASES DE PRODUCCIÓN                    -->
+    <!-- ============================================ -->
+    <section class="section section--dark" id="fases">
+      <div class="section__head">
+        <span class="section__num">04</span>
+        <h2 class="section__title">Las 7 fases de producción</h2>
+        <p class="section__sub">Cómo se hace un juego en orden cronológico. No te saltes ninguna.</p>
+      </div>
+
+      <ol class="timeline">
+
+        <li class="phase" data-reveal>
+          <div class="phase__num">01</div>
+          <div class="phase__duration">1-4 semanas</div>
+          <h3 class="phase__title">Concepto</h3>
+          <p class="phase__lede">¿Qué juego vas a hacer? ¿Por qué? ¿Para quién?</p>
+          <ul class="phase__list">
+            <li>One-pager: una página que explica el juego</li>
+            <li>Referencias visuales: 5-10 juegos similares</li>
+            <li>Scope inicial: ¿cuántos personajes? ¿cuántos stages?</li>
+            <li>Público objetivo: móvil competitivo, casual, single player</li>
+          </ul>
+          <div class="phase__out">
+            <strong>Entregable:</strong> una página de Word / Notion / Google Doc
+          </div>
+        </li>
+
+        <li class="phase" data-reveal>
+          <div class="phase__num">02</div>
+          <div class="phase__duration">2-6 semanas</div>
+          <h3 class="phase__title">Game Design Document (GDD)</h3>
+          <p class="phase__lede">El manual de instrucciones de tu juego antes de hacerlo.</p>
+          <ul class="phase__list">
+            <li>Mecánicas en detalle (movimiento, combate, recursos)</li>
+            <li>Frame data de cada move (tabla)</li>
+            <li>Historia / lore (si aplica)</li>
+            <li>Mapa de pantallas y flujos de UI</li>
+            <li>Lista de assets necesarios (sprites, sonidos, música)</li>
+          </ul>
+          <div class="phase__out">
+            <strong>Entregable:</strong> documento de 20-100 páginas (depende de la complejidad)
+          </div>
+        </li>
+
+        <li class="phase" data-reveal>
+          <div class="phase__num">03</div>
+          <div class="phase__duration">4-12 semanas</div>
+          <h3 class="phase__title">Prototipo (Greybox)</h3>
+          <p class="phase__lede">Lo más feo posible que demuestre que el juego ES divertido.</p>
+          <ul class="phase__list">
+            <li>Usa placeholders: cubos, círculos, sprites de Google</li>
+            <li>Implementa solo el gameplay core (movimiento + 1 ataque)</li>
+            <li>Pruebas con amigos: ¿es divertido? ¿se entiende?</li>
+            <li>Itera rápido: tira código, rehazlo, prueba otra cosa</li>
+          </ul>
+          <div class="phase__warn">
+            <strong>Regla sagrada:</strong> si el prototipo no es divertido, no lo va a ser con mejor arte. <strong>Para y rediseña.</strong>
+          </div>
+        </li>
+
+        <li class="phase" data-reveal>
+          <div class="phase__num">04</div>
+          <div class="phase__duration">8-20 semanas</div>
+          <h3 class="phase__title">Vertical Slice</h3>
+          <p class="phase__lede">Un nivel/personaje/scena del juego, terminado al 100% de calidad.</p>
+          <ul class="phase__list">
+            <li>Elige UNA sección representativa (ej: 1 luchador, 1 stage, menú principal)</li>
+            <li>Hazla perfecta: arte final, audio final, animaciones pulidas</li>
+            <li>Establece el "tono" del resto del juego</li>
+            <li>Úsala para validar que el pipeline de producción funciona</li>
+          </ul>
+          <div class="phase__out">
+            <strong>Entregable:</strong> un demo de 1-3 minutos jugable
+          </div>
+        </li>
+
+        <li class="phase" data-reveal>
+          <div class="phase__num">05</div>
+          <div class="phase__duration">3-18 meses</div>
+          <h3 class="phase__title">Producción</h3>
+          <p class="phase__lede">La fase larga. Crear todo el contenido: el resto de personajes, stages, modos, UI.</p>
+          <ul class="phase__list">
+            <li>Producción de assets en masa (sprites, animaciones, audio)</li>
+            <li>Implementación mecánica por mecánica</li>
+            <li>Iteración de diseño con base en playtesting</li>
+            <li>Polish progresivo: cada nueva feature entra ya pulida</li>
+          </ul>
+          <div class="phase__warn">
+            <strong>Peligro:</strong> el <em>scope creep</em> (agregar features infinitas) es la causa #1 de juegos que nunca se lanzan.
+          </div>
+        </li>
+
+        <li class="phase" data-reveal>
+          <div class="phase__num">06</div>
+          <div class="phase__duration">1-3 meses</div>
+          <h3 class="phase__title">Alpha</h3>
+          <p class="phase__lede">Todo el contenido del juego está implementado, en su mayoría sin pulir.</p>
+          <ul class="phase__list">
+            <li>Todos los personajes jugables</li>
+            <li>Todos los stages</li>
+            <li>Todos los modos de juego (al menos básicos)</li>
+            <li>Bugs conocidos: muchos. Funciona "de inicio a fin".</li>
+          </ul>
+        </li>
+
+        <li class="phase" data-reveal>
+          <div class="phase__num">07</div>
+          <div class="phase__duration">1-3 meses</div>
+          <h3 class="phase__title">Beta + Gold Master</h3>
+          <p class="phase__lede">Pulir, balancear, cazar bugs, marketing, certificaciones.</p>
+          <ul class="phase__list">
+            <li>QA extensivo: testers internos + externos</li>
+            <li>Balance: cada move, cada personaje, cada match-up</li>
+            <li>Optimización de performance móvil</li>
+            <li>Marketing: trailer, devlog, wishlist en Steam, etc.</li>
+            <li>Certificación: App Store y Google Play son estrictos</li>
+          </ul>
+          <div class="phase__out">
+            <strong>Entregable final:</strong> el build firmado listo para distribuirse.
+          </div>
+        </li>
+
+      </ol>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- STACK TECNOLÓGICO                            -->
+    <!-- ============================================ -->
+    <section class="section" id="stack">
+      <div class="section__head">
+        <span class="section__num">05</span>
+        <h2 class="section__title">Stack tecnológico por capa</h2>
+        <p class="section__sub">Las herramientas que usa la industria indie real</p>
+      </div>
+
+      <div class="stack">
+        <div class="stack__row" data-reveal>
+          <div class="stack__layer">Capa 1<br/><span>Lógica</span></div>
+          <div class="stack__cell">
+            <h4>Motores de juego</h4>
+            <div class="stack__chips">
+              <span class="chip chip--primary">Unity (C#)</span>
+              <span class="chip">Godot 4 (GDScript)</span>
+              <span class="chip">Unreal (C++/Blueprints)</span>
+              <span class="chip">GameMaker (GML)</span>
+              <span class="chip">Construct 3</span>
+            </div>
+            <p class="stack__note">Para juegos 2D pixel art: <strong>Godot es open-source y liviano</strong>; <strong>Unity tiene el mejor soporte móvil</strong>; GameMaker es el más rápido para prototipar.</p>
+          </div>
+        </div>
+
+        <div class="stack__row" data-reveal>
+          <div class="stack__layer">Capa 2<br/><span>Visual</span></div>
+          <div class="stack__cell">
+            <h4>Pixel art y 2D</h4>
+            <div class="stack__chips">
+              <span class="chip chip--primary">Aseprite</span>
+              <span class="chip">Piskel (gratis)</span>
+              <span class="chip">LibreSprite (gratis)</span>
+              <span class="chip">Pyxel (Python)</span>
+              <span class="chip">Photoshop</span>
+            </div>
+            <h4>3D</h4>
+            <div class="stack__chips">
+              <span class="chip">Blender (gratis)</span>
+              <span class="chip">Maya</span>
+              <span class="chip">ZBrush</span>
+            </div>
+            <h4>UI / Mockups</h4>
+            <div class="stack__chips">
+              <span class="chip">Figma (gratis)</span>
+              <span class="chip">Penpot (gratis)</span>
+            </div>
+            <p class="stack__note"><strong>Aseprite ($20 USD)</strong> es el estándar de la industria para pixel art. Tiene timeline, onion skin, exporta a sprite sheet directo. Vale cada centavo.</p>
+          </div>
+        </div>
+
+        <div class="stack__row" data-reveal>
+          <div class="stack__layer">Capa 3<br/><span>Audio</span></div>
+          <div class="stack__cell">
+            <h4>Efectos de sonido (SFX)</h4>
+            <div class="stack__chips">
+              <span class="chip">BFXR / SFXR (gratis)</span>
+              <span class="chip">Audacity (gratis)</span>
+              <span class="chip">Freesound.org (gratis)</span>
+            </div>
+            <h4>Música</h4>
+            <div class="stack__chips">
+              <span class="chip">LMMS (gratis)</span>
+              <span class="chip">Bosca Ceoil (gratis)</span>
+              <span class="chip">FL Studio</span>
+              <span class="chip">Ableton</span>
+              <span class="chip">Incompetech (royalty-free)</span>
+            </div>
+            <h4>Integración en motor</h4>
+            <div class="stack__chips">
+              <span class="chip">FMOD (gratis hasta cierto revenue)</span>
+              <span class="chip">Wwise (idem)</span>
+              <span class="chip">Audio Mixer nativo de Unity</span>
+            </div>
+            <p class="stack__note">Para empezar: <strong>BFXR genera SFX tipo arcade en 5 minutos</strong>, Incompetech te da música royalty-free de Kevin MacLeod, y Audacity te deja editar todo. $0.</p>
+          </div>
+        </div>
+
+        <div class="stack__row" data-reveal>
+          <div class="stack__layer">Capa 4<br/><span>Diseño</span></div>
+          <div class="stack__cell">
+            <h4>Documentación y planning</h4>
+            <div class="stack__chips">
+              <span class="chip">Notion (gratis)</span>
+              <span class="chip">Google Docs / Sheets</span>
+              <span class="chip">Miro (gratis)</span>
+              <span class="chip">Trello</span>
+            </div>
+            <h4>Versionado</h4>
+            <div class="stack__chips">
+              <span class="chip chip--primary">Git + GitHub</span>
+              <span class="chip">Plastic SCM</span>
+            </div>
+            <p class="stack__note"><strong>Google Sheets</strong> es donde la FGC (Fighting Game Community) lleva el frame data de cada juego. <a href="#" class="link">Hoja de frame data de SF6</a>. Es un estándar.</p>
+          </div>
+        </div>
+
+        <div class="stack__row" data-reveal>
+          <div class="stack__layer">Capa 5<br/><span>Negocio</span></div>
+          <div class="stack__cell">
+            <h4>Publicación móvil</h4>
+            <div class="stack__chips">
+              <span class="chip">Google Play Console ($25 único)</span>
+              <span class="chip">Apple Developer Program ($99/año)</span>
+            </div>
+            <h4>PC</h4>
+            <div class="stack__chips">
+              <span class="chip">Steam (Direct, $100 único)</span>
+              <span class="chip">itch.io (gratis)</span>
+            </div>
+            <h4>Marketing</h4>
+            <div class="stack__chips">
+              <span class="chip">Twitter/X</span>
+              <span class="chip">TikTok</span>
+              <span class="chip">YouTube</span>
+              <span class="chip">Reddit</span>
+              <span class="chip">Discord</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- CÓMO SE HACE UN JUEGO DE LUCHA 2D            -->
+    <!-- ============================================ -->
+    <section class="section section--accent" id="fighting">
+      <div class="section__head">
+        <span class="section__num">06</span>
+        <h2 class="section__title">Cómo se hace un juego de lucha 2D</h2>
+        <p class="section__sub">Lo específico de tu género. Si no entiendes esto, no podrás hacer Naruto Clash.</p>
+      </div>
+
+      <div class="fighting">
+
+        <article class="concept" data-reveal>
+          <h3 class="concept__title">1. Frame data: el ADN de cada movimiento</h3>
+          <p>En un juego de lucha, cada movimiento se define por <strong>3 fases temporales</strong> medidas en frames (1 segundo = 60 frames):</p>
+          <div class="framedata">
+            <div class="framedata__phase">
+              <div class="framedata__num">4</div>
+              <div class="framedata__name">STARTUP</div>
+              <div class="framedata__desc">Frames donde el personaje "carga" el golpe. El rival tiene una ventana para interrumpir.</div>
+            </div>
+            <div class="framedata__phase">
+              <div class="framedata__num">3</div>
+              <div class="framedata__name">ACTIVE</div>
+              <div class="framedata__desc">Frames donde el hitbox está activo y puede conectar con un hurtbox.</div>
+            </div>
+            <div class="framedata__phase">
+              <div class="framedata__num">6</div>
+              <div class="framedata__name">RECOVERY</div>
+              <div class="framedata__desc">Frames donde el personaje está "volviendo" a idle. Vulnerable a castigo.</div>
+            </div>
+          </div>
+          <p class="concept__example">Ejemplo: un puñetazo de Naruto tiene <strong>4 startup + 3 active + 6 recovery = 13 frames totales</strong> (~0.22 segundos). Tu input buffer lee comandos dentro de la ventana de "input window before" (8 frames antes del primer active).</p>
+        </article>
+
+        <article class="concept" data-reveal>
+          <h3 class="concept__title">2. Hitbox vs Hurtbox: la geometría del daño</h3>
+          <p>Cada frame de un movimiento activa/desactiva hitboxes en posiciones específicas del cuerpo del personaje. Las hurtboxes (zonas que reciben daño) son <strong>High</strong> (cabeza), <strong>Mid</strong> (torso) y <strong>Low</strong> (piernas).</p>
+          <p>Un movimiento <strong>Mid</strong> golpea siempre que el rival esté de pie. Un <strong>Low</strong> solo golpea si el rival está agachado (pero se puede bloquear parado). Un <strong>Throw</strong> ignora el bloqueo.</p>
+          <p>El estado del rival (parado/agachado/saltando) determina qué hurtbox está activa, lo que define si el golpe conecta o no.</p>
+        </article>
+
+        <article class="concept" data-reveal>
+          <h3 class="concept__title">3. Input buffer: la magia anti-input-lag</h3>
+          <p>En móvil, hay ~50-100ms de latencia táctil. Sin input buffer, los special moves (QCF, DP) son imposibles de hacer bien. El buffer:</p>
+          <ol class="concept__list">
+            <li>Registra los últimos 16-32 inputs del jugador con timestamp</li>
+            <li>Cuando el personaje está listo para actuar, lee el buffer</li>
+            <li>Detecta patrones: quarter circle (↓→), dragon punch (→↓↘), half circle back (→↗↑↖←)</li>
+            <li>Ejecuta el special move aunque el jugador lo haya apretado 1-2 frames antes</li>
+          </ol>
+          <p>Este es el motivo por el que juegos como BlazBlue o SF3:3S se sienten tan fluidos en arcade stick, y tan difíciles en pantalla táctil sin esta capa de software.</p>
+        </article>
+
+        <article class="concept" data-reveal>
+          <h3 class="concept__title">4. Cancel windows: el motor de los combos</h3>
+          <p>Un combo es encadenar varios movimientos antes de que termine el recovery del anterior. Esto se hace posible gracias a las <strong>cancel windows</strong>:</p>
+          <ul class="concept__list">
+            <li>Move A termina su active frame</li>
+            <li>Si conecta, el jugador tiene 8-12 frames para iniciar Move B</li>
+            <li>Move B se "cancela" dentro de la animación de A</li>
+            <li>Si conecta, ventana para Move C...</li>
+          </ul>
+          <p>Esto se implementa en los datos (MoveData.cancelWindowStart / End) y en el CommandReader que busca el siguiente move válido dentro de la ventana.</p>
+        </article>
+
+        <article class="concept" data-reveal>
+          <h3 class="concept__title">5. State machine: 15 estados mínimo</h3>
+          <p>Un luchador NO tiene una animación corriendo en loop. Tiene <strong>estados discretos</strong> con transiciones deterministas:</p>
+          <div class="states">
+            <span class="state">Idle</span>
+            <span class="state">Walk</span>
+            <span class="state">Jump</span>
+            <span class="state">Crouch</span>
+            <span class="state">Light Attack</span>
+            <span class="state">Heavy Attack</span>
+            <span class="state">Special</span>
+            <span class="state">Hit</span>
+            <span class="state">Blockstun</span>
+            <span class="state">Knockdown</span>
+            <span class="state">Wakeup</span>
+            <span class="state">Substitution</span>
+            <span class="state">Awakening</span>
+            <span class="state">KO</span>
+            <span class="state">Intros</span>
+          </div>
+          <p>La IA también usa una FSM similar pero con estados diferentes: <em>Approach, Attack, Defensive, Ranged, Combo, Awakening</em>.</p>
+        </article>
+
+        <article class="concept" data-reveal>
+          <h3 class="concept__title">6. Recursos: el "mana" de Naruto</h3>
+          <p>Los juegos de lucha modernos tienen <strong>3 recursos</strong> típicos:</p>
+          <ul class="concept__list">
+            <li><strong>Chakra / Super meter:</strong> se llena al pegar / recibir daño. Gasta en special moves</li>
+            <li><strong>Sustitución / Parry:</strong> 1-3 cargas. Se recarga con el tiempo. Invierte el momentum</li>
+            <li><strong>Awakening / Install:</strong> se llena con combos largos. Cambia stats, da acceso a super moves</li>
+          </ul>
+          <p>El balance entre estos 3 recursos es la diferencia entre un juego "spammeable" y uno que requiere estrategia.</p>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- ROADMAP NARUTO CLASH                          -->
+    <!-- ============================================ -->
+    <section class="section" id="roadmap">
+      <div class="section__head">
+        <span class="section__num">07</span>
+        <h2 class="section__title">Roadmap: Naruto Clash</h2>
+        <p class="section__sub">El plan concreto para tu proyecto, fase por fase</p>
+      </div>
+
+      <div class="roadmap">
+        <div class="rm-phase" data-reveal>
+          <div class="rm-phase__when">Semana 1</div>
+          <h3 class="rm-phase__title">Setup del proyecto</h3>
+          <ul>
+            <li>Instalar Unity 2022.3.62f1 LTS + módulos Android/iOS</li>
+            <li>Abrir el proyecto, verificar que compila sin errores</li>
+            <li>Configurar URP 2D + Input System + VFX Graph</li>
+            <li>Crear la primera escena vacía con el SceneBootstrap</li>
+          </ul>
+          <div class="rm-phase__out">Listo cuando: puedas darle Play y ver 2 cubos en pantalla.</div>
+        </div>
+
+        <div class="rm-phase" data-reveal>
+          <div class="rm-phase__when">Semana 2-3</div>
+          <h3 class="rm-phase__title">Prototipo jugable</h3>
+          <ul>
+            <li>2 personajes placeholder (cubos de colores)</li>
+            <li>Movimiento: joystick analógico funcional</li>
+            <li>1 ataque ligero + 1 ataque fuerte con hitbox/hurtbox</li>
+            <li>Hit detection funcional (cubos se bajan la "vida")</li>
+            <li>¿Es divertido? Probar con 3 amigos.</li>
+          </ul>
+          <div class="rm-phase__out">Listo cuando: 2 personas puedan jugar 1v1 en tu celular.</div>
+        </div>
+
+        <div class="rm-phase" data-reveal>
+          <div class="rm-phase__when">Semana 4-6</div>
+          <h3 class="rm-phase__title">Vertical slice: Naruto básico</h3>
+          <ul>
+            <li>Sprites pixel art de Naruto (idle, walk, punch, hit)</li>
+            <li>Animation Clips a 60 FPS fijos</li>
+            <li>Animator Controller con transiciones</li>
+            <li>Hurtbox/Hitbox siguiendo los frames de la animación</li>
+            <li>1 stage simple (estilo Valle del Fin, parallax básico)</li>
+            <li>HUD móvil funcional (salud, joystick, 4 botones)</li>
+            <li>BGM de fondo + 3 SFX (hit, jump, ko)</li>
+          </ul>
+          <div class="rm-phase__out">Listo cuando: Naruto se vea decente, se mueva fluido a 60 FPS, y pelear contra un cubo se sienta "como Naruto".</div>
+        </div>
+
+        <div class="rm-phase" data-reveal>
+          <div class="rm-phase__when">Semana 7-10</div>
+          <h3 class="rm-phase__title">Combate profundo</h3>
+          <ul>
+            <li>Input buffer + detección de comandos (QCF, DP, HCB)</li>
+            <li>2 special moves de Naruto: Rasengan + Shadow Clones</li>
+            <li>Chakra system con recarga manteniendo botón</li>
+            <li>Sustitución (3 cargas, recarga 12s)</li>
+            <li>Block high/mid/low con chip damage</li>
+            <li>Hitstun, blockstun, hitstop, pushback</li>
+            <li>Combo system con cancel windows</li>
+          </ul>
+          <div class="rm-phase__out">Listo cuando: Naruto tenga 8-10 movimientos funcionales y combos de 3+ hits.</div>
+        </div>
+
+        <div class="rm-phase" data-reveal>
+          <div class="rm-phase__when">Semana 11-14</div>
+          <h3 class="rm-phase__title">IA + Sasuke</h3>
+          <ul>
+            <li>IA con FSM: 5 estados (Idle, Approach, Attack, Defensive, Ranged)</li>
+            <li>IA con personalidad (agresivo / técnico)</li>
+            <li>Sasuke con moveset completo (Chidori, Amaterasu, Kirin)</li>
+            <li>Sprites y animaciones de Sasuke (otro set completo)</li>
+            <li>VFX Graph: Rasengan, Chidori, Amaterasu (esferas de fuego negro), Kirin (relámpago)</li>
+            <li>Cinematic zoom + speed lines para super moves</li>
+          </ul>
+          <div class="rm-phase__out">Listo cuando: puedas jugar Naruto vs Sasuke (1 vs IA) y se sienta "como un juego".</div>
+        </div>
+
+        <div class="rm-phase" data-reveal>
+          <div class="rm-phase__when">Semana 15-18</div>
+          <h3 class="rm-phase__title">Sistema + Polish</h3>
+          <ul>
+            <li>Menú principal, selección de personaje, pantalla vs</li>
+            <li>Sistema de rounds: 2 de 3 gana el match</li>
+            <li>Timer de 99 segundos, KO / Time Out</li>
+            <li>Awakening / Modo Sabio para Naruto, Mangekyo para Sasuke</li>
+            <li>Particle effects en hits, block sparks, dust</li>
+            <li>Camera shake en super moves</li>
+            <li>Audio: voces de personajes diciendo los jutsus</li>
+          </ul>
+          <div class="rm-phase__out">Listo cuando: un desconocido pueda abrir el juego y entender todo sin tutorial.</div>
+        </div>
+
+        <div class="rm-phase" data-reveal>
+          <div class="rm-phase__when">Semana 19-22</div>
+          <h3 class="rm-phase__title">QA + Balance + Audio final</h3>
+          <ul>
+            <li>10 testers externos juegan 30 horas</li>
+            <li>Recoger feedback, ajustar balance</li>
+            <li>BGMs completas (3-5 tracks)</li>
+            <li>Mix de audio: SFX no satura la música</li>
+            <li>Optimización: profiling en iPhone viejo + Android gama baja</li>
+            <li>Benchmark: 60 FPS en iPhone 11 / Snapdragon 700</li>
+          </ul>
+          <div class="rm-phase__out">Listo cuando: testers externos digan "se siente profesional".</div>
+        </div>
+
+        <div class="rm-phase rm-phase--final" data-reveal>
+          <div class="rm-phase__when">Semana 23-24</div>
+          <h3 class="rm-phase__title">Build + Publicación</h3>
+          <ul>
+            <li>Build firmado de Android (AAB) y iOS (IPA)</li>
+            <li>Crear assets de marketing: trailer, screenshots, iconos</li>
+            <li>Google Play Console: ficha, descripción, política de privacidad</li>
+            <li>App Store Connect: review de Apple (1-3 días)</li>
+            <li>Lanzamiento: soft launch primero, luego global</li>
+          </ul>
+          <div class="rm-phase__out">Listo cuando: el juego esté en la tienda y alguien lo descargue.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- EQUIPO Y COSTOS                              -->
+    <!-- ============================================ -->
+    <section class="section" id="equipo">
+      <div class="section__head">
+        <span class="section__num">08</span>
+        <h2 class="section__title">Equipo y costos</h2>
+        <p class="section__sub">Realista, sin humo. Lo que cuesta hacer esto en serio.</p>
+      </div>
+
+      <div class="cost">
+        <h3 class="cost__title">Roles necesarios</h3>
+        <div class="cost__table">
+          <div class="cost__head">
+            <div>Rol</div>
+            <div>Qué hace</div>
+            <div>Tarifa referencial</div>
+          </div>
+          <div class="cost__row">
+            <div><strong>Programador</strong></div>
+            <div>Motor, mecánicas, IA, red</div>
+            <div>$15-50 USD/hora (freelance) o equity</div>
+          </div>
+          <div class="cost__row">
+            <div><strong>Artista pixel art</strong></div>
+            <div>Sprites + animaciones</div>
+            <div>$3,000-15,000 USD / personaje completo</div>
+          </div>
+          <div class="cost__row">
+            <div><strong>Artista VFX</strong></div>
+            <div>Partículas, shaders, cinemáticas</div>
+            <div>$500-2,000 USD / jutsu especial</div>
+          </div>
+          <div class="cost__row">
+            <div><strong>Compositor musical</strong></div>
+            <div>BGM, themes</div>
+            <div>$500-3,000 USD / track</div>
+          </div>
+          <div class="cost__row">
+            <div><strong>Diseñador de sonido</strong></div>
+            <div>SFX, voces</div>
+            <div>$500-2,000 USD total</div>
+          </div>
+          <div class="cost__row">
+            <div><strong>Game designer</strong></div>
+            <div>Balance, frame data, testing</div>
+            <div>$15-40 USD/hora o equity</div>
+          </div>
+          <div class="cost__row">
+            <div><strong>QA / Tester</strong></div>
+            <div>Jugar 100 horas y reportar bugs</div>
+            <div>$10-20 USD/hora</div>
+          </div>
+        </div>
+
+        <h3 class="cost__title" style="margin-top:3rem">Escenarios de costo</h3>
+        <div class="scenarios">
+
+          <div class="scenario">
+            <div class="scenario__head">
+              <div class="scenario__badge">Hobby</div>
+              <h4>1 persona, sin dinero</h4>
+            </div>
+            <ul>
+              <li>Tú haces todo: código + arte amateur + audio royalty-free</li>
+              <li><strong>Tiempo:</strong> 18-36 meses</li>
+              <li><strong>Dinero:</strong> $0-200 USD (Aseprite + Apple Developer)</li>
+              <li><strong>Resultado:</strong> juego funcional, estilo "amateur con encanto"</li>
+              <li><strong>Limitación:</strong> 2-4 luchadores, 1-2 stages, sin modo historia</li>
+            </ul>
+          </div>
+
+          <div class="scenario">
+            <div class="scenario__head">
+              <div class="scenario__badge scenario__badge--alt">Semi-pro</div>
+              <h4>2-3 personas, bajo presupuesto</h4>
+            </div>
+            <ul>
+              <li>1 programador + 1 artista (medio tiempo) + tú como game designer</li>
+              <li><strong>Tiempo:</strong> 12-18 meses</li>
+              <li><strong>Dinero:</strong> $8,000-25,000 USD (pago al artista)</li>
+              <li><strong>Resultado:</strong> juego indie publicable, estilo "indie comercial"</li>
+              <li><strong>Incluye:</strong> 4-6 luchadores, 3-4 stages, modo arcade</li>
+            </ul>
+          </div>
+
+          <div class="scenario scenario--premium">
+            <div class="scenario__head">
+              <div class="scenario__badge scenario__badge--accent">Pro</div>
+              <h4>5-8 personas, presupuesto completo</h4>
+            </div>
+            <ul>
+              <li>2 programadores + 2 artistas + 1 diseñador + 1 audio + 1 QA</li>
+              <li><strong>Tiempo:</strong> 8-14 meses</li>
+              <li><strong>Dinero:</strong> $80,000-200,000 USD</li>
+              <li><strong>Resultado:</strong> juego comercial serio, publicable en Steam + móvil</li>
+              <li><strong>Incluye:</strong> 8-12 luchadores, 6-8 stages, online, ranked, replay</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- CALCULADORA                                   -->
+    <!-- ============================================ -->
+    <section class="section section--dark" id="calculadora">
+      <div class="section__head">
+        <span class="section__num">09</span>
+        <h2 class="section__title">¿Cuánto te costaría tu Naruto Clash?</h2>
+        <p class="section__sub">Calculadora interactiva. Mueve los sliders.</p>
+      </div>
+
+      <div class="calc">
+        <div class="calc__field">
+          <label for="calcFighters">Número de luchadores: <span id="calcFightersVal">2</span></label>
+          <input type="range" id="calcFighters" min="2" max="12" value="2" />
+          <div class="calc__hint">A más luchadores, más rápido se siente como "juego real", pero el costo escala lineal.</div>
+        </div>
+
+        <div class="calc__field">
+          <label for="calcStages">Número de stages: <span id="calcStagesVal">1</span></label>
+          <input type="range" id="calcStages" min="1" max="8" value="1" />
+          <div class="calc__hint">Cada stage con parallax art: 40-80 horas de arte.</div>
+        </div>
+
+        <div class="calc__field">
+          <label for="calcArtQuality">Calidad de sprites:</label>
+          <select id="calcArtQuality">
+            <option value="3000">Amateur ($3k/personaje)</option>
+            <option value="8000" selected>Decente ($8k/personaje)</option>
+            <option value="15000">Premium ($15k/personaje)</option>
+          </select>
+          <div class="calc__hint">Premium = estilo BlazBlue / Skullgirls. Amateur = se ve "okay".</div>
+        </div>
+
+        <div class="calc__field">
+          <label>
+            <input type="checkbox" id="calcVFX" />
+            VFX cinemáticos para super moves (+$2k por jutsu)
+          </label>
+        </div>
+
+        <div class="calc__field">
+          <label>
+            <input type="checkbox" id="calcAudio" />
+            Compositor profesional para BGM (+$3k por track)
+          </label>
+        </div>
+
+        <div class="calc__out" id="calcOut">
+          <div class="calc__row">
+            <span>Coste estimado de arte:</span>
+            <strong id="calcArtTotal">$16,000</strong>
+          </div>
+          <div class="calc__row">
+            <span>VFX:</span>
+            <strong id="calcVfxTotal">$0</strong>
+          </div>
+          <div class="calc__row">
+            <span>Audio:</span>
+            <strong id="calcAudioTotal">$0</strong>
+          </div>
+          <div class="calc__row calc__row--total">
+            <span>TOTAL estimado:</span>
+            <strong id="calcTotal">$16,000 USD</strong>
+          </div>
+          <div class="calc__row calc__row--time">
+            <span>Tiempo estimado de desarrollo:</span>
+            <strong id="calcTime">12-18 meses</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- ERRORES COMUNES                               -->
+    <!-- ============================================ -->
+    <section class="section" id="errores">
+      <div class="section__head">
+        <span class="section__num">10</span>
+        <h2 class="section__title">Errores que casi todos cometen</h2>
+        <p class="section__sub">Aprende de los demás, no de tus propios crashes.</p>
+      </div>
+
+      <div class="errors">
+        <article class="error" data-reveal>
+          <div class="error__num">01</div>
+          <h3>Scope creep</h3>
+          <p>Empezaste con "2 luchadores, 1 stage" y terminas el año 3 con "10 luchadores, modo online, ranking, historia, cosméticos, season pass". El 90% de los juegos indie que nunca se lanzan mueren por esto.</p>
+          <p class="error__fix"><strong>Fix:</strong> escribe el scope en piedra en la semana 2. Cualquier feature nueva después de eso se mete en "versión 2" o se descarta.</p>
+        </article>
+
+        <article class="error" data-reveal>
+          <div class="error__num">02</div>
+          <h3>Programar sin prototipo jugable</h3>
+          <p>Pasar 6 meses escribiendo sistemas perfectos sin haber validado que el gameplay es divertido. Si nadie juega tu prototipo y se ríe, no lo va a hacer la versión final.</p>
+          <p class="error__fix"><strong>Fix:</strong> en la semana 3, TENÉ un prototipo jugable aunque sea con cubos. La pregunta "¿es divertido?" se responde con un prototipo, no con un GDD.</p>
+        </article>
+
+        <article class="error" data-reveal>
+          <div class="error__num">03</div>
+          <h3>Olvidar el audio hasta el final</h3>
+          <p>El 80% de los devs indie añaden audio en las últimas 2 semanas. El audio se nota INMEDIATAMENTE cuando falta. Un juego sin SFX se siente vacío aunque el código sea perfecto.</p>
+          <p class="error__fix"><strong>Fix:</strong> pon SFX placeholder desde el día 1. Aunque sea con BFXR y clips genéricos. El "click" de un botón cambia la percepción del juego entero.</p>
+        </article>
+
+        <article class="error" data-reveal>
+          <div class="error__num">04</div>
+          <h3>No hacer playtesting con externos</h3>
+          <p>Tú sabes cómo jugar tu juego. Tus amigos cercanos te ven y dicen "está cool" para no herir sentimientos. Necesitas gente que NO te conozca y NO sepa nada.</p>
+          <p class="error__fix"><strong>Fix:</strong> mete tu juego en Discord, Reddit, foros. Míralos jugar sin hablar. Anota todo lo que no entienden. Itera.</p>
+        </article>
+
+        <article class="error" data-reveal>
+          <div class="error__num">05</div>
+          <h3>Creer que la IA generativa te salvará</h3>
+          <p>En 2026, los generadores de imagen/vídeo todavía no producen assets consistentes para juegos. Cambian de estilo, parpadean, no animan.</p>
+          <p class="error__fix"><strong>Fix:</strong> planéalo como si no existiera IA. Cuando madure (¿2027-2028?), úsala como herramienta auxiliar, no como reemplazo.</p>
+        </article>
+
+        <article class="error" data-reveal>
+          <div class="error__num">06</div>
+          <h3>Optimizar antes de tiempo</h3>
+          <p>Pasar semanas reescribiendo el sistema de pooling cuando tu juego corre a 60 FPS con 10 objetos en pantalla. La optimización prematura es la raíz de todo mal.</p>
+          <p class="error__fix"><strong>Fix:</strong> haz profiling solo cuando algo va lento en un dispositivo REAL. No optimices lo que el profiler no marca como problema.</p>
+        </article>
+
+        <article class="error" data-reveal>
+          <div class="error__num">07</div>
+          <h3>Ignorar la monetización hasta el final</h3>
+          <p>Decidir si es premium, F2P con ads, o F2P con gacha en la semana 22 es tarde. Cambia toda la arquitectura del juego.</p>
+          <p class="error__fix"><strong>Fix:</strong> define el modelo de negocio en la semana 1. ¿Pago único? ¿Free con ads? ¿Free con cosméticos? El modelo guía el diseño (un F2P necesita progresión, un premium no).</p>
+        </article>
+
+        <article class="error" data-reveal>
+          <div class="error__num">08</div>
+          <h3>No tener vertical slice</h3>
+          <p>Trabajar en 8 features a la vez, cada una al 30%. Nunca terminas nada. El vertical slice es terminar UNA cosa al 100%.</p>
+          <p class="error__fix"><strong>Fix:</strong> elige 1 personaje + 1 stage + 1 modo. Hazlo perfecto. Ese es tu benchmark de calidad para todo lo demás.</p>
+        </article>
+
+        <article class="error" data-reveal>
+          <div class="error__num">09</div>
+          <h3>Lanzar sin marketing</h3>
+          <p>"Si lo construyo, vendrán" — no. Steam tiene 50,000+ juegos. Nadie va a encontrar el tuyo por arte de magia.</p>
+          <p class="error__fix"><strong>Fix:</strong> empieza un TikTok / Twitter / devlog en la semana 4. Documenta el desarrollo. Construye audiencia ANTES del lanzamiento.</p>
+        </article>
+
+        <article class="error" data-reveal>
+          <div class="error__num">10</div>
+          <h3>Abandonar antes de terminar</h3>
+          <p>El burnout llega en el mes 6-9. Es normal. La mayoría de los juegos indie se abandonan entre el 30% y el 70% de progreso.</p>
+          <p class="error__fix"><strong>Fix:</strong> ten un co-fundador o una comunidad que te empuje. Diseña metas pequeñas y celebra cada una. Publica un devlog mensual aunque sea horrible.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- RECURSOS PARA APRENDER                       -->
+    <!-- ============================================ -->
+    <section class="section section--accent" id="recursos">
+      <div class="section__head">
+        <span class="section__num">11</span>
+        <h2 class="section__title">Recursos para aprender</h2>
+        <p class="section__sub">Por capa y por nivel. Gratis y de pago.</p>
+      </div>
+
+      <div class="resources">
+        <div class="resource" data-reveal>
+          <h3>Game design general</h3>
+          <ul>
+            <li><strong>The Art of Game Design (Jesse Schell)</strong> — libro, la biblia del game design</li>
+            <li><strong>Game Maker's Toolkit (YouTube)</strong> — análisis de diseño, gratis</li>
+            <li><strong>Postmortems en Gamasutra</strong> — devs cuentan qué funcionó y qué no</li>
+            <li><strong>How Games Make Money (David Heron)</strong></li>
+          </ul>
+        </div>
+
+        <div class="resource" data-reveal>
+          <h3>Pixel art y 2D</h3>
+          <ul>
+            <li><strong>Lospec/pixel-art-tutorial</strong> — wiki gratuita, exhaustiva</li>
+            <li><strong>Aseprite tutorials (YouTube)</strong> — MortMort, Pedro Medeiros</li>
+            <li><strong>MiniBoss (Tiny Snek on Twitter)</strong> — tips diarios de pixel art</li>
+            <li><strong>LibreSprite</strong> — alternativa open-source a Aseprite</li>
+          </ul>
+        </div>
+
+        <div class="resource" data-reveal>
+          <h3>Fighting games (tu género)</h3>
+          <ul>
+            <li><strong>FrameData y Mizuumi</strong> — bases de datos de frame data de juegos reales</li>
+            <li><strong>Sonichurricane (Dustloop)</strong> — wikis técnicas de juegos de lucha</li>
+            <li><strong>Mike Zaimont (YouTube)</strong> — creador de Skullgirls, explica todo</li>
+            <li><strong>Fighting Game Academy (YouTube)</strong></li>
+            <li><strong>r/FightingGames</strong> y <strong>r/IndieFightingGames</strong></li>
+          </ul>
+        </div>
+
+        <div class="resource" data-reveal>
+          <h3>Unity (motor)</h3>
+          <ul>
+            <li><strong>Unity Learn (learn.unity.com)</strong> — cursos oficiales, gratis</li>
+            <li><strong>Brackeys (YouTube)</strong> — tutoriales Unity legendarios</li>
+            <li><strong>Sebastian Lague (YouTube)</strong> — algoritmos y shaders</li>
+            <li><strong>Catlike Coding (catlikecoding.com)</strong> — tutoriales profundos</li>
+            <li><strong>Game Maker's Toolkit (YouTube)</strong> — Unity en contexto</li>
+          </ul>
+        </div>
+
+        <div class="resource" data-reveal>
+          <h3>Audio y música</h3>
+          <ul>
+            <li><strong>BFXR / SFXR</strong> — generador de SFX retro, gratis</li>
+            <li><strong>Freesound.org</strong> — biblioteca de SFX con licencia libre</li>
+            <li><strong>Incompetech (Kevin MacLeod)</strong> — música royalty-free, gratis con crédito</li>
+            <li><strong>OpenGameArt.org</strong> — assets libres (audio incluido)</li>
+          </ul>
+        </div>
+
+        <div class="resource" data-reveal>
+          <h3>Publicar y crecer</h3>
+          <ul>
+            <li><strong>How to Market a Game (Chris Zukowski)</strong> — blog, gratis, oro puro</li>
+            <li><strong>Steam Marketing Tour (YouTube)</strong> — Chris Zukowski, dev</li>
+            <li><strong>r/gamedev</strong> y <strong>r/IndieGaming</strong></li>
+            <li><strong>IndieHackers (indiehackers.com)</strong> — comunidad de indie devs</li>
+            <li><strong>GameDiscoverCo (Simon Carless)</strong> — newsletter de la industria</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- CIERRE                                        -->
+    <!-- ============================================ -->
+    <section class="section section--close" id="cierre">
+      <div class="section__head">
+        <span class="section__num">12</span>
+        <h2 class="section__title">Tu siguiente paso</h2>
+        <p class="section__sub">Lo único que tienes que hacer hoy.</p>
+      </div>
+
+      <div class="close" data-reveal>
+        <p class="close__big">Abre <code>public/juegos/naruto-clash/</code>, lee el <code>SETUP_GUIDE.md</code>, y monta tu primera escena con 2 cubos que se pegan.</p>
+        <p>Cuando eso funcione, vuelve a esta guía, lee la sección 7 (Roadmap), y empieza la semana 1 con honestidad: vas a necesitar 6-24 meses y entre $0 y $200,000 USD dependiendo de tu camino. No te asustes. Cada juego que ves publicado empezó con alguien que pensó "voy a intentarlo".</p>
+        <p class="close__small">Esta guía no es exhaustiva. La FGC, gamedev subreddits, y los postmortems de devs reales te enseñarán 10x más. Empieza, falla, itera, publica.</p>
+
+        <div class="close__actions">
+          <a href="naruto-clash/SETUP_GUIDE.md" class="btn btn--primary">ir al setup del proyecto</a>
+          <a href="naruto-clash/ARCHITECTURE.md" class="btn btn--ghost">leer arquitectura del código</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__col">
+        <div class="brand">
+          <span class="brand__mark">./</span>
+          <span class="brand__name">guía-de-juegos</span>
+        </div>
+        <p class="footer__note">Hecho con la honestidad brutal de alguien que ya cometió todos estos errores.</p>
+      </div>
+      <div class="footer__col">
+        <h4>Navegación</h4>
+        <ul class="footer__links">
+          <li><a href="#mito">Mito vs realidad</a></li>
+          <li><a href="#regla">Regla 30/30/20/20</a></li>
+          <li><a href="#capas">Las 5 capas</a></li>
+          <li><a href="#fases">Las 7 fases</a></li>
+          <li><a href="#stack">Stack</a></li>
+          <li><a href="#fighting">Pelea 2D</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>Proyecto</h4>
+        <ul class="footer__links">
+          <li><a href="naruto-clash/README.md">Naruto Clash</a></li>
+          <li><a href="naruto-clash/ARCHITECTURE.md">Arquitectura</a></li>
+          <li><a href="naruto-clash/SETUP_GUIDE.md">Setup</a></li>
+          <li><a href="naruto-clash/Assets/Sprites/SPRITE_GUIDE.md">Sprites</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>2026 — hecho en el monorepo yapido</span>
+      <span>sin tracking, sin ads, sin bullshit</span>
+    </div>
+  </footer>
+
+  <!-- GSAP + Lenis (mismo stack que /z) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
