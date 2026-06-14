@@ -55,7 +55,7 @@ const nextConfig: NextConfig = {
       ] : []),
       {
         source: '/__/auth/:path*',
-        destination: `https://auth.yapido.click/__/auth/:path*`,
+        destination: `https://studio-4796645076-6f375.firebaseapp.com/__/auth/:path*`,
       },
     ];
   },
