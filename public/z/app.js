@@ -70,22 +70,6 @@ const APPS = [
     badge: "Nuevo",
   },
   {
-    id: "animaciones",
-    name: "Animaciones",
-    cat: "creatividad",
-    catLabel: "Creatividad",
-    tagline: "Motor 3D procedimental.",
-    desc: "Convierte una idea en una escena 3D animada. Exporta a WebM, PNG o JSON reproducible.",
-    rating: 4.8,
-    installs: "3.7K+",
-    price: "Gratis",
-    size: "Vite · Three.js · GSAP",
-    url: "https://animaciones.yapido.click",
-    accent: "#06B6D4",
-    icon: "animaciones",
-    badge: "Beta",
-  },
-  {
     id: "lavadoras",
     name: "Lavadoras",
     cat: "comercio",
@@ -116,22 +100,6 @@ const APPS = [
     icon: "salud",
     badge: "Nuevo",
   },
-  {
-    id: "z",
-    name: "Premium Zone",
-    cat: "media",
-    catLabel: "Media & Brand",
-    tagline: "La portada del ecosistema.",
-    desc: "Landing editorial que presenta los productos del ecosistema como manifiesto de marca.",
-    rating: 4.9,
-    installs: "—",
-    price: "Gratis",
-    size: "Editorial Brutalism",
-    url: "https://yapido.click/z",
-    accent: "#111111",
-    icon: "z",
-    badge: "Editorial",
-  },
 ];
 
 // --- 2. Iconos SVG (inline) ---------------------------------
@@ -140,10 +108,8 @@ const ICONS = {
   nimbus: `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>`,
   cinestream: `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m10 9 5 3-5 3V9z" fill="#fff"/></svg>`,
   objetivos: `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" fill="#fff"/></svg>`,
-  animaciones: `<svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>`,
   lavadoras: `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="13" r="5"/><circle cx="12" cy="13" r="2"/><path d="M7 7h.01M11 7h.01"/></svg>`,
   salud: `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
-  z: `<svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h14L5 19h14"/></svg>`,
 };
 
 const ICON_BG = {
@@ -151,10 +117,8 @@ const ICON_BG = {
   nimbus: "#8B5CF6",
   cinestream: "#EF4444",
   objetivos: "#F59E0B",
-  animaciones: "#F2FF00",
   lavadoras: "#3B82F6",
   salud: "#22C55E",
-  z: "#F2FF00",
 };
 
 // --- 3. Estado de salud de las apps (verificación live) -----
@@ -164,10 +128,8 @@ const HEALTH_URLS = {
   nimbus: "https://nimbus.yapido.click",
   cinestream: "https://peliculas.yapido.click",
   objetivos: "https://organizar.yapido.click",
-  animaciones: "https://animaciones.yapido.click",
   lavadoras: "https://lavadoras.yapido.click",
   salud: "https://salud.yapido.click",
-  z: "https://yapido.click/z",
 };
 
 // Caché de resultados de salud
