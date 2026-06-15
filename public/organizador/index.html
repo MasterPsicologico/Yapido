@@ -543,46 +543,206 @@
             border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 16px 18px;
-            transition: var(--transition);
+            transition: var(--transition), border-color 0.3s ease;
             display: flex;
             flex-direction: column;
             gap: 10px;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
             cursor: pointer;
             animation: card-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+            will-change: transform, box-shadow;
+            backface-visibility: hidden;
+            transform: translateZ(0);
         }
         @keyframes card-in {
-            from { opacity: 0; transform: translateY(30px) scale(0.9) rotateX(-10deg); }
-            to { opacity: 1; transform: translateY(0) scale(1) rotateX(0); }
+            from { opacity: 0; transform: translateY(30px) scale(0.9) rotateX(-10deg) translateZ(0); }
+            to { opacity: 1; transform: translateY(0) scale(1) rotateX(0) translateZ(0); }
         }
         .link-card {
-            transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: box-shadow 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease;
             transform-style: preserve-3d;
             perspective: 1000px;
+            position: relative;
+            overflow: visible;
         }
-        .link-card:hover {
-            border-color: var(--accent);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px var(--accent-soft), inset 0 1px 0 var(--accent);
-            transform: translateY(-8px) scale(1.03) rotateX(2deg);
-        }
+        
+        /* Borde animado de fuego con gradiente cónico */
         .link-card::before {
             content: '';
             position: absolute;
-            top: -60px;
-            right: -60px;
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            background: radial-gradient(circle, var(--accent-soft), transparent 70%);
-            pointer-events: none;
-            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            inset: -3px;
+            border-radius: 15px;
+            background: conic-gradient(
+                from 0deg,
+                var(--accent),
+                var(--accent2),
+                #ff6b35,
+                #f72585,
+                #ff6b35,
+                var(--accent2),
+                var(--accent)
+            );
+            z-index: -2;
             opacity: 0;
-            transform: scale(0.5);
+            transition: opacity 0.4s ease;
+            animation: border-rotate 4s linear infinite;
+            filter: blur(4px) brightness(1.2);
+        }
+        .link-card::after {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 15px;
+            background: conic-gradient(
+                from 120deg,
+                var(--accent),
+                #ff6b35,
+                var(--accent2),
+                #f72585,
+                var(--accent2),
+                #ff6b35,
+                var(--accent)
+            );
+            z-index: -2;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            animation: border-rotate 3s linear infinite reverse;
+            filter: blur(3px) brightness(1.3);
+        }
+        
+        @keyframes border-rotate {
+            0% { transform: rotate(0deg) scale(1.02); }
+            50% { transform: rotate(180deg) scale(1.05); }
+            100% { transform: rotate(360deg) scale(1.02); }
+        }
+        
+        /* Efecto serpiente: gradiente que recorre el borde */
+        .link-card .border-flow {
+            position: absolute;
+            inset: -3px;
+            border-radius: 15px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+        .link-card .border-flow::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 15px;
+            padding: 3px;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                var(--accent) 15%,
+                var(--accent2) 30%,
+                #ff6b35 50%,
+                #f72585 70%,
+                var(--accent2) 85%,
+                transparent 100%
+            );
+            background-size: 200% 100%;
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            animation: border-flow-right 1.8s ease-in-out infinite;
+            filter: drop-shadow(0 0 6px var(--accent)) drop-shadow(0 0 10px #ff6b35);
+        }
+        .link-card .border-flow::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 15px;
+            padding: 3px;
+            background: linear-gradient(
+                -90deg,
+                transparent 0%,
+                var(--accent) 15%,
+                #f72585 35%,
+                var(--accent2) 55%,
+                #ff6b35 75%,
+                transparent 100%
+            );
+            background-size: 200% 100%;
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            animation: border-flow-left 1.8s ease-in-out infinite;
+            animation-delay: 0.9s;
+            filter: drop-shadow(0 0 6px #f72585) drop-shadow(0 0 10px var(--accent2));
+        }
+        
+        @keyframes border-flow-right {
+            0% { background-position: 200% 0; }
+            100% { background-position: -100% 0; }
+        }
+        @keyframes border-flow-left {
+            0% { background-position: -100% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        /* Efecto de glow pulsante en hover */
+        .link-card::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 20px;
+            background: radial-gradient(ellipse at center, var(--accent-soft) 0%, transparent 70%);
+            z-index: -3;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            animation: glow-pulse 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .link-card::after {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 20px;
+            background: radial-gradient(ellipse at center, rgba(255, 107, 53, 0.1) 0%, transparent 70%);
+            z-index: -3;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            animation: glow-pulse 2s ease-in-out infinite reverse;
+            pointer-events: none;
+        }
+        
+        @keyframes glow-pulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.05); }
+        }
+        
+        .link-card:hover {
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px var(--accent-soft), inset 0 1px 0 var(--accent);
+            transform: translateY(-8px) scale(1.03) rotateX(2deg);
         }
         .link-card:hover::before {
+            opacity: 0.5;
+        }
+        .link-card:hover::after {
+            opacity: 0.3;
+        }
+        .link-card:hover .border-flow {
             opacity: 1;
-            transform: scale(1.2);
+        }
+        
+        /* Efecto de chispa/partícula en hover */
+        .link-card .spark {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--accent2);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+            box-shadow: 0 0 6px var(--accent), 0 0 10px var(--accent2);
         }
         .link-card-header {
             display: flex;
@@ -689,10 +849,16 @@
             display: flex;
             align-items: center;
             gap: 4px;
+            transition: all 0.3s ease;
         }
         .tag-cat {
             background: var(--accent-soft);
             color: var(--accent-fg);
+            box-shadow: 0 0 10px transparent;
+        }
+        .tag-cat:hover {
+            box-shadow: 0 0 15px var(--accent-soft);
+            transform: translateY(-1px);
         }
         .tag-status {
             background: rgba(34, 197, 94, 0.15);
@@ -720,6 +886,27 @@
         .link-actions .btn-sm {
             font-size: 0.7rem;
             padding: 5px 10px;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .link-actions .btn-sm::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--accent-soft), transparent);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .link-actions .btn-sm:hover::before {
+            opacity: 1;
+        }
+        .link-actions .btn-sm:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 4px 15px var(--accent-soft);
+        }
+        .link-actions .btn-sm:active {
+            transform: translateY(0) scale(0.98);
         }
         .tor-btn {
             background: rgba(124, 58, 237, 0.15) !important;
@@ -729,6 +916,8 @@
         .tor-btn:hover {
             background: rgba(124, 58, 237, 0.3) !important;
             border-color: #7c3aed !important;
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4) !important;
+        }
             color: #c4b5fd !important;
         }
         .relevance-bar {
@@ -3288,6 +3477,7 @@ function renderLinks() {
             } catch(e) {}
         }
         card.innerHTML = `
+            <span class="border-flow"></span>
             <div class="link-card-header">
                 <div class="link-favicon ${isAuto ? 'auto' : ''}">${faviconHTML}</div>
                 <div style="flex:1;min-width:0;">
@@ -3324,9 +3514,36 @@ function renderLinks() {
                 from: 'start'
             },
             ease: 'back.out(1.7)',
-            clearProps: 'transform,filter'
+            clearProps: 'transform,filter',
+            onStart: function() {
+                // Efecto de "encendido" de bordes al entrar
+                grid.querySelectorAll('.link-card').forEach((card, i) => {
+                    gsap.fromTo(card, 
+                        { borderColor: 'var(--accent)' },
+                        { 
+                            borderColor: 'var(--border)',
+                            duration: 0.6,
+                            delay: i * 0.05 + 0.3,
+                            ease: 'power2.out'
+                        }
+                    );
+                });
+            }
         }
     );
+
+    // GSAP: Flash inicial de glow en bordes al cargar
+    grid.querySelectorAll('.link-card').forEach((card, i) => {
+        gsap.fromTo(card, 
+            { '--glow-flash': 1 },
+            { 
+                '--glow-flash': 0,
+                duration: 0.8,
+                delay: i * 0.03,
+                ease: 'power2.out'
+            }
+        );
+    });
 
     // GSAP: Animación premium para los favicon
     grid.querySelectorAll('.link-favicon').forEach((favicon, i) => {
@@ -3342,17 +3559,23 @@ function renderLinks() {
     });
 
     // GSAP: Hover effects con seguimiento del mouse
-    grid.querySelectorAll('.link-card').forEach(card => {
+    grid.querySelectorAll('.link-card').forEach((card, cardIndex) => {
+        const favicon = card.querySelector('.link-favicon img');
+        const borderFlow = card.querySelector('.border-flow');
+        
         card.addEventListener('mouseenter', () => {
             gsap.to(card, {
                 scale: 1.03,
                 y: -8,
                 boxShadow: '0 25px 50px rgba(0,0,0,0.6), 0 0 50px var(--accent-soft)',
-                borderColor: 'var(--accent)',
                 duration: 0.4,
                 ease: 'power2.out'
             });
-            const favicon = card.querySelector('.link-favicon img');
+            gsap.to(card, {
+                '--border-glow': 1,
+                duration: 0.3,
+                ease: 'power2.out'
+            });
             if (favicon) {
                 gsap.to(favicon, {
                     scale: 1.3,
@@ -3361,17 +3584,27 @@ function renderLinks() {
                     ease: 'power2.out'
                 });
             }
+            if (borderFlow) {
+                gsap.to(borderFlow, {
+                    opacity: 1,
+                    scale: 1.02,
+                    duration: 0.3,
+                    ease: 'power2.out'
+                });
+                gsap.to(card, {
+                    borderColor: 'transparent',
+                    duration: 0.2
+                });
+            }
         });
         card.addEventListener('mouseleave', () => {
             gsap.to(card, {
                 scale: 1,
                 y: 0,
                 boxShadow: 'none',
-                borderColor: 'var(--border)',
                 duration: 0.4,
                 ease: 'power2.out'
             });
-            const favicon = card.querySelector('.link-favicon img');
             if (favicon) {
                 gsap.to(favicon, {
                     scale: 1,
@@ -3380,7 +3613,78 @@ function renderLinks() {
                     ease: 'power2.out'
                 });
             }
+            if (borderFlow) {
+                gsap.to(borderFlow, {
+                    opacity: 0,
+                    scale: 1,
+                    duration: 0.3,
+                    ease: 'power2.out'
+                });
+                gsap.to(card, {
+                    borderColor: 'var(--border)',
+                    duration: 0.3,
+                    delay: 0.1
+                });
+            }
         });
+        
+        // Crear chispas aleatorias en hover
+        function createSparks(card) {
+            const sparkCount = 6 + Math.floor(Math.random() * 6);
+            for (let i = 0; i < sparkCount; i++) {
+                const spark = document.createElement('div');
+                spark.className = 'spark';
+                const side = Math.floor(Math.random() * 4);
+                let startX, startY, endX, endY;
+                
+                switch(side) {
+                    case 0: // top
+                        startX = Math.random() * 100;
+                        startY = 0;
+                        endX = startX + (Math.random() - 0.5) * 60;
+                        endY = -30 - Math.random() * 40;
+                        break;
+                    case 1: // right
+                        startX = 100;
+                        startY = Math.random() * 100;
+                        endX = 130 + Math.random() * 40;
+                        endY = startY + (Math.random() - 0.5) * 60;
+                        break;
+                    case 2: // bottom
+                        startX = Math.random() * 100;
+                        startY = 100;
+                        endX = startX + (Math.random() - 0.5) * 60;
+                        endY = 130 + Math.random() * 40;
+                        break;
+                    case 3: // left
+                        startX = 0;
+                        startY = Math.random() * 100;
+                        endX = -30 - Math.random() * 40;
+                        endY = startY + (Math.random() - 0.5) * 60;
+                        break;
+                }
+                
+                spark.style.left = startX + '%';
+                spark.style.top = startY + '%';
+                card.appendChild(spark);
+                
+                gsap.fromTo(spark, 
+                    { opacity: 1, x: 0, y: 0, scale: 1 },
+                    {
+                        opacity: 0,
+                        x: endX - startX,
+                        y: endY - startY,
+                        scale: 0,
+                        duration: 0.6 + Math.random() * 0.4,
+                        ease: 'power2.out',
+                        delay: i * 0.02,
+                        onComplete: () => spark.remove()
+                    }
+                );
+            }
+        }
+        
+        card.addEventListener('mouseenter', () => createSparks(card), { once: false });
     });
 
     // GSAP: Animación para el relevance bar si existe
@@ -3510,9 +3814,29 @@ function setMode(mode) {
     document.getElementById('modeOrion').classList.toggle('active', mode === 'orion');
     document.getElementById('modeWeb').classList.toggle('active', mode === 'web');
     document.body.style.transition = 'background 0.5s';
-    // Persist mode preference
     localStorage.setItem('orion_preferred_mode', mode);
-    updateAll();
+    
+    // GSAP: Animación de transición al cambiar modo
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        gsap.to(mainContent, {
+            opacity: 0,
+            y: 20,
+            scale: 0.98,
+            duration: 0.3,
+            ease: 'power2.in',
+            onComplete: () => {
+                updateAll();
+                gsap.fromTo(mainContent, 
+                    { opacity: 0, y: -20, scale: 1.02 },
+                    { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.4)' }
+                );
+            }
+        });
+    } else {
+        updateAll();
+    }
+    
     showToast(mode === 'orion' ? '🌌 Cambiaste a Orion Deep Web' : '🌐 Cambiaste a Web Clear Net', 'success');
 }
 
@@ -4624,4 +4948,21 @@ window.orionAPI = {
     scan: () => document.getElementById('scanBtn').click(),
     addLink: (link, mode) => {
         mode = mode || state.mode;
-        
+        if (!link.id) link.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        if (!link.status) link.status = 'unknown';
+        if (!link.added) link.added = Date.now();
+        state.links[mode].unshift(link);
+        saveAll();
+        updateAll();
+        return link;
+    },
+    getLinks: (mode) => state.links[mode || state.mode].slice(),
+    getPools: () => WEB_POOL,
+    resetOrion: () => { state.links.orion = defaultOrionLinks.map(l => ({...l})); saveAll(); updateAll(); },
+    clearWeb: () => { state.links.web = []; saveAll(); updateAll(); },
+};
+
+})();
+</script>
+</body>
+</html>
