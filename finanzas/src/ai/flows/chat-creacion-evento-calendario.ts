@@ -12,6 +12,10 @@ import {z} from 'genkit';
 
 const CrearEventoCalendarioInputSchema = z.object({
   text: z.string().describe('El mensaje del usuario describiendo el evento o recordatorio.'),
+  CURRENT_DATE: z
+    .string()
+    .optional()
+    .describe('Fecha actual en formato YYYY-MM-DD para resolver referencias relativas como "hoy" o "mañana".'),
 });
 export type CrearEventoCalendarioInput = z.infer<typeof CrearEventoCalendarioInputSchema>;
 

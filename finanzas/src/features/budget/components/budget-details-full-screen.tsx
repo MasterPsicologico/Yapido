@@ -283,8 +283,8 @@ export function BudgetDetailsFullScreen({
             </h4>
             <div className={cn(
               "p-6 rounded-[2.5rem] border-2 flex flex-col gap-4 shadow-xl transition-all duration-500",
-              stats.daysUntilDepletion !== null && stats.daysUntilDepletion < 7 
-                ? "bg-red-600 border-red-500 text-white animate-border-spin-red" 
+              stats.daysUntilDepletion != null && stats.daysUntilDepletion < 7
+                ? "bg-red-600 border-red-500 text-white animate-border-spin-red"
                 : "bg-primary text-white border-primary/10"
             )}>
               <div className="flex justify-between items-start">
@@ -295,13 +295,13 @@ export function BudgetDetailsFullScreen({
                   </h5>
                 </div>
                 <div className="p-3 bg-white/10 rounded-2xl">
-                  {stats.daysUntilDepletion !== null && stats.daysUntilDepletion < 7 ? <AlertCircle className="w-6 h-6 animate-pulse" /> : <Sparkles className="w-6 h-6 text-accent" />}
+                  {stats.daysUntilDepletion != null && stats.daysUntilDepletion < 7 ? <AlertCircle className="w-6 h-6 animate-pulse" /> : <Sparkles className="w-6 h-6 text-accent" />}
                 </div>
               </div>
               
               <div className="pt-4 border-t border-white/10">
                 <p className="text-[10px] font-medium leading-relaxed italic opacity-90">
-                  {stats.daysUntilDepletion !== null && stats.daysUntilDepletion < 7 
+                  {stats.daysUntilDepletion != null && stats.daysUntilDepletion < 7
                     ? `ALERTA CRÍTICA: Al ritmo actual de ${currency.symbol}${Math.round(stats.avgDailySpent).toLocaleString()}/día, tu meta de "${budget.category}" entrará en quiebra técnica antes de terminar el ciclo. Debes inyectar capital o recortar gastos de inmediato.`
                     : `SITUACIÓN ESTABLE: Tu ritmo de consumo diario de ${currency.symbol}${Math.round(stats.avgDailySpent).toLocaleString()} es compatible con los fondos restantes para este periodo.`
                   }

@@ -122,7 +122,7 @@ export function TransactionInputFixed({ onAdd, onEventAdd, onUpdate, onDelete, t
         const base64 = reader.result as string;
         const result = await scanReceipt({ photoDataUri: base64 });
         
-        result.items.forEach(item => {
+        result.items.forEach((item: { description: string; amount: number; category: string }) => {
           onAdd({
             description: item.description,
             amount: item.amount,

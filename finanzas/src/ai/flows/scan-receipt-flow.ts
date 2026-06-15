@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Agente de Vision IA para escaneo de recibos y facturas.
@@ -21,17 +20,32 @@ const ScanReceiptOutputSchema = z.object({
   currency: z.string().optional(),
 });
 
-export async function scanReceipt(input: { photoDataUri: string }) {
-  const { output } = await ai.generate({
-    model: 'googleai/gemini-2.0-flash',
-    input: input,
-    output: { schema: ScanReceiptOutputSchema },
-    prompt: `Analiza esta foto de un recibo o factura financiera. 
+export type ScanReceiptOutput = z.infer<typeof ScanReceiptOutputSchema>;
+
+const scanReceiptPrompt = ai.definePrompt({
+  name: 'scanReceiptPrompt',
+  input: { schema: ScanReceiptInputSchema },
+  output: { schema: ScanReceiptOutputSchema },
+  prompt: `Analiza esta foto de un recibo o factura financiera.
     1. Extrae cada producto o servicio comprado con su precio.
     2. Asigna una categoría lógica de UNA SOLA PALABRA a cada ítem (ej: comida, transporte, salud, hogar).
     3. Calcula el total de la factura.
-    
+
     Foto: {{media url=photoDataUri}}`,
-  });
-  return output!;
+});
+
+const scanReceiptFlow = ai.defineFlow(
+  {
+    name: 'scanReceiptFlow',
+    inputSchema: ScanReceiptInputSchema,
+    outputSchema: ScanReceiptOutputSchema,
+  },
+  async (input) => {
+    const { output } = await scanReceiptPrompt(input);
+    return output!;
+  }
+);
+
+export async function scanReceipt(input: { photoDataUri: string }): Promise<ScanReceiptOutput> {
+  return scanReceiptFlow(input);
 }

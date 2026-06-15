@@ -145,10 +145,10 @@ export function TransactionsView({ transactions, currency, onDelete, onEdit, onA
             } else {
               const ref = (item.targetReference || "").toLowerCase().trim();
               const target = transactions.find(t => t.description.toLowerCase().includes(ref) || t.amount.toString() === ref);
-              if (result.intent === 'modificar' && target) {
+              if (item.intent === 'modificar' && target) {
                 onEdit(target.id, item);
                 count++;
-              } else if (result.intent === 'eliminar' && target) {
+              } else if (item.intent === 'eliminar' && target) {
                 onDelete(target.id);
                 count++;
               }

@@ -408,13 +408,14 @@ export function AnalysisFeature() {
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '10px', fontWeight: 'bold' }}
                   formatter={(value: any) => [`${currency.symbol}${Math.round(value).toLocaleString()}`, 'Balance']}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="balance" 
-                  stroke={isSurvivalMode ? "#EF4444" : "#00AFB9"} 
-                  strokeWidth={3} 
+                <Line
+                  type="monotone"
+                  dataKey="balance"
+                  stroke={isSurvivalMode ? "#EF4444" : "#00AFB9"}
+                  strokeWidth={3}
                   dot={false}
-                  strokeDasharray={(props: any) => props.payload?.type === 'proyectado' ? '5 5' : '0'}
+                  strokeDasharray={((props: { payload?: { type?: string } }) =>
+                    props.payload?.type === 'proyectado' ? '5 5' : '0') as unknown as string}
                 />
               </LineChart>
             </ResponsiveContainer>
