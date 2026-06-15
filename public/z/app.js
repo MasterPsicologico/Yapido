@@ -427,7 +427,44 @@ themeBtn.addEventListener("click", () => {
   localStorage.setItem("mm-theme", next);
 });
 
-// --- 9. Init -------------------------------------------------
+// --- 10. Founders section -------------------------------------
+const foundersSection = document.getElementById("founders");
+const foundersOverlay = document.getElementById("foundersOverlay");
+const foundersTrigger = document.getElementById("foundersTrigger");
+const foundersClose = document.getElementById("foundersClose");
+
+if (foundersTrigger && foundersSection) {
+  foundersTrigger.addEventListener("click", (e) => {
+    e.preventDefault();
+    foundersSection.hidden = false;
+    document.body.style.overflow = "hidden";
+  });
+}
+
+if (foundersClose && foundersSection) {
+  foundersClose.addEventListener("click", closeFounders);
+}
+
+if (foundersOverlay) {
+  foundersOverlay.addEventListener("click", (e) => {
+    if (e.target === foundersOverlay) {
+      closeFounders();
+    }
+  });
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !foundersSection.hidden) {
+    closeFounders();
+  }
+});
+
+function closeFounders() {
+  foundersSection.hidden = true;
+  document.body.style.overflow = "";
+}
+
+// --- 11. Init -------------------------------------------------
 renderChips();
 render();
 initMotion();

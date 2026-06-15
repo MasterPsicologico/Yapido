@@ -265,6 +265,75 @@
       </section>
     </main>
 
+    <!-- ============ FOUNDERS SECTION (hidden by default) ============ -->
+    <section class="founders" id="founders" hidden>
+      <div class="founders__overlay" id="foundersOverlay">
+        <div class="founders__panel">
+          <div class="founders__header">
+            <span class="eyebrow eyebrow--accent">
+              <span class="dot"></span>
+              Detrás de yapido.click
+            </span>
+            <button class="founders__close" id="foundersClose" aria-label="Cerrar">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6 6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <div class="founders__grid">
+            <div class="founder-card">
+              <div class="founder-card__avatar" style="background: hsl(220, 70%, 18%);">
+                <svg viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="30" r="14" fill="hsl(63, 100%, 56%)"/>
+                  <path d="M12 70c0-15.464 12.536-28 28-28s28 12.536 28 28" fill="hsl(63, 100%, 56%)"/>
+                </svg>
+              </div>
+              <div class="founder-card__info">
+                <h3 class="founder-card__name">Oscar David</h3>
+                <p class="founder-card__role mono">Psicólogo · Programador · Creador de Sistemas Inteligentes</p>
+                <p class="founder-card__origin">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  Aguachica, Cesar
+                </p>
+                <p class="founder-card__bio">
+                  Fusiona la mente humana con la máquina. Psychologist oformation que entiende cómo operan las personas — y construye sistemas que piensan igual. Creador de los 20 agentes IA del ecosistema yapido.
+                </p>
+              </div>
+            </div>
+            <div class="founder-card">
+              <div class="founder-card__avatar" style="background: hsl(150, 60%, 18%);">
+                <svg viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="30" r="14" fill="hsl(63, 100%, 56%)"/>
+                  <path d="M12 70c0-15.464 12.536-28 28-28s28 12.536 28 28" fill="hsl(63, 100%, 56%)"/>
+                </svg>
+              </div>
+              <div class="founder-card__info">
+                <h3 class="founder-card__name">Jhonatan Daniel</h3>
+                <p class="founder-card__role mono">Salud Ocupacional · Seguridad Industrial · Electricidad</p>
+                <p class="founder-card__origin">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  Aguachica, Cesar
+                </p>
+                <p class="founder-card__bio">
+                  Especialista en seguridad y salud en el trabajo con dominio en electricidad. Crea automatizaciones industriales que generan ganancias y disminuyen pérdidas en las empresas.
+                </p>
+              </div>
+            </div>
+          </div>
+          <p class="founders__footer-text mono">
+            <span class="status-dot"></span>
+            Dos mentes, una visión · Aguachica, Cesar · 2026
+          </p>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ FOOTER ============ -->
     <footer class="footer">
       <div class="container footer__inner">
@@ -278,7 +347,7 @@
           <a href="#apps">Apps</a>
           <a href="#">Privacidad</a>
           <a href="#">Términos</a>
-          <a href="#">Contacto</a>
+          <a href="#" id="foundersTrigger">Fundadores</a>
         </nav>
       </div>
     </footer>
