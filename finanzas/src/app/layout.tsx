@@ -8,7 +8,7 @@ import { ModalFixer } from '@/components/modal-fixer';
 import { FirebaseClientProvider } from '@/firebase';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { AmbientBackgroundLazy as AmbientBackground } from '@/components/visual/AmbientBackgroundLazy';
+import { AmbientBackground } from '@/components/visual/AmbientBackground';
 import { SmoothScroll } from '@/components/visual/SmoothScroll';
 
 export const metadata: Metadata = {

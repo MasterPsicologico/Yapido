@@ -168,6 +168,21 @@
   75% { border-radius: 60% 40% 60% 30% / 60% 40% 30% 70%; }
 }
 
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(60px, -40px) scale(1.05); }
+  66% { transform: translate(-40px, 60px) scale(0.95); }
+}
+
+@keyframes float-slower {
+  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate(40px, -60px) scale(1.1) rotate(5deg); }
+}
+
+.animate-float-slow {
+  animation: float-slow 20s ease-in-out infinite;
+}
+
 /* ============================================================
    UTILIDADES DE ANIMACIÓN
    ============================================================ */
