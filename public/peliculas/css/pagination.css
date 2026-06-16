@@ -1,9 +1,6 @@
 /* ============================================================
-   CINESTREAM - Pagination Styles
-   ============================================================
-   Descripción: Controles de paginación (anterior, números, siguiente)
-   Ubicación: public/p/css/pagination.css
-   Importado por: styles.css
+   CINESTREAM - Pagination Styles (Cinema Noir Edition)
+   Botones elegantes con glow dorado
    ============================================================ */
 
 /* Contenedor de paginación */
@@ -12,45 +9,56 @@
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
-    padding: 2rem 0 3rem;
+    padding: 2.5rem 0 3.5rem;
     flex-wrap: wrap;
 }
 
 /* Botones de paginación */
 .pagination-btn {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: rgba(19, 18, 16, 0.8);
+    border: 1px solid rgba(212, 168, 67, 0.1);
     color: var(--text-primary);
-    min-width: 40px;
-    height: 40px;
-    padding: 0 0.8rem;
+    min-width: 42px;
+    height: 42px;
+    padding: 0 0.9rem;
     border-radius: var(--input-radius);
     cursor: pointer;
     transition: all var(--transition-normal);
-    font-size: 0.9rem;
-    font-weight: 500;
+    font-size: 0.875rem;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
+    backdrop-filter: blur(10px);
 }
 
 .pagination-btn:hover:not(:disabled) {
-    background: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     border-color: var(--primary-color);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(229, 9, 20, 0.3);
+    transform: translateY(-3px);
+    box-shadow:
+        0 6px 20px rgba(212, 168, 67, 0.25),
+        0 0 0 1px rgba(245, 240, 232, 0.05) inset;
+    color: var(--bg-dark);
 }
 
 .pagination-btn.active {
-    background: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     border-color: var(--primary-color);
-    font-weight: 700;
-    box-shadow: 0 2px 10px rgba(229, 9, 20, 0.4);
+    font-weight: 800;
+    box-shadow:
+        0 4px 15px rgba(212, 168, 67, 0.3),
+        0 0 0 1px rgba(245, 240, 232, 0.08) inset;
+    color: var(--bg-dark);
 }
 
 .pagination-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
+}
+
+.pagination-btn:active:not(:disabled) {
+    transform: translateY(-1px);
 }
 
 /* Separador de páginas (...) */
@@ -65,4 +73,33 @@
     background: transparent;
     transform: none;
     box-shadow: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pagination {
+        gap: 0.4rem;
+        padding: 2rem 0 2.5rem;
+    }
+
+    .pagination-btn {
+        min-width: 36px;
+        height: 36px;
+        font-size: 0.8125rem;
+        padding: 0 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .pagination {
+        gap: 0.3rem;
+        padding: 1.5rem 0 2rem;
+    }
+
+    .pagination-btn {
+        min-width: 34px;
+        height: 34px;
+        font-size: 0.78rem;
+        padding: 0 0.6rem;
+    }
 }

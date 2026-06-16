@@ -1,9 +1,6 @@
 /* ============================================================
-   CINESTREAM - Player Modal Styles
-   ============================================================
-   Descripción: Modal del reproductor de video (overlay, contenedor, header)
-   Ubicación: public/p/css/player-modal.css
-   Importado por: styles.css
+   CINESTREAM - Player Modal Styles (Cinema Noir Edition)
+   Overlay cinematográfico con blur y glow sutil
    ============================================================ */
 
 /* Modal overlay */
@@ -14,27 +11,33 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: var(--bg-modal);
+    background: rgba(10, 9, 8, 0.97);
     z-index: var(--z-modal);
     overflow-y: auto;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(20px) saturate(1.3);
 }
 
 .player-modal.active {
     display: block;
-    animation: fadeIn 0.3s ease;
+    animation: fadeInModal 0.35s var(--ease-out-quart);
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+@keyframes fadeInModal {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0) saturate(1);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(20px) saturate(1.3);
+    }
 }
 
 /* Contenedor del reproductor */
 .player-container {
     max-width: 1100px;
-    margin: 2rem auto;
-    padding: 0 1.5rem;
+    margin: 2.5rem auto;
+    padding: 0 2rem;
 }
 
 /* Header del reproductor */
@@ -42,29 +45,31 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.25rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(212, 168, 67, 0.08);
 }
 
 .player-header h2 {
-    font-size: 1.4rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 800;
     color: var(--text-primary);
     flex: 1;
-    margin-right: 1rem;
+    margin-right: 1.5rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    letter-spacing: -0.4px;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 /* Botón cerrar reproductor */
 .close-player {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: rgba(24, 22, 18, 0.9);
+    border: 1px solid rgba(212, 168, 67, 0.12);
     color: var(--text-primary);
-    width: 44px;
-    height: 44px;
+    width: 46px;
+    height: 46px;
     border-radius: 50%;
     cursor: pointer;
     font-size: 1.1rem;
@@ -73,12 +78,14 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    backdrop-filter: blur(10px);
 }
 
 .close-player:hover {
-    background: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     border-color: var(--primary-color);
-    transform: rotate(90deg);
+    transform: rotate(90deg) scale(1.05);
+    box-shadow: 0 0 30px rgba(212, 168, 67, 0.35);
 }
 
 /* Wrapper del video (aspect ratio 16:9) */
@@ -87,9 +94,11 @@
     width: 100%;
     padding-top: 56.25%;
     background: #000;
-    border-radius: var(--card-radius);
+    border-radius: var(--card-radius-lg);
     overflow: hidden;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(212, 168, 67, 0.08);
 }
 
 /* Placeholder de carga */
@@ -108,18 +117,19 @@
 }
 
 .video-placeholder .loader {
-    width: 55px;
-    height: 55px;
-    border: 3px solid var(--border-color);
+    width: 56px;
+    height: 56px;
+    border: 3px solid rgba(212, 168, 67, 0.1);
     border-top-color: var(--primary-color);
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 0 25px rgba(212, 168, 67, 0.2);
 }
 
 .video-placeholder p {
     color: var(--text-secondary);
-    font-size: 0.95rem;
+    font-size: 0.9375rem;
 }
 
 /* Video e iframe */
@@ -141,28 +151,68 @@
 
 /* Información de la película debajo del player */
 .player-info {
-    margin-top: 1.5rem;
-    padding: 1.5rem;
-    background: var(--bg-card);
-    border-radius: var(--card-radius);
-    border: 1px solid var(--border-color);
+    margin-top: 1.75rem;
+    padding: 1.75rem;
+    background: rgba(19, 18, 16, 0.7);
+    border-radius: var(--card-radius-lg);
+    border: 1px solid rgba(212, 168, 67, 0.08);
+    backdrop-filter: blur(15px);
 }
 
 .player-info .movie-meta {
     display: flex;
-    gap: 1.2rem;
+    gap: 1.25rem;
     margin-bottom: 1rem;
-    font-size: 0.95rem;
+    font-size: 0.9375rem;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .player-info #playerRating {
     color: var(--text-accent);
-    font-weight: 700;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.player-info #playerRating i {
+    filter: drop-shadow(0 0 6px rgba(212, 168, 67, 0.5));
 }
 
 .player-info #playerDescription {
     color: var(--text-secondary);
     line-height: 1.8;
-    font-size: 0.95rem;
+    font-size: 0.9375rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .player-container {
+        margin: 1.5rem auto;
+        padding: 0 1.25rem;
+    }
+
+    .player-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .close-player {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .player-info {
+        padding: 1.25rem;
+    }
+
+    .player-info .movie-meta {
+        font-size: 0.875rem;
+        gap: 1rem;
+    }
+
+    .player-info #playerDescription {
+        font-size: 0.875rem;
+    }
 }

@@ -1,21 +1,60 @@
 /* ============================================================
-   CINESTREAM - Footer Styles
-   ============================================================
-   Descripción: Pie de página con copyright
-   Ubicación: public/p/css/footer.css
-   Importado por: styles.css
+   CINESTREAM - Footer Styles (Cinema Noir Edition)
+   Pie de página elegante y minimalista
    ============================================================ */
 
 .footer {
     text-align: center;
-    padding: 2.5rem 2rem;
+    padding: 3rem 2rem;
     color: var(--text-muted);
     margin-top: 2rem;
-    border-top: 1px solid var(--border-color);
-    font-size: 0.85rem;
-    background: var(--bg-card);
+    border-top: 1px solid rgba(212, 168, 67, 0.06);
+    font-size: 0.8125rem;
+    background: rgba(10, 9, 8, 0.8);
+    position: relative;
+}
+
+.footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212, 168, 67, 0.3), transparent);
 }
 
 .footer p {
     opacity: 0.7;
+    line-height: 1.7;
+}
+
+.footer a {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.footer a:hover {
+    color: var(--primary-hover);
+}
+
+.footer-brand {
+    color: var(--text-secondary);
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .footer {
+        padding: 2rem 1.5rem;
+        font-size: 0.775rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .footer {
+        padding: 1.5rem 1rem;
+    }
 }
