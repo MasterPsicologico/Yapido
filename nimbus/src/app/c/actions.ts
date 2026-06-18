@@ -49,7 +49,6 @@ Rol más adecuado:`;
 
     try {
         const { text } = await ai.generate({
-          model: 'googleai/gemini-2.5-flash',
           prompt
         });
         const role = text.trim().replace(/Rol más adecuado: /g, '').replace(/[\n*]/g, '');
@@ -131,7 +130,6 @@ Asistente:`;
 
   try {
     const { text } = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
       prompt: expertAgentSystemPrompt,
     });
     return { response: text || "No pude generar una respuesta en este momento.", newRole };
