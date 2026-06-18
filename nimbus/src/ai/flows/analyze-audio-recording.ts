@@ -8,7 +8,6 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { DiagnosticReportSchema, type DiagnosticReport } from '@/lib/types';
-import { googleAI } from '@genkit-ai/google-genai';
 
 // --- SCHEMA DEFINITIONS ---
 

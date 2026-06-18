@@ -56,12 +56,18 @@ export async function getAIResponse(history: Message[], userId: string, currentA
   const HISTORY_THRESHOLD = 10;
   let conversationContext = '';
 
-  if (history.length > HISTORY_THRESHOLD) {
-    const fullHistoryString = history.map(m => `[${(m.timestamp instanceof Date ? m.timestamp : (m.timestamp as Timestamp).toDate()).toISOString()}] ${m.role}: ${m.content}`).join('\n');
+  // Filter out any imageUrl from messages to prevent sending images to text-only NVIDIA model
+  const textOnlyHistory = history.map(m => ({
+    ...m,
+    imageUrl: undefined as string | undefined,
+  }));
+
+  if (textOnlyHistory.length > HISTORY_THRESHOLD) {
+    const fullHistoryString = textOnlyHistory.map(m => `[${(m.timestamp instanceof Date ? m.timestamp : (m.timestamp as Timestamp).toDate()).toISOString()}] ${m.role}: ${m.content}`).join('\n');
     const { summary } = await genSummary({ chatHistory: fullHistoryString });
-    conversationContext = `Resumen de la conversación hasta ahora:\n${summary}\n\nMensajes más recientes:\n${history.slice(-4).map(m => `[${(m.timestamp instanceof Date ? m.timestamp : (m.timestamp as Timestamp).toDate()).toISOString()}] ${m.role}: ${m.content}`).join('\n')}`;
+    conversationContext = `Resumen de la conversación hasta ahora:\n${summary}\n\nMensajes más recientes:\n${textOnlyHistory.slice(-4).map(m => `[${(m.timestamp instanceof Date ? m.timestamp : (m.timestamp as Timestamp).toDate()).toISOString()}] ${m.role}: ${m.content}`).join('\n')}`;
   } else {
-    conversationContext = history.map(m => `[${(m.timestamp instanceof Date ? m.timestamp : (m.timestamp as Timestamp).toDate()).toISOString()}] ${m.role}: ${m.content}`).join('\n');
+    conversationContext = textOnlyHistory.map(m => `[${(m.timestamp instanceof Date ? m.timestamp : (m.timestamp as Timestamp).toDate()).toISOString()}] ${m.role}: ${m.content}`).join('\n');
   }
 
   let newRole: string | undefined = undefined;
