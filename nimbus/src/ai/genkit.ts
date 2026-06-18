@@ -5,6 +5,11 @@ import openAI from 'genkitx-openai';
 import { GenerationCommonConfigSchema } from 'genkit';
 import { ModelInfo } from 'genkit/model';
 
+// Hack for genkitx-openai to use NVIDIA API key
+if (process.env.NVIDIA_API_KEY && !process.env.OPENAI_API_KEY) {
+  process.env.OPENAI_API_KEY = process.env.NVIDIA_API_KEY;
+}
+
 const nvidiaModelInfo: ModelInfo = {
   versions: ['1.0'],
   label: 'NVIDIA Minimax 2.7',
@@ -35,5 +40,5 @@ export const ai = genkit({
       ],
     }),
   ],
-  model: 'nvidia/llama-3.3-nemotron-70b-instruct',
+  model: 'openai/nvidia/llama-3.3-nemotron-70b-instruct',
 });
