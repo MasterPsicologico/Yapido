@@ -54,24 +54,29 @@ Rol más adecuado:`;
 
 export async function getAIResponse(history: Message[], userId: string, currentAnchorRole: string | null, profile: ProfileData | null): Promise<{ response: string, newRole?: string }> {
   const HISTORY_THRESHOLD = 10;
-  let conversationContext = '';
 
-  // Filter out any imageUrl from messages to prevent sending images to text-only NVIDIA model
-  const textOnlyHistory = history.map(m => ({
+  // Clean history: remove any imageUrl references and file path mentions
+  // This prevents NVIDIA from trying to "read" local files like "image.png"
+  const cleanHistory = history.map(m => ({
     ...m,
-    imageUrl: undefined as string | undefined,
+    content: (m.content || '')
+      .replace(/image\.png/gi, '[imagen]')
+      .replace(/\/images\/[^\s]*/gi, '[imagen]')
+      .replace(/https?:\/\/[^\s]*\.(png|jpg|jpeg|gif|webp)[^\s]*/gi, '[imagen]'),
   }));
 
-  if (textOnlyHistory.length > HISTORY_THRESHOLD) {
-    const fullHistoryString = textOnlyHistory.map(m => `[${(m.timestamp instanceof Date ? m.timestamp : (m.timestamp as Timestamp).toDate()).toISOString()}] ${m.role}: ${m.content}`).join('\n');
+  let conversationContext = '';
+
+  if (cleanHistory.length > HISTORY_THRESHOLD) {
+    const fullHistoryString = cleanHistory.map(m => `[${(m.timestamp instanceof Date ? m.timestamp : (m.timestamp as Timestamp).toDate()).toISOString()}] ${m.role}: ${m.content}`).join('\n');
     const { summary } = await genSummary({ chatHistory: fullHistoryString });
-    conversationContext = `Resumen de la conversación hasta ahora:\n${summary}\n\nMensajes más recientes:\n${textOnlyHistory.slice(-4).map(m => `[${(m.timestamp instanceof Date ? m.timestamp : (m.timestamp as Timestamp).toDate()).toISOString()}] ${m.role}: ${m.content}`).join('\n')}`;
+    conversationContext = `Resumen de la conversación hasta ahora:\n${summary}\n\nMensajes más recientes:\n${cleanHistory.slice(-4).map(m => `[${(m.timestamp instanceof Date ? m.timestamp : (m.timestamp as Timestamp).toDate()).toISOString()}] ${m.role}: ${m.content}`).join('\n')}`;
   } else {
-    conversationContext = textOnlyHistory.map(m => `[${(m.timestamp instanceof Date ? m.timestamp : (m.timestamp as Timestamp).toDate()).toISOString()}] ${m.role}: ${m.content}`).join('\n');
+    conversationContext = cleanHistory.map(m => `[${(m.timestamp instanceof Date ? m.timestamp : (m.timestamp as Timestamp).toDate()).toISOString()}] ${m.role}: ${m.content}`).join('\n');
   }
 
   let newRole: string | undefined = undefined;
-  const lastUserMessage = history.filter(m => m.role === 'user').pop()?.content || '';
+  const lastUserMessage = cleanHistory.filter(m => m.role === 'user').pop()?.content || '';
 
   if (lastUserMessage) {
       const determinedRole = await determineAnchorRole(lastUserMessage);
@@ -79,9 +84,9 @@ export async function getAIResponse(history: Message[], userId: string, currentA
   }
 
   const roleToUse = newRole || currentAnchorRole || 'El Asistente General';
-  
-  const stateContext = profile 
-    ? JSON.stringify(profile, null, 2) 
+
+  const stateContext = profile
+    ? JSON.stringify(profile, null, 2)
     : 'Aún no hay un cianotipo psicológico. Esta es nuestra primera interacción. Sé cálido y haz una pregunta abierta.';
 
   const expertAgentSystemPrompt = `Eres un asistente de IA conversacional llamado Nimbus. Tu propósito es ser un confidente y psicólogo virtual, un espejo perspicaz que revela profundidades. Respondes de manera empática, profunda y transformadora.
@@ -116,10 +121,13 @@ ${conversationContext}
 Asistente:`;
 
   try {
-    const { text } = await ai.generate({ prompt: expertAgentSystemPrompt });
+    const { text } = await ai.generate({
+      model: 'googleai/gemini-2.5-flash',
+      prompt: expertAgentSystemPrompt,
+    });
     return { response: text || "No pude generar una respuesta en este momento.", newRole };
   } catch (error: any) {
-    console.error("[Nimbus] Error getting AI response:", error?.message || error);
+    console.error("[Nimbus] Google AI error:", error?.message || error);
     return { response: "Lo siento, estoy teniendo problemas para responder en este momento. Por favor, inténtalo de nuevo más tarde." };
   }
 }
