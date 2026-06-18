@@ -1,7 +1,7 @@
 @charset "UTF-8";
 /* ============================================================
-   CINESTREAM - Movie Rows (Cinema Noir Edition)
-   Scroll suave, transiciones elegantes con glow dorado
+   CINESTREAM - Movie Rows (Polychromatic Edition)
+   Acentos de color por género, scroll suave, glow dinámico
    ============================================================ */
 
 /* ── Contenedor general ─────────────────────────────────── */
@@ -16,6 +16,36 @@
     margin-bottom: 2.5rem;
     position: relative;
 }
+
+/* ── Acento lateral por género en la fila ──────────────── */
+.movie-row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.4rem;
+    bottom: 0.4rem;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    z-index: 5;
+    transition: box-shadow 0.4s ease;
+}
+
+.movie-row:hover::before {
+    box-shadow: 0 0 15px 2px currentColor;
+}
+
+.movie-row[data-genre="accion"]::before { background: var(--genre-accion); color: var(--genre-accion); }
+.movie-row[data-genre="comedia"]::before { background: var(--genre-comedia); color: var(--genre-comedia); }
+.movie-row[data-genre="drama"]::before { background: var(--genre-drama); color: var(--genre-drama); }
+.movie-row[data-genre="terror"]::before { background: var(--genre-terror); color: var(--genre-terror); }
+.movie-row[data-genre="cienciaficcion"]::before { background: var(--genre-cienciaficcion); color: var(--genre-cienciaficcion); }
+.movie-row[data-genre="anime"]::before { background: var(--genre-anime); color: var(--genre-anime); }
+.movie-row[data-genre="romance"]::before { background: var(--genre-romance); color: var(--genre-romance); }
+.movie-row[data-genre="thriller"]::before { background: var(--genre-thriller); color: var(--genre-thriller); }
+.movie-row[data-genre="documental"]::before { background: var(--genre-documental); color: var(--genre-documental); }
+.movie-row[data-genre="aventura"]::before { background: var(--genre-aventura); color: var(--genre-aventura); }
+.movie-row[data-genre="fantasia"]::before { background: var(--genre-fantasia); color: var(--genre-fantasia); }
+.movie-row[data-genre="misterio"]::before { background: var(--genre-misterio); color: var(--genre-misterio); }
 
 /* ── Encabezado de la fila ──────────────────────────────── */
 .movie-row-header {
@@ -48,11 +78,24 @@
     letter-spacing: 0.3px;
 }
 
+/* Icono con color de género */
 .movie-row-title i {
-    color: var(--primary-color);
     font-size: 1rem;
     filter: drop-shadow(0 0 8px rgba(212, 168, 67, 0.4));
 }
+
+.movie-row[data-genre="accion"] .movie-row-title i { color: var(--genre-accion); filter: drop-shadow(0 0 8px var(--genre-accion-glow)); }
+.movie-row[data-genre="comedia"] .movie-row-title i { color: var(--genre-comedia); filter: drop-shadow(0 0 8px var(--genre-comedia-glow)); }
+.movie-row[data-genre="drama"] .movie-row-title i { color: var(--genre-drama); filter: drop-shadow(0 0 8px var(--genre-drama-glow)); }
+.movie-row[data-genre="terror"] .movie-row-title i { color: var(--genre-terror); filter: drop-shadow(0 0 8px var(--genre-terror-glow)); }
+.movie-row[data-genre="cienciaficcion"] .movie-row-title i { color: var(--genre-cienciaficcion); filter: drop-shadow(0 0 8px var(--genre-cienciaficcion-glow)); }
+.movie-row[data-genre="anime"] .movie-row-title i { color: var(--genre-anime); filter: drop-shadow(0 0 8px var(--genre-anime-glow)); }
+.movie-row[data-genre="romance"] .movie-row-title i { color: var(--genre-romance); filter: drop-shadow(0 0 8px var(--genre-romance-glow)); }
+.movie-row[data-genre="thriller"] .movie-row-title i { color: var(--genre-thriller); filter: drop-shadow(0 0 8px var(--genre-thriller-glow)); }
+.movie-row[data-genre="documental"] .movie-row-title i { color: var(--genre-documental); filter: drop-shadow(0 0 8px var(--genre-documental-glow)); }
+.movie-row[data-genre="aventura"] .movie-row-title i { color: var(--genre-aventura); filter: drop-shadow(0 0 8px var(--genre-aventura-glow)); }
+.movie-row[data-genre="fantasia"] .movie-row-title i { color: var(--genre-fantasia); filter: drop-shadow(0 0 8px var(--genre-fantasia-glow)); }
+.movie-row[data-genre="misterio"] .movie-row-title i { color: var(--genre-misterio); filter: drop-shadow(0 0 8px var(--genre-misterio-glow)); }
 
 /* ── Contenedor scrollable ──────────────────────────────── */
 .movie-row-scroll {
@@ -123,7 +166,7 @@
     transform: scaleX(1);
 }
 
-/* ── Hover: elevación + glow dorado ─────────────────────── */
+/* ── Hover: elevación + glow ─────────────────────── */
 .movie-row-card:hover {
     transform: scale(1.1) translateY(-12px);
     box-shadow:
@@ -366,6 +409,10 @@
     .movie-row-title i {
         font-size: 0.9rem;
     }
+
+    .movie-row::before {
+        width: 2px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -379,6 +426,10 @@
     }
 
     .row-arrow {
+        display: none;
+    }
+
+    .movie-row::before {
         display: none;
     }
 }

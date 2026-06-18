@@ -1,7 +1,7 @@
 @charset "UTF-8";
 /* ============================================================
-   CINESTREAM - Movie Card (Cinema Noir Edition)
-   Glassmorphism sutil, hover sofisticado con glow dorado
+   CINESTREAM - Movie Card (Polychromatic Edition)
+   Acentos por género, gauge circular de rating, skeleton shimmer
    ============================================================ */
 
 /* ── Tarjeta principal ──────────────────────────────────── */
@@ -17,9 +17,42 @@
     position: relative;
     box-shadow: var(--shadow-card);
     border: 1px solid rgba(212, 168, 67, 0.06);
-    animation: cardFadeIn 0.7s var(--ease-out-expo) both;
-    will-change: transform, box-shadow, border-color;
+    animation: cardFadeIn 0.6s var(--ease-out-expo) both;
+    will-change: transform, box-shadow;
 }
+
+/* ── Borde lateral de acento por género ────────────────── */
+.movie-card .card-genre-accent {
+    position: absolute;
+    left: 0;
+    top: 8%;
+    bottom: 8%;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    z-index: 4;
+    opacity: 0.5;
+    transition: opacity 0.4s ease, width 0.4s var(--ease-out-expo);
+}
+
+.movie-card:hover .card-genre-accent {
+    opacity: 1;
+    width: 4px;
+}
+
+/* Colores por género vía data attribute */
+.movie-card[data-genre="accion"] .card-genre-accent { background: var(--genre-accion); }
+.movie-card[data-genre="comedia"] .card-genre-accent { background: var(--genre-comedia); }
+.movie-card[data-genre="drama"] .card-genre-accent { background: var(--genre-drama); }
+.movie-card[data-genre="terror"] .card-genre-accent { background: var(--genre-terror); }
+.movie-card[data-genre="cienciaficcion"] .card-genre-accent { background: var(--genre-cienciaficcion); }
+.movie-card[data-genre="anime"] .card-genre-accent { background: var(--genre-anime); }
+.movie-card[data-genre="romance"] .card-genre-accent { background: var(--genre-romance); }
+.movie-card[data-genre="thriller"] .card-genre-accent { background: var(--genre-thriller); }
+.movie-card[data-genre="documental"] .card-genre-accent { background: var(--genre-documental); }
+.movie-card[data-genre="aventura"] .card-genre-accent { background: var(--genre-aventura); }
+.movie-card[data-genre="fantasia"] .card-genre-accent { background: var(--genre-fantasia); }
+.movie-card[data-genre="misterio"] .card-genre-accent { background: var(--genre-misterio); }
+.movie-card[data-genre="busqueda"] .card-genre-accent { background: var(--genre-busqueda); }
 
 @keyframes cardFadeIn {
     from {
@@ -32,7 +65,7 @@
     }
 }
 
-/* Borde superior luminoso */
+/* ── Borde superior luminoso ────────────────────────────── */
 .movie-card::before {
     content: '';
     position: absolute;
@@ -60,7 +93,7 @@
     transform: scaleX(1);
 }
 
-/* ── Hover: elevación + glow dorado sutil ───────────────────────── */
+/* ── Hover: elevación + glow ────────────────────────────── */
 .movie-card:hover {
     transform: translateY(-12px) scale(1.03);
     box-shadow:
@@ -84,6 +117,10 @@
 
 .movie-card:hover .movie-info {
     transform: translateZ(15px);
+}
+
+.movie-card:hover .card-genre-accent {
+    box-shadow: 0 0 12px currentColor;
 }
 
 /* ── Contenedor del poster ──────────────────────────────── */
@@ -195,7 +232,7 @@
 
 /* ── Info de la película ────────────────────────────────── */
 .movie-info {
-    padding: 0.9rem;
+    padding: 0.85rem 0.9rem;
     background: var(--gradient-card);
     position: relative;
     z-index: 2;
@@ -215,11 +252,18 @@
     );
 }
 
-/* ── Título ─────────────────────────────────────────────── */
+/* ── Título + rating gauge en flex ─────────────────────── */
+.movie-info-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+}
+
 .movie-title {
     font-size: 0.875rem;
     font-weight: 700;
-    margin-bottom: 0.4rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -227,19 +271,64 @@
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
     line-height: 1.35;
     letter-spacing: -0.2px;
+    flex: 1;
+    min-width: 0;
     transition: color 0.3s ease;
 }
 
 .movie-card:hover .movie-title {
-    color: var(--text-primary);
     text-shadow: 0 2px 15px rgba(212, 168, 67, 0.2);
 }
 
-/* ── Meta (año, rating) ─────────────────────────────────── */
+/* ── Rating gauge circular ──────────────────────────────── */
+.rating-gauge {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    position: relative;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    background: rgba(19, 18, 16, 0.8);
+    border: 2px solid rgba(212, 168, 67, 0.3);
+    transition: all 0.4s var(--ease-out-expo);
+}
+
+.rating-gauge::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    padding: 2px;
+    background: conic-gradient(
+        var(--primary-color) calc(var(--rating-percent, 70) * 1%),
+        rgba(212, 168, 67, 0.15) calc(var(--rating-percent, 70) * 1%)
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    transition: all 0.4s var(--ease-out-expo);
+    opacity: 0.7;
+}
+
+.movie-card:hover .rating-gauge {
+    border-color: rgba(212, 168, 67, 0.6);
+    box-shadow: 0 0 15px rgba(212, 168, 67, 0.25);
+}
+
+.movie-card:hover .rating-gauge::before {
+    opacity: 1;
+}
+
+/* ── Meta (año) ────────────────────────────────────────── */
 .movie-meta {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.5rem;
     font-size: 0.78rem;
     color: var(--text-secondary);
     font-weight: 500;
@@ -257,33 +346,11 @@
     color: rgba(245, 240, 232, 0.9);
 }
 
-/* ── Rating con estrella dorada ─────────────────────────── */
-.movie-rating {
-    color: var(--text-accent) !important;
-    font-weight: 800;
-}
-
-.movie-rating i {
-    font-size: 0.7rem;
-    filter: drop-shadow(0 0 4px rgba(212, 168, 67, 0.5));
-    transition: filter 0.3s ease, transform 0.3s ease;
-}
-
-.movie-card:hover .movie-rating i {
-    filter: drop-shadow(0 0 8px rgba(212, 168, 67, 0.7));
-    animation: starPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes starPulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.15); }
-}
-
 /* ── Género ─────────────────────────────────────────────── */
 .movie-genre {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: var(--text-muted);
-    margin-top: 0.3rem;
+    margin-top: 0.25rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -291,12 +358,18 @@
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
     letter-spacing: 0.4px;
     text-transform: uppercase;
-    transition: color 0.3s ease, transform 0.3s ease;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    background: rgba(212, 168, 67, 0.06);
+    border: 1px solid rgba(212, 168, 67, 0.08);
+    display: inline-block;
+    transition: all 0.3s ease;
 }
 
 .movie-card:hover .movie-genre {
     color: var(--primary-color);
-    transform: translateX(3px);
+    border-color: rgba(212, 168, 67, 0.25);
+    background: rgba(212, 168, 67, 0.1);
 }
 
 /* ── Efecto glow radial (mouse tracking) ──────────────── */
@@ -329,6 +402,78 @@
     border-color: var(--primary-color);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   SKELETON LOADING CARDS
+   ═══════════════════════════════════════════════════════════ */
+.movie-card-skeleton {
+    background: var(--bg-card);
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(212, 168, 67, 0.04);
+    aspect-ratio: 2/3;
+}
+
+.movie-card-skeleton .skel-poster {
+    width: 100%;
+    height: 67%;
+    background: linear-gradient(
+        110deg,
+        #131210 30%,
+        #1c1a17 50%,
+        #131210 70%
+    );
+    background-size: 200% 100%;
+    animation: shimmer var(--skeleton-shimmer-speed) infinite;
+}
+
+.movie-card-skeleton .skel-info {
+    padding: 0.7rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.movie-card-skeleton .skel-line {
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(
+        110deg,
+        #1c1a17 30%,
+        #25221e 50%,
+        #1c1a17 70%
+    );
+    background-size: 200% 100%;
+    animation: shimmer var(--skeleton-shimmer-speed) infinite;
+}
+
+.movie-card-skeleton .skel-line.title { width: 80%; }
+.movie-card-skeleton .skel-line.meta { width: 55%; height: 8px; }
+.movie-card-skeleton .skel-line.genre { width: 40%; height: 8px; }
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ── Skeleton staggered delay ─────────────────── */
+.movie-card-skeleton:nth-child(1) .skel-poster,
+.movie-card-skeleton:nth-child(1) .skel-line { animation-delay: 0s; }
+.movie-card-skeleton:nth-child(2) .skel-poster,
+.movie-card-skeleton:nth-child(2) .skel-line { animation-delay: 0.1s; }
+.movie-card-skeleton:nth-child(3) .skel-poster,
+.movie-card-skeleton:nth-child(3) .skel-line { animation-delay: 0.2s; }
+.movie-card-skeleton:nth-child(4) .skel-poster,
+.movie-card-skeleton:nth-child(4) .skel-line { animation-delay: 0.3s; }
+.movie-card-skeleton:nth-child(5) .skel-poster,
+.movie-card-skeleton:nth-child(5) .skel-line { animation-delay: 0.4s; }
+.movie-card-skeleton:nth-child(6) .skel-poster,
+.movie-card-skeleton:nth-child(6) .skel-line { animation-delay: 0.5s; }
+.movie-card-skeleton:nth-child(7) .skel-poster,
+.movie-card-skeleton:nth-child(7) .skel-line { animation-delay: 0.6s; }
+.movie-card-skeleton:nth-child(8) .skel-poster,
+.movie-card-skeleton:nth-child(8) .skel-line { animation-delay: 0.7s; }
+
 /* ── Reduced motion ─────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
     .movie-card,
@@ -339,8 +484,9 @@
     .movie-type,
     .movie-title,
     .movie-meta,
-    .movie-rating i,
     .movie-genre,
+    .rating-gauge,
+    .card-genre-accent,
     .movie-card::after,
     .movie-card::before {
         animation: none !important;
@@ -353,5 +499,10 @@
 
     .movie-card:hover .movie-poster {
         transform: scale(1.05);
+    }
+
+    .movie-card-skeleton .skel-poster,
+    .movie-card-skeleton .skel-line {
+        animation: none !important;
     }
 }

@@ -1,6 +1,6 @@
 /* ============================================================
-   CINESTREAM - Filters Bar Styles (Cinema Noir Edition)
-   Selects elegantes con estilo refinado
+   CINESTREAM - Filters Bar Styles (Polychromatic Edition)
+   Chip-style genre tags, modern select styling
    ============================================================ */
 
 /* Contenedor principal */
@@ -12,21 +12,200 @@
     padding-right: 2rem;
 }
 
-/* Barra de filtros */
+/* Barra de filtros - nuevo diseño */
 .filters {
     display: flex;
-    gap: 1.5rem;
+    gap: 0.75rem;
     flex-wrap: wrap;
     margin-bottom: 2rem;
-    padding: 1.1rem 1.5rem;
-    background: rgba(19, 18, 16, 0.7);
-    border-radius: var(--card-radius);
+    padding: 1rem 1.5rem;
+    background: rgba(19, 18, 16, 0.6);
+    border-radius: var(--card-radius-lg);
     align-items: center;
-    border: 1px solid rgba(212, 168, 67, 0.08);
+    border: 1px solid rgba(212, 168, 67, 0.06);
     backdrop-filter: blur(15px);
+    transition: all 0.4s var(--ease-out-quart);
 }
 
-/* Grupo de filtro individual */
+/* ── Chip de género (pill-style) ──────────────────────── */
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.35s var(--ease-out-expo);
+    background: rgba(24, 22, 18, 0.8);
+    color: var(--text-secondary);
+    border: 1px solid rgba(212, 168, 67, 0.06);
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+}
+
+.filter-chip::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 30px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.filter-chip:hover {
+    background: rgba(26, 24, 21, 0.95);
+    border-color: rgba(212, 168, 67, 0.15);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.filter-chip.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: var(--bg-dark);
+    border-color: var(--primary-color);
+    font-weight: 700;
+    box-shadow:
+        0 4px 18px rgba(212, 168, 67, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.filter-chip.active:hover {
+    box-shadow:
+        0 6px 25px rgba(212, 168, 67, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Colores por género en chips */
+.filter-chip[data-genre="accion"]:hover,
+.filter-chip[data-genre="accion"].active {
+    border-color: var(--genre-accion);
+    box-shadow: 0 4px 18px var(--genre-accion-glow);
+}
+
+.filter-chip[data-genre="accion"].active {
+    background: linear-gradient(135deg, var(--genre-accion), #b91c1c);
+}
+
+.filter-chip[data-genre="comedia"]:hover,
+.filter-chip[data-genre="comedia"].active {
+    border-color: var(--genre-comedia);
+    box-shadow: 0 4px 18px var(--genre-comedia-glow);
+}
+
+.filter-chip[data-genre="comedia"].active {
+    background: linear-gradient(135deg, var(--genre-comedia), #b45309);
+}
+
+.filter-chip[data-genre="drama"]:hover,
+.filter-chip[data-genre="drama"].active {
+    border-color: var(--genre-drama);
+    box-shadow: 0 4px 18px var(--genre-drama-glow);
+}
+
+.filter-chip[data-genre="drama"].active {
+    background: linear-gradient(135deg, var(--genre-drama), #6d28d9);
+}
+
+.filter-chip[data-genre="terror"]:hover,
+.filter-chip[data-genre="terror"].active {
+    border-color: var(--genre-terror);
+    box-shadow: 0 4px 18px var(--genre-terror-glow);
+}
+
+.filter-chip[data-genre="terror"].active {
+    background: linear-gradient(135deg, var(--genre-terror), #991b1b);
+}
+
+.filter-chip[data-genre="cienciaficcion"]:hover,
+.filter-chip[data-genre="cienciaficcion"].active {
+    border-color: var(--genre-cienciaficcion);
+    box-shadow: 0 4px 18px var(--genre-cienciaficcion-glow);
+}
+
+.filter-chip[data-genre="cienciaficcion"].active {
+    background: linear-gradient(135deg, var(--genre-cienciaficcion), #0e7490);
+}
+
+.filter-chip[data-genre="anime"]:hover,
+.filter-chip[data-genre="anime"].active {
+    border-color: var(--genre-anime);
+    box-shadow: 0 4px 18px var(--genre-anime-glow);
+}
+
+.filter-chip[data-genre="anime"].active {
+    background: linear-gradient(135deg, var(--genre-anime), #be185d);
+}
+
+.filter-chip[data-genre="romance"]:hover,
+.filter-chip[data-genre="romance"].active {
+    border-color: var(--genre-romance);
+    box-shadow: 0 4px 18px var(--genre-romance-glow);
+}
+
+.filter-chip[data-genre="romance"].active {
+    background: linear-gradient(135deg, var(--genre-romance), #be185d);
+}
+
+.filter-chip[data-genre="thriller"]:hover,
+.filter-chip[data-genre="thriller"].active {
+    border-color: var(--genre-thriller);
+    box-shadow: 0 4px 18px var(--genre-thriller-glow);
+}
+
+.filter-chip[data-genre="thriller"].active {
+    background: linear-gradient(135deg, var(--genre-thriller), #c2410c);
+}
+
+.filter-chip[data-genre="documental"]:hover,
+.filter-chip[data-genre="documental"].active {
+    border-color: var(--genre-documental);
+    box-shadow: 0 4px 18px var(--genre-documental-glow);
+}
+
+.filter-chip[data-genre="documental"].active {
+    background: linear-gradient(135deg, var(--genre-documental), #047857);
+}
+
+.filter-chip[data-genre="aventura"]:hover,
+.filter-chip[data-genre="aventura"].active {
+    border-color: var(--genre-aventura);
+    box-shadow: 0 4px 18px var(--genre-aventura-glow);
+}
+
+.filter-chip[data-genre="aventura"].active {
+    background: linear-gradient(135deg, var(--genre-aventura), #15803d);
+}
+
+.filter-chip[data-genre="fantasia"]:hover,
+.filter-chip[data-genre="fantasia"].active {
+    border-color: var(--genre-fantasia);
+    box-shadow: 0 4px 18px var(--genre-fantasia-glow);
+}
+
+.filter-chip[data-genre="fantasia"].active {
+    background: linear-gradient(135deg, var(--genre-fantasia), #7c3aed);
+}
+
+.filter-chip[data-genre="misterio"]:hover,
+.filter-chip[data-genre="misterio"].active {
+    border-color: var(--genre-misterio);
+    box-shadow: 0 4px 18px var(--genre-misterio-glow);
+}
+
+.filter-chip[data-genre="misterio"].active {
+    background: linear-gradient(135deg, var(--genre-misterio), #4338ca);
+}
+
+.filter-chip.active {
+    color: #fff;
+}
+
+/* ── Grupo de filtro (dropdowns heredados) ────────────── */
 .filter-group {
     display: flex;
     align-items: center;
@@ -41,7 +220,6 @@
     letter-spacing: 0.2px;
 }
 
-/* Selects de filtro */
 .filter-group select {
     background: rgba(24, 22, 18, 0.9);
     border: 1px solid rgba(212, 168, 67, 0.12);
@@ -79,6 +257,28 @@
     padding: 0.5rem;
 }
 
+/* ── Separador visual ──────────────────────────────────── */
+.filter-divider {
+    width: 1px;
+    height: 28px;
+    background: rgba(212, 168, 67, 0.1);
+    margin: 0 0.25rem;
+}
+
+/* ── Count badge en chips ──────────────────────────────── */
+.filter-chip-count {
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.1rem 0.4rem;
+    border-radius: 10px;
+    line-height: 1.3;
+}
+
+.filter-chip.active .filter-chip-count {
+    background: rgba(255, 255, 255, 0.2);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .main {
@@ -87,8 +287,14 @@
     }
 
     .filters {
-        padding: 1rem;
-        gap: 1rem;
+        padding: 0.85rem 1rem;
+        gap: 0.5rem;
+        border-radius: var(--card-radius);
+    }
+
+    .filter-chip {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
     }
 
     .filter-group {
@@ -99,13 +305,21 @@
     .filter-group select {
         width: 100%;
     }
+
+    .filter-divider {
+        display: none;
+    }
 }
 
 @media (max-width: 480px) {
     .filters {
         flex-direction: column;
         align-items: stretch;
-        gap: 0.85rem;
+        gap: 0.5rem;
+    }
+
+    .filter-chip {
+        justify-content: center;
     }
 
     .filter-group {

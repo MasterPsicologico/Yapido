@@ -1,7 +1,7 @@
 @charset "UTF-8";
 /* ============================================================
-   CINESTREAM - Header Styles (Cinema Noir Edition)
-   Logo dorado, glassmorphism sutil, navegación elegante
+   CINESTREAM - Header Styles (Polychromatic Edition)
+   Logo dorado, glassmorphism, navegación con chips
    ============================================================ */
 
 /* Header principal */
@@ -24,9 +24,18 @@
         0 2px 20px rgba(0, 0, 0, 0.5),
         0 0 0 1px rgba(212, 168, 67, 0.05),
         inset 0 -1px 0 rgba(212, 168, 67, 0.08);
+    transition: transform 0.3s var(--ease-out-quart), box-shadow 0.3s ease;
 }
 
-/* Línea dorada superior sutil */
+.header.header-hidden {
+    transform: translateY(-100%);
+}
+
+.header.header-visible {
+    transform: translateY(0);
+}
+
+/* Línea dorada superior */
 .header::before {
     content: '';
     position: absolute;
@@ -96,7 +105,7 @@
 }
 
 /* ============================================================
-   NAVEGACIÓN TYPE NETFLIX - Scroll horizontal con flechas
+   NAVEGACIÓN - Scroll horizontal con flechas
    ============================================================ */
 .nav-wrapper {
     position: relative;
@@ -191,7 +200,7 @@
     right: -0.5rem;
 }
 
-/* Botones de navegación */
+/* Botones de navegación - estilo chip */
 .nav-btn {
     background: transparent;
     border: none;

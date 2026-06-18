@@ -1,9 +1,8 @@
 /* ============================================================
-   CINESTREAM - Pagination Styles (Cinema Noir Edition)
-   Botones elegantes con glow dorado
+   CINESTREAM - Pagination Styles (Polychromatic Edition)
+   Chips modernos con glow por género
    ============================================================ */
 
-/* Contenedor de paginación */
 .pagination {
     display: flex;
     justify-content: center;
@@ -13,7 +12,6 @@
     flex-wrap: wrap;
 }
 
-/* Botones de paginación */
 .pagination-btn {
     background: rgba(19, 18, 16, 0.8);
     border: 1px solid rgba(212, 168, 67, 0.1);
@@ -32,7 +30,7 @@
     backdrop-filter: blur(10px);
 }
 
-.pagination-btn:hover:not(:disabled) {
+.pagination-btn:hover:not(:disabled):not(.separator) {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     border-color: var(--primary-color);
     transform: translateY(-3px);
@@ -57,11 +55,10 @@
     cursor: not-allowed;
 }
 
-.pagination-btn:active:not(:disabled) {
+.pagination-btn:active:not(:disabled):not(.separator) {
     transform: translateY(-1px);
 }
 
-/* Separador de páginas (...) */
 .pagination-btn.separator {
     background: transparent;
     border: none;

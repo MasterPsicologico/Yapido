@@ -47,6 +47,80 @@ let currentFilters = {
 let searchTimeout = null;
 const SEARCH_DELAY = 500; // debounce 500ms
 
+// =====================================================
+// HERO EFFECTS — Particles + Parallax
+// =====================================================
+function initHeroParticles() {
+    const container = document.getElementById('heroParticles');
+    if (!container) return;
+
+    const count = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--particle-count')) || 12;
+
+    container.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'hero-particle';
+        p.style.left = `${Math.random() * 100}%`;
+        p.style.top = `${Math.random() * 100}%`;
+        p.style.setProperty('--float-delay', `${Math.random() * 6}s`);
+        p.style.setProperty('--float-duration', `${4 + Math.random() * 6}s`);
+        p.style.setProperty('--float-x', `${-30 + Math.random() * 60}px`);
+        p.style.setProperty('--float-y', `${-40 + Math.random() * 80}px`);
+        container.appendChild(p);
+    }
+}
+
+let _heroParallaxHandler = null;
+
+function initHeroParallax() {
+    const hero = document.getElementById('heroSection');
+    if (!hero) return;
+
+    if (_heroParallaxHandler) {
+        window.removeEventListener('scroll', _heroParallaxHandler);
+    }
+
+    _heroParallaxHandler = () => {
+        const scrollY = window.scrollY;
+        const heroHeight = hero.offsetHeight || 500;
+        if (scrollY < heroHeight) {
+            hero.style.setProperty('--parallax-y', `${scrollY * 0.3}px`);
+        }
+    };
+
+    window.addEventListener('scroll', _heroParallaxHandler, { passive: true });
+}
+
+function setupHeaderScroll() {
+    const header = document.querySelector('.site-header');
+    if (!header) return;
+    let lastScroll = 0;
+
+    window.addEventListener('scroll', () => {
+        const currentScroll = window.scrollY;
+        if (currentScroll > 80) {
+            header.classList.add('header-hidden');
+            header.classList.remove('header-visible');
+        } else {
+            header.classList.remove('header-hidden');
+            header.classList.add('header-visible');
+        }
+        lastScroll = currentScroll;
+    }, { passive: true });
+}
+
+function initGenreChips() {
+    const nav = document.querySelector('.nav-links');
+    if (!nav) return;
+
+    nav.querySelectorAll('.nav-btn').forEach(btn => {
+        const genre = btn.dataset.filter;
+        if (genre && genre !== 'all' && genreLabels[genre]) {
+            btn.setAttribute('data-genre', genre);
+        }
+    });
+}
+
 /**
  * Inicialización
  */
@@ -82,9 +156,11 @@ async function init() {
 
         setupEventListeners();
         setupInfiniteScroll();
+        setupHeaderScroll();
         renderHeroSection();
         renderGenreRows();
         renderMovies();
+        initGenreChips();
 
     } catch (error) {
         console.error('Init error:', error);
@@ -159,13 +235,7 @@ async function loadCategoryMovies() {
     if (!genre || genre === 'all') return;
 
     const grid = document.getElementById('moviesGrid');
-    grid.innerHTML = `
-        <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 3rem;">
-            <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
-            <h3>Buscando películas de ${genreLabels[genre]}...</h3>
-            <p>Conectando con YouTube API</p>
-        </div>
-    `;
+    grid.innerHTML = buildSkeletonCards(6);
 
     try {
         if (!window.CineStreamDB) {
@@ -315,13 +385,7 @@ function renderMovies() {
 
     if (moviesToShow.length === 0) {
         if (allLoadedMovies.length === 0) {
-            grid.innerHTML = `
-                <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 3rem;">
-                    <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
-                    <h3>Cargando peláculas...</h3>
-                    <p>Conectando con la base de datos</p>
-                </div>
-            `;
+            grid.innerHTML = buildSkeletonCards(12);
         } else if (currentFilters.category !== 'all') {
             grid.innerHTML = `
                 <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 3rem;">
@@ -345,25 +409,49 @@ function renderMovies() {
         return;
     }
 
-    grid.innerHTML = moviesToShow.map(movie => `
-        <div class="movie-card" onclick="openPlayer('${movie.id || movie.youtubeId}')">
+    grid.innerHTML = moviesToShow.map((movie, index) => {
+        const genre = movie.genre || 'accion';
+        const ratingNum = parseFloat(movie.rating) || 0;
+        const ratingPercent = Math.round((ratingNum / 10) * 100);
+        return `
+        <div class="movie-card" data-genre="${genre}" style="--card-index: ${index}" onclick="openPlayer('${movie.id || movie.youtubeId}')">
+            <div class="card-genre-accent"></div>
             <div class="movie-poster-container">
                 <img src="${movie.poster || ''}" alt="${movie.title || ''}" class="movie-poster" loading="lazy" onerror="this.src='https://picsum.photos/400/600?random=${movie.youtubeId}'">
                 <span class="movie-quality">${movie.quality || 'HD'}</span>
                 <span class="movie-type">${typeLabels[movie.type] || 'Pelácula'}</span>
             </div>
             <div class="movie-info">
-                <h3 class="movie-title">${movie.title || 'Sin tátulo'}</h3>
+                <div class="movie-info-top">
+                    <h3 class="movie-title">${movie.title || 'Sin tátulo'}</h3>
+                    <div class="rating-gauge" style="--rating-percent: ${ratingPercent}" title="${movie.rating || 'N/A'}">${ratingNum > 0 ? ratingNum.toFixed(1) : 'N/A'}</div>
+                </div>
                 <div class="movie-meta">
                     <span>${movie.year || 'N/A'}</span>
-                    <span class="movie-rating"><i class="fas fa-star"></i> ${movie.rating || 'N/A'}</span>
                 </div>
                 <p class="movie-genre">${genreLabels[movie.genre] || ''}</p>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 
     renderPagination();
+}
+
+function buildSkeletonCards(count) {
+    let html = '';
+    for (let i = 0; i < count; i++) {
+        html += `
+            <div class="movie-card-skeleton" style="--card-index: ${i}">
+                <div class="skel-poster"></div>
+                <div class="skel-info">
+                    <div class="skel-line title"></div>
+                    <div class="skel-line meta"></div>
+                    <div class="skel-line genre"></div>
+                </div>
+            </div>
+        `;
+    }
+    return html;
 }
 
 function renderPagination() {
@@ -412,13 +500,7 @@ async function performSearch(query) {
     }
 
     // Mostrar estado de carga
-    grid.innerHTML = `
-        <div class="empty-state" style="grid-column: 1/-1; text-align: center; padding: 3rem;">
-            <i class="fas fa-search" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
-            <h3>Buscando "${query}"...</h3>
-            <p>Consultando YouTube y base de datos local</p>
-        </div>
-    `;
+    grid.innerHTML = buildSkeletonCards(6);
 
     try {
         const language = currentFilters.language || 'both';
@@ -497,13 +579,15 @@ function renderHeroSection() {
     if (!featured) return;
 
     container.className = 'hero-section';
+    container.setAttribute('data-genre', featured.genre || 'accion');
     container.innerHTML = `
         <div class="hero-backdrop" style="background-image: url('${featured.poster || ''}')"></div>
+        <div class="hero-particles" id="heroParticles"></div>
         <div class="hero-content">
             <div class="hero-badge">
                 <i class="fas fa-fire"></i> Destacada
             </div>
-            <h1 class="hero-title">${featured.title || 'Sin tátulo'}</h1>
+            <h1 class="hero-title">${featured.title || 'Sin título'}</h1>
             <div class="hero-meta">
                 <span class="hero-rating"><i class="fas fa-star"></i> ${featured.rating || 'N/A'}</span>
                 <span class="hero-dot"></span>
@@ -519,11 +603,14 @@ function renderHeroSection() {
                     <i class="fas fa-play"></i> Ver ahora
                 </button>
                 <button class="hero-btn hero-btn-info" onclick="openPlayer('${featured.id || featured.youtubeId}')">
-                    <i class="fas fa-info-circle"></i> Ms info
+                    <i class="fas fa-info-circle"></i> Más info
                 </button>
             </div>
         </div>
     `;
+
+    initHeroParticles();
+    initHeroParallax();
 }
 
 // =====================================================
@@ -676,8 +763,8 @@ function showHeroView() {
     const filters = document.querySelector('.filters');
     const pagination = document.getElementById('pagination');
 
-    if (hero) hero.style.display = '';
-    if (rows) rows.style.display = '';
+    if (hero) { hero.classList.remove('view-exit'); hero.classList.add('view-enter'); hero.style.display = ''; }
+    if (rows) { rows.classList.remove('view-exit'); rows.classList.add('view-enter'); rows.style.display = ''; }
     if (grid) grid.style.display = 'none';
     if (filters) filters.style.display = 'none';
     if (pagination) pagination.style.display = 'none';
@@ -690,9 +777,9 @@ function showGridView() {
     const filters = document.querySelector('.filters');
     const pagination = document.getElementById('pagination');
 
-    if (hero) hero.style.display = 'none';
-    if (rows) rows.style.display = 'none';
-    if (grid) grid.style.display = '';
+    if (hero) { hero.classList.remove('view-enter'); hero.classList.add('view-exit'); setTimeout(() => { hero.style.display = 'none'; }, 300); }
+    if (rows) { rows.classList.remove('view-enter'); rows.classList.add('view-exit'); setTimeout(() => { rows.style.display = 'none'; }, 300); }
+    if (grid) { grid.style.display = ''; grid.classList.add('view-enter'); }
     if (filters) filters.style.display = '';
     if (pagination) pagination.style.display = '';
 }
@@ -787,9 +874,20 @@ function openPlayer(movieId) {
     const embed = document.getElementById('youtubeEmbed');
     const placeholder = document.getElementById('videoPlaceholder');
 
+    const existingBackdrop = modal.querySelector('.player-modal-backdrop');
+    if (existingBackdrop) existingBackdrop.remove();
+    if (movie.poster) {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'player-modal-backdrop';
+        backdrop.style.backgroundImage = `url('${movie.poster}')`;
+        modal.insertBefore(backdrop, modal.firstChild);
+    }
+
     document.getElementById('playerTitle').textContent = movie.title || '';
     document.getElementById('playerYear').textContent = movie.year || '';
     document.getElementById('playerGenre').textContent = genreLabels[movie.genre] || '';
+    const ratingNum = parseFloat(movie.rating) || 0;
+    const ratingPercent = Math.round((ratingNum / 10) * 100);
     document.getElementById('playerRating').innerHTML = `<i class="fas fa-star"></i> ${movie.rating || ''}`;
     document.getElementById('playerDescription').textContent = movie.description || '';
 
@@ -814,7 +912,10 @@ function closePlayer() {
     const embed = document.getElementById('youtubeEmbed');
     embed.innerHTML = '';
     embed.style.display = 'none';
-    document.getElementById('playerModal').classList.remove('active');
+    const modal = document.getElementById('playerModal');
+    modal.classList.remove('active');
+    const backdrop = modal.querySelector('.player-modal-backdrop');
+    if (backdrop) backdrop.remove();
     document.body.style.overflow = '';
     isPlaying = false;
     currentMovieId = null;

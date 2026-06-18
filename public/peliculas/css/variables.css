@@ -152,6 +152,59 @@
     --glow-subtle: 0 0 100px rgba(212, 168, 67, 0.06);
     --glow-text: 0 0 20px rgba(212, 168, 67, 0.4);
     --grain-opacity: 0.03;
+
+    /* ═══════════════════════════════════════════════════════════
+       PALETA DE COLORES POR GÉNERO
+       ═══════════════════════════════════════════════════════════ */
+    --genre-accion: #ef4444;
+    --genre-accion-glow: rgba(239, 68, 68, 0.35);
+    --genre-accion-subtle: rgba(239, 68, 68, 0.08);
+    --genre-comedia: #f59e0b;
+    --genre-comedia-glow: rgba(245, 158, 11, 0.35);
+    --genre-comedia-subtle: rgba(245, 158, 11, 0.08);
+    --genre-drama: #8b5cf6;
+    --genre-drama-glow: rgba(139, 92, 246, 0.35);
+    --genre-drama-subtle: rgba(139, 92, 246, 0.08);
+    --genre-terror: #dc2626;
+    --genre-terror-glow: rgba(220, 38, 38, 0.35);
+    --genre-terror-subtle: rgba(220, 38, 38, 0.08);
+    --genre-cienciaficcion: #06b6d4;
+    --genre-cienciaficcion-glow: rgba(6, 182, 212, 0.35);
+    --genre-cienciaficcion-subtle: rgba(6, 182, 212, 0.08);
+    --genre-anime: #f472b6;
+    --genre-anime-glow: rgba(244, 114, 182, 0.35);
+    --genre-anime-subtle: rgba(244, 114, 182, 0.08);
+    --genre-romance: #ec4899;
+    --genre-romance-glow: rgba(236, 72, 153, 0.35);
+    --genre-romance-subtle: rgba(236, 72, 153, 0.08);
+    --genre-thriller: #f97316;
+    --genre-thriller-glow: rgba(249, 115, 22, 0.35);
+    --genre-thriller-subtle: rgba(249, 115, 22, 0.08);
+    --genre-documental: #10b981;
+    --genre-documental-glow: rgba(16, 185, 129, 0.35);
+    --genre-documental-subtle: rgba(16, 185, 129, 0.08);
+    --genre-aventura: #22c55e;
+    --genre-aventura-glow: rgba(34, 197, 94, 0.35);
+    --genre-aventura-subtle: rgba(34, 197, 94, 0.08);
+    --genre-fantasia: #a855f7;
+    --genre-fantasia-glow: rgba(168, 85, 247, 0.35);
+    --genre-fantasia-subtle: rgba(168, 85, 247, 0.08);
+    --genre-misterio: #6366f1;
+    --genre-misterio-glow: rgba(99, 102, 241, 0.35);
+    --genre-misterio-subtle: rgba(99, 102, 241, 0.08);
+    --genre-busqueda: #14b8a6;
+    --genre-busqueda-glow: rgba(20, 184, 166, 0.35);
+    --genre-busqueda-subtle: rgba(20, 184, 166, 0.08);
+    --genre-default: #d4a843;
+    --genre-default-glow: rgba(212, 168, 67, 0.35);
+    --genre-default-subtle: rgba(212, 168, 67, 0.08);
+
+    /* ═══════════════════════════════════════════════════════════
+       ANIMACIONES AVANZADAS
+       ═══════════════════════════════════════════════════════════ */
+    --stagger-delay: 0.06s;
+    --skeleton-shimmer-speed: 2s;
+    --particle-count: 30;
 }
 
 /* Scale tipográfica */

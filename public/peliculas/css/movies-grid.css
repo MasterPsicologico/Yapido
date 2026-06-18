@@ -1,10 +1,44 @@
 /* ============================================================
-   CINESTREAM - Movies Grid Styles (Cinema Noir Edition)
-   Layout premium con espaciado refinado
+   CINESTREAM - Movies Grid Styles (Polychromatic Edition)
+   Layout con staggered animation, skeleton states, smooth transitions
    ============================================================ */
 
 /* Grid principal de películas */
 .movies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1.75rem;
+    padding: 1.5rem 0 3rem;
+    transition: opacity 0.4s var(--ease-out-quart);
+}
+
+.movies-grid.fade-out {
+    opacity: 0;
+}
+
+.movies-grid.fade-in {
+    opacity: 1;
+}
+
+/* ── Staggered card animations ──────────────────────── */
+.movie-card {
+    animation: cardStaggerIn 0.6s var(--ease-out-expo) both;
+    animation-delay: calc(var(--card-index, 0) * var(--stagger-delay));
+}
+
+@keyframes cardStaggerIn {
+    from {
+        opacity: 0;
+        transform: translateY(35px) scale(0.94);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ── Skeleton grid (placeholder mientras carga) ────── */
+.skeleton-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 1.75rem;
@@ -41,6 +75,11 @@
     max-width: 400px;
     margin: 0 auto;
     line-height: 1.6;
+}
+
+/* ── Empty state con género acento ──────────────────── */
+.empty-state.action-empty {
+    background: radial-gradient(ellipse at center, var(--genre-accion-subtle) 0%, transparent 60%);
 }
 
 /* Loading spinner */
@@ -81,9 +120,34 @@
     border-width: 2px;
 }
 
+/* ── View transition wrapper ───────────────────────── */
+.view-transition-enter {
+    animation: viewFadeIn 0.4s var(--ease-out-quart) both;
+}
+
+.view-transition-exit {
+    animation: viewFadeOut 0.25s var(--ease-out-quart) both;
+}
+
+@keyframes viewFadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes viewFadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-10px); }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .movies-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 1.25rem;
+        padding: 1rem 0 2rem;
+    }
+
+    .skeleton-grid {
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         gap: 1.25rem;
         padding: 1rem 0 2rem;
@@ -100,11 +164,24 @@
     .empty-state h3 {
         font-size: 1.25rem;
     }
+
+    .movie-card {
+        animation-delay: calc(var(--card-index, 0) * 0.04s) !important;
+    }
 }
 
 @media (max-width: 480px) {
     .movies-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
+    }
+
+    .skeleton-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .movie-card {
+        animation-delay: calc(var(--card-index, 0) * 0.03s) !important;
     }
 }
