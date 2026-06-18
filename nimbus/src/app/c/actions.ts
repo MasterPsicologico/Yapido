@@ -29,12 +29,18 @@ const expertRoles = [
 ];
 
 export async function determineAnchorRole(firstMessage: string): Promise<string> {
+    // Clean the message of any image references
+    const cleanMessage = firstMessage
+      .replace(/image\.png/gi, '[imagen]')
+      .replace(/\/images\/[^\s]*/gi, '[imagen]')
+      .replace(/https?:\/\/[^\s]*\.(png|jpg|jpeg|gif|webp)[^\s]*/gi, '[imagen]');
+
     const prompt = `Eres un sistema de enrutamiento de IA. Tu única tarea es leer el siguiente mensaje de un usuario y decidir cuál de los siguientes roles de experto es el más adecuado para liderar esta conversación. Responde únicamente con el nombre del rol.
 
 **Reglas de Enrutamiento Especiales:**
 - Si ningún otro rol coincide, elige "El Asistente General".
 
-Mensaje del usuario: "${firstMessage}"
+Mensaje del usuario: "${cleanMessage}"
 
 Lista de roles de experto:
 - ${expertRoles.join('\n- ')}
@@ -42,7 +48,10 @@ Lista de roles de experto:
 Rol más adecuado:`;
 
     try {
-        const { text } = await ai.generate({ prompt });
+        const { text } = await ai.generate({
+          model: 'googleai/gemini-2.5-flash',
+          prompt
+        });
         const role = text.trim().replace(/Rol más adecuado: /g, '').replace(/[\n*]/g, '');
         if (expertRoles.includes(role)) return role;
         return 'El Asistente General';
