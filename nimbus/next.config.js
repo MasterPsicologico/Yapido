@@ -7,9 +7,12 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  serverActions: {
-    bodySizeLimit: '5mb',
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '5mb',
+    },
   },
+  outputFileTracingRoot: __dirname,
   transpilePackages: ['three'],
   images: {
     remotePatterns: [
