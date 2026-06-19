@@ -1,6 +1,6 @@
 'use server';
 
-import { ai } from '@/ai/genkit';
+import { ai, generateWithFallback } from '@/ai/genkit';
 import { initialPromptSuggestionFlow } from '@/ai/flows/initial-prompt-suggestion';
 import { generateChatTitle as genTitle } from '@/ai/flows/generate-chat-title';
 import { summarizeChatHistory as genSummary } from '@/ai/flows/summarize-chat-history';
@@ -48,10 +48,7 @@ Lista de roles de experto:
 Rol más adecuado:`;
 
     try {
-        const { text } = await ai.generate({
-          model: 'googleai/gemini-2.5-flash',
-          prompt
-        });
+        const text = await generateWithFallback({ prompt });
         const role = text.trim().replace(/Rol más adecuado: /g, '').replace(/[\n*]/g, '');
         if (expertRoles.includes(role)) return role;
         return 'El Asistente General';
@@ -130,10 +127,7 @@ ${conversationContext}
 Asistente:`;
 
   try {
-    const { text } = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
-      prompt: expertAgentSystemPrompt,
-    });
+    const text = await generateWithFallback({ prompt: expertAgentSystemPrompt });
     return { response: text || "No pude generar una respuesta en este momento.", newRole };
   } catch (error: any) {
     console.error("[Nimbus] Google AI error:", error?.message || error);
