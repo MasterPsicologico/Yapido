@@ -28,15 +28,22 @@ export const ai = genkit({
  * Primary: Groq (high quota, fast)
  * Fallback: Google Gemini (low free-tier quota)
  */
-export async function generateWithFallback(options: { prompt: string; model?: string }): Promise<string> {
+export async function generateWithFallback(options: { prompt: string; model?: string; config?: any }): Promise<string> {
   const models = [
-    'groq/llama-3.3-70b-versatile',
-    ...(process.env.GOOGLE_GENAI_API_KEY ? ['googleai/gemini-2.5-flash'] : []),
+    options.model || defaultModel,
+    ...(defaultModel.startsWith('groq') && process.env.GOOGLE_GENAI_API_KEY ? ['googleai/gemini-2.5-flash'] : []),
+    ...(defaultModel.startsWith('google') && process.env.GROQ_API_KEY ? ['groq/llama-3.3-70b-versatile'] : []),
   ];
 
-  for (const model of models) {
+  const uniqueModels = [...new Set(models)];
+
+  for (const model of uniqueModels) {
     try {
-      const { text } = await ai.generate({ prompt: options.prompt, model });
+      const { text } = await ai.generate({
+        prompt: options.prompt,
+        model,
+        ...(options.config ? { config: options.config } : {}),
+      });
       if (text) return text;
     } catch (error: any) {
       console.warn(`[Nimbus] Model ${model} failed:`, error?.message?.substring(0, 150));
