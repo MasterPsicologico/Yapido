@@ -24,6 +24,7 @@ import {
 
 import { useAuth, useFirestore, useDocument } from '@/firebase';
 import type { Chat, Message, CachedProfile, ProfileData } from '@/lib/types';
+import { loadProfile as loadProfileFromFirestore } from '@/lib/profile-service';
 import {
   Sidebar,
   SidebarInset,
@@ -121,23 +122,42 @@ function ChatPage() {
     setIsClient(true);
   }, []);
 
-  const loadProfile = useCallback(() => {
-    if (user) {
-      const storageKey = `psych-profile-${user.uid}`;
-      const cachedItem = localStorage.getItem(storageKey);
-      if (cachedItem) {
-        try {
-          const data: CachedProfile = JSON.parse(cachedItem);
-          setProfile(data.profile);
-        } catch (e) {
-          console.error("Failed to parse cached profile", e);
-          setProfile(null);
-        }
-      } else {
+  const loadProfile = useCallback(async () => {
+    if (!user || !firestore) return;
+    const storageKey = `psych-profile-${user.uid}`;
+
+    try {
+      // 1. Try Firestore (source of truth)
+      const profileMain = await loadProfileFromFirestore(firestore, user.uid);
+      if (profileMain) {
+        setProfile(profileMain.latestProfile);
+        // Sync to localStorage as fast cache
+        const cacheData: CachedProfile = {
+          profile: profileMain.latestProfile,
+          lastMessageTimestamp: profileMain.lastMessageTimestamp,
+          currentVersion: profileMain.currentVersion,
+        };
+        localStorage.setItem(storageKey, JSON.stringify(cacheData));
+        return;
+      }
+    } catch (e) {
+      console.error('Error loading profile from Firestore, falling back to localStorage', e);
+    }
+
+    // 2. Fallback to localStorage
+    const cachedItem = localStorage.getItem(storageKey);
+    if (cachedItem) {
+      try {
+        const data: CachedProfile = JSON.parse(cachedItem);
+        setProfile(data.profile);
+      } catch (e) {
+        console.error("Failed to parse cached profile", e);
         setProfile(null);
       }
+    } else {
+      setProfile(null);
     }
-  }, [user]);
+  }, [user, firestore]);
 
   useEffect(() => {
     loadProfile();
