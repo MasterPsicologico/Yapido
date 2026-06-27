@@ -112,12 +112,10 @@ function ChatSidebar({
   };
   
   const navItems = [
-    { href: "/ia-vs-ia", icon: Atom, label: "IA vs IA", id: 'ia-vs-ia-nav', bgClassName: 'bg-nav-syi' },
-    { href: "/creator", icon: PenSquare, label: "GICI", id: 'gici-nav', bgClassName: 'bg-nav-syi' },
-    { href: "/profile", icon: UserCircle, label: "Perfil Psicológico", id: 'profile-nav', bgClassName: 'bg-nav-profile' },
-    { href: "/recorder", icon: Music, label: "Grabadora Psicológica", id: 'recorder-nav', bgClassName: 'bg-nav-recorder' },
-    { href: "/gym", icon: Dumbbell, label: "Gimnasio Emocional", id: 'gym-nav', bgClassName: 'bg-nav-gym' },
-    { href: "/dreams", icon: Star, label: "Portal de Sueños", id: 'dreams-nav', bgClassName: 'bg-nav-dreams' },
+    { href: "/profile", icon: UserCircle, label: "Perfil Psicológico", subtitle: "Análisis Profundo", id: 'profile-nav', bgClassName: 'bg-nav-profile' },
+    { href: "/recorder", icon: Music, label: "Grabadora Psicológica", subtitle: "Sesiones de Voz", id: 'recorder-nav', bgClassName: 'bg-nav-recorder' },
+    { href: "/gym", icon: Dumbbell, label: "Gimnasio Emocional", subtitle: "Simulaciones", id: 'gym-nav', bgClassName: 'bg-nav-gym' },
+    { href: "/dreams", icon: Star, label: "Portal de Sueños", subtitle: "Interpretación", id: 'dreams-nav', bgClassName: 'bg-nav-dreams' },
   ].filter(item => !(item as any).adminOnly || (userRoles && userRoles.includes('admin')));
 
   return (
@@ -150,7 +148,7 @@ function ChatSidebar({
                 </div>
               </button>
               {user && (
-                <div className="space-y-1">
+                <div className="space-y-2 px-1">
                     {navItems.map((item) => (
                     item && (
                         <Link key={item.href} href={item.href} id={item.id} passHref prefetch={true}>
@@ -161,9 +159,18 @@ function ChatSidebar({
                             pathname.startsWith(item.href) && 'active'
                             )}
                         >
-                            <div className="nav-content">
-                            <item.icon className="h-5 w-5" />
-                            <span className="block whitespace-normal">{item.label}</span>
+                            <div className="nav-card">
+                                <div className="nav-active-bar" />
+                                <div className="nav-corner-tl" />
+                                <div className="nav-icon-wrap">
+                                    <span className="nav-symbol" />
+                                </div>
+                                <div className="nav-content">
+                                    <span className="nav-title">{item.label}</span>
+                                    <span className="nav-subtitle">{item.subtitle}</span>
+                                </div>
+                                <div className="nav-corner" />
+                                <div className="nav-bottom-line" />
                             </div>
                         </div>
                         </Link>

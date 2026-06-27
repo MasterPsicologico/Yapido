@@ -10,17 +10,6 @@ export default {
   ],
   theme: {
     extend: {
-      backgroundImage: {
-        'nav-profile': "url('https://images.unsplash.com/photo-1505628346881-b72b27e84530?q=80&w=1974&auto=format&fit=crop')",
-        'nav-diagnostic': "url('https://images.unsplash.com/photo-1579547945412-480251735165?q=80&w=2070&auto=format&fit=crop')",
-        'nav-recorder': "url('https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=2070&auto=format&fit=crop')",
-        'nav-gym': "url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop')",
-        'nav-dreams': "url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=2113&auto=format&fit=crop')",
-        'nav-syi': "url('https://images.unsplash.com/photo-1532187863486-abf9db50b692?q=80&w=2070&auto=format&fit=crop')",
-        'nav-blog': "url('https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=2070&auto=format&fit=crop')",
-        'nav-marketplace': "url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop')",
-        'nav-torah': "url('https://images.unsplash.com/photo-1590412204786-8b291419f935?q=80&w=1964&auto=format&fit=crop')",
-      },
       fontFamily: {
         body: ['var(--font-body)', 'sans-serif'],
         headline: ['var(--font-body)', 'sans-serif'],

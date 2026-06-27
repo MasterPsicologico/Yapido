@@ -14,7 +14,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { AppLogo } from '../logo';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { useAuth } from '@/firebase';
 import AuthRequiredPanel from './AuthRequiredPanel';
 import ThemeToggle from '../ThemeToggle';
@@ -23,13 +22,6 @@ import ThemeToggle from '../ThemeToggle';
 interface EmptyChatProps {
   createChat: (firstMessage: Omit<Message, 'id'>) => Promise<string | undefined>;
 }
-
-const colorSchemes = [
-    { primary: '45 92% 51%', accent: '190 80% 70%', chart1: '210 20% 98%' }, // Gold, Cyan, White
-    { primary: '280 80% 70%', accent: '340 80% 70%', chart1: '190 80% 70%' }, // Purple, Pink, Cyan
-    { primary: '150 80% 60%', accent: '200 90% 70%', chart1: '100 80% 80%' }, // Green, Sky Blue, Light Green
-    { primary: '0 90% 70%', accent: '45 90% 65%', chart1: '60 90% 70%' },   // Red, Gold, Yellow
-];
 
 export default function EmptyChat({ createChat }: EmptyChatProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -101,17 +93,17 @@ export default function EmptyChat({ createChat }: EmptyChatProps) {
   };
 
   return (
-    <div className="flex flex-col h-full relative">
+    <div className="brutal-page flex flex-col h-full relative">
       <AnimatePresence>
         {showAuthModal && (
             <AuthRequiredPanel onClose={() => setShowAuthModal(false)} />
         )}
       </AnimatePresence>
 
-      <header className="flex h-14 items-center justify-between p-2 md:p-4 border-b">
+      <header className="brutal-header flex h-14 items-center justify-between p-2 md:p-4 border-b border-[hsl(220,15%,18%)]">
         <div className="flex items-center gap-2">
           {isMobile && <SidebarTrigger />}
-          <h2 className="text-lg font-semibold tracking-wider">
+          <h2 className="text-lg font-bold tracking-[0.2em] uppercase text-[hsl(220,10%,90%)]">
             Nuevo Chat
           </h2>
         </div>
@@ -119,26 +111,26 @@ export default function EmptyChat({ createChat }: EmptyChatProps) {
           <ThemeToggle />
           <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="text-[hsl(220,10%,60%)] hover:text-[hsl(220,10%,90%)] hover:bg-[hsl(220,15%,15%)]">
                       <Menu className="h-5 w-5" />
                       <span className="sr-only">Abrir menú de políticas</span>
                   </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="bg-[hsl(220,15%,12%)] border-[hsl(220,15%,18%)]">
                   <DropdownMenuItem asChild>
-                      <Link href="/legal/about">Quiénes Somos</Link>
+                      <Link href="/legal/about" className="text-[hsl(220,10%,80%)] hover:text-[hsl(220,10%,95%)] hover:bg-[hsl(220,15%,18%]">Quiénes Somos</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                      <Link href="/legal/contact">Contacto</Link>
+                      <Link href="/legal/contact" className="text-[hsl(220,10%,80%)] hover:text-[hsl(220,10%,95%)] hover:bg-[hsl(220,15%,18%]">Contacto</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                      <Link href="/legal/terms">Términos y Condiciones</Link>
+                      <Link href="/legal/terms" className="text-[hsl(220,10%,80%)] hover:text-[hsl(220,10%,95%)] hover:bg-[hsl(220,15%,18%]">Términos y Condiciones</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                      <Link href="/legal/privacy">Política de Privacidad</Link>
+                      <Link href="/legal/privacy" className="text-[hsl(220,10%,80%)] hover:text-[hsl(220,10%,95%)] hover:bg-[hsl(220,15%,18%]">Política de Privacidad</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                      <Link href="/legal/disclaimer">Descargo de Responsabilidad</Link>
+                      <Link href="/legal/disclaimer" className="text-[hsl(220,10%,80%)] hover:text-[hsl(220,10%,95%)] hover:bg-[hsl(220,15%,18%)]">Descargo de Responsabilidad</Link>
                   </DropdownMenuItem>
               </DropdownMenuContent>
           </DropdownMenu>
@@ -146,73 +138,71 @@ export default function EmptyChat({ createChat }: EmptyChatProps) {
       </header>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <ScrollArea className="flex-1">
-          <div className="p-4">
+        <ScrollArea className="flex-1 brutal-scroll">
+          <div className="p-4 relative z-[1]">
             <div className="grid lg:grid-cols-2 gap-8 items-center max-w-5xl mx-auto">
                 <motion.div
                   initial={{ opacity: 0, x: -50 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, ease: 'easeOut' }}
                 >
-                    <Card className="bg-card/50 border-transparent relative overflow-hidden rounded-2xl">
-                       <div className="animated-border" />
-                      <CardContent className="p-8 text-center relative">
-                         <motion.div 
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
-                            className="relative mb-4 inline-block"
-                        >
-                            <AppLogo className="w-16 h-16 text-primary" />
-                             <motion.div
-                                className="absolute inset-0 -z-10"
-                                animate={{
-                                    scale: [1, 1.2, 1],
-                                    opacity: [0, 0.4, 0]
-                                }}
-                                transition={{
-                                    duration: 3,
-                                    repeat: Infinity,
-                                    ease: 'easeInOut'
-                                }}
-                                style={{
-                                    borderRadius: '50%',
-                                    backgroundColor: 'hsl(var(--primary))',
-                                    filter: 'blur(20px)'
-                                }}
-                             />
-                        </motion.div>
-                         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-                            Bienvenido a Nimbus
-                          </h1>
-                      </CardContent>
-                    </Card>
+                    <div className="brutal-welcome p-8 text-center relative">
+                       <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+                          className="relative mb-4 inline-block"
+                      >
+                          <AppLogo className="w-16 h-16 text-[#22d3ee]" />
+                           <motion.div
+                              className="absolute inset-0 -z-10"
+                              animate={{
+                                  scale: [1, 1.2, 1],
+                                  opacity: [0, 0.4, 0]
+                              }}
+                              transition={{
+                                  duration: 3,
+                                  repeat: Infinity,
+                                  ease: 'easeInOut'
+                              }}
+                              style={{
+                                  borderRadius: '50%',
+                                  backgroundColor: 'hsl(190, 80%, 50%)',
+                                  filter: 'blur(20px)'
+                              }}
+                           />
+                      </motion.div>
+                       <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[hsl(220,10%,95%)]">
+                          Bienvenido a Nimbus
+                        </h1>
+                    </div>
                 </motion.div>
                 <motion.div
                   initial={{ opacity: 0, x: 50 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 0.1, ease: 'easeOut' }}
-                  className="prose prose-lg dark:prose-invert max-w-none"
                 >
-                    <h2 className="text-primary flex items-center gap-3"><BrainCircuit className="w-7 h-7" /> Tu Espejo Inteligente</h2>
-                    <p className="text-muted-foreground">
-                      No soy un simple chatbot. Soy tu <strong className="text-foreground">confidente IA</strong>, un espejo diseñado para reflejar y descifrar la complejidad de tu mente.
-                    </p>
-                     <p className="text-muted-foreground">
-                       Habla con naturalidad, expresa tus pensamientos, ansiedades o ideas. Juntos, construiremos un <strong className="text-foreground">cianotipo de tu psique</strong>, un mapa de tu mundo interior que te revelará patrones, fortalezas y el camino hacia tu crecimiento.
-                    </p>
+                    <div className="brutal-section">
+                        <h2><BrainCircuit className="w-6 h-6 text-[#22d3ee]" /> Tu Espejo Inteligente</h2>
+                        <p>
+                          No soy un simple chatbot. Soy tu <strong>confidente IA</strong>, un espejo diseñado para reflejar y descifrar la complejidad de tu mente.
+                        </p>
+                         <p style={{ marginTop: '1rem' }}>
+                          Habla con naturalidad, expresa tus pensamientos, ansiedades o ideas. Juntos, construiremos un <strong>cianotipo de tu psique</strong>, un mapa de tu mundo interior que te revelará patrones, fortalezas y el camino hacia tu crecimiento.
+                        </p>
+                    </div>
                 </motion.div>
             </div>
 
-            <div className="max-w-5xl mx-auto mt-8">
-              <h3 className="text-lg font-semibold text-center mb-4 flex items-center justify-center gap-2 text-muted-foreground"><Sparkles className="w-5 h-5 text-accent" />Inicia la Conversación</h3>
+            <div className="max-w-5xl mx-auto mt-12">
+              <div className="brutal-label"><Sparkles className="w-4 h-4 text-[#22d3ee]" />Inicia la Conversación</div>
               {isLoading && suggestions.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <div className="flex items-center justify-center h-full py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-[#22d3ee]" />
                 </div>
               ) : (
                 <motion.div
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                  className="brutal-suggestion-grid"
                   variants={containerVariants}
                   initial="initial"
                   animate="animate"
@@ -220,7 +210,6 @@ export default function EmptyChat({ createChat }: EmptyChatProps) {
                   <AnimatePresence>
                     {suggestions.map((prompt, index) => {
                       const isProcessing = processingSuggestion === prompt.text;
-                      const colors = colorSchemes[index % colorSchemes.length];
                       return (
                       <motion.div
                         key={prompt.text + index}
@@ -231,35 +220,27 @@ export default function EmptyChat({ createChat }: EmptyChatProps) {
                         exit={{ opacity: 0, scale: 0.9 }}
                         layout
                       >
-                        <Button
-                          variant="outline"
-                          className="h-auto w-full text-left justify-start p-4 whitespace-normal bg-card/50 hover:bg-card/80 text-base relative overflow-hidden rounded-2xl border-transparent text-foreground hover:text-foreground"
+                        <button
+                          className="brutal-suggestion-btn"
                           onClick={() => handleCreateChat(prompt.text)}
                           disabled={!!processingSuggestion}
                         >
-                          <div
-                            className="animated-border"
-                            style={{
-                                '--primary': colors.primary,
-                                '--accent': colors.accent,
-                                '--chart-1': colors.chart1,
-                            } as React.CSSProperties}
-                          />
                           {isProcessing && (
-                            <motion.div 
-                              className="absolute inset-0 bg-primary/80"
+                            <motion.div
+                              className="absolute inset-0 opacity-80"
                               initial={{ width: '0%' }}
                               animate={{ width: '100%' }}
                               transition={{ duration: 2, ease: 'linear' }}
+                              style={{ background: `hsl(var(--btn-accent-hue, 190), 80%, 50% / 0.2)` }}
                             />
                           )}
-                          <span className="relative z-10 flex items-center w-full">
+                          <span>
                             {isProcessing && (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
                             )}
                             <span className="flex-1">{isProcessing ? 'Procesando...' : prompt.text}</span>
                           </span>
-                        </Button>
+                        </button>
                       </motion.div>
                     )})}
                   </AnimatePresence>
@@ -270,7 +251,7 @@ export default function EmptyChat({ createChat }: EmptyChatProps) {
         </ScrollArea>
       </div>
 
-      <footer className="shrink-0 px-2 py-4 md:px-4 md:py-4 border-t bg-background/95 backdrop-blur-sm">
+      <footer className="shrink-0 px-2 py-4 md:px-4 md:py-4 border-t border-[hsl(220,15%,18%)] bg-[hsl(220,20%,6%)]">
         <ChatInput
           ref={inputRef}
           onSendMessage={handleCreateChat}
