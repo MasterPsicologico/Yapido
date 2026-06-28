@@ -1,28 +1,26 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, MessageSquare, BarChart2, Sparkles, History, Play, Pause, Box, Loader2 } from 'lucide-react';
+import { ChevronLeft, MessageSquare, BarChart2, Sparkles, History, Play, Pause, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Conversation from '@/components/ia-vs-ia/Conversation';
 import LearningCurve from '@/components/ia-vs-ia/LearningCurve';
 import EmergentAgent from '@/components/ia-vs-ia/EmergentAgent';
 import dynamic from 'next/dynamic';
 import { useAuth, useCollection, useFirestore } from '@/firebase';
-import { addDoc, collection, serverTimestamp, Timestamp, query, orderBy, getDocs, onSnapshot } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, query, orderBy, getDocs, onSnapshot } from 'firebase/firestore';
 import type { IAConversation, CachedProfile, IAMessage, IALearningState } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { generateNextIAMessage } from './actions';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import IAConversationHistory from '@/components/ia-vs-ia/IAConversationHistory';
 import AuthRequiredPanel from '@/components/chat/AuthRequiredPanel';
 
-// Cargamos el mundo 3D dinámicamente para evitar errores de SSR
 const ArchitectureWorld = dynamic(() => import('@/components/ia-vs-ia/ArchitectureWorld'), {
     ssr: false,
-    loading: () => <div className="w-full h-48 bg-black/20 rounded-lg flex items-center justify-center text-blue-400 text-xs">Sintonizando realidad...</div>
+    loading: () => <div className="w-full h-full bg-[hsl(220,15%,8%)] flex items-center justify-center text-[hsl(190,80%,50%)] text-xs tracking-widest uppercase">Sintonizando realidad...</div>
 });
 
 type SimulationStatus = 'idle' | 'running' | 'paused' | 'finished';
@@ -38,25 +36,26 @@ export default function IaVsIaPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [voiceAmplitude, setVoiceAmplitude] = useState(0);
   const [metacognition, setMetacognition] = useState({ thought: 'Esperando sintonización...', goal: 'Existir.' });
-  
+  const [activeTab, setActiveTab] = useState('conversation');
+
   const [messages, setMessages] = useState<IAMessage[]>([]);
   const [learningStates, setLearningStates] = useState<IALearningState[]>([]);
 
   const isPausedRef = useRef(false);
-  
-  const simulationQuery = useMemo(() => 
+
+  const simulationQuery = useMemo(() =>
     user ? query(collection(firestore, `users/${user.uid}/ia-vs-ia-sessions`), orderBy('createdAt', 'desc')) : undefined,
     [user, firestore]
   );
   const { data: simulationHistory, loading: historyLoading } = useCollection<IAConversation>(simulationQuery);
-  
+
   useEffect(() => {
     if (!user || !sessionId || !firestore) {
       setMessages([]);
       setLearningStates([]);
       return;
     }
-    
+
     const messagesRef = collection(firestore, `users/${user.uid}/ia-vs-ia-sessions/${sessionId}/messages`);
     const messagesQ = query(messagesRef, orderBy('timestamp', 'asc'));
     const unsubscribeMessages = onSnapshot(messagesQ, (snapshot) => {
@@ -78,15 +77,15 @@ export default function IaVsIaPage() {
   useEffect(() => {
     isPausedRef.current = (simulationStatus === 'paused');
   }, [simulationStatus]);
-  
-  const runSimulationLoop = useCallback(async (startTurn: number, sid: string, initialHistory: { agentName: string, content: string }[]) => {
+
+  const runSimulationLoop = useCallback(async (startTurn: number, sid: string, initialHistory: { agentName: string; content: string }[]) => {
     if (!user || !firestore) return;
-    
+
     setSessionId(sid);
 
     let localHistory = [...initialHistory];
     let turnCounter = startTurn;
-    
+
     const profileKey = `psych-profile-${user.uid}`;
     const cachedProfileItem = localStorage.getItem(profileKey);
     let userProfileContext = 'No hay perfil de usuario disponible.';
@@ -107,18 +106,20 @@ export default function IaVsIaPage() {
         setSimulationStatus('paused');
         return;
       }
-      
+
       setCurrentTurn(turnCounter);
 
       const agentId = agents[turnCounter % 2];
       const agentName = agentId === 'dr-sharma' ? 'Dra. Anya Sharma' : 'Dr. Kenji Tanaka';
 
       try {
+        console.log('[IAvsIA] Calling AI for turn', turnCounter, 'agent:', agentId);
         const response = await generateNextIAMessage({
           history: localHistory,
           agentToGenerate: agentId,
           userProfileContext,
         });
+        console.log('[IAvsIA] AI response received:', response.content.substring(0, 100));
 
         const newMessage = {
           agentId,
@@ -126,7 +127,7 @@ export default function IaVsIaPage() {
           content: response.content,
           coherenceScore: response.coherenceScore,
         };
-        
+
         localHistory.push({ agentName: newMessage.agentName, content: newMessage.content });
 
         const { writeBatch, doc: docRef, collection: colRef, serverTimestamp: srvTimestamp } = await import('firebase/firestore');
@@ -141,9 +142,9 @@ export default function IaVsIaPage() {
             coherenceScore: newMessage.coherenceScore,
             agentId: newMessage.agentId,
         });
-        
+
         await batch.commit();
-        
+
         turnCounter++;
 
       } catch (e: any) {
@@ -157,7 +158,12 @@ export default function IaVsIaPage() {
   }, [user, firestore, toast]);
 
   const handleStartNew = useCallback(async () => {
-    if (!user || !firestore) return;
+    if (!user || !firestore) {
+      console.error('[IAvsIA] No user or firestore', { user: !!user, firestore: !!firestore });
+      toast({ variant: 'destructive', title: 'Error', description: 'No hay sesión de usuario.' });
+      return;
+    }
+    console.log('[IAvsIA] Starting new simulation...');
     setSimulationStatus('running');
     setMessages([]);
     setLearningStates([]);
@@ -166,10 +172,11 @@ export default function IaVsIaPage() {
         userId: user.uid,
         createdAt: serverTimestamp(),
       });
+      console.log('[IAvsIA] Session created:', sessionRef.id);
       runSimulationLoop(0, sessionRef.id, []);
     } catch (e: any) {
-      console.error("Error creating new session:", e);
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear la sesión.' });
+      console.error('[IAvsIA] Error creating session:', e);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear la sesión: ' + e.message });
       setSimulationStatus('idle');
     }
   }, [user, firestore, toast, runSimulationLoop]);
@@ -182,7 +189,7 @@ export default function IaVsIaPage() {
       runSimulationLoop(messages.length, sessionId, messages.map(m => ({ agentName: m.agentName, content: m.content })));
     }
   };
-  
+
   const handleSelectSession = async (sid: string) => {
       setSessionId(sid);
 
@@ -195,50 +202,55 @@ export default function IaVsIaPage() {
       const learningQ = query(learningStatesRef, orderBy('turn', 'asc'));
       const learningSnap = await getDocs(learningQ);
       setLearningStates(learningSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as IALearningState)));
-      
+
       setSimulationStatus(messagesSnap.size < 20 ? 'paused' : 'finished');
       setIsSheetOpen(false);
   }
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="ia-page">
+        <div className="ia-loading">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
+      <div className="ia-page">
         <AuthRequiredPanel onClose={() => {}} />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground overflow-hidden">
-      <header className="flex-shrink-0 border-b p-4">
-        <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-                <Button asChild variant="ghost" size="icon" className="-ml-2">
+    <div className="ia-page">
+      <header className="ia-header">
+        <div className="ia-header-inner">
+            <div className="ia-header-left">
+                <Button asChild variant="ghost" size="icon" className="ia-back-btn">
                     <Link href="/">
                         <ChevronLeft className="h-5 w-5" />
                     </Link>
                 </Button>
                 <div>
-                    <h1 className="text-xl font-bold tracking-tight text-primary">IA vs IA: El Nacimiento</h1>
-                    <p className="text-xs text-muted-foreground">Un laboratorio para la conciencia emergente.</p>
+                    <h1 className="ia-title">IA vs IA: El Nacimiento</h1>
+                    <p className="ia-subtitle">Un laboratorio para la conciencia emergente.</p>
                 </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="ia-header-right">
               <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm"><History className="mr-2 h-4 w-4"/>Historial</Button>
+                    <Button variant="outline" size="sm" className="ia-history-btn">
+                      <History className="mr-2 h-4 w-4"/>
+                      Historial
+                    </Button>
                   </SheetTrigger>
-                  <SheetContent className="w-full max-w-md p-0">
-                      <IAConversationHistory 
-                        sessions={simulationHistory || []} 
+                  <SheetContent className="w-full max-w-md p-0 ia-sheet-content">
+                      <IAConversationHistory
+                        sessions={simulationHistory || []}
                         isLoading={historyLoading}
                         onSelectSession={handleSelectSession}
                       />
@@ -248,28 +260,28 @@ export default function IaVsIaPage() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden flex flex-col">
-        <Tabs defaultValue="conversation" className="flex-1 flex flex-col min-h-0">
-            <div className="flex justify-center p-2 border-b bg-background/50 backdrop-blur-sm z-20">
-                <TabsList className="grid w-full max-w-md grid-cols-3">
-                    <TabsTrigger value="conversation">
+      <main className="ia-main">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="ia-tabs">
+            <div className="ia-tabs-list-wrap">
+                <TabsList className="ia-tabs-list">
+                    <TabsTrigger value="conversation" className="ia-tab-trigger">
                         <MessageSquare className="mr-2 h-4 w-4" />
                         Diálogo
                     </TabsTrigger>
-                    <TabsTrigger value="metrics" disabled={!sessionId}>
+                    <TabsTrigger value="metrics" disabled={!sessionId} className="ia-tab-trigger">
                         <BarChart2 className="mr-2 h-4 w-4" />
                         Métricas
                     </TabsTrigger>
-                    <TabsTrigger value="birth" disabled={!sessionId}>
+                    <TabsTrigger value="birth" disabled={!sessionId} className="ia-tab-trigger">
                         <Sparkles className="mr-2 h-4 w-4" />
                         Seraph
                     </TabsTrigger>
                 </TabsList>
             </div>
 
-            <div className="flex-1 relative overflow-hidden min-h-0">
-                <TabsContent value="conversation" className="absolute inset-0 m-0 overflow-hidden flex flex-col">
-                    <Conversation 
+            <div className="ia-tabs-content">
+                <TabsContent value="conversation" className="ia-tab-panel">
+                    <Conversation
                         sessionId={sessionId}
                         status={simulationStatus}
                         onStart={handleStartNew}
@@ -279,13 +291,13 @@ export default function IaVsIaPage() {
                         messages={messages}
                     />
                 </TabsContent>
-                <TabsContent value="metrics" className="absolute inset-0 m-0 overflow-y-auto">
-                    {sessionId && <LearningCurve learningStates={learningStates} />}
+                <TabsContent value="metrics" className="ia-tab-panel">
+                    <LearningCurve learningStates={learningStates} />
                 </TabsContent>
-                <TabsContent value="birth" className="absolute inset-0 m-0 flex flex-col overflow-hidden">
+                <TabsContent value="birth" className="ia-tab-panel">
                     {sessionId && (
-                        <EmergentAgent 
-                            sessionId={sessionId} 
+                        <EmergentAgent
+                            sessionId={sessionId}
                             onMetacognitionUpdate={setMetacognition}
                             onVoiceAmplitudeUpdate={setVoiceAmplitude}
                             voiceAmplitude={voiceAmplitude}

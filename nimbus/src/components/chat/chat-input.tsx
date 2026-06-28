@@ -187,14 +187,14 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       <div className="w-full max-w-4xl mx-auto space-y-4" id="chat-input-container">
         {showSuggestions && suggestions.length > 0 && !isLoading && (
            <div className="relative flex flex-col items-start gap-2">
-            <div className="flex items-center gap-2 text-sm text-[hsl(220,10%,50%)] w-full">
-              <Sparkles className="w-4 h-4 text-[#22d3ee] flex-shrink-0" />
-              <span className="uppercase tracking-widest text-xs font-bold">Sugerencias:</span>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground w-full">
+              <Sparkles className="w-4 h-4 text-accent flex-shrink-0" />
+              <span>Sugerencias:</span>
             </div>
             <div className="absolute top-0 right-0 flex items-center">
               <Tooltip>
                   <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 rounded-none text-[hsl(220,10%,40%)] hover:text-[hsl(220,10%,90%)] hover:bg-[hsl(220,15%,15%)]" onClick={onRefreshSuggestions} disabled={isRefreshingSuggestions}>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={onRefreshSuggestions} disabled={isRefreshingSuggestions}>
                           <RefreshCw className={cn("h-3 w-3", isRefreshingSuggestions && "animate-spin")} />
                       </Button>
                   </TooltipTrigger>
@@ -202,23 +202,24 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
               </Tooltip>
               <Tooltip>
                   <TooltipTrigger asChild>
-                       <Button variant="ghost" size="icon" className="h-6 w-6 rounded-none text-red-400 hover:text-red-400 hover:bg-red-500/10" onClick={() => setShowSuggestions(false)}>
+                       <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full text-red-500 hover:text-red-500 hover:bg-red-500/10" onClick={() => setShowSuggestions(false)}>
                         <X className="h-4 w-4" />
                       </Button>
                   </TooltipTrigger>
                    <TooltipContent><p>Cerrar Sugerencias</p></TooltipContent>
               </Tooltip>
             </div>
-            <div className="flex items-center gap-2 flex-wrap mt-1">
+            <div className="flex items-center gap-2 flex-wrap">
               {suggestions.map((s, i) => (
-                <button
+                <Button
                   key={i}
+                  variant="outline"
+                  size="sm"
                   onClick={() => handleSuggestion(s)}
-                  className="brutal-suggestion-btn text-xs py-1.5 px-3"
-                  style={{ padding: '0.375rem 0.75rem' }}
+                  className="rounded-full text-xs md:text-sm whitespace-normal h-auto py-1.5 px-3"
                 >
-                  <span>{s}</span>
-                </button>
+                  {s}
+                </Button>
               ))}
             </div>
           </div>
@@ -234,39 +235,39 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-<div className={cn(
-                         "brutal-input-wrap flex w-full items-end overflow-hidden",
-                         isFocused && "focused"
-                      )} id="chat-input-area">
+                     <div className={cn(
+                        "relative flex w-full items-end overflow-hidden rounded-2xl border bg-card transition-all",
+                        isFocused ? "ring-2 ring-primary/50" : "ring-0"
+                     )} id="chat-input-area">
                         <div className="flex items-center pl-2">
                            <Tooltip>
                               <TooltipTrigger asChild>
-<Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-[hsl(220,10%,40%)] hover:text-[#22d3ee] hover:bg-[hsl(220,15%,12%)]" onClick={handleToggleSuggestions}>
-                                     <Sparkles className={cn("h-5 w-5", suggestions.length > 0 && showSuggestions && "text-[#22d3ee]")} />
-                                     <span className="sr-only">Toggle Suggestions</span>
-                                   </Button>
-                               </TooltipTrigger>
-                               <TooltipContent>
-                                 <p>{showSuggestions && suggestions.length > 0 ? 'Ocultar' : 'Mostrar'} Sugerencias</p>
-                               </TooltipContent>
+                                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={handleToggleSuggestions}>
+                                    <Sparkles className={cn("h-5 w-5", suggestions.length > 0 && showSuggestions && "text-accent")} />
+                                    <span className="sr-only">Toggle Suggestions</span>
+                                  </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{showSuggestions && suggestions.length > 0 ? 'Ocultar' : 'Mostrar'} Sugerencias</p>
+                              </TooltipContent>
+                           </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={isRecording ? handleStopRecording : handleStartRecording} disabled={isLoading || isTranscribing}>
+                                    {isRecording ? <Square className="h-5 w-5 text-red-500 fill-red-500" /> : isTranscribing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-5 w-5" />}
+                                    <span className="sr-only">{isRecording ? 'Detener grabación' : isTranscribing ? 'Transcribiendo...' : 'Grabar audio'}</span>
+                                </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{isRecording ? 'Detener grabación' : isTranscribing ? 'Transcribiendo...' : 'Grabar audio'}</p>
+                                </TooltipContent>
                             </Tooltip>
-                             <Tooltip>
-                                 <TooltipTrigger asChild>
-                                 <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-[hsl(220,10%,40%)] hover:text-[hsl(220,10%,90%)] hover:bg-[hsl(220,15%,12%)]" onClick={isRecording ? handleStopRecording : handleStartRecording} disabled={isLoading || isTranscribing}>
-                                     {isRecording ? <Square className="h-5 w-5 text-red-400 fill-red-400" /> : isTranscribing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-5 w-5" />}
-                                     <span className="sr-only">{isRecording ? 'Detener grabación' : isTranscribing ? 'Transcribiendo...' : 'Grabar audio'}</span>
-                                 </Button>
-                                 </TooltipTrigger>
-                                 <TooltipContent>
-                                     <p>{isRecording ? 'Detener grabación' : isTranscribing ? 'Transcribiendo...' : 'Grabar audio'}</p>
-                                 </TooltipContent>
-                             </Tooltip>
                         </div>
                         <Textarea
                           {...field}
                           ref={localTextareaRef}
                           placeholder={placeholder || "Cuéntame cómo te sientes..."}
-                          className="brutal-textarea flex-1 self-center border-none bg-transparent px-3 py-3 text-base shadow-none outline-none ring-0 focus-visible:ring-0 max-h-48"
+                          className="flex-1 resize-none self-center border-none bg-transparent px-3 py-3 text-base shadow-none outline-none ring-0 focus-visible:ring-0 max-h-48"
                           onKeyDown={handleKeyDown}
                           onFocus={() => setIsFocused(true)}
                           onBlur={() => setIsFocused(false)}
@@ -278,7 +279,7 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
                                 <Button
                                   type="submit"
                                   size="icon"
-                                  className="brutal-send-btn"
+                                  className="h-9 w-9 shrink-0 rounded-full transition-colors"
                                   disabled={!canSubmit}
                                 >
                                   <Send className="w-4 h-4" />

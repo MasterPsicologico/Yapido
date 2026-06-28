@@ -189,15 +189,15 @@ function ChatPanel({ chat, appendMessage, updateChat, profile }: ChatPanelProps)
 
   return (
     <div className="flex flex-col h-full flex-1 min-w-0">
-       <header className="brutal-header flex h-14 items-center justify-between p-2 md:p-4 shrink-0 z-10">
+       <header className="flex h-14 items-center justify-between p-2 md:p-4 border-b shrink-0 bg-background/80 backdrop-blur-sm z-10">
         <div className="flex items-center gap-2 min-w-0">
           {isMobile && <SidebarTrigger />}
            <div className='min-w-0'>
-            <h2 className="text-base md:text-lg font-bold truncate tracking-wide text-[hsl(220,10%,90%)] uppercase">
+            <h2 className="text-base md:text-lg font-semibold truncate">
               {chat.title}
             </h2>
             {chat.anchorRole && (
-              <p className='text-xs text-[hsl(220,10%,40%)] truncate tracking-wider'>Rol: {chat.anchorRole}</p>
+              <p className='text-xs text-muted-foreground truncate'>Rol: {chat.anchorRole}</p>
             )}
            </div>
         </div>
@@ -206,17 +206,17 @@ function ChatPanel({ chat, appendMessage, updateChat, profile }: ChatPanelProps)
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsWhiteboardOpen(true)}
-                className="text-[hsl(220,10%,40%)] hover:text-[hsl(220,10%,90%)] hover:bg-[hsl(220,15%,15%)]"
+                className="text-muted-foreground hover:text-foreground"
             >
                 <ImageIcon className="h-5 w-5" />
                 <span className="sr-only">Abrir Pizarra de Imagen</span>
             </Button>
         </div>
       </header>
-      <main className="flex-1 overflow-y-auto min-w-0 brutal-scroll">
+      <main className="flex-1 overflow-y-auto min-w-0">
         <ChatMessages messages={messages || []} isResponding={isResponding || messagesLoading} />
       </main>
-      <footer className="shrink-0 px-2 py-4 md:px-4 md:py-4 border-t border-[hsl(220,15%,18%)] bg-[hsl(220,20%,6%)]">
+      <footer className="shrink-0 px-2 py-4 md:px-4 md:py-4 border-t bg-background/95 backdrop-blur-sm">
         {showAd && <div className="mb-4"><AdsterraBanner /></div>}
         <ChatInput
           onSendMessage={handleSendMessage}

@@ -9,6 +9,7 @@ import ChatMessage from './chat-message';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Sparkles } from 'lucide-react';
 
 
@@ -134,11 +135,14 @@ const ThinkingAnimation = () => {
 const ThinkingMessage = () => {
     return (
         <div className={cn( 'flex items-start space-x-2 md:space-x-4 animate-in fade-in duration-300 justify-start' )}>
-            <div className="h-8 w-8 flex items-center justify-center bg-[hsl(220,15%,12%)] border border-[hsl(220,15%,20%)] text-[#22d3ee] shrink-0" style={{ clipPath: 'polygon(100% 0, 0 100%, 100% 100%)' }}>
-                <Sparkles className="h-4 w-4" />
-            </div>
+            <Avatar className="h-8 w-8 bg-accent/20 text-accent">
+                <AvatarFallback>
+                    <Sparkles className="h-5 w-5" />
+                </AvatarFallback>
+            </Avatar>
             <div className={cn(
-                'brutal-card px-4 py-3 w-48 h-36 overflow-hidden flex items-center justify-center'
+                'px-4 py-3 rounded-2xl w-48 h-36 overflow-hidden',
+                'bg-card border rounded-bl-none flex items-center justify-center'
             )}>
                 <ThinkingAnimation />
             </div>
@@ -167,7 +171,7 @@ export default function ChatMessages({ messages, isResponding }: { messages: Mes
 
   return (
     <div className="relative h-full">
-      <ScrollArea className="h-full brutal-scroll" viewportRef={viewportRef} onScroll={handleScroll}>
+      <ScrollArea className="h-full" viewportRef={viewportRef} onScroll={handleScroll}>
         <div className="p-4 md:p-6 space-y-6">
           {messages.map((message, index) => (
             <ChatMessage key={message.id || index} message={message} />
