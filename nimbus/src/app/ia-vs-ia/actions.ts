@@ -3,9 +3,10 @@
 import {
   iaConversationFlow,
 } from '@/ai/flows/ia-conversation-flow';
-import { emergentAgentFlow, type EmergentAgentInput, type EmergentAgentOutput } from '@/ai/flows/emergent-agent-flow';
+import { emergentAgentFlow, type EmergentAgentInput } from '@/ai/flows/emergent-agent-flow';
 import { analyzeIAVoice as analyzeIAVoiceFlow } from '@/ai/flows/ia-voice-input-flow';
 import { generateSpeech as generateSpeechFlow } from '@/ai/flows/speech';
+import type { EmergentAgentOutput } from '@/lib/types';
 
 interface NextMessageInput {
     history: { agentName: string; content: string }[];

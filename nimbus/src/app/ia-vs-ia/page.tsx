@@ -17,6 +17,7 @@ import { generateNextIAMessage } from './actions';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import IAConversationHistory from '@/components/ia-vs-ia/IAConversationHistory';
 import AuthRequiredPanel from '@/components/chat/AuthRequiredPanel';
+import './ia-vs-ia.css';
 
 const ArchitectureWorld = dynamic(() => import('@/components/ia-vs-ia/ArchitectureWorld'), {
     ssr: false,

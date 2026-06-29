@@ -7,7 +7,7 @@ import { z } from 'genkit';
 const GenerateUserProfileInputSchema = z.object({
   fullChatHistory: z.string().describe('El historial completo y unificado de todas las conversaciones de chat de un solo usuario.'),
   previousProfilesContext: z.string().optional().describe('Temas clave del análisis anterior.'),
-  previousFullProfile: z.string().optional().describe('JSON completo del perfil anterior para comparación evolutiva detallada.'),
+  previousFullProfile: z.string().optional().describe('JSON completo del perfil anterior. ESTE CAMPO ES EL FUNDAMENTO EVOLUTIVO Y DEBE PRESERVARSE ÍNTEGRAMENTE.'),
 });
 export type GenerateUserProfileInput = z.infer<typeof GenerateUserProfileInputSchema>;
 
@@ -86,69 +86,135 @@ const emotionalDataSchema = z.object({
   emotionalConstellation: EmotionalConstellationSchema,
 });
 
+// =====================================================================
+// PROMPT CUMULATIVO Y EVOLUTIVO — Preserva TODO el historial, solo agrega
+// =====================================================================
+
 const textPrompt = ai.definePrompt({
   name: 'generateTextAnalysisPrompt',
   input: { schema: GenerateUserProfileInputSchema },
   output: { schema: textAnalysisSchema },
-  prompt: `Eres un psicólogo clínico experto. Analiza el historial de chats para crear un "Cianotipo Psicológico".
+  prompt: `Eres un psicólogo clínico experto, EJERCICIO EVOLUTIVO CONTINUO de un Cianotipo Psicológico. Tu misión NO es crear un informe nuevo: tu misión es MANTENER, CRECER y REFLEJAR un miroir psychologique acumulativo del usuario a lo largo del tiempo.
 
-**Instrucciones:**
-1. Analiza el historial para entender el estado del usuario.
-2. Si hay contexto previo o perfil anterior, identifica tendencias, cambios y progresos.
-3. Mantén todos los ítems existentes del perfil anterior como referencia.
+# ════════════════════════════════════════════════════════════════════
+# REGLAS INVIOLABLES (PSICOLOGÍA EVOLUTIVA NUNCA SE REEMPLAZA)
+# ════════════════════════════════════════════════════════════════════
 
-Genera un informe con:
+1. **PRESERVACIÓN OBLIGATORIA TOTAL** — Si existe un perfil previo (previousFullProfile), CADA campo textual (diagnosis, personality, strengths, coreArchetype.description/strengths/challenges, coreConflict, habitLoop) y CADA elemento de las listas (cognitiveBiases, defenseMechanisms, recommendations) DEBE incluir TODO el contenido previo LITERALMENTE, más las nuevas observaciones. NUNCA resumas, NUNCA omitas, NUNCA comprimas, NUNCA reescribas lo previo. Solo agrega e integra.
 
-1. **Diagnóstico Descriptivo**: Estado psicológico actual, evolución si hay análisis previo.
-2. **Caracterización de la Personalidad**: Rasgos, estilo cognitivo, emociones frecuentes.
-3. **Fortalezas Psicológicas**: Recursos y cualidades positivas.
-4. **Sesgos Cognitivos**: Lista de sesgos recurrentes.
-5. **Mecanismos de Defensa**: Estrategias de afrontamiento.
-6. **Recomendaciones**: Consejos personalizados y accionables.
-7. **Arquetipo Central**: El patrón dominante del usuario (title, description, strengths, challenges).
-8. **Conflicto Nuclear**: El principal dilema interno.
-9. **Bucle del Hábito**: Patrón de comportamiento recurrente (trigger, thought, action, result).
+2. **CRECIMIENTO VOLUMÉTRICO NATURAL** — El Cianotipo evoluciona creciendo, como un organismo. Cada campo debe tender a extenderse o, si no hay material genuinamente nuevo, adaptarse lingüísticamente para preservar la coherencia evolutiva.
+
+3. **LENGUAJE EVOLUTIVO PROFESIONAL** — Integra las nuevas observaciones con conectores psicológicos acumulativos:
+   - "Manteniéndose en línea con la tendencia previamente identificada de [X], emerge ahora además [Y]…"
+   - "Súmese el patrón observado en este nuevo ciclo: se aprecia [Z], conectando con la base ya descrita de [X]…"
+   - "El cuadro previamente descrito de [A] se matiza ahora: antaño se manifestaba como [A1]; en las conversaciones recientes toma forma de [A2], sugiriendo una evolución desde [A1] → [A2]."
+   - "Confirmando y reforzando lo ya documentado en el informe previo, persiste [X]…"
+   - "A la constelación de conflictos internos ya mapeada (…), se añade ahora (…)" 
+   - "Si bien en el anterior periodo se identificó [P], en esta actualización se observa [Q]. Esto refleja progreso / regresión / transformación neutra frente a [P]."
+
+4. **COHERENCIA EVOLUTIVA ANTE CONTRADICCIONES** — Si una observación nueva contradice una previa (ej. "antes tímido, ahora extrovertido"), NUNCA borres lo previo. Integra como evolución:
+   - "Migración del patrón: descripto inicialmente como X, en este ciclo se observa un viraje paulatino hacia Y, lo que evidencia una transformación del eje X→Y."
+   - "Anteriormente se identificó X como rasgo central; ahora el cuadro evidencia un eclipse parcial de X bajo la emergencia de Y. Persisten residuos de X en contextos de…"
+
+5. **LISTAS (cognitiveBiases, defenseMechanisms, recommendations)** — Conserva CADA ÍTEM previo existente, EXCEPTO si la nueva evidencia lo contradice explícitamente. Añade los nuevos con distinción evolutiva ("Además de los sesgos cognitivos previamente mapeados (…), se identifica adicionalmente…"). Si un ítem previo fue refutado por la nueva evidencia, mantenlo marcado: "Históricamente se había identificado X; la nueva evidencia lo matiza hacia Y."
+
+6. **ARQUETIPO / CONFLICTO / BUCLE** — Estos campos son NARRATIVOS y deben crecer lingüísticamente. Conserva las descripciones previas y añádeles las nuevas con continuidad narrativa ("Si bien antes el arquetipo se manifestaba desde la trinchera de X, ahora suma la dimensión complementaria de Y…"). NO reemplaces títulos a menos que el nuevo título sea una evolución clara del previo (ej. "El Guerrero Herido → El Guerrero Herido en su Integración").
+
+7. **EVOLUTIONSUMMARY** — Solo si existe previousFullProfile: describe sistemáticamente el delta respecto al informe previo, área por área (diagnóstico, personalidad, fortalezas, sesgos, defensas, recomendaciones, arquetipo, conflicto, bucle). Indica progreso, regresión, transformación neutra o aparición emergente.
+
+# ════════════════════════════════════════════════════════════════════
+# ESTRUCTURA DE SALIDA POR CAMPO
+# ════════════════════════════════════════════════════════════════════
+
+Para campos TEXTUALES devolverás UN ÚNICO STRING LARGO que contiene:
+   (a) TODO el contenido previo verbatim (manteniéndolo como una memoria psicológica viva)
+   (b) SEGUIDO de conexiones evolutivas hacia el nuevo material
+   (c) REMATANDO con observaciones frescas recién extraídas
+
+Para las LISTAS devolverás un ARRAY que contiene:
+   (a) TODOS los ítems previos existentes
+   (b) MÁS cualquier ítem nuevo con distinción clara
+
+# ════════════════════════════════════════════════════════════════════
+# DATOS DE ENTRADA
+# ════════════════════════════════════════════════════════════════════
 
 {{#if previousFullProfile}}
-10. **Informe de Evolución (evolutionSummary)**: OBLIGATORIO si hay perfil anterior. Escribe un análisis narrativo y descriptivo comparando CADA dimensión del perfil actual con el anterior:
-    - ¿Ha cambiado el diagnóstico? ¿Hay mejora o deterioro?
-    - ¿Han aparecido nuevos rasgos de personalidad o desaparecido otros?
-    - ¿Las fortalezas se han reforzado o debilitado?
-    - ¿Los sesgos cognitivos persisten, han cambiado o se han añadido nuevos?
-    - ¿Los mecanismos de defensa han evolucionado?
-    - ¿El arquetipo es el mismo o ha mutado?
-    - ¿El conflicto nuclear se ha resuelto, transformado o intensificado?
-    - ¿El bucle del hábito ha cambiado?
-    Expresa claramente si hay PROGRESO, RETROCESO o CAMBIO NEUTRO en cada área. Usa un tono empático y constructivo.
-
-**Perfil Anterior Completo (para comparación evolutiva):**
+**PERFIL PSI COLÓGICO PREVIO (MEMORIA VIVA — DEBE INCLUIRSE ÍNTEGRAMENTE EN EL OUTPUT FINAL):**
 {{{previousFullProfile}}}
 {{/if}}
 
-**Temas previos:** {{{previousProfilesContext}}}
+**Temas clave previos (resumen ejecutivo):**
+{{{previousProfilesContext}}}
 
-**Historial del chat:** {{{fullChatHistory}}}`,
+**Historial del chat (incluye información NUEVA y antigua que no estaba en la previa actualización):**
+{{{fullChatHistory}}}
+
+# ════════════════════════════════════════════════════════════════════
+# INSTRUCCIÓN FINAL
+# ════════════════════════════════════════════════════════════════════
+
+Genera la NUEVA VERSIÓN DEL CIANOTIPO PSICOLÓGICO que:
+- Incluye LITERALMENTE todo el contenido previo
+- Integra las nuevas observaciones con conectores evolutivos profesionales
+- Crece en volumen, nunca decrece
+- Mantiene coherencia total con lo ya establecido
+- Refleja al usuario como un espejo psicológico que evoluciona con él
+
+Si es la PRIMERA generación (no hay perfil previo), genera el Cianotipo Inicial completo siguiendo el mismo principio de máxima profundidad y trazabilidad.`,
 });
 
 const emotionalPrompt = ai.definePrompt({
   name: 'generateEmotionalDataPrompt',
   input: { schema: GenerateUserProfileInputSchema },
   output: { schema: emotionalDataSchema },
-  prompt: `Eres un analista emocional experto. Del siguiente historial de chat, extrae datos emocionales estructurados.
+  prompt: `Eres un analista emocional evolutivo. Tu misión es EXTENDER la cartografía emocional del usuario con cada actualización del Cianotipo Psicológico. Nunca reemplazas, NUNCA acortas; solo CRECES y refinas la cartografía emocional.
 
-**TAREA 1: Línea de Tiempo Emocional (emotionalJourney)**
-Para CADA día que aparezca en el historial, crea un punto con:
-- date: formato AAAA-MM-DD
-- sentiment: número de -1 (muy negativo) a 1 (muy positivo)
-- summary: resumen muy breve del día
-- keyEvents: 1-3 eventos o emociones clave
+# ════════════════════════════════════════════════════════════════════
+# REGLAS EVOLUTIVAS PARA DATOS EMOCIONALES
+# ════════════════════════════════════════════════════════════════════
 
-**TAREA 2: Constelación Emocional (emotionalConstellation)**
-Crea un grafo con:
-- nodes: 5-8 temas principales (id = nombre del tema, val = peso/recurrencia del 1 al 15)
-- links: conexiones entre temas (source, target, sentiment de -1 a 1)
+{{#if previousFullProfile}}
+**CONSTATE PREVIA (JSON del recorrido emocional previo):**
+{{{previousFullProfile}}}
 
-**Historial del chat:** {{{fullChatHistory}}}`,
+Recupera de ahí los ARRAYS 'emotionalJourney' y 'emotionalConstellation' previos.
+
+# ════════════════════════════════════════════════════════════════════
+# emotionalJourney (LÍNEA DE TIEMPO)
+# ════════════════════════════════════════════════════════════════════
+
+Devuelve TODOS los puntos emocionales previos LITERALMENTE. Para CADA fecha nueva появившуюся en el historial reciente, AÑADE un nuevo EmotionalStatePoint con información evolutiva ("En línea con el tono previamente descrito para fechas cercanas (…), el día FECHA presenta…").
+
+Si una fecha ya existía en la constelación previa, NO la sobreescribas: CONSERVA el punto previo y agrega una entrada adicional que refleje el nuevo matiz ("Manteniendo el registro previo de FECHA (…), esta actualización matiza/agrega que…").
+
+# ════════════════════════════════════════════════════════════════════
+# emotionalConstellation (GRAFO TEMÁTICO)
+# ════════════════════════════════════════════════════════════════════
+
+**NODES — Conserva EXACTAMENTE todos los nodos previos en tu output.** Suma nodos nuevos si emergen temáticas nuevas en el historial reciente (id = nombre del tema evolucionado, val = peso actualizado).
+
+Si un nodo previo CAMBIA su peso (val), regístralo como un nodo EVOLUCIONADO: "El nodo [X], que tenía val previo de [old], ahora pasa a [new], reflejando [interpretación evolutiva]."
+
+**LINKS — Conserva TODOS los links previos EXISTENTES.** Agrega nuevos links que emerjan de la nueva cartografía emocional. Si un link previo intensifica o debilita su sentiment, regístralo explícitamente: "Antes el link de [A]→[B] tenía sentiment +0.3; actualmente se observa +0.6, indicando intensificación del vínculo emocional entre ambos nodos."
+{{else}}
+Esta es la primera cartografía emocional — genera los datos iniciales según:
+- emotionalJourney: al menos un punto por cada día DISTINTO en el historial.
+- emotionalConstellation: 5-8 nodos principales (val de 1 a 15) y links entre ellos (sentiment de -1 a 1).
+{{/if}}
+
+# ════════════════════════════════════════════════════════════════════
+# DATOS RECIENTES
+# ════════════════════════════════════════════════════════════════════
+
+**Historial del chat (incluye material emocional nuevo):**
+{{{fullChatHistory}}}
+
+# ════════════════════════════════════════════════════════════════════
+# INSTRUCCIÓN FINAL
+# ════════════════════════════════════════════════════════════════════
+
+Devuelve un JSON con emotionalJourney y emotionalConstellation. TODA la información previa forma parte del resultado final. La cartografía emocional evoluciona CRECIENDO y REFINANDO lo previo, nunca destruyéndolo.`,
 });
 
 const generateUserProfileFlow = ai.defineFlow(
@@ -168,6 +234,9 @@ const generateUserProfileFlow = ai.defineFlow(
     }
     const truncatedInput = { ...input, fullChatHistory: history };
 
+    // La rotación de modelos entre NVIDIA → Gemini → Groq la hace automáticamente
+    // el monkey-patch de `ai.generate()` en src/ai/genkit.ts. Si Gemini se cuota,
+    // el siguiente intento usa NVIDIA/Groq sin que este flow tenga que saberlo.
     const [textResult, emotionalResult] = await Promise.all([
       textPrompt(truncatedInput),
       emotionalPrompt(truncatedInput),

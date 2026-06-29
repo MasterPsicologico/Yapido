@@ -462,17 +462,26 @@ export const DiagnosticReportSchema = z.object({
 export type DiagnosticReport = z.infer<typeof DiagnosticReportSchema>;
 
 
+export type DetectedParticipant = {
+  rawLabel: string;
+  inferredRole: string;
+  confidence: 'alta' | 'media' | 'baja';
+  rationale?: string;
+};
+
 export type AudioDraft = {
   id: string;
   title: string;
   audioUrl: string;
-  timestamp: string; 
+  timestamp: string;
   transcription?: string;
   report?: DiagnosticReport;
   roles?: {
     speakerOne: string;
     speakerTwo: string;
-  }
+  };
+  detectedParticipants?: DetectedParticipant[];
+  detectedParticipantsSummary?: string;
 };
 
 

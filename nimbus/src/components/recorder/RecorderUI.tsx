@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Pause, Play, Square, Trash2, Edit, Save, Bot, Loader2, ArrowDown } from 'lucide-react';
+import { Mic, Pause, Play, Square, Trash2, Edit, Save, Bot, Loader2, ArrowDown, Users, Sparkles, Check, AudioLines, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { AudioDraft, DiagnosticReport } from '@/lib/types';
+import type { AudioDraft, DiagnosticReport, DetectedParticipant } from '@/lib/types';
 import AudioVisualizer from '@/components/dreams/AudioVisualizer';
 import AudioPlayer from '@/components/recorder/AudioPlayer';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,7 @@ interface RecorderUIProps {
 
 type RecorderStatus = 'idle' | 'recording' | 'paused' | 'stopped';
 type AnalysisStatus = 'idle' | 'analyzing' | 'done' | 'error';
+type AnalysisStep = 'idle' | 'transcribing' | 'analyzing' | 'finalizing';
 
 const formatTime = (seconds: number) => {
   if (isNaN(seconds) || seconds < 0) return '00:00';
@@ -41,15 +42,18 @@ export default function RecorderUI({ initialDraft, onNewRecording, onDraftCreate
   // --- LOCAL STATE ---
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
-  const [roles, setRoles] = useState({ speakerOne: 'Hablante 1', speakerTwo: 'Hablante 2' });
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [recorderStatus, setRecorderStatus] = useState<RecorderStatus>('idle');
   const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus>('idle');
+  const [analysisStep, setAnalysisStep] = useState<AnalysisStep>('idle');
   const [report, setReport] = useState<DiagnosticReport | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [time, setTime] = useState(0);
   const [isPlaybackVisualizerActive, setIsPlaybackVisualizerActive] = useState(false);
+  const [transcription, setTranscription] = useState<string | undefined>(undefined);
+  const [detectedParticipants, setDetectedParticipants] = useState<DetectedParticipant[]>([]);
+  const [detectedParticipantsSummary, setDetectedParticipantsSummary] = useState<string>('');
 
 
   // --- REFS ---
@@ -61,10 +65,13 @@ export default function RecorderUI({ initialDraft, onNewRecording, onDraftCreate
   useEffect(() => {
     setCurrentDraftId(initialDraft?.id || null);
     setTitle(initialDraft?.title || `Grabación ${new Date().toLocaleDateString()}`);
-    setRoles(initialDraft?.roles || { speakerOne: 'Hablante 1', speakerTwo: 'Hablante 2' });
     setReport(initialDraft?.report || null);
+    setTranscription(initialDraft?.transcription);
+    setDetectedParticipants(initialDraft?.detectedParticipants || []);
+    setDetectedParticipantsSummary(initialDraft?.detectedParticipantsSummary || '');
     setAudioUrl(initialDraft?.audioUrl || null);
     setAnalysisStatus(initialDraft?.report ? 'done' : 'idle');
+    setAnalysisStep(initialDraft?.report ? 'finalizing' : 'idle');
     setRecorderStatus(initialDraft?.audioUrl ? 'stopped' : 'idle');
     setIsEditingTitle(!initialDraft);
     setTime(0);
@@ -83,12 +90,8 @@ export default function RecorderUI({ initialDraft, onNewRecording, onDraftCreate
     }
   };
   
-  const handleSaveRoles = async () => {
-    if (currentDraftId) {
-        await updateDraft(currentDraftId, { roles });
-        toast({ title: "Roles guardados" });
-    }
-  }
+  // Roles ya no se ingresan manualmente. La IA los detecta.
+  // (handleSaveRoles eliminado)
 
   const handleDelete = async () => {
     if (currentDraftId) {
@@ -129,7 +132,7 @@ export default function RecorderUI({ initialDraft, onNewRecording, onDraftCreate
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         
         const finalTitle = title.trim() || `Grabación ${new Date().toLocaleDateString()}`;
-        const savedDraft = await saveDraft(currentDraftId, finalTitle, audioBlob, roles);
+        const savedDraft = await saveDraft(currentDraftId, finalTitle, audioBlob);
         
         setAudioUrl(savedDraft.audioUrl);
         setCurrentDraftId(savedDraft.id);
@@ -178,25 +181,54 @@ export default function RecorderUI({ initialDraft, onNewRecording, onDraftCreate
       return;
     }
     setAnalysisStatus('analyzing');
+    setAnalysisStep('transcribing');
+
+    // Avance cosmético de UI: tras 6s (típica transcripción Whisper),
+    // pasamos al step de detección de hablantes. tras 8s más (típico LLM),
+    // pasamos al de informe final. Estos pasos son indicadores visuales;
+    // el backend hace todo en UNA llamada (Whisper sigue siendo paso 1).
+    const stepTimer1 = setTimeout(() => setAnalysisStep('analyzing'), 6000);
+    const stepTimer2 = setTimeout(() => setAnalysisStep('finalizing'), 14000);
+
     try {
-      await handleSaveRoles(); // Save roles before analyzing
       const result = await analyzeAudioRecording({
         audioDataUri: audioUrl,
         title: title.trim(),
-        roles,
       });
 
-      if (!result.report || !result.transcription) throw new Error("El análisis no devolvió un informe completo.");
-      
-      await updateDraft(currentDraftId, { transcription: result.transcription, report: result.report });
+      if (!result.report || !result.transcription) {
+        throw new Error("El análisis no devolvió un informe completo.");
+      }
 
+      await updateDraft(currentDraftId, {
+        transcription: result.transcription,
+        report: result.report,
+        detectedParticipants: result.detectedParticipants,
+        detectedParticipantsSummary: result.detectedParticipantsSummary,
+      });
+
+      setTranscription(result.transcription);
       setReport(result.report);
+      setDetectedParticipants(result.detectedParticipants || []);
+      setDetectedParticipantsSummary(result.detectedParticipantsSummary || '');
       setAnalysisStatus('done');
-      toast({ title: 'Análisis Completado', description: 'El informe diagnóstico está listo.' });
+      setAnalysisStep('finalizing');
+      const participantsCount = result.detectedParticipants?.length ?? 0;
+      toast({
+        title: 'Análisis Completado',
+        description: `Informe listo. Se detectaron ${participantsCount} hablante(s).`,
+      });
     } catch (err: any) {
       console.error("Analysis failed:", err);
       setAnalysisStatus('error');
-      toast({ variant: 'destructive', title: 'Error de Análisis', description: err.message });
+      toast({
+        variant: 'destructive',
+        title: 'Error de Análisis',
+        description: err?.message || 'Verifica que tu audio sea válido y que tengas conexión.',
+      });
+    } finally {
+      clearTimeout(stepTimer1);
+      clearTimeout(stepTimer2);
     }
   };
   
@@ -291,10 +323,68 @@ export default function RecorderUI({ initialDraft, onNewRecording, onDraftCreate
 
   const renderAnalysisSection = () => {
     if (analysisStatus === 'analyzing') {
+        const steps = [
+          { id: 'transcribing' as const, label: 'Transcribiendo audio con Whisper', icon: AudioLines },
+          { id: 'analyzing' as const, label: 'Detectando hablantes y roles', icon: Users },
+          { id: 'finalizing' as const, label: 'Generando informe clínico', icon: Brain },
+        ];
+        const currentStepIndex = steps.findIndex(s => s.id === analysisStep);
+
         return (
-            <div className="mt-8 text-center">
-                <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary" />
-                <p className="mt-2 text-muted-foreground">Transcribiendo y analizando el audio...</p>
+            <div className="mt-8 w-full max-w-2xl space-y-6">
+              <div className="text-center">
+                <Brain className="h-12 w-12 mx-auto text-primary animate-pulse" />
+                <h3 className="mt-3 text-lg font-semibold">Analizando tu grabación</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Este proceso puede tardar entre 30s y 2 minutos mientras la IA procesa el audio profundo. Por favor, no cierres esta ventana.
+                </p>
+              </div>
+
+              <Card className="bg-card/40">
+                <CardContent className="pt-6 space-y-3">
+                  {steps.map((step, idx) => {
+                    const isDone = idx < currentStepIndex || (currentStepIndex === -1);
+                    const isCurrent = idx === currentStepIndex;
+                    const isPending = idx > currentStepIndex;
+
+                    const Icon = step.icon;
+                    return (
+                      <motion.div
+                        key={step.id}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className={`flex items-center gap-3 p-3 rounded-lg ${
+                          isCurrent ? 'bg-primary/10 border border-primary/20' : ''
+                        }`}
+                      >
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                          isDone ? 'bg-emerald-500/20 text-emerald-400'
+                            : isCurrent ? 'bg-primary/30 text-primary'
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {isDone ? <Check className="h-4 w-4" /> :
+                           isCurrent ? <Loader2 className="h-4 w-4 animate-spin" /> :
+                           <Icon className="h-4 w-4" />}
+                        </div>
+                        <div className="flex-1">
+                          <p className={`text-sm font-medium ${
+                            isDone ? 'text-emerald-300 line-through opacity-60'
+                              : isCurrent ? 'text-foreground'
+                              : 'text-muted-foreground'
+                          }`}>
+                            {step.label}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+
+              <p className="text-xs text-center text-muted-foreground/70 italic">
+                La IA analiza el discurso clínico con rotación automática entre múltiples modelos (NVIDIA → Gemini → Groq) para garantizar precisión.
+              </p>
             </div>
         )
     }
@@ -304,12 +394,18 @@ export default function RecorderUI({ initialDraft, onNewRecording, onDraftCreate
         <div className="mt-8 w-full max-w-3xl flex flex-col items-center space-y-4">
             <Card className="w-full bg-card/30">
                 <CardHeader>
-                    <CardTitle className="text-base">Definir Roles (Opcional)</CardTitle>
-                    <CardDescription className="text-xs">Contextualiza a la IA para un análisis más preciso.</CardDescription>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-amber-400" />
+                      Detección automática
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Los hablantes y roles se identifican automáticamente al analizar el audio. No necesitas ingresar nada manualmente.
+                    </CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-col sm:flex-row gap-4">
-                    <Input value={roles.speakerOne} onChange={e => setRoles(prev => ({...prev, speakerOne: e.target.value}))} onBlur={handleSaveRoles} placeholder="Rol del Hablante 1"/>
-                    <Input value={roles.speakerTwo} onChange={e => setRoles(prev => ({...prev, speakerTwo: e.target.value}))} onBlur={handleSaveRoles} placeholder="Rol del Hablante 2"/>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      Al pulsar <span className="font-semibold">"Analizar Grabación con IA"</span>, Nimbus transcribirá el audio y detectará cuántos participantes hay y qué rol tiene cada uno (psicólogo, paciente, familiar, etc.).
+                    </p>
                 </CardContent>
             </Card>
           <div className="flex items-center gap-2 p-4 border-t border-dashed w-full justify-center">
@@ -352,6 +448,42 @@ export default function RecorderUI({ initialDraft, onNewRecording, onDraftCreate
                     Re-analizar
                 </Button>
             </div>
+
+            {detectedParticipants && detectedParticipants.length > 0 && (
+              <Card className="bg-card/40 mb-6 border-amber-500/20">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Users className="h-4 w-4 text-amber-400" />
+                    Participantes Detectados por IA ({detectedParticipants.length})
+                  </CardTitle>
+                  {detectedParticipantsSummary && (
+                    <CardDescription className="text-xs">{detectedParticipantsSummary}</CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-sm">
+                    {detectedParticipants.map((p, idx) => (
+                      <li key={idx} className="flex flex-col sm:flex-row sm:items-start sm:gap-3 border-b border-border/40 pb-2 last:border-b-0">
+                        <div className="font-mono text-xs bg-muted/60 px-2 py-0.5 rounded w-fit">{p.rawLabel}</div>
+                        <div className="flex-1 mt-1 sm:mt-0">
+                          <div className="font-semibold">{p.inferredRole}</div>
+                          {p.rationale && (
+                            <div className="text-xs text-muted-foreground mt-1">{p.rationale}</div>
+                          )}
+                        </div>
+                        <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded w-fit ${
+                          p.confidence === 'alta' ? 'bg-emerald-500/20 text-emerald-300'
+                          : p.confidence === 'media' ? 'bg-amber-500/20 text-amber-300'
+                          : 'bg-rose-500/20 text-rose-300'
+                        }`}>
+                          {p.confidence}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
             <Accordion type="multiple" defaultValue={['diagnosticSynthesis']} className="w-full space-y-4">
                 {reportSections.map(section => (
                     report[section.key as keyof DiagnosticReport] && (

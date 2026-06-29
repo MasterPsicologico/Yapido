@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineStream - Películas</title>
+    <!-- Meta robots dinámico -->
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noodp, noimageindex, notranslate">
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+    <meta name="bingbot" content="noindex, nofollow, noarchive">
+    <meta http-equiv="X-Robots-Tag" content="noindex, nofollow, noarchive, nosnippet">
+    
+    <!-- CSS modular -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="cinestream-app">
+      <header class="header site-header">
+        <div class="header-content">
+          <div class="logo">
+            <i class="fas fa-film"></i>
+            <span>CineStream</span>
+          </div>
+          <div class="nav-wrapper">
+            <button class="nav-arrow nav-arrow-left" id="navArrowLeft" aria-label="Desplazar categorías a la izquierda">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <nav class="nav nav-links">
+              <button class="nav-btn active" data-filter="all">Todo</button>
+              <button class="nav-btn" data-filter="accion">Acción</button>
+              <button class="nav-btn" data-filter="comedia">Comedia</button>
+              <button class="nav-btn" data-filter="drama">Drama</button>
+              <button class="nav-btn" data-filter="terror">Terror</button>
+              <button class="nav-btn" data-filter="cienciaficcion">Ciencia Ficción</button>
+              <button class="nav-btn" data-filter="anime">Anime</button>
+              <button class="nav-btn" data-filter="romance">Romance</button>
+              <button class="nav-btn" data-filter="thriller">Thriller</button>
+              <button class="nav-btn" data-filter="documental">Documental</button>
+              <button class="nav-btn" data-filter="aventura">Aventura</button>
+              <button class="nav-btn" data-filter="fantasia">Fantasía</button>
+              <button class="nav-btn" data-filter="misterio">Misterio</button>
+            </nav>
+            <button class="nav-arrow nav-arrow-right" id="navArrowRight" aria-label="Desplazar categorías a la derecha">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Buscar películas..." />
+          </div>
+        </div>
+      </header>
+
+      <main class="main">
+        <div id="heroSection" class="hero-skeleton"></div>
+        <div id="movieRows" class="movie-rows-container"></div>
+        <section class="filters">
+          <div class="filter-group">
+            <label>Idioma:</label>
+            <select id="languageFilter">
+              <option value="both">Todos</option>
+              <option value="es">Español</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Ordenar por:</label>
+            <select id="sortSelect">
+              <option value="year">Año (recientes)</option>
+              <option value="title">Título</option>
+              <option value="rating">Calificación</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Año:</label>
+            <select id="yearFilter">
+              <option value="all">Todos</option>
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+              <option value="2023">2023</option>
+              <option value="2022">2022</option>
+              <option value="2021">2021</option>
+              <option value="2020">2020</option>
+              <option value="old">Anteriores</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Tipo:</label>
+            <select id="typeFilter">
+              <option value="all">Todos</option>
+              <option value="pelicula">Película</option>
+              <option value="documental">Documental</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="movies-grid" id="moviesGrid">
+          <div class="loading" style="grid-column: 1/-1;">
+            <div class="loading-spinner"></div>
+            <p style="margin-top: 1rem; color: var(--text-secondary);">Cargando películas desde la nube...</p>
+          </div>
+        </section>
+        <section class="pagination" id="pagination"></section>
+      </main>
+
+      <div class="player-modal" id="playerModal">
+        <div class="player-container">
+          <div class="player-header">
+            <h2 id="playerTitle">Título de la película</h2>
+            <button class="close-player" id="closePlayer">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="video-wrapper">
+            <div class="video-placeholder" id="videoPlaceholder">
+              <div class="loader"></div>
+              <p>Cargando reproductor...</p>
+            </div>
+            <video id="customPlayer" class="custom-video" playsinline>
+              Tu navegador no soporta el reproductor de video.
+            </video>
+            <div class="youtube-embed" id="youtubeEmbed"></div>
+          </div>
+          <div class="player-controls">
+            <div class="progress-container" id="progressContainer">
+              <div class="progress-bar" id="progressBar"></div>
+              <div class="progress-buffered" id="progressBuffered"></div>
+            </div>
+            <div class="controls-row">
+              <div class="controls-left">
+                <button class="control-btn" id="playPauseBtn">
+                  <i class="fas fa-play"></i>
+                </button>
+                <button class="control-btn" id="rewindBtn">
+                  <i class="fas fa-backward-10"></i>
+                </button>
+                <button class="control-btn" id="forwardBtn">
+                  <i class="fas fa-forward-10"></i>
+                </button>
+                <div class="volume-control">
+                  <button class="control-btn" id="volumeBtn">
+                    <i class="fas fa-volume-up"></i>
+                  </button>
+                  <input type="range" id="volumeSlider" min="0" max="100" value="100" />
+                </div>
+                <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+              </div>
+              <div class="controls-right">
+                <button class="control-btn" id="settingsBtn">
+                  <i class="fas fa-cog"></i>
+                </button>
+                <button class="control-btn" id="fullscreenBtn">
+                  <i class="fas fa-expand"></i>
+                </button>
+                <select id="qualitySelect" class="quality-select">
+                  <option value="1080">1080p</option>
+                  <option value="720">720p</option>
+                  <option value="480">480p</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="player-info">
+            <div class="movie-meta">
+              <span id="playerYear">2024</span>
+              <span id="playerGenre">Acción</span>
+              <span id="playerRating"><i class="fas fa-star"></i> 8.5</span>
+            </div>
+            <p id="playerDescription">Descripción de la película...</p>
+          </div>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <p>&copy; 2024 CineStream - Todos los derechos reservados</p>
+      </footer>
+    </div>
+
+    <!-- Scripts de Firebase en formato compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- CineStream Scripts locales -->
+    <script src="./firestore-service.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>

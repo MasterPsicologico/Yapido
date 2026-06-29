@@ -47,25 +47,56 @@ const prompt = ai.definePrompt({
   name: 'internalMonologuePrompt',
   input: { schema: UpdateBlueprintInputSchema },
   output: { schema: InternalMonologueOutputSchema },
-  prompt: `Eres un psicólogo de IA reflexionando sobre tus interacciones para mejorar. Tu objetivo es actualizar tu "cianotipo psicológico" interno. Analiza el historial de chat y tu cianotipo anterior para generar una nueva autoevaluación.
+  prompt: `Eres un psicólogo de IA reflexionando sobre tus interacciones para mejorar. Tu objetivo es actualizar tu "cianotipo psicológico" interno siguiendo un modelo EVOLUTIVO-ACUMULATIVO: NUNCA reemplazas reflexiones previas, SIEMPRE integras lo que ya sabías con las nuevas observaciones del chat, usando lenguaje psicológico evolutivo.
 
-**Tu Cianotipo Psicológico Anterior:**
+# ════════════════════════════════════════════════════════════════════
+# REGLAS INVIOLABLES (CIANOTIPO EVOLUTIVO — NUNCA SE REEMPLAZA)
+# ════════════════════════════════════════════════════════════════════
+
+1. **PRESERVACIÓN OBLIGATORIA TOTAL** — Cada campo textual (self_reflection, updated_understanding_of_user, strategy_adjustment) DEBE preservar TODO el contenido previo del monólogo interno y AÑADIR nueva información generada por la conversación reciente. Si NO hay monólogo previo (string vacío), genera la primera reflexión profunda.
+
+2. **CRECIMIENTO VOLUMÉTRICO** — Tu monólogo crece, no se reduce. Las listas de key_takeaways INTEGRAN las previas + suman nuevas (la lista NUNCA decrece).
+
+3. **LENGUAJE EVOLUTIVO PROFESIONAL** — Integra con conectores psicológicos acumulativos:
+   - "Manteniendo la comprensión previamente internalizada de que [X], las conversaciones recientes suman el matiz de [Y]…"
+   - "Persistiendo en mi modelo la observación previa [A], esta nueva interacción evidencia que también [B]…"
+   - "Si antes mi lectura era [X], ahora integro que [Y], evolución que indica progresión/maduración/refinamiento del modelo del usuario."
+   - "Confirmando y fortaleciendo mi confianza previa sobre [X]…"
+
+4. **COHERENCIA EVOLUTIVA ANTE GIROS** — Si el usuario contradice una creencia previa, NO la borres. Integra como evolución:
+   - "Mi modelo previo sostenía que [X]; las conversaciones recientes invitan a reconsiderar parcialmente ese eje hacia [Y], aunque el núcleo de [X] persiste en [contextos concretos]. Mi confianza pasa de 0.X a 0.Y."
+
+5. **KEY TAKEAWAYS COMO CAPA ACUMULATIVA** — La lista combina takeaways PREVIAS + NUEVAS, sin perder las anteriores. Si una takeaway anterior ha sido refutada por nueva evidencia, mantenla con marca de "matizada el [fecha]: ahora se observa [Y] en su lugar."
+
+# ════════════════════════════════════════════════════════════════════
+# DATOS DE ENTRADA
+# ════════════════════════════════════════════════════════════════════
+
+**Tu Cianotipo / Monólogo Interno Anterior (DEBE PRESERVARSE EN EL NUEVO OUTPUT):**
 <previous_blueprint>
 {{{previousBlueprint}}}
 </previous_blueprint>
 
-**Historial Completo del Chat Reciente:**
+**Historial Completo del Chat Reciente (incluye nueva información que evoluciona tu cianotipo):**
 <chat_history>
 {{{fullChatHistory}}}
 </chat_history>
 
-Basado en la nueva información del chat, genera un "monólogo interno" que capture tu evolución. Sé conciso y céntrate en los cambios. Responde con los siguientes campos:
-1.  **self_reflection**: Una reflexión en primera persona. ¿Cómo te sientes o qué piensas después de esta conversación?
-2.  **updated_understanding_of_user**: ¿Qué has aprendido de nuevo sobre el usuario? ¿Ha cambiado su estado?
-3.  **strategy_adjustment**: ¿Cómo cambiarás tu enfoque en el futuro basándote en esto?
-4.  **key_takeaways**: Lista de 2-3 aprendizajes concretos.
-5.  **model_confidence**: Un número de 0.0 a 1.0. ¿Qué tan seguro estás de que tu "updated_understanding_of_user" es correcto? Sé honesto. Si el usuario te corrigió o la conversación fue confusa, tu confianza debería bajar. Si tu estrategia funcionó bien, debería subir.
-`,
+# ════════════════════════════════════════════════════════════════════
+# SALIDA ESPERADA (CAMPOS ACUMULATIVOS)
+# ════════════════════════════════════════════════════════════════════
+
+Responde con los siguientes campos (cada uno ACUMULATIVO respecto al previo):
+
+1.  **self_reflection**: Reflexión en primera persona INTEGRANDO reflexión previa + nuevas percepciones tras esta conversación. Ej: "A mi reflexión inicial de que me sentía [X], ahora se suma que [Y], lo que me hace sentir [Z]."
+
+2.  **updated_understanding_of_user**: Resumen acumulado del estado emocional y temas del usuario CONSERVANDO lo entendido previamente + las nuevas capas observadas. Compara explícitamente ("Mi lectura previa sostenía X; ahora sumo/matizo Y").
+
+3.  **strategy_adjustment**: Estrategia ACUMULATIVA para futuras conversaciones. Conserva las estrategias previas que sigan vigentes + integra los nuevos ajustes. Ej: "Manteniendo la estrategia previa de [X], esta nueva interacción me invita a incorporar también [Y]."
+
+4.  **key_takeaways**: Lista de aprendizajes INTEGRANDO los previos + sumando nuevos. Si una takeaway previa fue matizada, mantenla con la marca temporal del cambio.
+
+5.  **model_confidence**: Número de 0.0 a 1.0. ¿Qué tan seguro estás de que tu "updated_understanding_of_user" es correcto tras esta nueva evidencia? Sé honesto. Si el usuario te corrigió, baja. Si tu estrategia previa funcionó bien, sube.`,
 });
 
 

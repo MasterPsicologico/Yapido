@@ -57,7 +57,7 @@ export const useAudioDrafts = () => {
     fetchDrafts();
   }, [fetchDrafts]);
 
-  const saveDraft = useCallback(async (id: string | null, title: string, audioBlob: Blob, roles: { speakerOne: string, speakerTwo: string }): Promise<AudioDraft> => {
+  const saveDraft = useCallback(async (id: string | null, title: string, audioBlob: Blob): Promise<AudioDraft> => {
     if (!db) throw new Error("La base de datos no está inicializada.");
 
     const draftId = id || uuidv4();
@@ -66,7 +66,7 @@ export const useAudioDrafts = () => {
     return new Promise((resolve, reject) => {
         reader.onloadend = () => {
             const base64Audio = reader.result as string;
-            
+
             const getRequest = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(draftId);
             getRequest.onsuccess = () => {
                 const existingDraft = getRequest.result;
@@ -76,16 +76,17 @@ export const useAudioDrafts = () => {
                     title,
                     audioUrl: base64Audio,
                     timestamp: existingDraft?.timestamp || new Date().toISOString(),
-                    roles: existingDraft?.roles || roles,
                     // Ensure these are not present on initial save unless provided
                     transcription: existingDraft?.transcription,
                     report: existingDraft?.report,
+                    detectedParticipants: existingDraft?.detectedParticipants,
+                    detectedParticipantsSummary: existingDraft?.detectedParticipantsSummary,
                 };
 
                 const transaction = db.transaction(STORE_NAME, 'readwrite');
                 const store = transaction.objectStore(STORE_NAME);
                 const request = store.put(draft);
-                
+
                 request.onsuccess = () => {
                     fetchDrafts();
                     resolve(draft);
