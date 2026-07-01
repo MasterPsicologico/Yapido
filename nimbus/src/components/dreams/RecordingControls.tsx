@@ -1,7 +1,6 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 import { Mic, Square, Pause, Play, Trash2, Loader2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -22,7 +21,7 @@ const iconVariants = {
   exit: { scale: 0.5, opacity: 0, rotate: 45 },
 };
 
-const MotionButton = motion(Button);
+const MotionDiv: any = motion.div;
 
 export default function RecordingControls({ status, onStart, onPause, onResume, onStop, onClear }: RecordingControlsProps) {
 
@@ -34,18 +33,17 @@ export default function RecordingControls({ status, onStart, onPause, onResume, 
         return (
           <Tooltip>
             <TooltipTrigger asChild>
-                <MotionButton
+                <button
                     type="button"
                     key="start"
-                    variants={iconVariants}
-                    initial="hidden" animate="visible" exit="exit"
-                    className="h-10 w-10 rounded-full"
-                    size="icon"
+                    className="dream-rec-btn"
                     onClick={onStart}
                     disabled={disabled}
                 >
-                    <Mic className="h-5 w-5" />
-                </MotionButton>
+                    <MotionDiv variants={iconVariants} initial="hidden" animate="visible" exit="exit">
+                       <Mic style={{ width: '20px', height: '20px' }} />
+                    </MotionDiv>
+                </button>
             </TooltipTrigger>
             <TooltipContent><p>Empezar a Grabar</p></TooltipContent>
           </Tooltip>
@@ -54,18 +52,17 @@ export default function RecordingControls({ status, onStart, onPause, onResume, 
         return (
           <Tooltip>
             <TooltipTrigger asChild>
-                 <MotionButton
+                 <button
                     type="button"
                     key="pause"
-                    variants={iconVariants}
-                    initial="hidden" animate="visible" exit="exit"
-                    className="h-10 w-10 rounded-full bg-amber-500 hover:bg-amber-600"
-                    size="icon"
+                    className="dream-rec-btn dream-rec-btn--recording"
                     onClick={onPause}
                     disabled={disabled}
                 >
-                    <Pause className="h-5 w-5" />
-                </MotionButton>
+                    <MotionDiv variants={iconVariants} initial="hidden" animate="visible" exit="exit">
+                       <Pause style={{ width: '20px', height: '20px' }} />
+                    </MotionDiv>
+                </button>
             </TooltipTrigger>
              <TooltipContent><p>Pausar Grabación</p></TooltipContent>
           </Tooltip>
@@ -74,52 +71,49 @@ export default function RecordingControls({ status, onStart, onPause, onResume, 
         return (
           <Tooltip>
             <TooltipTrigger asChild>
-                 <MotionButton
+                 <button
                     type="button"
                     key="resume"
-                    variants={iconVariants}
-                    initial="hidden" animate="visible" exit="exit"
-                    className="h-10 w-10 rounded-full"
-                    size="icon"
+                    className="dream-rec-btn"
                     onClick={onResume}
                     disabled={disabled}
                 >
-                    <Play className="h-5 w-5" />
-                </MotionButton>
+                    <MotionDiv variants={iconVariants} initial="hidden" animate="visible" exit="exit">
+                       <Play style={{ width: '20px', height: '20px' }} />
+                    </MotionDiv>
+                </button>
             </TooltipTrigger>
             <TooltipContent><p>Reanudar Grabación</p></TooltipContent>
           </Tooltip>
         );
        case 'transcribing':
         return (
-            <MotionButton
+            <button
                 disabled
                 type="button"
                 key="processing"
-                variants={iconVariants}
-                initial="hidden" animate="visible" exit="exit"
-                className="h-10 w-10 rounded-full"
-                size="icon"
+                className="dream-rec-btn"
             >
-                <Loader2 className="h-5 w-5 animate-spin" />
-            </MotionButton>
+                <MotionDiv variants={iconVariants} initial="hidden" animate="visible" exit="exit">
+                   <Loader2 style={{ width: '20px', height: '20px', animation: 'dream-spin 1s linear infinite' }} />
+                </MotionDiv>
+            </button>
         );
       case 'done':
         return (
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <MotionButton
+                    <button
                         type="button"
                         key="clear"
-                        variants={iconVariants}
-                        initial="hidden" animate="visible" exit="exit"
-                        className="h-10 w-10 rounded-full bg-destructive text-white hover:bg-destructive/90"
-                        size="icon"
+                        className="dream-rec-btn dream-rec-btn--danger"
                         onClick={onClear}
                         disabled={disabled}
                     >
-                        <Trash2 className="h-5 w-5" />
-                    </MotionButton>
+                        <MotionDiv variants={iconVariants} initial="hidden" animate="visible" exit="exit">
+                           <Trash2 style={{ width: '20px', height: '20px' }} />
+                        </MotionDiv>
+                    </button>
                 </TooltipTrigger>
                 <TooltipContent><p>Limpiar Grabación</p></TooltipContent>
             </Tooltip>
@@ -134,19 +128,14 @@ export default function RecordingControls({ status, onStart, onPause, onResume, 
        return (
          <Tooltip>
             <TooltipTrigger asChild>
-                <MotionButton
+                <button
                     type="button"
                     key="stop"
-                    layout
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="h-10 w-10 rounded-full bg-red-500 text-white hover:bg-red-600"
-                    size="icon"
+                    className="dream-rec-btn dream-rec-btn--danger"
                     onClick={onStop}
                 >
-                    <Square className="h-5 w-5" />
-                </MotionButton>
+                    <Square style={{ width: '20px', height: '20px' }} />
+                </button>
             </TooltipTrigger>
             <TooltipContent><p>Finalizar Grabación</p></TooltipContent>
          </Tooltip>
@@ -157,7 +146,7 @@ export default function RecordingControls({ status, onStart, onPause, onResume, 
 
   return (
     <TooltipProvider>
-      <div className="relative flex items-center justify-center h-10 gap-2">
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '56px', gap: '8px' }}>
          <AnimatePresence mode="wait">
             {renderMainButton()}
         </AnimatePresence>
