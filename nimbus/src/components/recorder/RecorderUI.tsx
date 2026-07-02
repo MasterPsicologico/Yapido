@@ -10,7 +10,6 @@ import AudioVisualizer from '@/components/dreams/AudioVisualizer';
 import AudioPlayer from '@/components/recorder/AudioPlayer';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { analyzeAudioRecording } from '@/ai/flows/analyze-audio-recording';
 import ReactMarkdown from 'react-markdown';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -191,10 +190,28 @@ export default function RecorderUI({ initialDraft, onNewRecording, onDraftCreate
     const stepTimer2 = setTimeout(() => setAnalysisStep('finalizing'), 14000);
 
     try {
-      const result = await analyzeAudioRecording({
-        audioDataUri: audioUrl,
-        title: title.trim(),
+      const res = await fetch('/api/analyze-recording', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audioDataUri: audioUrl,
+          title: title.trim() || 'Grabación sin título',
+        }),
       });
+
+      if (!res.ok) {
+        let errPayload: any = null;
+        try {
+          errPayload = await res.json();
+        } catch { /* no JSON body */ }
+
+        const message =
+          errPayload?.error ||
+          `Error HTTP ${res.status} en el análisis. Verifica tu audio.`;
+        throw new Error(message);
+      }
+
+      const result = await res.json();
 
       if (!result.report || !result.transcription) {
         throw new Error("El análisis no devolvió un informe completo.");

@@ -9,7 +9,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: '5mb',
+      bodySizeLimit: '25mb',
     },
   },
   outputFileTracingRoot: __dirname,
