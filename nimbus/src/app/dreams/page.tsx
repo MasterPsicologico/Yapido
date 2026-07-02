@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Sidebar, SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import ChatSidebar from '@/components/chat/chat-sidebar';
 import { formatDistanceToNow, format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es } from 'date-fns/locale/es';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,9 +25,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth, useFirestore, useCollection } from '@/firebase';
-import { query, collection, orderBy, doc, setDoc, deleteDoc, getDocs, Timestamp } from 'firebase/firestore';
+import { query, collection, orderBy, doc, setDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import anime from 'animejs';
+import {
+  playEntranceMaster,
+  animatePanelCurtain,
+  animateDiarySwarm,
+  animateSpecialistBreathing,
+  spawnWaterRipple,
+  animateMorphingBackdrop,
+  bindGlobalParallax,
+  bindTiltParallax,
+} from './dream-animations';
 import DreamSpecialistSelection from '@/components/dreams/DreamSpecialistSelection';
 import AudioVisualizer from '@/components/dreams/AudioVisualizer';
 import RecordingControls from '@/components/dreams/RecordingControls';
@@ -71,6 +81,7 @@ export default function DreamWeaverPage() {
 
   const portalRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
   const textareaWrapRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLButtonElement>(null);
   const moonRef = useRef<HTMLDivElement>(null);
@@ -109,11 +120,11 @@ export default function DreamWeaverPage() {
   // --- Generate stars on client only (Post-Mount) to prevent SSR hydration mismatch with Math.random ---
   useEffect(() => {
     const generated: StarConfig[] = [];
+    const sizeOptions = [1.5, 2, 2.5, 3, 3.5];
     for (let i = 0; i < 28; i++) {
-      const size = Math.random() > 0.85 ? 3 : Math.random() > 0.5 ? 2 : 1.5;
       generated.push({
         id: i,
-        size,
+        size: sizeOptions[Math.floor(Math.random() * sizeOptions.length)],
         left: Math.random() * 100,
         top: Math.random() * 100,
       });
@@ -121,69 +132,60 @@ export default function DreamWeaverPage() {
     setStars(generated);
   }, []);
 
-  // --- Panel toggle animation ---
+  // --- Panel toggle animation (Curtain) ---
   useEffect(() => {
     if (!panelRef.current) return;
+    const totalWidth = typeof window !== 'undefined'
+      ? (isMobile ? window.innerWidth : 360)
+      : 360;
+    animatePanelCurtain(panelRef.current, isHistoryOpen, totalWidth);
+
+    // Spawn swarm animation if opening & items exist
     if (isHistoryOpen) {
-      anime({
-        targets: panelRef.current,
-        translateX: isMobile ? [window.innerWidth, 0] : [360, 0],
-        opacity: [0, 1],
-        duration: 350,
-        easing: 'easeOutCubic',
-      });
-    } else {
-      anime({
-        targets: panelRef.current,
-        translateX: [0, isMobile ? window.innerWidth : 360],
-        opacity: [1, 0],
-        duration: 280,
-        easing: 'easeInCubic',
-      });
+      setTimeout(() => {
+        const items = Array.from(document.querySelectorAll<HTMLElement>('.dream-diary-item'));
+        if (items.length > 0) animateDiarySwarm(items);
+      }, 400);
     }
   }, [isHistoryOpen, isMobile]);
 
-  // --- Entrance animations ---
+  // --- Master Cinematic Entrance ---
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (!portalRef.current) return;
+    const starsEls = Array.from(portalRef.current.querySelectorAll<HTMLElement>('.dream-star'));
 
-    anime({
-      targets: '.dream-star',
-      opacity: [
-        { value: () => anime.random(2, 7) / 10, duration: () => anime.random(1800, 3500) },
-        { value: 0.08, duration: () => anime.random(1800, 3500) },
-      ],
-      easing: 'easeInOutSine',
-      direction: 'alternate',
-      loop: true,
-      delay: () => anime.random(0, 2500),
+    // Decorate stars with random hue & size for fall & orbit
+    starsEls.forEach((el) => {
+      (el as any).__hue = 200 + Math.random() * 60;
+      (el as any).__size = [1.5, 2, 2.5, 3, 3.5][Math.floor(Math.random() * 5)];
+      (el as any).__finalX = Math.random() * 95;
+      (el as any).__finalY = Math.random() * 80 + 5;
     });
 
-    anime({
-      targets: moonRef.current,
-      translateY: [-5, 5],
-      duration: 6000,
-      direction: 'alternate',
-      easing: 'easeInOutSine',
-      loop: true,
+    playEntranceMaster({
+      portal: portalRef.current,
+      moon: moonRef.current || undefined,
+      stars: starsEls,
+      hero: heroRef.current || undefined,
+      subtitle: subtitleRef.current || undefined,
+      textarea: textareaWrapRef.current || undefined,
+      cta: ctaRef.current || undefined,
     });
 
-    const tl = anime.timeline({ easing: 'easeOutExpo' });
-    tl.add({ targets: moonRef.current, opacity: [0, 1], translateY: [-30, 0], duration: 1600 }, 0);
-    tl.add({ targets: '.dream-star', delay: anime.stagger(60, { start: 400 }), scale: [0, 1], opacity: [0, 0.6], duration: 600 }, 200);
-    tl.add({ targets: heroRef.current, opacity: [0, 1], translateY: [40, 0], duration: 1200 }, 500);
-    tl.add({ targets: textareaWrapRef.current, opacity: [0, 1], translateY: [30, 0], duration: 1000 }, 800);
-    tl.add({ targets: ctaRef.current, opacity: [0, 1], translateY: [20, 0], scale: [0.96, 1], duration: 800 }, 1000);
-
-    return () => {
-      anime.remove('.dream-star');
-      if (moonRef.current) anime.remove(moonRef.current);
-    };
+    if (portalRef.current) {
+      animateMorphingBackdrop(portalRef.current);
+      bindGlobalParallax(portalRef.current, [
+        { el: moonRef.current!, depth: 0.8 },
+      ]);
+    }
   }, []);
 
-  // Entrance for step transitions
+  // Entrance for step transitions (skip initial 'input' mount — playEntranceMaster handles that)
+  const isFirstInputMount = useRef(true);
   useEffect(() => {
-    if (!ctaRef.current || !portalRef.current) return;
+    if (isFirstInputMount.current) { isFirstInputMount.current = false; return; }
+    if (!ctaRef.current) return;
     if (analysisStep === 'input') {
       anime({
         targets: [textareaWrapRef.current, ctaRef.current],
@@ -204,6 +206,16 @@ export default function DreamWeaverPage() {
       if (!profile) {
           toast({ variant: 'destructive', title: 'Perfil no encontrado', description: 'Es necesario un perfil psicológico para elegir un especialista.' });
           return;
+      }
+      // Wave/ripple effect at the CTA click point
+      const btn = ctaRef.current;
+      if (btn) {
+        const rect = btn.getBoundingClientRect();
+        spawnWaterRipple(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2,
+          'rgba(196, 181, 253, 0.7)',
+        );
       }
       setAnalysisStep('specialist');
   };
@@ -394,16 +406,16 @@ export default function DreamWeaverPage() {
   const sortedDreams = useMemo(() => {
     if (!dreamHistory) return [];
     return [...dreamHistory].sort((a, b) => {
-         const tA = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : new Date(a.createdAt).getTime();
-         const tB = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : new Date(b.createdAt).getTime();
+         const tA = typeof a.createdAt === 'string' ? new Date(a.createdAt).getTime() : Date.now();
+         const tB = typeof b.createdAt === 'string' ? new Date(b.createdAt).getTime() : Date.now();
          return tB - tA;
     })
   }, [dreamHistory]);
 
-  const getFormattedDate = (dateString: string | Date | Timestamp) => {
+  const getFormattedDate = (dateString: string | Date) => {
     if (!dateString) return { relative: 'Fecha desconocida', absolute: '' };
     try {
-      const date = dateString instanceof Timestamp ? dateString.toDate() : new Date(dateString);
+      const date = new Date(dateString);
       return {
           relative: formatDistanceToNow(date, { addSuffix: true, locale: es }),
           absolute: format(date, "d MMM, HH:mm", { locale: es })
@@ -429,10 +441,12 @@ export default function DreamWeaverPage() {
         <div ref={moonRef} className="dream-moon" />
 
         {/* Main sidebar (nimbus nav) */}
-        <Sidebar className="dream-main-sidebar">
-          <ChatSidebar chats={chats || []} activeChatId={''} isLoading={chatsLoading} removeChat={() => {}} clearChats={() => {}} startNewChat={() => Promise.resolve()} />
-        </Sidebar>
-        <SidebarInset className="flex overflow-hidden relative" style={{ zIndex: 1, background: 'transparent' }}>
+        <div className="dream-main-sidebar">
+          <Sidebar>
+            <ChatSidebar chats={chats || []} activeChatId={''} isLoading={chatsLoading} removeChat={() => {}} clearChats={() => {}} startNewChat={() => Promise.resolve()} />
+          </Sidebar>
+        </div>
+        <SidebarInset className="flex overflow-hidden relative dream-sidebar-inset">
             {/* Content area */}
             <main className="flex-1 flex flex-col overflow-y-auto relative" style={{ transition: 'margin-right 0.1s ease' }}>
                 {/* Header */}
@@ -480,10 +494,10 @@ export default function DreamWeaverPage() {
                 <div className="dream-step-input">
                   {analysisStep === 'input' ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', width: '100%', maxWidth: '640px' }}>
-                         <div ref={heroRef} style={{ textAlign: 'center', opacity: 0 }}>
+                         <div style={{ textAlign: 'center' }} ref={heroRef}>
                              <h2 className="dream-hero-title">¿Qué te ha mostrado tu subconsciente?</h2>
-                             <p className="dream-hero-subtitle">Describe o relata tu sueño. Luego, elige un especialista para la interpretación.</p>
                          </div>
+                         <p className="dream-hero-subtitle" ref={subtitleRef}>Describe o relata tu sueño. Luego, elige un especialista para la interpretación.</p>
 
                          {profileError && (
                             <div className="dream-profile-warn">

@@ -1,15 +1,25 @@
 /* ============================================
-   PORTAL DE SUEÑOS — Dream Module Styles
-   Ethereal · Nocturnal · Oneiric
+   PORTAL DE SUEÑOS — Cinematic Dream Styles
+   Ondas · Partículas · Morphing · Parallax · Liquid
    ============================================ */
 
-/* --- DREAM PAGE ROOT --- */
+:root {
+  --dream-bg: hsl(230, 35%, 6%);
+  --dream-fg: hsl(220, 30%, 88%);
+  --dream-accent: #93c5fd;
+  --dream-accent2: #a5b4fc;
+  --dream-accent3: #c4b5fd;
+  --dream-glow: rgba(96, 165, 250, 0.15);
+  --dream-deep: hsl(230, 30%, 10%);
+}
+
+/* ========== DREAM PAGE ROOT ========== */
 .dream-portal {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  background: hsl(230, 35%, 6%);
-  color: hsl(220, 30%, 88%);
+  background: var(--dream-bg);
+  color: var(--dream-fg);
 }
 
 .dream-portal::before {
@@ -24,30 +34,92 @@
   z-index: 0;
 }
 
-/* --- FLOATING STARS (decorative particles) --- */
+/* ========== STARS — multi-layer parallax ========== */
 .dream-stars {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
+  perspective: 600px;
 }
 
 .dream-star {
   position: absolute;
   border-radius: 50%;
-  background: rgba(147, 197, 253, 0.6);
-  box-shadow: 0 0 6px rgba(147, 197, 253, 0.4);
+  background: rgba(147, 197, 253, 0.7);
+  box-shadow:
+    0 0 4px rgba(147, 197, 253, 0.5),
+    0 0 8px rgba(147, 197, 253, 0.2);
+  animation: star-pulse 4s ease-in-out infinite alternate;
 }
 
 .dream-star--lg {
-  width: 4px;
-  height: 4px;
-  background: rgba(165, 180, 252, 0.8);
-  box-shadow: 0 0 10px rgba(165, 180, 252, 0.5);
+  background: rgba(165, 180, 252, 0.9);
+  box-shadow:
+    0 0 6px rgba(165, 180, 252, 0.7),
+    0 0 14px rgba(165, 180, 252, 0.3),
+    0 0 30px rgba(165, 180, 252, 0.1);
+  animation: star-pulse 3s ease-in-out infinite alternate;
 }
 
-/* --- DREAM MOON (decorative crescent) --- */
+.dream-star--xl {
+  background: rgba(196, 181, 253, 1);
+  box-shadow:
+    0 0 8px rgba(196, 181, 253, 0.8),
+    0 0 20px rgba(196, 181, 253, 0.4),
+    0 0 40px rgba(196, 181, 253, 0.15);
+  animation: star-pulse 2.5s ease-in-out infinite alternate, star-orbit 20s linear infinite;
+}
+
+@keyframes star-pulse {
+  0% { opacity: 0.3; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes star-orbit {
+  from { transform: rotate(0deg) translateX(2px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(2px) rotate(-360deg); }
+}
+
+/* ========== FIREFLIES ========== */
+.dream-firefly {
+  position: fixed;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(253, 230, 138, 0.8);
+  box-shadow: 0 0 8px rgba(253, 230, 138, 0.6), 0 0 20px rgba(253, 230, 138, 0.2);
+  pointer-events: none;
+  z-index: 1;
+  animation: firefly-drift 12s ease-in-out infinite;
+}
+
+.dream-firefly::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(253, 230, 138, 0.3) 0%, transparent 70%);
+  animation: firefly-glow 3s ease-in-out infinite alternate;
+}
+
+@keyframes firefly-drift {
+  0% { transform: translate(0, 0) scale(1); opacity: 0; }
+  10% { opacity: 0.8; }
+  25% { transform: translate(30px, -40px) scale(1.2); opacity: 0.6; }
+  50% { transform: translate(-20px, -80px) scale(0.8); opacity: 0.9; }
+  75% { transform: translate(40px, -50px) scale(1.1); opacity: 0.4; }
+  90% { opacity: 0.7; }
+  100% { transform: translate(0, 0) scale(1); opacity: 0; }
+}
+
+@keyframes firefly-glow {
+  0% { transform: scale(0.5); opacity: 0.3; }
+  100% { transform: scale(1.5); opacity: 0.8; }
+}
+
+/* ========== MOON — deep radial + crescent ========== */
 .dream-moon {
   position: fixed;
   top: 30px;
@@ -55,12 +127,28 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: radial-gradient(circle at 65% 35%, rgba(253, 230, 138, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle at 65% 35%,
+    rgba(253, 230, 138, 0.25) 0%,
+    rgba(253, 230, 138, 0.1) 40%,
+    transparent 70%
+  );
   box-shadow:
-    0 0 60px rgba(253, 230, 138, 0.08),
-    0 0 120px rgba(253, 230, 138, 0.04);
+    0 0 60px rgba(253, 230, 138, 0.1),
+    0 0 120px rgba(253, 230, 138, 0.06),
+    0 0 200px rgba(253, 230, 138, 0.03),
+    inset 0 0 30px rgba(253, 230, 138, 0.08);
   pointer-events: none;
   z-index: 0;
+  animation: moon-breathe 8s ease-in-out infinite;
+}
+
+.dream-moon::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 1px solid rgba(253, 230, 138, 0.08);
+  animation: moon-ring-pulse 6s ease-in-out infinite;
 }
 
 .dream-moon::after {
@@ -71,17 +159,53 @@
   width: 70px;
   height: 70px;
   border-radius: 50%;
-  background: hsl(230, 35%, 6%);
+  background: var(--dream-bg);
 }
 
-/* --- HEADER BAR --- */
+@keyframes moon-breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 60px rgba(253, 230, 138, 0.1), 0 0 120px rgba(253, 230, 138, 0.06); }
+  50% { transform: scale(1.05); box-shadow: 0 0 80px rgba(253, 230, 138, 0.15), 0 0 160px rgba(253, 230, 138, 0.08); }
+}
+
+@keyframes moon-ring-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.15); opacity: 0.1; }
+}
+
+/* ========== COSMIC DUST PARTICLES ========== */
+.dream-cosmic-dust {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.dream-dust-particle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  background: rgba(147, 197, 253, 0.4);
+  border-radius: 50%;
+  animation: dust-fall linear infinite;
+}
+
+@keyframes dust-fall {
+  0% { transform: translateY(-10px) translateX(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(100vh) translateX(30px) rotate(360deg); opacity: 0; }
+}
+
+/* ========== HEADER ========== */
 .dream-header {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: hsla(230, 35%, 6%, 0.85);
-  backdrop-filter: blur(16px) saturate(180%);
-  border-bottom: 1px solid rgba(96, 165, 250, 0.1);
+  background: hsla(230, 35%, 6%, 0.88);
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  border-bottom: 1px solid rgba(96, 165, 250, 0.08);
   padding: 16px 24px;
 }
 
@@ -93,19 +217,7 @@
   text-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
 }
 
-/* --- STEP INPUT --- */
-.dream-step-input {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  padding: 32px 20px;
-  gap: 32px;
-}
-
+/* ========== HERO TITLE — split letter system ========== */
 .dream-hero-title {
   font-size: clamp(2rem, 5vw, 3.2rem);
   font-weight: 800;
@@ -127,28 +239,60 @@
   animation: dream-gradient-shift 12s ease infinite;
 }
 
+.dream-hero-letter {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
 @keyframes dream-gradient-shift {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
 
 .dream-hero-subtitle {
-  font-size: 1.1rem;
-  color: hsl(220, 20%, 55%);
+  font-size: 1.25rem;
+  color: hsl(220, 20%, 65%);
   text-align: center;
-  max-width: 480px;
+  max-width: 540px;
   line-height: 1.6;
+  opacity: 0.85;
 }
 
-/* --- TEXTAREA WRAPPER --- */
+/* ========== WAVE ORB — expanding wave rings on CTA click ========== */
+.dream-wave-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(147, 197, 253, 0.3);
+  pointer-events: none;
+  animation: wave-expand 1.2s ease-out forwards;
+}
+
+@keyframes wave-expand {
+  0% { width: 0; height: 0; opacity: 0.8; transform: translate(-50%, -50%) scale(0); }
+  100% { width: 400px; height: 400px; opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ========== STEP INPUT ========== */
+.dream-step-input {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 32px 20px;
+  gap: 32px;
+}
+
+/* ========== TEXTAREA — liquid ripple on focus ========== */
 .dream-textarea-wrap {
   position: relative;
   width: 100%;
   max-width: 640px;
   border-radius: 20px;
   background: hsla(230, 30%, 12%, 0.6);
-  border: 1px solid rgba(96, 165, 250, 0.15);
-  backdrop-filter: blur(8px);
+  border: 1px solid rgba(96, 165, 250, 0.12);
   transition: border-color 0.4s ease, box-shadow 0.4s ease;
   overflow: hidden;
 }
@@ -161,13 +305,11 @@
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgba(96, 165, 250, 0.25),
-    rgba(139, 92, 246, 0.15),
-    rgba(56, 189, 248, 0.2),
-    rgba(96, 165, 250, 0.25)
+    rgba(96, 165, 250, 0.3),
+    rgba(139, 92, 246, 0.2),
+    rgba(56, 189, 248, 0.25),
+    rgba(96, 165, 250, 0.3)
   );
-  background-size: 300% 300%;
-  animation: dream-gradient-shift 8s ease infinite;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -178,36 +320,54 @@
 }
 
 .dream-textarea-wrap:focus-within {
-  border-color: rgba(96, 165, 250, 0.35);
+  border-color: rgba(96, 165, 250, 0.4);
   box-shadow:
-    0 0 30px rgba(96, 165, 250, 0.08),
-    0 0 60px rgba(139, 92, 246, 0.04);
+    0 0 30px rgba(96, 165, 250, 0.1),
+    0 0 60px rgba(139, 92, 246, 0.06),
+    0 0 100px rgba(96, 165, 250, 0.03);
 }
 
 .dream-textarea-wrap:focus-within::before {
   opacity: 1;
 }
 
+.dream-textarea-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+  animation: ripple-expand 0.8s ease-out forwards;
+}
+
+@keyframes ripple-expand {
+  0% { transform: scale(0); opacity: 1; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
 .dream-textarea {
   width: 100%;
-  min-height: 180px;
-  padding: 20px 20px 20px 20px;
+  min-height: 220px;
+  padding: 22px;
   background: transparent;
   border: none;
   outline: none;
-  color: hsl(220, 30%, 88%);
-  font-size: 1rem;
+  color: hsl(220, 30%, 92%);
+  font-size: 1.3rem !important;
+  font-weight: 500;
+  font-family: inherit;
   line-height: 1.7;
   resize: vertical;
-  font-family: inherit;
+  letter-spacing: 0.01em;
 }
 
 .dream-textarea::placeholder {
-  color: hsl(220, 20%, 38%);
+  color: hsl(220, 25%, 50%);
   font-style: italic;
+  font-size: 1.3rem !important;
+  font-weight: 400;
 }
 
-/* --- RECORDING CONTROLS (dream themed) --- */
+/* ========== RECORDING CONTROLS ========== */
 .dream-recorder-area {
   display: flex;
   flex-direction: column;
@@ -233,7 +393,7 @@
   display: block;
 }
 
-/* --- RECORDING BUTTON --- */
+/* ========== REC BUTTON — seismic pulses + concentric rings ========== */
 .dream-rec-btn {
   position: relative;
   display: flex;
@@ -246,8 +406,9 @@
   background: hsla(230, 50%, 20%, 0.6);
   color: hsl(217, 72%, 84%);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   backdrop-filter: blur(4px);
+  overflow: visible;
 }
 
 .dream-rec-btn:hover {
@@ -263,6 +424,42 @@
   animation: dream-rec-pulse 1.5s ease-in-out infinite;
 }
 
+.dream-rec-concentric {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  animation: concentric-expand 2s ease-out infinite;
+  pointer-events: none;
+}
+
+.dream-rec-concentric:nth-child(2) { animation-delay: 0.6s; inset: -12px; }
+.dream-rec-concentric:nth-child(3) { animation-delay: 1.2s; inset: -16px; }
+
+@keyframes concentric-expand {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes dream-rec-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.3); }
+  50% { box-shadow: 0 0 0 16px rgba(251, 191, 36, 0); }
+}
+
+.dream-rec-stop-wave {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(239, 68, 68, 0.4);
+  animation: stop-wave 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes stop-wave {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
 .dream-rec-btn--danger {
   border-color: rgba(239, 68, 68, 0.4);
   background: hsla(0, 60%, 20%, 0.5);
@@ -274,12 +471,7 @@
   box-shadow: 0 0 24px rgba(239, 68, 68, 0.2);
 }
 
-@keyframes dream-rec-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.3); }
-  50% { box-shadow: 0 0 0 12px rgba(251, 191, 36, 0); }
-}
-
-/* --- CTA BUTTON --- */
+/* ========== CTA BUTTON — liquid morph + wave click ========== */
 .dream-cta-btn {
   position: relative;
   display: inline-flex;
@@ -290,13 +482,13 @@
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: hsl(230, 35%, 6%);
+  color: var(--dream-bg);
   background: linear-gradient(135deg, #93c5fd 0%, #a5b4fc 50%, #c4b5fd 100%);
   background-size: 200% 200%;
   border: none;
   border-radius: 60px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow:
     0 4px 20px rgba(96, 165, 250, 0.25),
     0 0 60px rgba(139, 92, 246, 0.08);
@@ -307,16 +499,35 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+  background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%);
   transform: translateX(-100%);
   transition: transform 0.6s ease;
 }
 
+.dream-cta-btn::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg, #93c5fd, #a5b4fc, #c4b5fd, #93c5fd);
+  opacity: 0;
+  z-index: -1;
+  animation: cta-orbit 4s linear infinite;
+  filter: blur(8px);
+  transition: opacity 0.4s ease;
+}
+
+@keyframes cta-orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .dream-cta-btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.02);
   box-shadow:
     0 8px 30px rgba(96, 165, 250, 0.35),
-    0 0 80px rgba(139, 92, 246, 0.12);
+    0 0 80px rgba(139, 92, 246, 0.12),
+    0 0 120px rgba(96, 165, 250, 0.06);
   background-position: 100% 0;
 }
 
@@ -324,8 +535,12 @@
   transform: translateX(100%);
 }
 
+.dream-cta-btn:hover::after {
+  opacity: 0.4;
+}
+
 .dream-cta-btn:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
 }
 
 .dream-cta-btn:disabled {
@@ -339,7 +554,24 @@
   transform: translateX(-100%);
 }
 
-/* --- SPECIALIST CARDS --- */
+.dream-cta-btn:disabled:hover::after {
+  opacity: 0;
+}
+
+.dream-cta-wave {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 60%);
+  pointer-events: none;
+  animation: cta-wave-expand 0.8s ease-out forwards;
+}
+
+@keyframes cta-wave-expand {
+  0% { transform: scale(0); opacity: 1; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+/* ========== SPECIALIST CARDS — 3D tilt + orbit particles ========== */
 .dream-specialist-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -347,6 +579,7 @@
   width: 100%;
   max-width: 1100px;
   padding: 0 16px;
+  perspective: 1200px;
 }
 
 .dream-specialist-card {
@@ -359,8 +592,10 @@
   border-radius: 20px;
   backdrop-filter: blur(8px);
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
+  transform-style: preserve-3d;
+  will-change: transform;
 }
 
 .dream-specialist-card::before {
@@ -381,7 +616,7 @@
   inset: 0;
   background: radial-gradient(
     ellipse at 50% 0%,
-    var(--spec-glow, rgba(147, 197, 253, 0.06)) 0%,
+    var(--spec-glow, rgba(147, 197, 253, 0.08)) 0%,
     transparent 60%
   );
   opacity: 0;
@@ -389,16 +624,63 @@
 }
 
 .dream-specialist-card:hover {
-  border-color: rgba(96, 165, 250, 0.25);
-  transform: translateY(-6px);
+  border-color: rgba(96, 165, 250, 0.3);
   box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.3),
-    0 0 40px var(--spec-glow, rgba(147, 197, 253, 0.08));
+    0 20px 50px rgba(0, 0, 0, 0.35),
+    0 0 40px var(--spec-glow, rgba(147, 197, 253, 0.1));
 }
 
 .dream-specialist-card:hover::before,
 .dream-specialist-card:hover::after {
   opacity: 1;
+}
+
+.dream-specialist-card.is-tilted {
+  transition: box-shadow 0.5s ease;
+}
+
+.dream-spec-tilt-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--tilt-x, 50%) var(--tilt-y, 0%),
+    var(--spec-glow, rgba(147, 197, 253, 0.15)) 0%,
+    transparent 50%
+  );
+  transition: opacity 0.3s ease;
+}
+
+.dream-specialist-card:hover .dream-spec-tilt-glow {
+  opacity: 1;
+}
+
+/* Orbit particles around icon */
+.dream-spec-orbit {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.dream-spec-orbit-dot {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--spec-accent, #93c5fd);
+  box-shadow: 0 0 6px var(--spec-accent, #93c5fd);
+  animation: orbit-run 6s linear infinite;
+}
+
+.dream-spec-orbit-dot:nth-child(2) { animation-delay: -2s; opacity: 0.6; }
+.dream-spec-orbit-dot:nth-child(3) { animation-delay: -4s; opacity: 0.3; }
+
+@keyframes orbit-run {
+  from { transform: rotate(0deg) translateX(36px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(36px) rotate(-360deg); }
 }
 
 .dream-spec-icon {
@@ -469,16 +751,677 @@
   border-radius: 12px;
   color: hsl(220, 30%, 85%);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.dream-spec-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--spec-accent, #93c5fd);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: -1;
 }
 
 .dream-spec-btn:hover {
-  background: var(--spec-accent, #93c5fd);
-  color: hsl(230, 35%, 6%);
+  color: var(--dream-bg);
   border-color: var(--spec-accent, #93c5fd);
 }
 
-/* --- DREAM HISTORY SIDEBAR --- */
+.dream-spec-btn:hover::after {
+  transform: scaleX(1);
+}
+
+/* ========== SPECIALIST COLOR VARIANTS ========== */
+.dream-spec--psychological {
+  --spec-accent: #a5b4fc;
+  --spec-glow: rgba(165, 180, 252, 0.12);
+}
+
+.dream-spec--symbolic {
+  --spec-accent: #93c5fd;
+  --spec-glow: rgba(147, 197, 253, 0.12);
+}
+
+.dream-spec--spiritual {
+  --spec-accent: #86efac;
+  --spec-glow: rgba(134, 239, 172, 0.12);
+}
+
+.dream-spec--shamanic {
+  --spec-accent: #f9a8d4;
+  --spec-glow: rgba(249, 168, 212, 0.12);
+}
+
+/* ========== GLOW RING ========== */
+.dream-glow-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 1px solid var(--spec-accent, #93c5fd);
+  opacity: 0;
+  animation: dream-breathe 3s ease-in-out infinite;
+}
+
+@keyframes dream-breathe {
+  0%, 100% { opacity: 0; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(1.05); }
+}
+
+/* ========== DREAM DIARY PANEL — curtain reveal ========== */
+.dream-diary-panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 360px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: hsl(233, 35%, 5%);
+  border-left: 1px solid rgba(96, 165, 250, 0.1);
+  box-shadow:
+    -8px 0 40px rgba(0, 0, 0, 0.5),
+    -2px 0 20px rgba(96, 165, 250, 0.04);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+}
+
+.dream-diary-curtain {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, hsl(230, 35%, 6%), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dream-diary-panel-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(96, 165, 250, 0.08);
+}
+
+.dream-history-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: hsl(217, 72%, 84%);
+}
+
+.dream-diary-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: hsl(220, 20%, 50%);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dream-diary-panel-close:hover {
+  background: hsla(230, 30%, 12%, 0.8);
+  color: hsl(220, 30%, 85%);
+}
+
+.dream-diary-panel-body {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.dream-diary-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dream-diary-card {
+  flex: 1;
+  text-align: left;
+  padding: 14px 16px;
+  background: hsla(230, 30%, 10%, 0.5);
+  border: 1px solid rgba(96, 165, 250, 0.06);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  position: relative;
+}
+
+.dream-diary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #93c5fd, #a5b4fc, #c4b5fd);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.dream-diary-card:hover {
+  background: hsla(230, 30%, 12%, 0.8);
+  border-color: rgba(96, 165, 250, 0.15);
+  transform: translateX(4px);
+}
+
+.dream-diary-card:hover::before {
+  opacity: 1;
+}
+
+.dream-diary-card-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: hsl(220, 30%, 88%);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dream-diary-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.7rem;
+  color: hsl(220, 20%, 45%);
+}
+
+.dream-diary-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dream-diary-meta-item svg {
+  width: 12px;
+  height: 12px;
+}
+
+.dream-diary-delete {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: hsl(0, 60%, 50%);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.dream-diary-item:hover .dream-diary-delete {
+  opacity: 1;
+}
+
+.dream-diary-delete:hover {
+  background: hsla(0, 60%, 50%, 0.15);
+}
+
+.dream-diary-panel-footer {
+  position: relative;
+  z-index: 2;
+  padding: 12px;
+  border-top: 1px solid rgba(96, 165, 250, 0.08);
+}
+
+/* ========== DIARY TOGGLE BUTTON ========== */
+.dream-diary-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: hsl(217, 72%, 84%);
+  background: hsla(230, 40%, 12%, 0.6);
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(6px);
+}
+
+.dream-diary-toggle:hover {
+  border-color: rgba(96, 165, 250, 0.4);
+  box-shadow: 0 0 20px rgba(96, 165, 250, 0.12);
+  background: hsla(230, 40%, 15%, 0.8);
+}
+
+.dream-diary-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--dream-bg);
+  background: #93c5fd;
+  border-radius: 10px;
+  box-shadow: 0 0 8px rgba(147, 197, 253, 0.4);
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(147, 197, 253, 0.4); }
+  50% { box-shadow: 0 0 14px rgba(147, 197, 253, 0.6); }
+}
+
+/* ========== HISTORY CLEAN BUTTON ========== */
+.dream-history-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: hsl(0, 60%, 50%);
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dream-history-clear-btn:hover {
+  background: hsla(0, 60%, 50%, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ========== PROFILE WARNING ========== */
+.dream-profile-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  max-width: 640px;
+  width: 100%;
+  border-radius: 16px;
+  background: hsla(45, 60%, 15%, 0.4);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  color: hsl(45, 80%, 75%);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  backdrop-filter: blur(4px);
+}
+
+.dream-profile-warn-icon {
+  flex-shrink: 0;
+  color: #fbbf24;
+}
+
+.dream-profile-warn-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+/* ========== AUDIO PLAYBACK ========== */
+.dream-audio-playback {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 12px;
+  width: 100%;
+  max-width: 640px;
+  border-radius: 14px;
+  background: hsla(230, 30%, 10%, 0.5);
+  border: 1px solid rgba(96, 165, 250, 0.1);
+}
+
+.dream-audio-playback audio {
+  width: 100%;
+  height: 40px;
+  border-radius: 8px;
+}
+
+.dream-audio-playback audio::-webkit-media-controls-panel {
+  background: hsla(230, 30%, 12%, 0.8);
+}
+
+.dream-audio-transcribing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: hsl(217, 72%, 84%);
+  background: hsla(230, 40%, 15%, 0.6);
+  border: 1px solid rgba(147, 197, 253, 0.2);
+  border-radius: 8px;
+  text-shadow: 0 0 12px rgba(96, 165, 250, 0.25);
+}
+
+/* ========== ANALYSIS PAGE ========== */
+.dream-analysis-page {
+  min-height: 100vh;
+  background: var(--dream-bg);
+  color: var(--dream-fg);
+  position: relative;
+  overflow: hidden;
+}
+
+.dream-analysis-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 10%, rgba(139, 92, 246, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 80% 70%, rgba(56, 189, 248, 0.04) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.dream-analysis-container {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+.dream-analysis-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: hsl(220, 20%, 55%);
+  background: transparent;
+  border: 1px solid rgba(96, 165, 250, 0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.dream-analysis-back:hover {
+  color: hsl(217, 72%, 84%);
+  border-color: rgba(96, 165, 250, 0.25);
+  background: hsla(230, 30%, 10%, 0.5);
+}
+
+.dream-analysis-content {
+  margin-top: 32px;
+  line-height: 1.8;
+  font-size: 1.05rem;
+}
+
+.dream-analysis-content h1 {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 8px;
+  background: clip-text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(135deg, #93c5fd 0%, #a5b4fc 30%, #c4b5fd 60%, #a5b4fc 100%);
+  background-size: 300% 300%;
+  animation: dream-gradient-shift 8s ease infinite;
+}
+
+.dream-analysis-content h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: hsl(217, 72%, 84%);
+  margin-top: 40px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(96, 165, 250, 0.12);
+}
+
+.dream-analysis-content p {
+  color: hsl(220, 20%, 72%);
+  margin-bottom: 16px;
+  line-height: 1.8;
+}
+
+.dream-analysis-content ul {
+  list-style: none;
+  padding: 0;
+}
+
+.dream-analysis-content li {
+  position: relative;
+  padding-left: 24px;
+  margin-bottom: 16px;
+  color: hsl(220, 20%, 72%);
+  line-height: 1.7;
+}
+
+.dream-analysis-content li::before {
+  content: '\2727';
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--spec-accent, #93c5fd);
+  opacity: 0.6;
+  font-size: 0.85rem;
+}
+
+/* Progressive scribble effect for analysis words */
+.dream-scribble-word {
+  display: inline-block;
+  opacity: 0;
+  animation: scribble-in 0.3s ease-out forwards;
+}
+
+@keyframes scribble-in {
+  0% { opacity: 0; filter: blur(4px); transform: translateY(8px); }
+  100% { opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+
+/* Letter drip for analysis title */
+.dream-drip-letter {
+  display: inline-block;
+  animation: drip-fall 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes drip-fall {
+  0% { opacity: 0; transform: translateY(-30px) scaleY(1.5); filter: blur(2px); }
+  60% { transform: translateY(4px) scaleY(0.95); }
+  100% { opacity: 1; transform: translateY(0) scaleY(1); filter: blur(0); }
+}
+
+/* ========== REFLECTION SECTION ========== */
+.dream-reflection {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px dashed rgba(96, 165, 250, 0.12);
+  text-align: center;
+}
+
+.dream-reflection-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: hsl(220, 30%, 88%);
+  margin-bottom: 8px;
+}
+
+.dream-reflection-desc {
+  font-size: 0.9rem;
+  color: hsl(220, 20%, 50%);
+  margin-bottom: 24px;
+}
+
+.dream-reflection-textarea {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  min-height: 120px;
+  padding: 16px 20px;
+  background: hsla(230, 30%, 10%, 0.5);
+  border: 1px solid rgba(96, 165, 250, 0.1);
+  border-radius: 16px;
+  color: hsl(220, 30%, 85%);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  display: block;
+}
+
+.dream-reflection-textarea:focus {
+  border-color: rgba(96, 165, 250, 0.3);
+  box-shadow: 0 0 30px rgba(96, 165, 250, 0.06);
+}
+
+.dream-reflection-textarea::placeholder {
+  color: hsl(220, 20%, 35%);
+  font-style: italic;
+}
+
+/* ========== LOADING STATE — morphing orb ========== */
+.dream-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--dream-bg);
+  color: hsl(220, 30%, 70%);
+  gap: 24px;
+}
+
+.dream-loading-orb {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.dream-loading-orb::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(96, 165, 250, 0.2);
+  border-top-color: #93c5fd;
+  animation: dream-spin 1s linear infinite;
+}
+
+.dream-loading-orb::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 2px solid rgba(139, 92, 246, 0.15);
+  border-bottom-color: #c4b5fd;
+  animation: dream-spin 1.5s linear infinite reverse;
+}
+
+@keyframes dream-spin {
+  to { transform: rotate(360deg); }
+}
+
+.dream-loading-text {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: hsl(220, 20%, 60%);
+  text-shadow: 0 0 20px rgba(96, 165, 250, 0.15);
+  animation: loading-breathe 2s ease-in-out infinite;
+}
+
+@keyframes loading-breathe {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ========== EMPTY STATE ========== */
+.dream-empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: hsl(220, 20%, 40%);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* ========== ORNAMENTAL DIVIDER ========== */
+.dream-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 16px 0;
+  color: hsl(220, 20%, 30%);
+  font-size: 0.8rem;
+  letter-spacing: 0.3em;
+  opacity: 0.5;
+}
+
+.dream-divider::before,
+.dream-divider::after {
+  content: '';
+  flex: 1;
+  max-width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.2), transparent);
+  animation: divider-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes divider-shimmer {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* ========== SKELETON LOADER ========== */
+.dream-skeleton {
+  width: 100%;
+  height: 72px;
+  border-radius: 14px;
+  background: linear-gradient(
+    90deg,
+    hsla(230, 30%, 10%, 0.5) 25%,
+    hsla(230, 30%, 14%, 0.6) 50%,
+    hsla(230, 30%, 10%, 0.5) 75%
+  );
+  background-size: 200% 100%;
+  animation: dream-skeleton-shimmer 1.5s ease infinite;
+  margin-bottom: 8px;
+}
+
+@keyframes dream-skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ========== HISTORY SIDEBAR (legacy compatibility) ========== */
 .dream-history-sidebar {
   height: 100%;
   display: flex;
@@ -491,15 +1434,6 @@
 .dream-history-header {
   padding: 20px;
   border-bottom: 1px solid rgba(96, 165, 250, 0.08);
-}
-
-.dream-history-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 1rem;
-  font-weight: 700;
-  color: hsl(217, 72%, 84%);
 }
 
 .dream-history-list {
@@ -603,586 +1537,26 @@
   border-top: 1px solid rgba(96, 165, 250, 0.08);
 }
 
-.dream-history-clear-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: hsl(0, 60%, 50%);
-  background: transparent;
-  border: 1px solid rgba(239, 68, 68, 0.15);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.dream-history-clear-btn:hover {
-  background: hsla(0, 60%, 50%, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
-}
-
-/* --- PROFILE WARNING --- */
-.dream-profile-warn {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 18px 20px;
-  max-width: 640px;
-  width: 100%;
-  border-radius: 16px;
-  background: hsla(45, 60%, 15%, 0.4);
-  border: 1px solid rgba(251, 191, 36, 0.2);
-  color: hsl(45, 80%, 75%);
-  font-size: 0.875rem;
-  line-height: 1.6;
-  backdrop-filter: blur(4px);
-}
-
-.dream-profile-warn-icon {
-  flex-shrink: 0;
-  color: #fbbf24;
-}
-
-.dream-profile-warn-title {
-  font-weight: 700;
-  margin-bottom: 4px;
-  font-size: 0.9rem;
-}
-
-/* --- AUDIO PLAYBACK --- */
-.dream-audio-playback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  width: 100%;
-  max-width: 640px;
-  border-radius: 14px;
-  background: hsla(230, 30%, 10%, 0.5);
-  border: 1px solid rgba(96, 165, 250, 0.1);
-}
-
-.dream-audio-playback audio {
-  width: 100%;
-  height: 40px;
-  border-radius: 8px;
-}
-
-.dream-audio-playback audio::-webkit-media-controls-panel {
-  background: hsla(230, 30%, 12%, 0.8);
-}
-
-.dream-audio-playback {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-}
-
-.dream-audio-transcribing {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 6px 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: hsl(217, 72%, 84%);
-  background: hsla(230, 40%, 15%, 0.6);
-  border: 1px solid rgba(147, 197, 253, 0.2);
-  border-radius: 8px;
-  text-shadow: 0 0 12px rgba(96, 165, 250, 0.25);
-}
-
-/* --- ANALYSIS PAGE --- */
-.dream-analysis-page {
-  min-height: 100vh;
-  background: hsl(230, 35%, 6%);
-  color: hsl(220, 30%, 88%);
-  position: relative;
-  overflow: hidden;
-}
-
-.dream-analysis-page::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 70% 40% at 50% 10%, rgba(139, 92, 246, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 50% at 80% 70%, rgba(56, 189, 248, 0.04) 0%, transparent 50%);
-  pointer-events: none;
-}
-
-.dream-analysis-container {
-  position: relative;
-  z-index: 1;
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 24px 20px 60px;
-}
-
-.dream-analysis-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: hsl(220, 20%, 55%);
-  background: transparent;
-  border: 1px solid rgba(96, 165, 250, 0.1);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-}
-
-.dream-analysis-back:hover {
-  color: hsl(217, 72%, 84%);
-  border-color: rgba(96, 165, 250, 0.25);
-  background: hsla(230, 30%, 10%, 0.5);
-}
-
-.dream-analysis-content {
-  margin-top: 32px;
-  line-height: 1.8;
-  font-size: 1.05rem;
-}
-
-/* Markdown overrides for dream analysis */
-.dream-analysis-content h1 {
-  font-size: clamp(2rem, 5vw, 3rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-  margin-bottom: 8px;
-  background: clip-text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-image: linear-gradient(135deg, #93c5fd 0%, #a5b4fc 30%, #c4b5fd 60%, #a5b4fc 100%);
-}
-
-.dream-analysis-content h2 {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: hsl(217, 72%, 84%);
-  margin-top: 40px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(96, 165, 250, 0.12);
-}
-
-.dream-analysis-content p {
-  color: hsl(220, 20%, 72%);
-  margin-bottom: 16px;
-  line-height: 1.8;
-}
-
-.dream-analysis-content ul {
-  list-style: none;
-  padding: 0;
-}
-
-.dream-analysis-content li {
-  position: relative;
-  padding-left: 24px;
-  margin-bottom: 16px;
-  color: hsl(220, 20%, 72%);
-  line-height: 1.7;
-}
-
-.dream-analysis-content li::before {
-  content: '✧';
-  position: absolute;
-  left: 0;
-  top: 0;
-  color: var(--spec-accent, #93c5fd);
-  opacity: 0.6;
-  font-size: 0.85rem;
-}
-
-/* Reflection section */
-.dream-reflection {
-  margin-top: 48px;
-  padding-top: 32px;
-  border-top: 1px dashed rgba(96, 165, 250, 0.12);
-  text-align: center;
-}
-
-.dream-reflection-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: hsl(220, 30%, 88%);
-  margin-bottom: 8px;
-}
-
-.dream-reflection-desc {
-  font-size: 0.9rem;
-  color: hsl(220, 20%, 50%);
-  margin-bottom: 24px;
-}
-
-.dream-reflection-textarea {
-  width: 100%;
-  max-width: 560px;
-  margin: 0 auto;
-  min-height: 120px;
-  padding: 16px 20px;
-  background: hsla(230, 30%, 10%, 0.5);
-  border: 1px solid rgba(96, 165, 250, 0.1);
-  border-radius: 16px;
-  color: hsl(220, 30%, 85%);
-  font-size: 0.95rem;
-  line-height: 1.7;
-  resize: vertical;
-  outline: none;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.dream-reflection-textarea:focus {
-  border-color: rgba(96, 165, 250, 0.3);
-  box-shadow: 0 0 30px rgba(96, 165, 250, 0.06);
-}
-
-.dream-reflection-textarea::placeholder {
-  color: hsl(220, 20%, 35%);
-  font-style: italic;
-}
-
-/* --- LOADING STATE --- */
-.dream-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: hsl(230, 35%, 6%);
-  color: hsl(220, 30%, 70%);
-  gap: 20px;
-}
-
-.dream-loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 3px solid rgba(96, 165, 250, 0.15);
-  border-top-color: #93c5fd;
-  border-radius: 50%;
-  animation: dream-spin 1s linear infinite;
-}
-
-@keyframes dream-spin {
-  to { transform: rotate(360deg); }
-}
-
-.dream-loading-text {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: hsl(220, 20%, 60%);
-  text-shadow: 0 0 20px rgba(96, 165, 250, 0.15);
-}
-
-/* --- EMPTY STATE --- */
-.dream-empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: hsl(220, 20%, 40%);
-  font-size: 0.85rem;
-  font-style: italic;
-}
-
-/* --- ORNAMENTAL DIVIDER --- */
-.dream-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin: 16px 0;
-  color: hsl(220, 20%, 30%);
-  font-size: 0.8rem;
-  letter-spacing: 0.3em;
-  opacity: 0.5;
-}
-
-.dream-divider::before,
-.dream-divider::after {
-  content: '';
-  flex: 1;
-  max-width: 80px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.2), transparent);
-}
-
-/* --- BREATHING GLOW RING (for specialist icons) --- */
-.dream-glow-ring {
-  position: absolute;
-  inset: -6px;
-  border-radius: inherit;
-  border: 1px solid var(--spec-accent, #93c5fd);
-  opacity: 0;
-  animation: dream-breathe 3s ease-in-out infinite;
-}
-
-@keyframes dream-breathe {
-  0%, 100% { opacity: 0; transform: scale(1); }
-  50% { opacity: 0.3; transform: scale(1.05); }
-}
-
-/* --- SPECIALIST COLOR VARIANTS --- */
-.dream-spec--psychological {
-  --spec-accent: #a5b4fc;
-  --spec-glow: rgba(165, 180, 252, 0.12);
-}
-
-.dream-spec--symbolic {
-  --spec-accent: #93c5fd;
-  --spec-glow: rgba(147, 197, 253, 0.12);
-}
-
-.dream-spec--spiritual {
-  --spec-accent: #86efac;
-  --spec-glow: rgba(134, 239, 172, 0.12);
-}
-
-.dream-spec--shamanic {
-  --spec-accent: #f9a8d4;
-  --spec-glow: rgba(249, 168, 212, 0.12);
-}
-
-/* --- SKELETON LOADER (dreams) --- */
-.dream-skeleton {
-  width: 100%;
-  height: 72px;
-  border-radius: 14px;
-  background: linear-gradient(
-    90deg,
-    hsla(230, 30%, 10%, 0.5) 25%,
-    hsla(230, 30%, 14%, 0.6) 50%,
-    hsla(230, 30%, 10%, 0.5) 75%
-  );
-  background-size: 200% 100%;
-  animation: dream-skeleton-shimmer 1.5s ease infinite;
-  margin-bottom: 8px;
-}
-
-@keyframes dream-skeleton-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* --- DREAM DIARY TOGGLE BUTTON (header) --- */
-.dream-diary-toggle {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 38px;
-  padding: 0 16px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: hsl(217, 72%, 84%);
-  background: hsla(230, 40%, 12%, 0.6);
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(6px);
-}
-
-.dream-diary-toggle:hover {
-  border-color: rgba(96, 165, 250, 0.4);
-  box-shadow: 0 0 20px rgba(96, 165, 250, 0.12);
-  background: hsla(230, 40%, 15%, 0.8);
-}
-
-.dream-diary-badge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: hsl(230, 35%, 6%);
-  background: #93c5fd;
-  border-radius: 10px;
-  box-shadow: 0 0 8px rgba(147, 197, 253, 0.4);
-}
-
-/* --- DREAM DIARY SLIDE-OVER PANEL --- */
-.dream-diary-panel {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 360px;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  background: hsl(233, 35%, 5%);
-  border-left: 1px solid rgba(96, 165, 250, 0.1);
-  box-shadow:
-    -8px 0 40px rgba(0, 0, 0, 0.5),
-    -2px 0 20px rgba(96, 165, 250, 0.04);
-  backdrop-filter: blur(20px);
-}
-
-.dream-diary-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 20px 16px;
-  border-bottom: 1px solid rgba(96, 165, 250, 0.08);
-}
-
-.dream-diary-panel-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: hsl(220, 20%, 50%);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.dream-diary-panel-close:hover {
-  background: hsla(230, 30%, 12%, 0.8);
-  color: hsl(220, 30%, 85%);
-}
-
-.dream-diary-panel-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-}
-
-.dream-diary-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.dream-diary-card {
-  flex: 1;
-  text-align: left;
-  padding: 14px 16px;
-  background: hsla(230, 30%, 10%, 0.5);
-  border: 1px solid rgba(96, 165, 250, 0.06);
-  border-radius: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  position: relative;
-}
-
-.dream-diary-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  background: linear-gradient(180deg, #93c5fd, #a5b4fc);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.dream-diary-card:hover {
-  background: hsla(230, 30%, 12%, 0.8);
-  border-color: rgba(96, 165, 250, 0.15);
-  transform: translateX(4px);
-}
-
-.dream-diary-card:hover::before {
-  opacity: 1;
-}
-
-.dream-diary-card-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: hsl(220, 30%, 88%);
-  margin-bottom: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dream-diary-card-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 0.7rem;
-  color: hsl(220, 20%, 45%);
-}
-
-.dream-diary-meta-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.dream-diary-meta-item svg {
-  width: 12px;
-  height: 12px;
-}
-
-.dream-diary-delete {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  border: none;
-  background: transparent;
-  color: hsl(0, 60%, 50%);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  opacity: 0;
-}
-
-.dream-diary-item:hover .dream-diary-delete {
-  opacity: 1;
-}
-
-.dream-diary-delete:hover {
-  background: hsla(0, 60%, 50%, 0.15);
-}
-
-.dream-diary-panel-footer {
-  padding: 12px;
-  border-top: 1px solid rgba(96, 165, 250, 0.08);
-}
-
-/* --- MAIN SIDEBAR (nimbus nav) dark theme override --- */
+/* ========== MAIN SIDEBAR DARK OVERRIDE ========== */
 .dream-main-sidebar {
   background: hsl(233, 35%, 5%) !important;
   border-right: 1px solid rgba(96, 165, 250, 0.06) !important;
 }
 
-/* --- RESPONSIVE --- */
+/* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
   .dream-specialist-grid {
     grid-template-columns: 1fr;
     gap: 16px;
+    perspective: none;
   }
 
-  .dream-moon {
+.dream-sidebar-inset {
+  z-index: 1;
+  background: transparent;
+}
+
+.dream-moon {
     width: 50px;
     height: 50px;
     top: 20px;
@@ -1195,7 +1569,7 @@
     left: 8px;
     width: 44px;
     height: 44px;
-    background: hsl(230, 35%, 6%);
+    background: var(--dream-bg);
   }
 
   .dream-hero-title {
@@ -1218,6 +1592,10 @@
   .dream-diary-toggle {
     padding: 0 12px;
     font-size: 0.8rem;
+  }
+
+  .dream-specialist-card {
+    transform-style: flat;
   }
 }
 

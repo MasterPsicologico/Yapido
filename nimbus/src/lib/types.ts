@@ -236,7 +236,7 @@ export type DreamSpecialist = {
   title: string;
   description: string;
   perspective: 'psychological' | 'symbolic' | 'spiritual' | 'shamanic';
-  icon: React.ComponentType<{ className?: string }>;
+  icon: any;
 };
 
 export const AnalyzeSentimentInputSchema = z.object({
