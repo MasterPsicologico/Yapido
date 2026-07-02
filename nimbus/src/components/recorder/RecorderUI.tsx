@@ -179,6 +179,16 @@ export default function RecorderUI({ initialDraft, onNewRecording, onDraftCreate
       toast({ variant: 'destructive', title: 'Error', description: 'No hay un borrador de audio para analizar.' });
       return;
     }
+
+    if (audioUrl.length < 1500) {
+      toast({
+        variant: 'destructive',
+        title: 'Audio demasiado corto',
+        description: 'La grabación parece vacía. Graba al menos unos segundos con voz audible.',
+      });
+      return;
+    }
+
     setAnalysisStatus('analyzing');
     setAnalysisStep('transcribing');
 
@@ -208,7 +218,9 @@ export default function RecorderUI({ initialDraft, onNewRecording, onDraftCreate
         const message =
           errPayload?.error ||
           `Error HTTP ${res.status} en el análisis. Verifica tu audio.`;
-        throw new Error(message);
+        const hint = errPayload?.hint;
+        const composed = hint ? `${message} — ${hint}` : message;
+        throw new Error(composed);
       }
 
       const result = await res.json();

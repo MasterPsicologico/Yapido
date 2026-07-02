@@ -58,12 +58,16 @@ export type AnalyzeAudioOutput = z.infer<typeof AnalyzeAudioOutputSchema>;
 // =============================================================================
 
 async function transcribeWithFallback(audioDataUri: string): Promise<string> {
+  const trimmedUri = audioDataUri.length > 100 ? audioDataUri.slice(0, 80) + '…' : audioDataUri;
+  console.log(`[Nimbus] Transcribiendo audio: ${audioDataUri.length} bytes totales (data URI). Muestra: ${trimmedUri}`);
+
   try {
     const result = await groqTranscribe({
       audioDataUri,
       model: 'whisper-large-v3',
       responseFormat: 'verbose_json',
     });
+    console.log(`[Nimbus] Whisper large-v3 OK. Texto: ${(result.text || '').length} chars.`);
     // Whisper devuelve un objeto con .text y a veces .segments con timestamps.
     // Si hay segmentos los formateamos con marcadores por turno (speaker_id
     // cuando lo proporciona Whisper). Si no, devolvemos el texto crudo igual.
@@ -97,16 +101,25 @@ async function transcribeWithFallback(audioDataUri: string): Promise<string> {
     }
     return result.text || '';
   } catch (err: any) {
-    console.warn('[Nimbus] Whisper failed, trying whisper-large-v3-turbo:', err?.message?.substring(0, 200));
+    const errMsg = err?.message || String(err);
+    console.warn(`[Nimbus] Whisper large-v3 failed: ${errMsg.substring(0, 400)}. Probando whisper-large-v3-turbo…`);
+
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error('GROQ_API_KEY no está configurada en el entorno de producción. Configúrala en el panel de Vercel > Settings > Environment Variables.');
+    }
+
     try {
       const result = await groqTranscribe({
         audioDataUri,
         model: 'whisper-large-v3-turbo',
         responseFormat: 'verbose_json',
       });
+      console.log(`[Nimbus] Whisper turbo OK. Texto: ${(result.text || '').length} chars.`);
       return result.text || '';
     } catch (err2: any) {
-      throw new Error('La transcripción de audio falló en todos los modelos disponibles.');
+      const errMsg2 = err2?.message || String(err2);
+      console.error(`[Nimbus] Whisper turbo también falló: ${errMsg2.substring(0, 400)}`);
+      throw new Error(`La transcripción de audio falló en todos los modelos. Causa probable: ${errMsg.substring(0, 240)}`);
     }
   }
 }

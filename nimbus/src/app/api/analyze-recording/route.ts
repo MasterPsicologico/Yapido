@@ -52,12 +52,13 @@ export async function POST(request: Request) {
     const message = err?.message || 'Error desconocido durante el análisis.';
     console.error('[Nimbus API /analyze-recording] Fallo en el análisis:', {
       message,
-      stack: err?.stack?.substring?.(0, 400),
+      stack: err?.stack?.substring?.(0, 800),
+      hint: 'Si es timeout, considera chunked-upload. Si es "all models failed", verifica GROQ/NVIDIA/GEMINI keys en Vercel.',
     });
 
     const lowered = String(message).toLowerCase();
     const isTransient =
-      /429|rate.?limit|quota|exhausted|timeout|timed.?out|503|502|500|timeout|503 service unavailable|not found|unavailable/i.test(
+      /429|rate.?limit|quota|exhausted|timeout|timed.?out|503|502|500|all models failed|not found|unavailable/i.test(
         lowered
       );
 
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
         transient: isTransient,
         hint: isTransient
           ? 'Reintenta en unos segundos; los modelos de IA rotan automáticamente.'
-          : undefined,
+          : 'Verifica que las llaves de API (GROQ_API_KEY, NVIDIA_API_KEY, GOOGLE_GENAI_API_KEY) estén configuradas en el panel de Vercel.',
       },
       { status: 500 }
     );

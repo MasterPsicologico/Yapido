@@ -103,48 +103,61 @@ export async function groqTranscribe(
     formData.append('temperature', String(options.temperature));
   }
 
-  const response = await fetch(`${GROQ_BASE_URL}/audio/transcriptions`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      // No añadimos Content-Type — fetch lo genera con boundary de FormData
-    },
-    body: formData as any,
-    signal: options.signal,
-  });
+  const timeoutMs = (options as any).timeoutMs ?? 60_000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new Error('Groq Whisper request timed out')), timeoutMs);
 
-  if (response.status === 401 || response.status === 403) {
-    throw new GroqAuthError(`Groq auth failed: ${response.status}`);
-  }
-  if (response.status === 429) {
-    const text = await response.text().catch(() => '');
-    throw new GroqRateLimitError(`Groq rate limited: ${text.slice(0, 200)}`);
-  }
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`Groq transcription failed: ${response.status} ${text.slice(0, 300)}`);
-  }
+  try {
+    const response = await fetch(`${GROQ_BASE_URL}/audio/transcriptions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        // No añadimos Content-Type — fetch lo genera con boundary de FormData
+      },
+      body: formData as any,
+      signal: options.signal || controller.signal,
+    });
 
-  const data = await response.json();
+    if (response.status === 401 || response.status === 403) {
+      throw new GroqAuthError(`Groq auth failed: ${response.status}`);
+    }
+    if (response.status === 429) {
+      const text = await response.text().catch(() => '');
+      throw new GroqRateLimitError(`Groq rate limited: ${text.slice(0, 200)}`);
+    }
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(`Groq transcription failed: ${response.status} ${text.slice(0, 400)}`);
+    }
 
-  // Whisper verbose_json response shape
-  if (data && typeof data === 'object' && 'text' in data) {
-    return {
-      text: data.text || '',
-      language: data.language,
-      duration: data.duration,
-      segments: Array.isArray(data.segments)
-        ? data.segments.map((s: any) => ({
-            id: s.id ?? 0,
-            start: s.start ?? 0,
-            end: s.end ?? 0,
-            text: s.text ?? '',
-            speaker: s.speaker,
-          }))
-        : undefined,
-    };
+    const data = await response.json();
+
+    // Whisper verbose_json response shape
+    if (data && typeof data === 'object' && 'text' in data) {
+      return {
+        text: data.text || '',
+        language: data.language,
+        duration: data.duration,
+        segments: Array.isArray(data.segments)
+          ? data.segments.map((s: any) => ({
+              id: s.id ?? 0,
+              start: s.start ?? 0,
+              end: s.end ?? 0,
+              text: s.text ?? '',
+              speaker: s.speaker,
+            }))
+          : undefined,
+      };
+    }
+
+    // Fallback a texto plano
+    return { text: typeof data === 'string' ? data : '' };
+  } catch (err: any) {
+    if (err?.name === 'AbortError' || /aborted/i.test(err?.message || '')) {
+      throw new Error(`Groq Whisper timeout después de ${timeoutMs}ms — el servidor tardó demasiado.`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-
-  // Fallback a texto plano
-  return { text: typeof data === 'string' ? data : '' };
 }
