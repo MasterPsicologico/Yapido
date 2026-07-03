@@ -134,20 +134,30 @@ export async function analyzeCombined(input: {
   const prompt = buildCombinedPrompt(input);
   let lastError: any = null;
 
-  // Rotación intencional — probar primero NVIDIA llama, fallback automático a Gemini/Groq
+  // Orden optimizado para VELOCIDAD + fiabilidad:
+  // 1. Gemini 2.5 Flash (Google) — el más rápido disponible en Vercel
+  // 2. Groq Llama 3.3 70B — fallback rápido con JSON estricto
+  // 3. NVIDIA NIM — solo como último recurso (a veces cuelga con prompts largos)
   const models = [
-    'meta/llama-3.3-70b-instruct',
     'googleai/gemini-2.5-flash',
     'groq/llama-3.3-70b-versatile',
+    'meta/llama-3.3-70b-instruct',
   ];
 
   for (const model of models) {
     try {
-      const { output } = await ai.generate({
-        model,
-        prompt,
-        output: { schema: CombinedAnalysisSchema },
-      });
+      // Empacamos la llamada en un timeout duro de 70s por modelo
+      // para que un modelo colgado no tumbe toda la request.
+      const { output } = await Promise.race([
+        ai.generate({
+          model,
+          prompt,
+          output: { schema: CombinedAnalysisSchema },
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`analyzeCombined(${model}) timeout 70s`)), 70_000)
+        ),
+      ]);
       if (output) {
         console.log(`[Nimbus] analyzeCombined succeeded via ${model}`);
         return output as CombinedAnalysis;
@@ -156,7 +166,7 @@ export async function analyzeCombined(input: {
     } catch (e: any) {
       lastError = e;
       console.warn(`[Nimbus] analyzeCombined ${model} failed: ${e?.message?.substring(0, 200)}`);
-      if (/429|rate.?limit|quota|exhausted|timeout|ETIMEDOUT|503|502|500|UNAVAILABLE|unavailable/i.test(e?.message || '')) {
+      if (/429|rate.?limit|quota|exhausted|timeout|ETIMEDOUT|503|502|500|UNAVAILABLE|unavailable|aborted|all models failed/i.test(e?.message || '')) {
         continue;
       }
       throw e;

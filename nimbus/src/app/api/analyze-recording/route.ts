@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { analyzeAudioRecording } from '@/ai/flows/analyze-audio-recording';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+export const maxDuration = 90;
+export const dynamic = 'force-dynamic';
 
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 
@@ -53,12 +54,11 @@ export async function POST(request: Request) {
     console.error('[Nimbus API /analyze-recording] Fallo en el análisis:', {
       message,
       stack: err?.stack?.substring?.(0, 800),
-      hint: 'Si es timeout, considera chunked-upload. Si es "all models failed", verifica GROQ/NVIDIA/GEMINI keys en Vercel.',
     });
 
     const lowered = String(message).toLowerCase();
     const isTransient =
-      /429|rate.?limit|quota|exhausted|timeout|timed.?out|503|502|500|all models failed|not found|unavailable/i.test(
+      /429|rate.?limit|quota|exhausted|timeout|timed.?out|503|502|500|all models failed|not found|unavailable|aborted/i.test(
         lowered
       );
 
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
         error: message,
         transient: isTransient,
         hint: isTransient
-          ? 'Reintenta en unos segundos; los modelos de IA rotan automáticamente.'
+          ? 'Reintenta en unos segundos; si persiste, reduce la duración de la grabación.'
           : 'Verifica que las llaves de API (GROQ_API_KEY, NVIDIA_API_KEY, GOOGLE_GENAI_API_KEY) estén configuradas en el panel de Vercel.',
       },
       { status: 500 }
@@ -82,6 +82,7 @@ export async function GET() {
       endpoint: '/api/analyze-recording',
       method: 'POST',
       accepts: { audioDataUri: 'string', title: 'string' },
+      maxSeconds: 90,
     },
     { status: 200 }
   );

@@ -192,22 +192,29 @@ export default function RecorderUI({ initialDraft, onNewRecording, onDraftCreate
     setAnalysisStatus('analyzing');
     setAnalysisStep('transcribing');
 
-    // Avance cosmético de UI: tras 6s (típica transcripción Whisper),
-    // pasamos al step de detección de hablantes. tras 8s más (típico LLM),
-    // pasamos al de informe final. Estos pasos son indicadores visuales;
-    // el backend hace todo en UNA llamada (Whisper sigue siendo paso 1).
-    const stepTimer1 = setTimeout(() => setAnalysisStep('analyzing'), 6000);
-    const stepTimer2 = setTimeout(() => setAnalysisStep('finalizing'), 14000);
+    // Avance cosmético de UI: avanza entre pasos mientras la IA trabaja;
+    // el estado final se confirma al recibir la respuesta del servidor.
+    const stepTimer1 = setTimeout(() => setAnalysisStep('analyzing'), 8000);
+    const stepTimer2 = setTimeout(() => setAnalysisStep('finalizing'), 15000);
 
     try {
-      const res = await fetch('/api/analyze-recording', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          audioDataUri: audioUrl,
-          title: title.trim() || 'Grabación sin título',
-        }),
-      });
+      const controller = new AbortController();
+      const fetchTimeout = setTimeout(() => controller.abort(new Error('Timeout aguardando respuesta del servidor (90s). Intenta de nuevo o reduce la duración del audio.')), 90_000);
+
+      let res: Response;
+      try {
+        res = await fetch('/api/analyze-recording', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            audioDataUri: audioUrl,
+            title: title.trim() || 'Grabación sin título',
+          }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(fetchTimeout);
+      }
 
       if (!res.ok) {
         let errPayload: any = null;
@@ -248,6 +255,9 @@ export default function RecorderUI({ initialDraft, onNewRecording, onDraftCreate
         description: `Informe listo. Se detectaron ${participantsCount} hablante(s).`,
       });
     } catch (err: any) {
+      // Si el cliente abortó (timeout), capturamos el mensaje desde el AbortController
+      const isAbort = err?.name === 'AbortError' || /abort/i.test(err?.message || '');
+      if (isAbort) console.warn('[Nimbus Recorder UI] La petición fue abortada por timeout');
       console.error("Analysis failed:", err);
       setAnalysisStatus('error');
       toast({
