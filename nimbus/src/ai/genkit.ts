@@ -53,6 +53,8 @@ export const ai = genkit({
 //   getAIResponse, generate-user-profile, etc.
 // =============================================================================
 const _origGenerate = (ai as any).generate.bind(ai);
+const DEFAULT_GENERATE_TIMEOUT = 70_000;
+
 (ai as any).generate = async function (opts: any) {
   const explicitModel = opts?.model;
   const chain: any[] = [];
@@ -64,15 +66,9 @@ const _origGenerate = (ai as any).generate.bind(ai);
 
   const hasOutputSchema = !!opts?.output?.schema;
 
-  // Intentar primero con genkit (Gemini/Groq) preservando TODO el contrato
-  // (parseo de output.schema, validación Zod). Si falla por modelo o por
-  // output no parseado, pasamos al cliente NVIDIA directo (que devuelve texto
-  // crudo y parseamos manualmente).
   for (const model of chain) {
     try {
       if (isNvidiaModel(model)) {
-        // NVIDIA: usamos cliente directo porque no hay plugin genkit.
-        // Renderizamos el prompt y parseamos el JSON manualmente si hay schema.
         const rendered = Array.isArray(opts?.messages)
           ? (opts.messages as any[]).map((m: any) => `${m.role}: ${m.content || ''}`).join('\n')
           : typeof opts?.prompt === 'string'
@@ -81,21 +77,14 @@ const _origGenerate = (ai as any).generate.bind(ai);
               ? (opts.prompt as any[]).map((p: any) => p.text || '').join('\n')
               : '';
 
-        // Si hay output.schema, enriquece el prompt para que devuelva JSON estricto.
-        let finalPrompt = rendered;
-        // NVIDIA NO soporta response_format estable entre todos sus modelos,
-        // y m2.7/m3 cuelgan cuando se les pide json_object forzado. Usamos
-        // instrucciones de formato en el propio prompt y parseamos manualmente.
-
         const result = await nvidiaChat({
           model: model as string,
-          messages: [{ role: 'user', content: finalPrompt }],
+          messages: [{ role: 'user', content: rendered }],
           temperature: opts?.config?.temperature,
           topP: opts?.config?.topP,
           maxTokens: opts?.config?.maxOutputTokens ?? 4096,
         });
 
-        // Si NO hay schema, devolvemos solo text (compatible con genkit).
         if (!hasOutputSchema) {
           return {
             text: result.text,
@@ -104,15 +93,10 @@ const _origGenerate = (ai as any).generate.bind(ai);
           };
         }
 
-        // Si HAY schema, parseamos manualmente con Zod. Si falla la validación,
-        // devolvemos text crudo y output null para que genkit NO lance exception
-        // y el caller decida (eso ya ocurre actualmente).
         const schema = opts.output.schema;
         let parsedOutput: any = null;
-        let parseError: string | null = null;
         try {
           const trimmed = (result.text || '').trim();
-          // Quitar fences markdown ```json ... ```
           const fence = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
           const json = fence ? fence[1] : trimmed;
           parsedOutput = JSON.parse(json);
@@ -121,10 +105,7 @@ const _origGenerate = (ai as any).generate.bind(ai);
           }
         } catch (e: any) {
           const errMsg = e?.message || String(e);
-          parseError = errMsg;
           console.warn(`[Nimbus] NVIDIA ${model} schema parse failed (will rotate): ${errMsg.substring(0, 200)}`);
-          // Forzar el comportamiento de rotación devolviendo una "excepción"
-          // sintética — el loop exterior la capturará y seguirá al próximo modelo.
           throw new Error(`NVIDIA schema parse failed: ${errMsg.substring(0, 150)}`);
         }
 
@@ -136,19 +117,25 @@ const _origGenerate = (ai as any).generate.bind(ai);
         };
       }
 
-      // Para todos los demás modelos (Gemini, Groq): usar el genkit original
-      // que ya parsea el schema correctamente.
-      // CRÍTICO: NO pasar `opts.model` al genkit original — solo pasamos los
-      // modelos que sí están registrados como plugins. Si opts.model venía con
-      // un NVIDIA model inexistente en genkit, lo descartamos.
       const optsForGenkit = { ...opts };
       if (typeof optsForGenkit.model === 'string') {
-        // Solo preservar model si es de un plugin instalado.
         if (!optsForGenkit.model.startsWith('googleai/') && !optsForGenkit.model.startsWith('groq/')) {
           delete optsForGenkit.model;
         }
       }
-      return await _origGenerate(optsForGenkit);
+
+      // Timeout duro global: si la llamada a genkit no responde en DEFAULT_GENERATE_TIMEOUT,
+      // abortamos y rotamos al siguiente modelo. Esto evita hanging indefinido.
+      const genkitResult = await Promise.race([
+        _origGenerate(optsForGenkit),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`ai.generate(${model}) timeout after ${DEFAULT_GENERATE_TIMEOUT}ms`)),
+            DEFAULT_GENERATE_TIMEOUT
+          )
+        ),
+      ]);
+      return genkitResult;
     } catch (error: any) {
       console.warn(`[Nimbus] ai.generate(${typeof model === 'string' ? model : '<ref>'}) failed: ${error?.message?.substring(0, 200)}`);
       if (shouldRotateToNext(error)) continue;
@@ -173,15 +160,11 @@ export function getFallbackChain(): string[] {
 function shouldRotateToNext(error: any): boolean {
   if (!error) return false;
   const msg = String(error?.message || error);
-  // Errores transitorios que justifican rotación entre modelos
   return (
     error instanceof NvidiaAuthError ||
     error instanceof NvidiaRateLimitError ||
-    /429|rate.?limit|quota|exhausted|token.?limit|timeout|ETIMEDOUT|503|502|500/i.test(msg) ||
+    /429|rate.?limit|quota|exhausted|token.?limit|timeout|timed.?out|ETIMEDOUT|503|502|500|UNAVAILABLE|unavailable|aborted|all models failed/i.test(msg) ||
     /model.?not.?found|model.?unavailable/i.test(msg) ||
-    // Si la respuesta de NVIDIA parseó pero su JSON no cumple Zod (el modelo
-    // se equivocó en el formato, p.ej. confidence numérico en vez de string),
-    // rotamos al siguiente modelo para intentar mejor formato.
     /schema.?parse.?failed/i.test(msg)
   );
 }
