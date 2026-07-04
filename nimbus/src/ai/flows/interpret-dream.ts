@@ -5,9 +5,18 @@
  * @fileOverview Interpreta un sueño en el contexto del perfil psicológico del usuario y desde una perspectiva elegida.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, getFallbackChain } from '@/ai/genkit';
 import { DreamInterpretationInputSchema, type InterpretDreamInput } from '@/lib/types';
 import { z } from 'zod';
+
+function withTimeout(promise: Promise<any>, ms: number, label: string): Promise<any> {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
 
 
 // Esquema de salida del FLOW, no del prompt de la IA.
@@ -63,14 +72,36 @@ Mantén un tono empático, sabio y coherente con la perspectiva del especialista
 NO incluyas ninguna otra frase introductoria o de cierre. Empieza directamente con el título del sueño.
 `;
     
-    const { text } = await ai.generate({ prompt: fullPrompt });
-
-    if (!text) {
-      throw new Error('La IA no pudo generar una interpretación del sueño.');
+    const chain = getFallbackChain();
+    if (chain.length === 0) {
+      throw new Error('No hay ningún modelo de IA configurado. Configura GOOGLE_GENAI_API_KEY o GROQ_API_KEY.');
     }
 
-    // Envolvemos el texto crudo en el objeto que la aplicación espera.
-    return { interpretationText: text };
+    const TIMEOUT_PER_MODEL = 70_000;
+    let lastError: any = null;
+
+    for (const model of chain) {
+      try {
+        const { text } = await withTimeout(
+          ai.generate({ model, prompt: fullPrompt }),
+          TIMEOUT_PER_MODEL,
+          `interpretDreamFlow(${model})`
+        );
+        if (text) {
+          console.log(`[Nimbus] interpretDreamFlow succeeded via ${model}`);
+          return { interpretationText: text };
+        }
+      } catch (e: any) {
+        lastError = e;
+        console.warn(`[Nimbus] interpretDreamFlow ${model} failed: ${e?.message?.substring(0, 200)}`);
+        if (/429|rate.?limit|quota|exhausted|timeout|timed.?out|503|502|500|UNAVAILABLE/i.test(e?.message || '')) {
+          continue;
+        }
+        throw e;
+      }
+    }
+
+    throw lastError || new Error('La IA no pudo generar una interpretación del sueño.');
   }
 );
 
