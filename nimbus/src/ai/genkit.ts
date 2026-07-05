@@ -163,10 +163,14 @@ const _origGenerate = (ai as any).generate.bind(ai);
  * Solo se incluyen los modelos para los que existe API key.
  */
 export function getFallbackChain(): string[] {
+  // ORDEN OPTIMIZADO PARA VELOCIDAD + FIABILIDAD:
+  // 1. Groq (verificado funcionando, ~100-200ms)
+  // 2. Google AI (si está configurado, fallback rápido)
+  // 3. NVIDIA NIM (fue el default historically, pero a veces cuelga)
   const chain: string[] = [];
-  if (process.env.NVIDIA_API_KEY) chain.push(PRIMARY_MODEL);
-  if (process.env.GOOGLE_GENAI_API_KEY) chain.push('googleai/gemini-2.5-flash');
   if (process.env.GROQ_API_KEY) chain.push('groq/llama-3.3-70b-versatile');
+  if (process.env.GOOGLE_GENAI_API_KEY) chain.push('googleai/gemini-2.5-flash');
+  if (process.env.NVIDIA_API_KEY) chain.push(PRIMARY_MODEL);
   return chain;
 }
 
@@ -187,14 +191,27 @@ function shouldRotateToNext(error: any): boolean {
 }
 
 async function callNvidia(model: string, options: { prompt: string; config?: any }): Promise<string> {
-  const result = await nvidiaChat({
-    model,
-    messages: [{ role: 'user', content: options.prompt }],
-    temperature: options.config?.temperature,
-    topP: options.config?.topP,
-    maxTokens: options.config?.maxOutputTokens ?? options.config?.max_tokens ?? 2048,
-  });
-  return result.text;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000); // 15s hard timeout
+  try {
+    const result = await nvidiaChat({
+      model,
+      messages: [{ role: 'user', content: options.prompt }],
+      temperature: options.config?.temperature,
+      topP: options.config?.topP,
+      maxTokens: options.config?.maxOutputTokens ?? options.config?.max_tokens ?? 2048,
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    return result.text;
+  } catch (e: any) {
+    clearTimeout(timeout);
+    // Transform AbortError into timeout error for shouldRotateToNext
+    if (e?.name === 'AbortError' || /aborted/i.test(e?.message || '')) {
+      throw new Error(`NVIDIA timeout after 15s`);
+    }
+    throw e;
+  }
 }
 
 function isNvidiaModel(model: unknown): boolean {
