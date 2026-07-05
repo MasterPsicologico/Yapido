@@ -26,7 +26,7 @@ if (process.env.GOOGLE_GENAI_API_KEY) {
 // (cuando un flow hace `ai.generate()` directamente).
 // =============================================================================
 
-const PRIMARY_MODEL = 'meta/llama-3.3-70b-instruct';
+const PRIMARY_MODEL = 'minimaxai/minimax-m2.7';
 
 export const ai = genkit({
   plugins,
@@ -163,14 +163,22 @@ const _origGenerate = (ai as any).generate.bind(ai);
  * Solo se incluyen los modelos para los que existe API key.
  */
 export function getFallbackChain(): string[] {
-  // ORDEN OPTIMIZADO PARA VELOCIDAD + FIABILIDAD:
-  // 1. Groq (verificado funcionando, ~100-200ms)
-  // 2. Google AI (si está configurado, fallback rápido)
-  // 3. NVIDIA NIM (fue el default historically, pero a veces cuelga)
+  // ORDEN PRIORIZADO POR INTELIGENCIA (no por velocidad):
+  // 1. minimaxai/minimax-m2.7 — GRATIS, IQ ~38, el más inteligente libre
+  // 2. nvidia/nemotron-4-340b-instruct — 340B, muy capaz
+  // 3. nvidia/llama-3.3-nemotron-super-49b-v1.5 — 49B optimizado
+  // 4. googleai/gemini-2.5-flash — buen razonamiento
+  // 5. groq/llama-3.3-70b-versatile — funciona, menos inteligente pero rápido
+  // 6. meta/llama-3.3-70b-instruct — último recurso NVIDIA (a veces cuelga)
   const chain: string[] = [];
-  if (process.env.GROQ_API_KEY) chain.push('groq/llama-3.3-70b-versatile');
+  if (process.env.NVIDIA_API_KEY) {
+    chain.push('minimaxai/minimax-m2.7');
+    chain.push('nvidia/nemotron-4-340b-instruct');
+    chain.push('nvidia/llama-3.3-nemotron-super-49b-v1.5');
+    chain.push('meta/llama-3.3-70b-instruct');
+  }
   if (process.env.GOOGLE_GENAI_API_KEY) chain.push('googleai/gemini-2.5-flash');
-  if (process.env.NVIDIA_API_KEY) chain.push(PRIMARY_MODEL);
+  if (process.env.GROQ_API_KEY) chain.push('groq/llama-3.3-70b-versatile');
   return chain;
 }
 
@@ -216,7 +224,15 @@ async function callNvidia(model: string, options: { prompt: string; config?: any
 
 function isNvidiaModel(model: unknown): boolean {
   if (typeof model !== 'string') return false;
-  return model === PRIMARY_MODEL || model.startsWith('minimaxai/');
+  return (
+    model.startsWith('minimaxai/') ||
+    model.startsWith('nvidia/') ||
+    model.startsWith('meta/') ||
+    model.startsWith('mistralai/') ||
+    model.startsWith('qwen/') ||
+    model.startsWith('deepseek-ai/') ||
+    model === PRIMARY_MODEL
+  );
 }
 
 async function callGenkitModel(modelRef: any, options: { prompt: string; config?: any }): Promise<string> {

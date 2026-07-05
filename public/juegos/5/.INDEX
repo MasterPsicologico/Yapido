@@ -1,0 +1,494 @@
+================================================================================
+                        APEX GP — FÓRMULA 1 ARCADE RACING
+                              Game Design Document
+================================================================================
+
+Versión: 1.0
+Fecha: 2 de Julio, 2026
+Autor: Uix Games
+Motor: Vanilla JS + Canvas 2D (single-file)
+Puerto: Archivo estático (index.html)
+
+================================================================================
+  1. CONCEPTO
+================================================================================
+
+APEX GP es un juego de carreras de Fórmula 1 estilo arcade con vista superior.
+Combina controles simples con profundidad estratégica: drift, rebufo (slipstream),
+gestión de neumáticos y ERS, carreras contra IA inteligente y climas dinámicos.
+
+Pilar de diseño: "Fácil de jugar, difícil de dominar."
+
+================================================================================
+  2. CONTROLES
+================================================================================
+
+  Teclado           Acción
+  ────────────────  ──────────────────────
+  W / ↑             Acelerar
+  S / ↓             Frenar / Marcha atrás
+  A / ←             Giro izquierda
+  D / →             Giro derecha
+  Shift             Drift (mantener + giro)
+  Espacio           ERS / KERS Boost
+  Escape            Pausa
+  Enter             Aceptar / Siguiente pantalla
+
+  Gamepad:
+  RT                Acelerar
+  LT                Frenar
+  Stick izq.        Giro
+  A                 Drift
+  B                 ERS Boost
+  Start              Pausa
+
+================================================================================
+  3. MODOS DE JUEGO
+================================================================================
+
+  3.1 GRAN PREMIO (Campeonato)
+  ─────────────────────────────
+  - 8 circuitos en orden fijo
+  - Sistema de puntos F1: 25/18/15/12/10/8/6/4/2/1
+  - Clasificación: 3 minutos para definir la parrilla
+  - Carrera: 8-15 vueltas (según circuito)
+  - Penalty porOutOfBounds: +3 segundos
+  - Tabla de posiciones se actualiza en tiempo real
+  - Podio animado al finalizar cada carrera
+
+  3.2 CONTRARRELOJ
+  ────────────────
+  - Circuito libre, solo tú contra el reloj
+  - 3 intentos por circuito
+  - Ghost del mejor tiempo visible como referencia
+  - Clasificación global de mejores tiempos (localStorage)
+  - Sin IA, sin presión, solo tú y tu tiempo
+
+  3.3 ARCADE
+  ──────────
+  - Power-ups en la pista (recogidos al pasar por encima)
+  - 5 power-ups:
+    • Misil Trasero — daña al coche que te sigue
+    • Escudo — invulnerable 3 segundos
+    • Aceite — deja charco que derrapa rivales
+    • Turbo — aceleración máxima instantánea
+    • Caos — revierte controles de todos 3 segundos
+  - Carrera de 10 vueltas con 6 rivales
+
+  3.4 SPLIT-SCREEN (2 jugadores)
+  ──────────────────────────────
+  - Pantalla dividida horizontal
+  - Jugador 1: WASD + Shift + Space
+  - Jugador 2: Flechas + . (drift) + , (ERS)
+  - Circuito libre o Carrera vs IA
+
+================================================================================
+  4. CIRCUITOS (8 PISTAS)
+================================================================================
+
+  #   Nombre                País        Vueltas  Tipo          Dificultad
+  ──  ────────────────────  ──────────  ───────  ────────────  ──────────
+  1   Circuito de Mónaco    Mónaco      15       Callejero     ★★★★★
+      Curvas cerradas, túnel, port. Poca oportunidad de adelantar.
+      Drift técnico en La Source, Chicane del puerto.
+      Ráfaga: velocidad máxima baja pero curvas peligrosas.
+
+  2   Circuit de Spa        Bélgica     12       Mixto         ★★★★☆
+      Eau Rouge iconico, raidillon, bus stop.
+      Alto promedio de velocidad. Curvas en cuesta.
+      Lluvia frecuente (clima dinámico).
+
+  3   Autodromo di Monza    Italia      11       Velocidad     ★★★☆☆
+      Rectas largas, chicanes.
+      Mejor circuito para rebufo.
+      DRS máximo, adelantamientos en las curvas 1 y 4.
+
+  4   Suzuka Circuit        Japón       12       Técnico       ★★★★☆
+      Forma de 8, curvas S legendarias.
+      130R a máxima velocidad.
+      Balance entre velocidad y técnica.
+
+  5   Interlagos            Brasil      13       Subida        ★★★☆☆
+      Recorrido antihorario (único).
+      Subida en la recta opuesta.
+      Clima: seco → lluvia → seco en la carrera.
+
+  6   Silverstone           Reino Unido 12       Alto ritmo    ★★★☆☆
+      Curvas de alta velocidad: Maggotts, Becketts.
+      Poca frenada, mucha confianza.
+      Mal weather frecuente.
+
+  7   Baku City Circuit     Azerbaiyán  14       Callejero     ★★★★★
+      Castillo estrecho, rectas enormes.
+      Extrema velocidad + calle extremadamente estrecha.
+      Pista se ensancha y estrecha.
+
+  8   Yapido Speedway       Noche       10       Fantasía      ★★★☆☆
+      Pista original temática neón.
+      Curvas luminiscentes, secciones con gravedad invertida.
+      Cierre secreto del campeonato.
+
+================================================================================
+  5. EQUIPOS Y STATS
+================================================================================
+
+  Cada coche tiene 4 atributos (1-10):
+
+  #   Equipo              Color   Motor  Aero   Agarre  Frenada
+  ──  ──────────────────  ──────  ─────  ─────  ──────  ───────
+  1   Apex Racing         Rojo    9      8      7       8
+  2   Shadow Motors       Negro   7      9      9       7
+  3   Velocity GP         Azul    10     6      6       9
+  4   Iron Circuit        Plata   6      7      10      8
+  5   Neon Drift          Cyan    8      8      8       6
+  6   Thunder Bolts       Amar.   9      5      7       10
+  7   Phantom Race        Púrpura 5      10     9       7
+  8   Turbo Kings         Naranja 8      6      8       9
+  9   Aero Dynamics       Blanco  6      10     7       8
+  10  Speed Demons        Verde   10     5      6       10
+
+  Descripción de stats:
+  - Motor: velocidad máxima y aceleración
+  - Aero: downforce (velocidad en curvas)
+  - Agarre: tolerancia al drift y lluvia
+  - Frenada: distancia de frenado y recuperación ERS
+
+================================================================================
+  6. MECÁNICAS DE JUEGO
+================================================================================
+
+  6.1 FÍSICA
+  ──────────
+  - Modelo Ackermann simplificado (eje delantero gira, trasero sigue)
+  - Peso: 750kg F1 real → simplificado como constante
+  - Velocidad máxima: ~320 km/h (varía por motor)
+  - Aceleración: 0-100 en ~2.5s
+  - Frenada: 100-0 en ~1.8s
+  - Ángulo de giro: ±30° max
+
+  6.2 DRIFT
+  ─────────
+  - Activar: Shift + giro (mantiene Shift para sostener)
+  - Al derrapar: ángulo de entrada >15° genera turbo boost
+  - Duración del boost: 0.5-2.0s (según severidad del drift)
+  - Visual: chispas, línea de fuego en neumáticos traseros
+  - Penalización: desgaste extra de neumáticos traseros
+
+  6.3 REBUFO (SLIPSTREAM)
+  ────────────────────────
+  - Condición: estar <1.0 segundo detrás de un rival por >1.5 segundos
+  - Efecto: +20% velocidad máxima durante 3 segundos
+  - Visual: líneas de viento, el coche rival "brilla"
+  - Riesgo: si el rival frena, impacto frontal
+
+  6.4 ERS / KERS
+  ───────────────
+  - Barra de 0-100% (se recarga al frenar)
+  - Boost: +15% velocidad por 2 segundos
+  - Costo: 25% de la barra por uso
+  - Visual: brillo dorado en el coche, screen-shake suave
+
+  6.5 NEUMÁTICOS
+  ───────────────
+  - 3 compuestos:
+    • Blandos: máximo agarre, se degradan rápido (15 vueltas)
+    • Medios: balance, duración media (25 vueltas)
+    - Lluvia: obligatorios si llueve, seco = penalización
+  - Desgaste visible en HUD (código de color: verde → amarillo → rojo)
+  - Al 20% de vida: derrapes involuntarios cada 5 segundos
+  - Al 0%: velocidad máxima reducida 40%, giro reducido 50%
+
+  6.6 CLIMA DINÁMICO
+  ───────────────────
+  - Estados: Seco → Nublado → Lluvia → Lluvia fuerte → Seco
+  - Transición gradual (no instantánea)
+  - Si llueve: neumáticos de lluvia obligatorios (si no, derrape controlado)
+  - Visual: gotas de lluvia, charcos reflectantes, niebla
+  - Audio: sonido de lluvia, viento
+
+  6.7 SAFETY CAR
+  ──────────────
+  - Se activa si hay 3+ choques fuertes en 30 segundos
+  - Velocidad reducida 60% para todos
+  - Duración: 1-2 vueltas
+  - Reinicio: aceleración progresiva en 3 segundos
+
+  6.8 PENALIZACIONES
+  ───────────────────
+  - Fuera de pista: +3 segundos de penalización
+  - Choque con barrera: pérdida de velocidad 50% por 2 segundos
+  - Choque con rival: ambos pierden velocidad 30% por 1.5 segundos
+  - Vuelta completa fuera: vuelta anulada
+
+================================================================================
+  7. IA RIVALES
+================================================================================
+
+  4 perfiles de IA (combinables):
+
+  PERFIL          CARACTERÍSTICAS
+  ──────────────  ──────────────────────────────────────
+  Conservador     Línea de carrera perfecta, no se equivoca
+                  Nunca intenta adelantamientos arriesgados
+                  Pierde por exceso de prudencia
+
+  Agresivo        Intenta adelantar en cada oportunidad
+                  Frena tarde, curvas rápidas
+                  Puede cometer errores por exceso de confianza
+
+  Impredecible    5% de chance de error por curva
+                  A veces muy rápido, a veces muy lento
+                  Difícil de predecir
+
+  Velocista       Explota en rectas (velocidad máxima alta)
+                  Sufridor en curvas (aerodinámica baja)
+                  Mejor en Monza, peor en Mónaco
+
+  Cada rival tiene:
+  - Perfil base + variación aleatoria ±10%
+  - Línea de carrera pre-calculada por waypoint
+  - Detección de rebufo (usa slipstream agresivamente)
+  - Memoria de 5 segundos (recuerda posición anterior)
+  - Reacción a safety car (reduce velocidad inmediatamente)
+
+================================================================================
+  8. HUD Y UI
+================================================================================
+
+  8.1 PANTALLA DE INICIO
+  ──────────────────────
+  - Título "APEX GP" con animación de coche cruzando
+  - Menú: Gran Premio | Contrarreloj | Arcade | Split-Screen | Opciones
+  - Fondo: circuito animado en loop
+
+  8.2 PANTALLA DE SELECCIÓN
+  ──────────────────────────
+  - Circuito: thumbnail + stats + preview 3D (pseudo)
+  - Equipo: 10 coches con stats visuales (radar chart)
+  - Neumáticos: selector de compuesto
+  - IA: nivel de dificultad (Fácil/Medio/Difícil/Experto)
+
+  8.3 HUD EN CARRERA
+  ───────────────────
+  ┌─────────────────────────────────────────────────┐
+  │ [P1/10]  Vuelta 3/12        [CIRCUITO MAPA]    │
+  │ Tiempo: 1:23.456              ┌─────────┐      │
+  │ Mejor: 1:21.234               │ minimapa│      │
+  │                               └─────────┘      │
+  │                                                 │
+  │                                                 │
+  │         ╔══════════════════════╗                │
+  │         ║  DRS DISPONIBLE     ║                │
+  │         ╚══════════════════════╝                │
+  │                                                 │
+  │ ┌─────────┐                      ┌───────────┐ │
+  │ │ TACÓMET │  [BLANDOS]  ERS 85%  │  TIEMPOS  │ │
+  │ │ 12.000  │  ██████░░░░  ──────  │  T1: 32.1 │ │
+  │ │ 280km/h │  [MEDIOS]    ←→      │  T2: 33.4 │ │
+  │ └─────────┘  [LLUVIA]   [BOOST]  │  T3: 31.8 │ │
+  │                                  └───────────┘ │
+  └─────────────────────────────────────────────────┘
+
+  8.4 PANTALLA DE PODIO
+  ─────────────────────
+  - 3 coches en posiciones (1°/2°/3°)
+  - Animación de confetti
+  - Estadísticas: vueltas, mejor tiempo, adelantamientos
+  - Botón: Siguiente carrera / Volver al menú
+
+================================================================================
+  9. EFECTOS VISUALES Y SONIDO
+================================================================================
+
+  9.1 VISUAL
+  ──────────
+  - Screen-shake en choques (duración: 0.3s, intensidad: 5px)
+  - Motion blur direccional al acelerar
+  - Partículas de chispas al derrapar (20 partículas/segundo)
+  - Partículas de polvo al salir de pista
+  - Línea de fuego en neumáticos durante drift
+  - Brillo neón en coches (glow según velocidad)
+  - Sombras dinámicas bajo los coches
+  - Gotas de lluvia en modo lluvia
+  - Charcos reflectantes en pista mojada
+  - Niebla ambiental en Spau/Interlagos
+
+  9.2 COLOR PALETTE
+  ─────────────────
+  - Background: #0a0a0f (negro profundo)
+  - Pista: #1a1a2e (azul oscuro)
+  - Líneas: #e94560 (rojo neón)
+  - Coche jugador: #00d4ff (cian)
+  - IA rivales: #ff6b35, #ffd700, #00ff88, etc.
+  - UI: #e94560 (accent), #ffffff (texto)
+  - Drift: #ff4500 (naranja fuego)
+  - ERS: #ffd700 (dorado)
+  - Lluvia: #4a90d9 (azul agua)
+
+  9.3 AUDIO (WebAudio API)
+  ─────────────────────────
+  - Motor: oscilador con pitch = RPM × constante
+    • RPM bajo: grave profundo (80Hz)
+    - RPM alto: agudo metálico (800Hz)
+    • Transición suave (no abrupta)
+  - Derrape: ruido blanco filtrado (band-pass 2kHz)
+  - Viento: ruido rosa (proporcional a velocidad)
+  - Choque: buffer de impacto corto (50ms)
+  - Freno: squeal de neumático (filtered noise 3kHz)
+  - ERS: zumbido electrónico (sawtooth 200Hz)
+  - Música: loop de 3 min estilo synthwave/arco
+
+================================================================================
+  10. SISTEMA DE PUNTUACIÓN
+================================================================================
+
+  GRAN PREMIO (por carrera):
+  Posición   Puntos
+  1°         25
+  2°         18
+  3°         15
+  4°         12
+  5°         10
+  6°         8
+  7°         6
+  8°         4
+  9°         2
+  10°        1
+
+  Puntos extra:
+  +1 por mejor vuelta de la carrera
+  +1 por haber liderado al menos 1 vuelta
+
+  CONTRARRELOJ:
+  - Clasificación por tiempo (menor es mejor)
+  - Bonificaciones:
+    • Sub-1:10 → +10 puntos
+    • Sub-1:00 → +25 puntos
+    • Sub-0:55 → +50 puntos
+    • Récord del mundo → +100 puntos (localStorage)
+
+  ARCADE:
+  - Puntos por posición: 100/75/50/30/20/10
+  - Bonus power-ups usados: +5 cada uno
+
+================================================================================
+  11. PROGRESIÓN Y DESBLOQUEOS
+================================================================================
+
+  - Circuito 1 (Mónaco): siempre desbloqueado
+  - Circuito 2-3: desbloquean al terminar Monza 3° o mejor
+  - Circuito 4-5: desbloquean al tener 30+ puntos en campeonato
+  - Circuito 6-7: desbloquean al completar 6 carreras
+  - Circuito 8 (Yapido Speedway): desbloquear al ganar el campeonato
+
+  - Equipos: todos disponibles desde el inicio
+  - Dificultad Expert: desbloquear al ganar en Difícil
+
+  - Logros:
+    • "Primer Podio" — Terminar 3° o mejor en cualquier carrera
+    • "Dominante" — Ganar una carrera sin ser adelantado
+    • "Maestro del Drift" — 20 deriva en una carrera
+    • "Rebufo Maestro" — Adelantar 3 veces con slipstream
+    • "Invicto" — Ganar el campeonato sin abandonos
+    • "Yapido Champion" — Completar Yapido Speedway
+    • "Perfeccionista" — Mejor tiempo en todos los circuitos
+    • "Rey de la Lluvia" — Ganar 3 carreras en lluvia
+
+================================================================================
+  12. ESTRUCTURA TÉCNICA
+================================================================================
+
+  Todo el juego vive en un solo archivo: index.html
+
+  Secciones del HTML:
+  ┌──────────────────────────────────────┐
+  │ <canvas id="gameCanvas">             │
+  │ <div id="startScreen">               │  ← Menú principal
+  │ <div id="garageScreen">              │  ← Selección de equipo
+  │ <div id="circuitScreen">             │  ← Selección de circuito
+  │ <div id="raceScreen">                │  ← HUD durante carrera
+  │ <div id="podiumScreen">              │  ← Resultados
+  │ <div id="settingsScreen">            │  ← Opciones
+  │ <div id="controlsHelp">              │  ← Ayuda de controles
+  └──────────────────────────────────────┘
+
+  Clases JS principales:
+  ┌──────────────────────────────────────┐
+  │ Game             — Loop principal     │
+  │ Car              — Coche (física+render)│
+  │ Track            — Circuito (path+IA) │
+  │ AI               — Comportamiento rival│
+  │ PhysicsEngine    — Colisiones y rebote│
+  │ HUD              — Interfaz en pantalla│
+  │ AudioManager     — WebAudio engine    │
+  │ ParticleSystem   — Efectos visuales   │
+  │ RaceManager      — Estado de carrera  │
+  │ InputManager     — Teclado + Gamepad  │
+  │ WeatherSystem    — Clima dinámico     │
+  │ PowerUpSystem    — Arcade mode        │
+  └──────────────────────────────────────┘
+
+================================================================================
+  13. MAPA DEL CIRCUITO (formato interno)
+================================================================================
+
+  Cada circuito se define como una serie de waypoints:
+
+  {
+    name: "Monaco",
+    laps: 15,
+    width: 60,
+    waypoints: [
+      { x: 500, y: 100, angle: 0, width: 60, type: "straight" },
+      { x: 600, y: 150, angle: 45, width: 50, type: "turn" },
+      ...
+    ],
+    pitLane: { start: 0, end: 10, speed: 80 },
+    boundaries: [ /* polígono exterior */ ],
+    scenery: [ /* árboles, edificios, barreras */ ],
+    weather: { probability: 0.3, transition: "gradual" }
+  }
+
+  El racing line se pre-calcula usando:
+  1. Puntos medios entre waypoints
+  2. Suavizado con Catmull-Rom spline
+  3. Punto de frenada = √(distancia × curvatura × grip)
+
+================================================================================
+  14. OPTIMIZACIÓN
+================================================================================
+
+  - Canvas rendering a 60fps target
+  - Dirty rect rendering (solo redibujar lo que cambia)
+  - Object pooling para partículas (máx 500)
+  - Lazy collision detection (solo con coches cercanos)
+  - Audio context suspendido hasta primera interacción
+  - requestAnimationFrame con delta-time smoothing
+  - Circuito cacheado como offscreen canvas
+  - Solo coches visibles son renderizados (culling por viewport)
+
+================================================================================
+  15. CONTENIDO FUTURO (v2.0)
+================================================================================
+
+  - Modo carreras online (WebSocket)
+  - Editor de circuitos (crear tus propias pistas)
+  - Sistema de temporadas con recompensas
+  - Más power-ups: rayo, hielo, torbellino
+  - Coches desbloqueables (retro, clásicos)
+  - Modo historia: "De karting a F1"
+  - Modo fotografía (capturar momentos épicos)
+  - Leaderboard global online
+
+================================================================================
+  ARCHIVOS
+================================================================================
+
+  5/
+  ├── .INDEX          ← este archivo (Game Design Document)
+  ├── index.html      ← juego completo (~3000 líneas)
+  └── README.md       ← quickstart + controles
+
+================================================================================
+                         APEX GP — "Every lap is a battle"
+================================================================================

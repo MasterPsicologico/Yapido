@@ -1,0 +1,142 @@
+Error getting initial prompts: [Error [FirebaseError]: Missing or insufficient permissions.] {
+  code: 'permission-denied',
+  customData: undefined,
+  toString: [Function (anonymous)]
+}
+Error getting initial prompts: [Error [FirebaseError]: Missing or insufficient permissions.] {
+  code: 'permission-denied',
+  customData: undefined,
+  toString: [Function (anonymous)]
+}
+[Nimbus] ai.generate(meta/llama-3.3-70b-instruct) failed: NVIDIA request failed: 504 
+Error in interpretDreamAction: Error: NVIDIA request failed: 504 
+    at nvidiaChat (src\ai\nvidia-client.ts:95:11)
+    at async ai.generate (src\ai\genkit.ts:90:24)
+    at async eval (src\ai\flows\interpret-dream.ts:66:22)
+    at async interpretDreamAction (src\app\dreams\actions.ts:11:12)
+  93 |   if (!response.ok) {
+  94 |     const text = await response.text().catch(() => '');
+> 95 |     throw new Error(`NVIDIA request failed: ${response.status} ${text.slice(0, 300)}`);
+     |           ^
+  96 |   }
+  97 |
+  98 |   const data = await response.json(); {
+  traceId: '68c760ae0ad0fc5ab6236fa8d56696d3',
+  ignoreFailedSpan: true
+}
+ ⨯ Error: No se pudo interpretar el sueño.
+    at interpretDreamAction (src\app\dreams\actions.ts:14:11)
+  12 |   } catch (e: any) {
+  13 |     console.error("Error in interpretDreamAction:", e);
+> 14 |     throw new Error('No se pudo interpretar el sueño.');
+     |           ^
+  15 |   }
+  16 | }
+  17 | {
+  digest: '2847625693'
+}
+[2026-06-30T21:58:11.249Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Listen' stream 0x1c0f4b5a error. Code: 14 Message: 14 UNAVAILABLE: read ECONNRESET
+[Nimbus] ai.generate(meta/llama-3.3-70b-instruct) failed: fetch failed
+Error in interpretDreamAction: TypeError: fetch failed
+    at async nvidiaChat (src\ai\nvidia-client.ts:74:20)
+    at async ai.generate (src\ai\genkit.ts:90:24)
+    at async eval (src\ai\flows\interpret-dream.ts:66:22)
+    at async interpretDreamAction (src\app\dreams\actions.ts:11:12)
+  72 |   }
+  73 |
+> 74 |   const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
+     |                    ^
+  75 |     method: 'POST',
+  76 |     headers: {
+  77 |       'Authorization': `Bearer ${apiKey}`, {
+  traceId: '72d0f6ebd7e196498fbf8c552ff992ef',
+  ignoreFailedSpan: true,
+  [cause]: [Error: read ECONNRESET] {
+    errno: -4077,
+    code: 'ECONNRESET',
+    syscall: 'read'
+  }
+}
+ ⨯ Error: No se pudo interpretar el sueño.
+    at interpretDreamAction (src\app\dreams\actions.ts:14:11)
+  12 |   } catch (e: any) {
+  13 |     console.error("Error in interpretDreamAction:", e);
+> 14 |     throw new Error('No se pudo interpretar el sueño.');
+     |           ^
+  15 |   }
+  16 | }
+  17 | {
+  digest: '2496573683'
+}
+Error getting initial prompts: [Error [FirebaseError]: Missing or insufficient permissions.] {
+  code: 'permission-denied',
+  customData: undefined,
+  toString: [Function (anonymous)]
+}
+Error getting initial prompts: [Error [FirebaseError]: Missing or insufficient permissions.] {
+  code: 'permission-denied',
+  customData: undefined,
+  toString: [Function (anonymous)]
+}
+[2026-07-01T03:24:49.314Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Listen' stream 0x26ebaa7d error. Code: 1 Message: 1 CANCELLED: Disconnecting idle stream. Timed out waiting for new targets.
+[2026-07-01T04:12:41.044Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Listen' stream 0x26ebaa7e error. Code: 14 Message: 14 UNAVAILABLE: No connection established. Last error: Client network socket disconnected before secure TLS connection was established (2026-07-01T04:12:41.037Z)
+[Nimbus] ai.generate(meta/llama-3.3-70b-instruct) failed: fetch failed
+Error getting initial prompts: TypeError: fetch failed
+    at async nvidiaChat (src\ai\nvidia-client.ts:74:20)
+    at async ai.generate (src\ai\genkit.ts:90:24)
+    at async eval (src\ai\flows\initial-prompt-suggestion.ts:53:24)
+    at async getInitialPrompts (src\app\c\actions.ts:174:25)
+  72 |   }
+  73 |
+> 74 |   const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
+     |                    ^
+  75 |     method: 'POST',
+  76 |     headers: {
+  77 |       'Authorization': `Bearer ${apiKey}`, {
+  traceId: 'b9ed90d964b9d38661eeed79fe395ff6',
+  ignoreFailedSpan: true,
+  [cause]: [Error [ConnectTimeoutError]: Connect Timeout Error (attempted addresses: 99.83.136.103:443, 75.2.113.119:443, timeout: 10000ms)] {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+[Nimbus] ai.generate(meta/llama-3.3-70b-instruct) failed: fetch failed
+Error getting initial prompts: TypeError: fetch failed
+    at async nvidiaChat (src\ai\nvidia-client.ts:74:20)
+    at async ai.generate (src\ai\genkit.ts:90:24)
+    at async eval (src\ai\flows\initial-prompt-suggestion.ts:53:24)
+    at async getInitialPrompts (src\app\c\actions.ts:174:25)
+  72 |   }
+  73 |
+> 74 |   const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
+     |                    ^
+  75 |     method: 'POST',
+  76 |     headers: {
+  77 |       'Authorization': `Bearer ${apiKey}`, {
+  traceId: 'f7d6f593d715de15af9d3f1e4574a67b',
+  ignoreFailedSpan: true,
+  [cause]: [Error [ConnectTimeoutError]: Connect Timeout Error (attempted addresses: 99.83.136.103:443, 75.2.113.119:443, timeout: 10000ms)] {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+Error getting initial prompts: [Error [FirebaseError]: Missing or insufficient permissions.] {
+  code: 'permission-denied',
+  customData: undefined,
+  toString: [Function (anonymous)]
+}
+Error getting initial prompts: [Error [FirebaseError]: Missing or insufficient permissions.] {
+  code: 'permission-denied',
+  customData: undefined,
+  toString: [Function (anonymous)]
+}
+[2026-07-01T04:19:52.803Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Listen' stream 0x26ebaa7f error. Code: 1 Message: 1 CANCELLED: Disconnecting idle stream. Timed out waiting for new targets.
+Error getting initial prompts: [Error [FirebaseError]: Missing or insufficient permissions.] {
+  code: 'permission-denied',
+  customData: undefined,
+  toString: [Function (anonymous)]
+}
+Error getting initial prompts: [Error [FirebaseError]: Missing or insufficient permissions.] {
+  code: 'permission-denied',
+  customData: undefined,
+  toString: [Function (anonymous)]
+}
+[2026-07-01T04:24:24.791Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Listen' stream 0x26ebaa80 error. Code: 1 Message: 1 CANCELLED: Disconnecting idle stream. Timed out waiting for new targets.

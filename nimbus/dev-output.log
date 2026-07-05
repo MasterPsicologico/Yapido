@@ -1,0 +1,38 @@
+
+> nextn@0.1.0 dev
+> next dev -p 9004
+
+   ▲ Next.js 15.5.9
+   - Local:        http://localhost:9004
+   - Network:      http://192.168.2.171:9004
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+ ✓ Ready in 4.2s
+ ○ Compiling /c/[chatId] ...
+ ✓ Compiled /c/[chatId] in 33.1s (5263 modules)
+ ✓ Compiled in 3s (1807 modules)
+ GET /c/6qKtrDvMorR8Ni5EB3hW 200 in 41613ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 4.5s (3464 modules)
+ GET /favicon.ico 200 in 5406ms
+Error getting initial prompts: [Error [FirebaseError]: Missing or insufficient permissions.] {
+  code: 'permission-denied',
+  customData: undefined,
+  toString: [Function (anonymous)]
+}
+ POST /c/6qKtrDvMorR8Ni5EB3hW 200 in 7629ms
+ GET /c/6qKtrDvMorR8Ni5EB3hW 200 in 1425ms
+ GET /favicon.ico 200 in 55ms
+Error getting initial prompts: [Error [FirebaseError]: Missing or insufficient permissions.] {
+  code: 'permission-denied',
+  customData: undefined,
+  toString: [Function (anonymous)]
+}
+ POST /c/6qKtrDvMorR8Ni5EB3hW 200 in 239ms
+[2026-06-27T22:11:50.185Z]  @firebase/firestore: Firestore (11.9.0): GrpcConnection RPC 'Listen' stream 0x1de71600 error. Code: 1 Message: 1 CANCELLED: Disconnecting idle stream. Timed out waiting for new targets.
+ ✓ Compiled in 7s (5254 modules)
+ GET /c/6qKtrDvMorR8Ni5EB3hW 200 in 670ms
+[?25h

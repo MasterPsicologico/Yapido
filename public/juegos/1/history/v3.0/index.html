@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Blaster - Game Creator v3.0</title>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        /* Editor Styles */
+        .editor-master-container {
+            display: flex;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .editor-left-panel {
+            flex: 0 0 65%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .editor-right-panel {
+            flex: 0 0 35%;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-panel);
+            border-left: 2px solid var(--accent);
+            overflow-y: auto;
+        }
+
+        /* Grid Container */
+        #pixelGridContainer {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #0a0a0f;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .pixel-grid-wrapper {
+            overflow: auto;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .pixel-grid-inner {
+            transition: transform 0.1s ease;
+            transform-origin: center center;
+        }
+
+        .editor-pixel {
+            width: 8px;
+            height: 8px;
+            background: #222;
+            cursor: crosshair;
+            transition: transform 0.05s;
+        }
+
+        .editor-pixel:hover {
+            transform: scale(1.3);
+            z-index: 10;
+        }
+
+        .editor-pixel.filled {
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Preview */
+        #pixelPreviewContainer {
+            background: #0a0a0f;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        #pixelPreviewContainer canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Scale Controls */
+        .scale-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background: var(--bg-section);
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .scale-controls label {
+            color: var(--text-dim);
+            font-size: 12px;
+        }
+
+        .scale-controls input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+        }
+
+        .scale-value {
+            color: var(--accent);
+            font-weight: bold;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        /* Upload Area */
+        .upload-section {
+            padding: 15px;
+            background: var(--bg-section);
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .upload-section h3 {
+            color: var(--accent);
+            font-size: 12px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        #uploadArea {
+            border: 2px dashed #333;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-dim);
+            font-size: 13px;
+        }
+
+        #uploadArea:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        #uploadArea .icon {
+            font-size: 32px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        #imageUpload {
+            display: none;
+        }
+
+        .upload-type-select {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .upload-type-select label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-dim);
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .upload-type-select input {
+            accent-color: var(--accent);
+        }
+
+        /* Sprite Actions */
+        .sprite-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .sprite-actions .btn {
+            padding: 8px;
+            font-size: 11px;
+        }
+
+        /* Sprite Info */
+        .sprite-info {
+            padding: 10px;
+            background: var(--bg-section);
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .sprite-info p {
+            color: var(--text-dim);
+            font-size: 11px;
+            margin: 5px 0;
+        }
+
+        .sprite-info span {
+            color: var(--accent);
+        }
+
+        /* Color Picker Enhanced */
+        .color-picker-section h3 {
+            color: var(--accent);
+            font-size: 12px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .color-picker-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 10px;
+            background: var(--bg-section);
+            border-radius: 8px;
+        }
+
+        .color-swatch {
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .color-swatch:hover, .color-swatch.selected {
+            border-color: #fff;
+            transform: scale(1.1);
+        }
+
+        /* Tool Buttons */
+        .tool-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .tool-btn {
+            padding: 6px 10px;
+            background: var(--bg-section);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+
+        .tool-btn:hover {
+            background: var(--border);
+            border-color: var(--accent);
+        }
+
+        /* Touch Controls */
+        #touchControls {
+            display: none;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            pointer-events: none;
+        }
+
+        .touch-zone {
+            position: absolute;
+            bottom: 20px;
+            width: 70px;
+            height: 70px;
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: rgba(255,255,255,0.5);
+            user-select: none;
+        }
+
+        .touch-zone:active { background: rgba(255,255,255,0.3); }
+        #touchLeft { left: 20px; }
+        #touchRight { left: 110px; }
+        #touchJump { right: 20px; }
+        #touchShoot { right: 110px; }
+
+        @media (max-width: 768px) {
+            #touchControls { display: block; }
+            .editor-master-container { flex-direction: column; }
+            .editor-left-panel, .editor-right-panel { flex: none; width: 100%; }
+        }
+
+        /* Shop & Leaderboard */
+        #shopScreen, #leaderboardScreen {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 10, 15, 0.98);
+            z-index: 200;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .screen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .screen-header h2 { color: #00ff88; font-size: 24px; }
+        .coins-display { color: #ffd700; font-size: 18px; }
+
+        .shop-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .shop-item {
+            background: #1a1a2e;
+            border: 2px solid #2a2a3e;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: border-color 0.2s;
+        }
+
+        .shop-item:hover { border-color: #00ff88; }
+
+        .shop-item-preview {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .shop-item-info { flex: 1; }
+        .shop-item-name { font-weight: bold; color: #fff; margin-bottom: 5px; }
+        .shop-item-price { color: #ffd700; font-size: 14px; }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 11px;
+            background: #00ff88;
+            color: #0a0a0f;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-small:disabled { background: #333; color: #666; cursor: not-allowed; }
+        .selected-tag { color: #00ff88; font-size: 12px; font-weight: bold; }
+
+        .leaderboard-list { display: flex; flex-direction: column; gap: 8px; }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: #1a1a2e;
+            border-radius: 4px;
+            gap: 15px;
+        }
+
+        .leaderboard-item .rank { color: #ffd700; font-weight: bold; width: 40px; }
+        .leaderboard-item .score { color: #00ff88; font-weight: bold; flex: 1; }
+        .leaderboard-item .level { color: #888; font-size: 12px; }
+        .leaderboard-item .date { color: #666; font-size: 11px; }
+
+        /* Stats Panel */
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-box {
+            background: var(--bg-section);
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-box .value {
+            font-size: 20px;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .stat-box .label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="gameArea">
+            <canvas id="gameCanvas"></canvas>
+
+            <div id="touchControls">
+                <div class="touch-zone" id="touchLeft">◀</div>
+                <div class="touch-zone" id="touchRight">▶</div>
+                <div class="touch-zone" id="touchJump">▲</div>
+                <div class="touch-zone" id="touchShoot">●</div>
+            </div>
+
+            <div id="gameUI">
+                <span class="game-stat" id="score">PUNTOS: 0</span>
+                <span class="game-stat" id="levelDisplay" style="color:#ffd93d;">NIVEL 1</span>
+                <span class="game-stat" id="coinDisplay">🪙 0</span>
+                <span class="game-stat">VIDA: <span id="hearts" style="color:#ff6b6b;">♥♥♥</span></span>
+                <span class="game-stat" id="comboDisplay" style="color:#ff00ff;opacity:0;">COMBO</span>
+                <span class="game-stat" id="modeIndicator" style="color:#ffd93d;display:none;">[EDITOR]</span>
+            </div>
+
+            <div id="startScreen">
+                <h1>NEON BLASTER</h1>
+                <p class="subtitle">Game Creator v3.0</p>
+                <div class="controls-grid">
+                    <p><span>← →</span> Mover</p>
+                    <p><span>↑</span> Saltar</p>
+                    <p><span>ESPACIO</span> Disparar</p>
+                    <p><span>ESC</span> Pausar</p>
+                    <p><span>TAB</span> Editor</p>
+                </div>
+                <button class="startBtn" onclick="startGame()">JUGAR</button>
+                <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                    <button class="btn btn-secondary" onclick="showScreen('shop')" id="btnShop">🛒 TIENDA</button>
+                    <button class="btn btn-secondary" onclick="showScreen('leaderboard')" id="btnLeaderboard">🏆 RANKING</button>
+                </div>
+            </div>
+
+            <div id="gameOverScreen">
+                <h1>GAME OVER</h1>
+                <div id="finalScore" style="font-size: 18px; margin: 15px 0; line-height: 1.8;"></div>
+                <p class="score-display">Mejor: <span id="highScore">0</span></p>
+                <button class="startBtn" onclick="startGame()">REINTENTAR</button>
+                <button class="btn btn-secondary" onclick="showScreen('menu')" style="margin-top:15px;">MENÚ</button>
+            </div>
+
+            <div id="shopScreen">
+                <div class="screen-header">
+                    <h2>🛒 TIENDA DE SKINS</h2>
+                    <div class="coins-display">🪙 <span id="shopCoins">0</span></div>
+                </div>
+                <div id="shopItems" class="shop-items"></div>
+                <button class="btn btn-secondary" onclick="showScreen('menu')" id="btnShopBack" style="margin-top:20px;">← VOLVER</button>
+            </div>
+
+            <div id="leaderboardScreen">
+                <div class="screen-header">
+                    <h2>🏆 RANKING</h2>
+                </div>
+                <div id="leaderboardList" class="leaderboard-list"></div>
+                <button class="btn btn-secondary" onclick="showScreen('menu')" id="btnLeaderboardBack" style="margin-top:20px;">← VOLVER</button>
+            </div>
+        </div>
+
+        <!-- Editor Panel -->
+        <div id="editorPanel" class="editor-hidden">
+            <div class="editor-header">
+                <span class="logo">🎨 PIXEL EDITOR</span>
+                <button class="toggle-btn" onclick="toggleEditor()">✕</button>
+            </div>
+
+            <div class="editor-tabs">
+                <button class="editor-tab active" data-tab="draw">Dibujar</button>
+                <button class="editor-tab" data-tab="sprites">Sprites</button>
+                <button class="editor-tab" data-tab="props">Propiedades</button>
+            </div>
+
+            <div class="editor-content">
+                <!-- DRAW TAB -->
+                <div id="tab-draw">
+                    <div class="editor-master-container">
+                        <div class="editor-left-panel">
+                            <!-- Scale Controls -->
+                            <div class="scale-controls">
+                                <label>Zoom:</label>
+                                <input type="range" id="pixelScaleSlider" min="1" max="100" value="8">
+                                <span class="scale-value" id="pixelScaleValue">8x</span>
+                            </div>
+
+                            <!-- Pixel Grid -->
+                            <div id="pixelGridContainer"></div>
+                        </div>
+
+                        <div class="editor-right-panel">
+                            <!-- Preview -->
+                            <h3 style="color:var(--accent);font-size:12px;margin-bottom:10px;">VISTA PREVIA</h3>
+                            <div id="pixelPreviewContainer"></div>
+
+                            <!-- Stats -->
+                            <div class="stats-panel" id="spriteStats">
+                                <div class="stat-box">
+                                    <div class="value" id="statWidth">0</div>
+                                    <div class="label">Ancho</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="value" id="statHeight">0</div>
+                                    <div class="label">Alto</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="value" id="statPixels">0</div>
+                                    <div class="label">Píxeles</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="value" id="statScale">1x</div>
+                                    <div class="label">Escala Game</div>
+                                </div>
+                            </div>
+
+                            <!-- Upload Section -->
+                            <div class="upload-section">
+                                <h3>📤 Subir Imagen</h3>
+                                <div id="uploadArea">
+                                    <span class="icon">🖼️</span>
+                                    Arrastra una imagen o haz clic para seleccionar
+                                </div>
+                                <input type="file" id="imageUpload" accept="image/*">
+                                <div class="upload-type-select">
+                                    <label>
+                                        <input type="radio" name="uploadType" value="sprite" checked>
+                                        Sprite (recorta espacios)
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="uploadType" value="background">
+                                        Fondo (completo)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Tool Buttons -->
+                            <div class="sprite-actions">
+                                <button class="btn btn-secondary" onclick="PixelEditor.clearGrid()">🗑️ Limpiar</button>
+                                <button class="btn btn-secondary" onclick="PixelEditor.flipHorizontal()">↔️ Voltear H</button>
+                                <button class="btn btn-secondary" onclick="PixelEditor.flipVertical()">↕️ Voltear V</button>
+                                <button class="btn btn-secondary" onclick="PixelEditor.rotateCW()">🔄 Rotar</button>
+                                <button class="btn btn-secondary" onclick="PixelEditor.fillEmpty()">🪣 Rellenar</button>
+                                <button class="btn btn-primary" onclick="applyEditorChanges()">✓ Aplicar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Color Picker -->
+                    <div class="color-picker-section" style="margin-top:15px;">
+                        <h3>🎨 Paleta de Colores</h3>
+                        <div id="colorPicker" class="color-picker-grid"></div>
+                    </div>
+                </div>
+
+                <!-- SPRITES TAB -->
+                <div id="tab-sprites" style="display:none;">
+                    <div class="editor-section">
+                        <h3>Seleccionar Sprite</h3>
+                        <select id="objectSelect" class="editor-select" onchange="loadSpriteToEditor(this.value)">
+                            <option value="player">Jugador</option>
+                            <option value="walker">Enemigo Caminante</option>
+                            <option value="flyer">Enemigo Volador</option>
+                            <option value="shooter">Enemigo Tirador</option>
+                            <option value="boss">JEFE</option>
+                            <option value="bullet">Bala</option>
+                            <option value="powerup_health">Power-up Vida</option>
+                            <option value="powerup_speed">Power-up Velocidad</option>
+                            <option value="coin">Moneda</option>
+                        </select>
+                    </div>
+
+                    <div class="editor-section">
+                        <h3>Sprite Actual</h3>
+                        <div id="currentSpritePreview" style="background:#0a0a0f;padding:20px;border-radius:8px;text-align:center;">
+                            <canvas id="spritePreviewCanvas" width="200" height="150"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROPERTIES TAB -->
+                <div id="tab-props" style="display:none;">
+                    <div class="editor-section">
+                        <h3>Dimensión en Pixeles</h3>
+                        <div class="editor-row">
+                            <label>Ancho Game</label>
+                            <input type="range" id="propWidth" min="10" max="200" value="40">
+                            <span class="value" id="propWidthVal">40</span>
+                        </div>
+                        <div class="editor-row">
+                            <label>Alto Game</label>
+                            <input type="range" id="propHeight" min="10" max="200" value="50">
+                            <span class="value" id="propHeightVal">50</span>
+                        </div>
+                        <div class="editor-row">
+                            <label>Escala</label>
+                            <input type="range" id="propScale" min="1" max="10" value="1">
+                            <span class="value" id="propScaleVal">1</span>
+                        </div>
+                    </div>
+
+                    <div class="editor-section">
+                        <h3>Comportamiento</h3>
+                        <div class="editor-row">
+                            <label>Velocidad</label>
+                            <input type="range" id="propSpeed" min="0" max="20" value="5">
+                            <span class="value" id="propSpeedVal">5</span>
+                        </div>
+                        <div class="editor-row">
+                            <label>Vida</label>
+                            <input type="range" id="propHealth" min="1" max="20" value="3">
+                            <span class="value" id="propHealthVal">3</span>
+                        </div>
+                        <div class="editor-row">
+                            <label>Puntos</label>
+                            <input type="range" id="propPoints" min="10" max="1000" value="100">
+                            <span class="value" id="propPointsVal">100</span>
+                        </div>
+                        <div class="editor-row">
+                            <label>Cadencia</label>
+                            <input type="range" id="propCooldown" min="1" max="30" value="12">
+                            <span class="value" id="propCooldownVal">12</span>
+                        </div>
+                    </div>
+
+                    <div class="editor-section">
+                        <h3>Apariencia</h3>
+                        <div class="editor-row">
+                            <label>Color Base</label>
+                            <input type="color" id="propColor" value="#00ff88">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" onclick="applyEditorChanges()">✓ Aplicar Cambios</button>
+                    <button class="btn btn-secondary btn-block" onclick="resetToDefault()">↺ Restaurar Original</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="js/game.js"></script>
+    <script src="js/editor/PixelEditor.js"></script>
+</body>
+</html>

@@ -1,0 +1,1218 @@
+:root {
+    --bg-dark: #0a0a0f;
+    --bg-panel: #141420;
+    --bg-section: #1a1a2e;
+    --border: #2a2a3e;
+    --text: #e0e0e0;
+    --text-dim: #888;
+    --accent: #00ff88;
+    --accent-dark: #00cc6a;
+    --danger: #ff6b6b;
+    --warning: #ffd93d;
+    --purple: #c792ea;
+    --font: 'Segoe UI', system-ui, sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg-dark);
+    font-family: var(--font);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+#app {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+#gameArea {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #000;
+    position: relative;
+    min-height: 100vh;
+    transition: flex 0.3s ease;
+}
+
+#gameCanvas {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+#gameUI {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+}
+
+.game-stat {
+    color: var(--accent);
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: 0 0 10px var(--accent);
+    letter-spacing: 1px;
+}
+
+#editorPanel {
+    width: 50%;
+    min-width: 320px;
+    max-width: 600px;
+    background: var(--bg-panel);
+    border-left: 2px solid var(--accent);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: width 0.3s ease, opacity 0.3s ease;
+    flex-shrink: 0;
+}
+
+#editorPanel.editor-hidden {
+    display: none;
+}
+
+.editor-header {
+    background: var(--accent);
+    color: var(--bg-dark);
+    padding: 12px 15px;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.editor-header .logo {
+    font-size: 16px;
+    letter-spacing: 2px;
+}
+
+.editor-header .toggle-btn {
+    background: rgba(0,0,0,0.2);
+    border: none;
+    color: inherit;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.editor-header .toggle-btn:hover {
+    background: rgba(0,0,0,0.4);
+}
+
+.editor-tabs {
+    display: flex;
+    background: var(--bg-section);
+    border-bottom: 1px solid var(--border);
+}
+
+.editor-tab {
+    flex: 1;
+    padding: 10px 8px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+}
+
+.editor-tab:hover {
+    color: var(--text);
+    background: rgba(255,255,255,0.05);
+}
+
+.editor-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.editor-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+.editor-section {
+    margin-bottom: 20px;
+}
+
+.editor-section h3 {
+    color: var(--accent);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border);
+}
+
+.editor-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.editor-row label {
+    flex: 0 0 70px;
+    color: var(--text-dim);
+    font-size: 11px;
+}
+
+.editor-row input[type="range"] {
+    flex: 1;
+    height: 4px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.editor-row input[type="number"] {
+    width: 50px;
+    background: var(--bg-section);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    text-align: center;
+}
+
+.editor-row input[type="color"] {
+    width: 35px;
+    height: 25px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+}
+
+.editor-row .value {
+    flex: 0 0 35px;
+    color: var(--accent);
+    font-size: 11px;
+    text-align: right;
+}
+
+select.editor-select {
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--bg-section);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+select.editor-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: var(--bg-dark);
+}
+
+.btn-primary:hover {
+    background: var(--accent-dark);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--bg-section);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--border);
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+#startScreen, #gameOverScreen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(10, 10, 15, 0.95);
+    color: #fff;
+    text-align: center;
+    z-index: 100;
+}
+
+#gameOverScreen {
+    display: none;
+}
+
+h1 {
+    font-size: 42px;
+    color: var(--accent);
+    text-shadow: 0 0 30px var(--accent);
+    margin-bottom: 10px;
+    letter-spacing: 4px;
+}
+
+.subtitle {
+    font-size: 16px;
+    color: var(--text-dim);
+    margin-bottom: 30px;
+}
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 30px;
+    background: rgba(255,255,255,0.03);
+    padding: 15px 25px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    text-align: left;
+}
+
+.controls-grid p {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.controls-grid span {
+    color: var(--accent);
+    background: rgba(0,255,136,0.1);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+.startBtn {
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: var(--bg-dark);
+    border: none;
+    padding: 15px 50px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+}
+
+.startBtn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 50px rgba(0, 255, 136, 0.6);
+}
+
+.score-display {
+    font-size: 36px;
+    color: var(--accent);
+    margin: 10px 0;
+}
+
+#finalScore {
+    font-size: 24px;
+    color: var(--danger);
+    margin: 20px 0;
+}
+
+.notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: var(--bg-dark);
+    padding: 10px 25px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 2000;
+}
+
+.notification.show {
+    opacity: 1;
+}
+
+.pixel-grid {
+    display: grid;
+    gap: 1px;
+    background: #222;
+    padding: 8px;
+    border-radius: 4px;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.pixel {
+    width: 14px;
+    height: 14px;
+    background: #333;
+    cursor: crosshair;
+    transition: transform 0.1s;
+    flex-shrink: 0;
+}
+
+.pixel:hover {
+    transform: scale(1.2);
+    z-index: 1;
+}
+
+.pixel.filled {
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px;
+    background: #1a1a2e;
+    border-radius: 4px;
+}
+
+.color-swatch {
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.color-swatch:hover, .color-swatch.selected {
+    border-color: #fff;
+    transform: scale(1.1);
+}
+
+/* ============================================================================
+   SCALE CONTROLS (Zoom slider)
+   ============================================================================ */
+.scale-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    background: var(--bg-section);
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.scale-controls label {
+    font-size: 12px;
+    color: var(--text-dim);
+    min-width: 40px;
+}
+
+.scale-controls input[type="range"] {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    background: var(--bg-dark);
+    border-radius: 2px;
+}
+
+.scale-controls input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--accent);
+}
+
+.scale-controls .scale-value {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--accent);
+    min-width: 30px;
+    text-align: right;
+}
+
+/* ============================================================================
+   PREVIEW AREA
+   ============================================================================ */
+.preview-area {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: var(--bg-section);
+    border-radius: 8px;
+}
+
+#pixelPreviewContainer {
+    flex: 0 0 180px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-dark);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+}
+
+#pixelPreviewContainer canvas {
+    image-rendering: pixelated;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.stats-panel {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.stat-box {
+    background: var(--bg-panel);
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+    border: 1px solid var(--border);
+}
+
+.stat-box .value {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--accent);
+}
+
+.stat-box .label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+}
+
+/* ============================================================================
+   UPLOAD SECTION
+   ============================================================================ */
+.upload-section {
+    background: var(--bg-section);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.upload-section h3 {
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 8px;
+}
+
+#uploadArea {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg-dark);
+    text-align: center;
+}
+
+#uploadArea:hover {
+    border-color: var(--accent);
+    background: rgba(0, 255, 136, 0.05);
+}
+
+#uploadArea .icon {
+    font-size: 28px;
+    margin-bottom: 6px;
+}
+
+#uploadArea p {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin: 0;
+}
+
+.upload-type-select {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    justify-content: center;
+}
+
+.upload-type-select label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.upload-type-select input[type="radio"] {
+    accent-color: var(--accent);
+}
+
+/* ============================================================================
+   COLOR PICKER SECTION
+   ============================================================================ */
+.color-picker-section {
+    background: var(--bg-section);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.color-picker-section h3 {
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 8px;
+}
+
+#colorPicker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px;
+    background: var(--bg-dark);
+    border-radius: 6px;
+}
+
+.color-swatch {
+    width: 26px;
+    height: 26px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.color-swatch:hover {
+    transform: scale(1.15);
+    border-color: rgba(255,255,255,0.5);
+}
+
+.color-swatch.selected {
+    border-color: #fff;
+    transform: scale(1.1);
+    box-shadow: 0 0 8px rgba(255,255,255,0.3);
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 11px;
+    background: #00ff88;
+    color: #0a0a0f;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-small:disabled {
+    background: #333;
+    color: #666;
+    cursor: not-allowed;
+}
+
+/* ============================================================================
+   SPRITE LIBRARY STYLES
+   ============================================================================ */
+.sprite-library {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    background: var(--bg-section);
+    border-radius: 8px;
+}
+
+.sprite-categories {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px;
+    background: var(--bg-panel);
+    border-radius: 6px;
+}
+
+.sprite-category-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-dark);
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s;
+}
+
+.sprite-category-btn:hover {
+    border-color: var(--accent);
+    background: var(--bg-section);
+}
+
+.sprite-category-btn.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+}
+
+.sprite-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+    padding: 10px;
+    background: var(--bg-panel);
+    border-radius: 6px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.sprite-card {
+    background: var(--bg-dark);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.sprite-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.sprite-card.selected {
+    border-color: var(--accent);
+    background: var(--bg-section);
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.sprite-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sprite-icon canvas {
+    image-rendering: pixelated;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.sprite-name {
+    font-size: 10px;
+    color: var(--text);
+    text-align: center;
+    word-break: break-word;
+}
+
+.sprite-category-tag {
+    font-size: 8px;
+    color: var(--accent);
+    background: rgba(0, 255, 136, 0.1);
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+
+.sprite-upload-zone {
+    padding: 15px;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg-dark);
+}
+
+.sprite-upload-zone:hover,
+.sprite-upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(0, 255, 136, 0.05);
+}
+
+.sprite-upload-zone .icon {
+    font-size: 24px;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.sprite-upload-zone p {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin: 0;
+}
+
+.sprite-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.sprite-actions .tool-btn {
+    flex: 1;
+    min-width: 70px;
+    font-size: 11px;
+    padding: 6px 8px;
+}
+
+#currentSpritePreview {
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+    background: var(--bg-dark);
+    border-radius: 8px;
+}
+
+#currentSpritePreview canvas {
+    image-rendering: pixelated;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* ============================================================================
+   EDITOR SECTION STYLES
+   ============================================================================ */
+.editor-section {
+    background: var(--bg-section);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.editor-section h3 {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+}
+
+.editor-select {
+    width: 100%;
+    padding: 10px;
+    background: var(--bg-dark);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.editor-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.tools-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.tools-row .tool-btn {
+    flex: 1;
+    min-width: 60px;
+}
+
+/* ============================================================================
+   SPRITE CARD ACTIONS
+   ============================================================================ */
+.sprite-card-actions {
+    display: flex;
+    gap: 3px;
+    margin-top: 4px;
+    width: 100%;
+}
+
+.sprite-card-actions select {
+    flex: 1;
+    font-size: 9px;
+    padding: 2px 4px;
+    background: var(--bg-dark);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+}
+
+/* ============================================================================
+   MODAL STYLES
+   ============================================================================ */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: var(--bg-panel);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 20px;
+    min-width: 300px;
+    max-width: 90%;
+}
+
+.modal-content h2 {
+    margin: 0 0 15px 0;
+    font-size: 14px;
+    color: var(--accent);
+}
+
+.modal-content .form-group {
+    margin-bottom: 12px;
+}
+
+.modal-content label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+}
+
+.modal-content input[type="text"],
+.modal-content select {
+    width: 100%;
+    padding: 8px;
+    background: var(--bg-dark);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    box-sizing: border-box;
+}
+
+.modal-content .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.modal-content .modal-actions button {
+    flex: 1;
+}
+
+/* ============================================================================
+   EDITOR ROW (SLIDERS)
+   ============================================================================ */
+.editor-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.editor-row label {
+    min-width: 60px;
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.editor-row input[type="range"] {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    background: var(--bg-dark);
+    border-radius: 2px;
+    outline: none;
+}
+
+.editor-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 6px var(--accent);
+}
+
+.editor-row input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.editor-row .value {
+    min-width: 35px;
+    text-align: right;
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--accent);
+}
+
+/* ================================================================================
+   PRO SHADER CONTROLS - Material Properties UI
+   ================================================================================ */
+
+.shader-controls {
+    background: var(--bg-section);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.shader-controls h3 {
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.material-preview {
+    width: 100%;
+    height: 80px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+.material-preview canvas {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.upload-section {
+    background: var(--bg-section);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+}
+
+.upload-section input[type="file"] {
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px;
+    color: var(--text);
+    font-size: 10px;
+    width: 100%;
+}
+
+.upload-section input[type="file"]::file-selector-button {
+    background: var(--accent);
+    border: none;
+    color: var(--bg-dark);
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 10px;
+    margin-right: 5px;
+}
+
+/* Parallax Layer Controls */
+.parallax-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    margin: 5px 0;
+}
+
+.parallax-controls label {
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+.parallax-controls input[type="range"] {
+    flex: 1;
+    height: 4px;
+}
+
+.parallax-controls span {
+    font-size: 10px;
+    min-width: 30px;
+    color: var(--accent);
+}
+
+/* Animation State Machine Visualizer */
+.animation-state-machine {
+    background: var(--bg-section);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.state-node {
+    background: var(--bg-panel);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    display: inline-block;
+    margin: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 11px;
+}
+
+.state-node:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+}
+
+.state-node.active {
+    border-color: var(--accent);
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.state-connector {
+    width: 40px;
+    height: 2px;
+    background: var(--border);
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 5px;
+}
+
+.blend-indicator {
+    font-size: 9px;
+    color: var(--warning);
+    display: block;
+    text-align: center;
+}
+
+/* Tilemap Editor Controls */
+.tilemap-toolbar {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    padding: 8px;
+    background: var(--bg-section);
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.tilemap-tool {
+    width: 32px;
+    height: 32px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.tilemap-tool:hover {
+    border-color: var(--accent);
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.tilemap-tool.active {
+    background: var(--accent);
+    color: var(--bg-dark);
+}
+
+.layer-list {
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.layer-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: var(--bg-section);
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-size: 11px;
+}
+
+.layer-item input[type="range"] {
+    width: 60px;
+    height: 4px;
+}

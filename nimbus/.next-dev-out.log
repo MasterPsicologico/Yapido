@@ -1,0 +1,60 @@
+
+> nextn@0.1.0 dev
+> next dev -p 9004
+
+   ▲ Next.js 15.5.9
+   - Local:        http://localhost:9004
+   - Network:      http://192.168.2.171:9004
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+ ✓ Ready in 8.6s
+ ○ Compiling /recorder ...
+ ✓ Compiled /ia-vs-ia in 35.5s (9581 modules)
+ GET / 200 in 320ms
+ GET /recorder 200 in 39270ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 1667ms (5706 modules)
+ GET /favicon.ico 200 in 1957ms
+ GET /ia-vs-ia 200 in 1493ms
+ GET /recorder 200 in 268ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 3.2s (9604 modules)
+ GET /c 404 in 3880ms
+[Nimbus] analyzeCombined succeeded via meta/llama-3.3-70b-instruct
+ POST /recorder 200 in 123895ms
+ GET / 200 in 204ms
+ POST / 200 in 3144ms
+ POST / 200 in 371ms
+ ○ Compiling /dreams ...
+ ✓ Compiled /dreams in 8.7s (9038 modules)
+ GET /dreams 200 in 9189ms
+ GET /dreams 200 in 89ms
+ POST /dreams 200 in 45184ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 2.5s (5153 modules)
+ GET /favicon.ico 200 in 2843ms
+ ✓ Compiled in 3.1s (3916 modules)
+ GET /dreams 200 in 455ms
+ ✓ Compiled in 2.4s (3916 modules)
+ GET /dreams 200 in 132ms
+ ✓ Compiled in 7.4s (9068 modules)
+ GET /dreams 200 in 474ms
+ ✓ Compiled in 3s (9055 modules)
+ GET /dreams 200 in 412ms
+ ✓ Compiled in 5.8s (9055 modules)
+ GET /dreams 200 in 420ms
+ ✓ Compiled in 5s (9055 modules)
+ GET /dreams 200 in 307ms
+ ✓ Compiled in 5.4s (9068 modules)
+ GET /dreams 200 in 315ms
+ ✓ Compiled in 18.1s (9055 modules)
+ ✓ Compiled in 4.2s (9068 modules)
+ ✓ Compiled in 3.1s (9055 modules)
+ ✓ Compiled in 1368ms (3918 modules)
+ GET /dreams 200 in 1799ms
+[?25h
+
+C:\Users\dcard\OneDrive\Escritorio\Uix\nimbus>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Blaster - Game Creator v3.0</title>
+    <link rel="stylesheet" href="css/main.css">
+    <!-- PixiJS WebGL Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- GAME AREA -->
+        <div id="gameArea">
+            <canvas id="gameCanvas"></canvas>
+
+            <!-- HUD -->
+            <div id="gameUI">
+                <span class="game-stat" id="score">PUNTOS: 0</span>
+                <span class="game-stat" id="levelDisplay" style="color:#ffd93d;">NIVEL 1</span>
+                <span class="game-stat" id="coinDisplay">🪙 0</span>
+                <span class="game-stat">VIDA: <span id="hearts" style="color:#ff6b6b;">♥♥♥</span></span>
+                <span class="game-stat" id="comboDisplay" style="color:#ff00ff;opacity:0;">COMBO</span>
+                <span class="game-stat" id="modeIndicator" style="color:#ffd93d;display:none;">[EDITOR]</span>
+            </div>
+
+            <!-- START SCREEN -->
+            <div id="startScreen">
+                <h1>NEON BLASTER</h1>
+                <p class="subtitle">Game Creator v3.0</p>
+                <div class="controls-grid">
+                    <p><span>← →</span> Mover</p>
+                    <p><span>↑</span> Saltar</p>
+                    <p><span>ESPACIO</span> Disparar</p>
+                    <p><span>ESC</span> Pausar</p>
+                    <p><span>TAB</span> Editor</p>
+                </div>
+                <button class="startBtn" onclick="startGame()">JUGAR</button>
+                <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                    <button class="btn btn-secondary" onclick="showScreen('shop')">🛒 TIENDA</button>
+                    <button class="btn btn-secondary" onclick="showScreen('leaderboard')">🏆 RANKING</button>
+                </div>
+            </div>
+
+            <!-- GAME OVER SCREEN -->
+            <div id="gameOverScreen">
+                <h1>GAME OVER</h1>
+                <div id="finalScore" style="font-size: 16px; margin: 15px 0; line-height: 1.8;"></div>
+                <p class="score-display">Mejor: <span id="highScore">0</span></p>
+                <button class="startBtn" onclick="startGame()">REINTENTAR</button>
+                <button class="btn btn-secondary" onclick="showScreen('menu')" style="margin-top:15px;">MENÚ</button>
+            </div>
+
+            <!-- SHOP SCREEN -->
+            <div id="shopScreen">
+                <div class="screen-header">
+                    <h2>🛒 TIENDA DE SKINS</h2>
+                    <div class="coins-display">🪙 <span id="shopCoins">0</span></div>
+                </div>
+                <div id="shopItems" class="shop-items"></div>
+                <button class="btn btn-secondary" onclick="showScreen('menu')" style="margin-top:20px;">← VOLVER</button>
+            </div>
+
+            <!-- LEADERBOARD SCREEN -->
+            <div id="leaderboardScreen">
+                <div class="screen-header">
+                    <h2>🏆 RANKING</h2>
+                </div>
+                <div id="leaderboardList" class="leaderboard-list"></div>
+                <button class="btn btn-secondary" onclick="showScreen('menu')" style="margin-top:20px;">← VOLVER</button>
+            </div>
+
+            <!-- TOUCH CONTROLS -->
+            <div id="touchControls">
+                <div class="touch-zone" id="touchLeft">◀</div>
+                <div class="touch-zone" id="touchRight">▶</div>
+                <div class="touch-zone" id="touchJump">▲</div>
+                <div class="touch-zone" id="touchShoot">●</div>
+            </div>
+        </div>
+
+        <!-- EDITOR PANEL -->
+        <div id="editorPanel" class="editor-hidden">
+            <div class="editor-header">
+                <span class="logo">🎨 PIXEL EDITOR v4.0</span>
+                <div style="display:flex;gap:5px;">
+                    <button class="toggle-btn" onclick="toggleEditor()">✕ Cerrar</button>
+                </div>
+            </div>
+
+            <div class="editor-tabs">
+                <button class="editor-tab active" data-tab="draw">Dibujar</button>
+                <button class="editor-tab" data-tab="sprites">Sprites</button>
+                <button class="editor-tab" data-tab="props">Propiedades</button>
+            </div>
+
+            <div class="editor-content">
+                <!-- ========== TAB: DIBUJAR ========== -->
+                <div id="tab-draw">
+                    <div class="scale-controls">
+                        <label>Zoom:</label>
+                        <input type="range" id="pixelScaleSlider" min="1" max="100" value="5">
+                        <span class="scale-value" id="pixelScaleValue">5x</span>
+                    </div>
+
+                    <div id="pixelGridContainer"></div>
+
+                    <div class="preview-area">
+                        <div id="pixelPreviewContainer"></div>
+                        <div class="stats-panel" id="spriteStats">
+                            <div class="stat-box">
+                                <div class="value" id="statWidth">0</div>
+                                <div class="label">Ancho</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="value" id="statHeight">0</div>
+                                <div class="label">Alto</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="value" id="statPixels">0</div>
+                                <div class="label">Pixeles</div>
+                            </div>
+                            <div class="stat-box">
+                                <div class="value" id="statScale">1x</div>
+                                <div class="label">Scale</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tools-row">
+                        <button class="tool-btn" onclick="PixelEditor.clearGrid()">🗑️</button>
+                        <button class="tool-btn" onclick="PixelEditor.flipHorizontal()">↔️</button>
+                        <button class="tool-btn" onclick="PixelEditor.flipVertical()">↕️</button>
+                        <button class="tool-btn" onclick="PixelEditor.rotateCW()">🔄</button>
+                        <button class="tool-btn" onclick="PixelEditor.fillEmpty()">🪣</button>
+                        <button class="tool-btn primary" onclick="applyEditorChanges()">✓ Aplicar</button>
+                    </div>
+
+                    <div class="upload-section">
+                        <h3>📤 Subir Imagen</h3>
+                        <div id="uploadArea">
+                            <span class="icon">🖼️</span>
+                            Arrastra o selecciona
+                        </div>
+                        <input type="file" id="imageUpload" accept="image/*">
+                        <div class="upload-type-select">
+                            <label><input type="radio" name="uploadType" value="sprite" checked> Sprite</label>
+                            <label><input type="radio" name="uploadType" value="background"> Fondo</label>
+                        </div>
+                    </div>
+
+                    <div class="color-picker-section">
+                        <h3>🎨 Colores</h3>
+                        <div id="colorPicker"></div>
+                    </div>
+                </div>
+
+                <!-- ========== TAB: SPRITES ========== -->
+                <div id="tab-sprites" style="display:none;">
+                    <div class="sprite-library">
+                        <div id="spriteCategories" class="sprite-categories"></div>
+                        <div id="spriteGrid" class="sprite-grid"></div>
+                        <div id="spriteUploadZone" class="sprite-upload-zone">
+                            <span class="icon">🖼️</span>
+                            <p>Arrastra o sube una imagen para el sprite seleccionado</p>
+                        </div>
+
+                        <!-- PRO SHADER CONTROLS -->
+                        <div class="editor-section" style="margin-top:10px;">
+                            <h3>🎮 Normal Map (Iluminación 3D)</h3>
+                            <div class="upload-section" style="margin-top:5px;">
+                                <label style="font-size:10px;color:#888;">Albedo (Color base)</label>
+                                <input type="file" id="albedoUpload" accept="image/*" style="width:100%;font-size:10px;">
+                            </div>
+                            <div class="upload-section" style="margin-top:5px;">
+                                <label style="font-size:10px;color:#888;">Normal Map (Mapa de relieve)</label>
+                                <input type="file" id="normalMapUpload" accept="image/*" style="width:100%;font-size:10px;">
+                                <p style="font-size:9px;color:#666;margin-top:3px;">Sube una imagen grayscale para generar normals automáticamente</p>
+                            </div>
+                        </div>
+
+                        <div class="editor-section">
+                            <h3>✨ Propiedades de Material</h3>
+                            <div class="editor-row">
+                                <label>Shininess (Brillo)</label>
+                                <input type="range" id="propShininess" min="0" max="100" value="50">
+                                <span class="value" id="propShininessVal">50%</span>
+                            </div>
+                            <div class="editor-row">
+                                <label>Emisión</label>
+                                <input type="range" id="propEmission" min="0" max="100" value="0">
+                                <span class="value" id="propEmissionVal">0%</span>
+                            </div>
+                            <div class="editor-row">
+                                <label>Color Emisión</label>
+                                <input type="color" id="propEmissionColor" value="#00ff88">
+                            </div>
+                        </div>
+
+                        <div class="sprite-actions">
+                            <button class="tool-btn" onclick="SpriteManager.selectSprite(document.getElementById('objectSelect')?.value)">✏️ Editar</button>
+                            <button class="tool-btn" onclick="SpriteManager.addNewSprite()">➕ Nuevo</button>
+                            <button class="tool-btn" onclick="SpriteManager.deleteSprite(SpriteManager.selectedSprite)">🗑️ Eliminar</button>
+                        </div>
+                        <div class="editor-section" style="margin-top:10px;">
+                            <h3>Sprite Actual</h3>
+                            <select id="objectSelect" class="editor-select" onchange="SpriteManager.selectSprite(this.value)">
+                                <option value="player">Jugador</option>
+                                <option value="walker">Enemigo Caminante</option>
+                                <option value="flyer">Enemigo Volador</option>
+                                <option value="shooter">Enemigo Tirador</option>
+                                <option value="boss">JEFE</option>
+                                <option value="bullet">Bala</option>
+                                <option value="powerup_health">Power-up Vida</option>
+                                <option value="powerup_speed">Power-up Velocidad</option>
+                                <option value="coin">Moneda</option>
+                            </select>
+                        </div>
+                        <div id="currentSpritePreview">
+                            <canvas id="spritePreviewCanvas" width="200" height="150"></canvas>
+                        </div>
+                        <div class="tools-row" style="margin-top:10px;">
+                            <button class="tool-btn" onclick="loadSpriteToEditor(document.getElementById('objectSelect').value)">🔄</button>
+                            <button class="tool-btn" onclick="resetToDefault()">↺</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== TAB: PROPIEDADES ========== -->
+                <div id="tab-props" style="display:none;">
+                    <div class="editor-section">
+                        <h3>Tamaño en Juego</h3>
+                        <div class="editor-row">
+                            <label>Ancho</label>
+                            <input type="range" id="propWidth" min="10" max="200" value="40">
+                            <span class="value" id="propWidthVal">40</span>
+                        </div>
+                        <div class="editor-row">
+                            <label>Alto</label>
+                            <input type="range" id="propHeight" min="10" max="200" value="50">
+                            <span class="value" id="propHeightVal">50</span>
+                        </div>
+                    </div>
+
+                    <div class="editor-section">
+                        <h3>Comportamiento</h3>
+                        <div class="editor-row">
+                            <label>Velocidad</label>
+                            <input type="range" id="propSpeed" min="0" max="20" value="5">
+                            <span class="value" id="propSpeedVal">5</span>
+                        </div>
+                        <div class="editor-row">
+                            <label>Vida</label>
+                            <input type="range" id="propHealth" min="1" max="20" value="3">
+                            <span class="value" id="propHealthVal">3</span>
+                        </div>
+                        <div class="editor-row">
+                            <label>Puntos</label>
+                            <input type="range" id="propPoints" min="10" max="5000" value="100">
+                            <span class="value" id="propPointsVal">100</span>
+                        </div>
+                        <div class="editor-row">
+                            <label>Cadencia</label>
+                            <input type="range" id="propCooldown" min="1" max="30" value="12">
+                            <span class="value" id="propCooldownVal">12</span>
+                        </div>
+                    </div>
+
+                    <div class="editor-section">
+                        <h3>Color</h3>
+                        <div class="editor-row">
+                            <label>Base</label>
+                            <input type="color" id="propColor" value="#00ff88">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" onclick="applyEditorChanges()">✓ Aplicar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="js/game.js"></script>
+    <script src="js/editor/PixelEditor.js"></script>
+    <script src="js/renderer/PixiRenderer.js"></script>
+    <script src="js/shaders/LightingShader.js"></script>
+    <script src="js/animation/AnimationManager.js"></script>
+    <script src="js/map/TilemapEngine.js"></script>
+    <script src="js/renderer/ProRenderer.js"></script>
+</body>
+</html>

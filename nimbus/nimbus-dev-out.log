@@ -1,0 +1,113 @@
+   ▲ Next.js 15.5.9
+   - Local:        http://localhost:9004
+   - Network:      http://192.168.2.171:9004
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · serverActions
+
+ ✓ Starting...
+ ✓ Ready in 7.4s
+ ○ Compiling /dreams ...
+ ✓ Compiled /dreams in 19.7s (4689 modules)
+ GET /dreams 200 in 22771ms
+ ✓ Compiled in 4.1s (1491 modules)
+ GET /dreams 200 in 186ms
+ ○ Compiling /dreams/analysis ...
+ ✓ Compiled /dreams/analysis in 8.5s (5022 modules)
+ GET /dreams/analysis?id=test 200 in 10482ms
+ GET /dreams 200 in 779ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 2.2s (3228 modules)
+ GET /favicon.ico 200 in 2616ms
+ ✓ Compiled in 2.7s (4875 modules)
+ GET /dreams 200 in 483ms
+ ✓ Compiled in 2.2s (4875 modules)
+ GET /dreams 200 in 424ms
+ ✓ Compiled in 1917ms (4858 modules)
+ GET /dreams 200 in 638ms
+ ✓ Compiled in 1929ms (4858 modules)
+ GET /dreams 200 in 322ms
+ ✓ Compiled in 1872ms (4858 modules)
+ GET /dreams 200 in 440ms
+ ✓ Compiled in 1994ms (4858 modules)
+ GET /dreams 200 in 359ms
+ ✓ Compiled in 1529ms (1647 modules)
+ GET /dreams 200 in 232ms
+ GET /dreams 200 in 1141ms
+ GET /dreams 200 in 199ms
+ GET /dreams 200 in 196ms
+ POST /dreams 200 in 41258ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 2.1s (3228 modules)
+ GET /favicon.ico 200 in 2388ms
+ POST /dreams 200 in 151318ms
+ ○ Compiling /dreams/analysis ...
+ ✓ Compiled /dreams/analysis in 2.7s (3389 modules)
+ GET /dreams/analysis?id=8f68f6db-ac34-4fb6-9bff-01204bb4e951 200 in 3275ms
+ ✓ Compiled in 2.7s (3390 modules)
+ ✓ Compiled in 2.9s (5037 modules)
+ GET /dreams/analysis?id=8f68f6db-ac34-4fb6-9bff-01204bb4e951 200 in 422ms
+ ✓ Compiled in 6.3s (5037 modules)
+ GET /dreams/analysis?id=8f68f6db-ac34-4fb6-9bff-01204bb4e951 200 in 465ms
+ ✓ Compiled in 2.3s (5050 modules)
+ GET /dreams/analysis?id=8f68f6db-ac34-4fb6-9bff-01204bb4e951 200 in 649ms
+ GET /dreams 200 in 1203ms
+ GET /dreams 200 in 89ms
+ GET /dreams 200 in 234ms
+ GET /dreams 200 in 289ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 2.4s (3407 modules)
+ GET /favicon.ico 200 in 2875ms
+ POST /dreams 200 in 1989ms
+ GET /favicon.ico 200 in 48ms
+ POST /dreams 200 in 175608ms
+ GET /dreams 200 in 1222ms
+ GET /favicon.ico 200 in 46ms
+ ○ Compiling /recorder ...
+ ✓ Compiled /recorder in 11.6s (8122 modules)
+ GET /recorder 200 in 12361ms
+ GET /recorder 200 in 162ms
+ ○ Compiling / ...
+ ✓ Compiled / in 5.8s (8510 modules)
+ GET / 200 in 6479ms
+ POST / 200 in 1998ms
+ POST / 200 in 235ms
+ GET /dreams 200 in 175ms
+ GET /dreams/analysis?id=8f68f6db-ac34-4fb6-9bff-01204bb4e951 200 in 150ms
+ GET /dreams 200 in 129ms
+ GET /recorder 200 in 122ms
+ POST /dreams 200 in 141077ms
+ GET /recorder 200 in 975ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 3s (5161 modules)
+ GET /favicon.ico 200 in 3206ms
+ GET / 200 in 224ms
+ GET /dreams 200 in 120ms
+ POST / 200 in 4023ms
+ POST / 200 in 1948ms
+ POST /dreams 200 in 2036ms
+ GET /dreams 200 in 113ms
+ GET /favicon.ico 200 in 42ms
+ POST /dreams 200 in 3563ms
+ POST /dreams 200 in 88495ms
+ GET /dreams/analysis?id=7d59cd4a-ee36-472c-9da7-64f249443953 200 in 97ms
+ GET /dreams 200 in 92ms
+ GET / 200 in 91ms
+ GET /dreams 200 in 68ms
+ POST / 200 in 21435ms
+ POST / 200 in 18891ms
+ POST /dreams 200 in 18960ms
+ GET /dreams 200 in 64ms
+ GET / 200 in 126ms
+ GET /dreams 200 in 72ms
+ POST / 200 in 5495ms
+ POST / 200 in 3668ms
+ POST /dreams 200 in 3741ms
+ GET /dreams 200 in 100ms
+ GET / 200 in 75ms
+ GET /dreams 200 in 94ms
+ POST / 200 in 2035ms
+ POST / 200 in 460ms
+ POST /dreams 200 in 533ms
+ GET /dreams 200 in 95ms
+ ✓ Compiled in 9.7s (8524 modules)
