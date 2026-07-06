@@ -163,17 +163,17 @@ const _origGenerate = (ai as any).generate.bind(ai);
  * Solo se incluyen los modelos para los que existe API key.
  */
 export function getFallbackChain(): string[] {
-  // ORDEN: Groq primero (funciona), luego NVIDIA (gratis pero a veces lento/no responde), luego Google
-  // Cada modelo NVIDIA tiene timeout de 5s para no acumular demasiado delay
+  // ORDEN: minimax primero (el más inteligente libre), groq segundo (funciona), google, luego otros NVIDIA
   const chain: string[] = [];
+  if (process.env.NVIDIA_API_KEY) {
+    chain.push('minimaxai/minimax-m2.7');       // 1. el mejor gratis
+    chain.push('minimaxai/minimax-m3');           // 2. versión nueva
+    chain.push('nvidia/nemotron-4-340b-instruct'); // 3. 340B
+    chain.push('nvidia/llama-3.3-nemotron-super-49b-v1.5'); // 4. 49B
+    chain.push('meta/llama-3.3-70b-instruct');    // 5. último NVIDIA
+  }
   if (process.env.GROQ_API_KEY) chain.push('groq/llama-3.3-70b-versatile');
   if (process.env.GOOGLE_GENAI_API_KEY) chain.push('googleai/gemini-2.5-flash');
-  if (process.env.NVIDIA_API_KEY) {
-    chain.push('minimaxai/minimax-m2.7');
-    chain.push('nvidia/nemotron-4-340b-instruct');
-    chain.push('nvidia/llama-3.3-nemotron-super-49b-v1.5');
-    chain.push('meta/llama-3.3-70b-instruct');
-  }
   return chain;
 }
 
@@ -195,7 +195,7 @@ function shouldRotateToNext(error: any): boolean {
 
 async function callNvidia(model: string, options: { prompt: string; config?: any }): Promise<string> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5_000); // 5s hard timeout — NVIDIA es lento/falla a menudo
+  const timeout = setTimeout(() => controller.abort(), 12_000); // 12s para que minimax/m3 pueda arrancar
   try {
     const result = await nvidiaChat({
       model,
@@ -210,7 +210,7 @@ async function callNvidia(model: string, options: { prompt: string; config?: any
   } catch (e: any) {
     clearTimeout(timeout);
     if (e?.name === 'AbortError' || /aborted/i.test(e?.message || '')) {
-      throw new Error(`NVIDIA timeout after 5s`);
+      throw new Error(`NVIDIA timeout after 12s`);
     }
     throw e;
   }
