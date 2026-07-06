@@ -163,22 +163,17 @@ const _origGenerate = (ai as any).generate.bind(ai);
  * Solo se incluyen los modelos para los que existe API key.
  */
 export function getFallbackChain(): string[] {
-  // ORDEN PRIORIZADO POR INTELIGENCIA (no por velocidad):
-  // 1. minimaxai/minimax-m2.7 — GRATIS, IQ ~38, el más inteligente libre
-  // 2. nvidia/nemotron-4-340b-instruct — 340B, muy capaz
-  // 3. nvidia/llama-3.3-nemotron-super-49b-v1.5 — 49B optimizado
-  // 4. googleai/gemini-2.5-flash — buen razonamiento
-  // 5. groq/llama-3.3-70b-versatile — funciona, menos inteligente pero rápido
-  // 6. meta/llama-3.3-70b-instruct — último recurso NVIDIA (a veces cuelga)
+  // ORDEN: Groq primero (funciona), luego NVIDIA (gratis pero a veces lento/no responde), luego Google
+  // Cada modelo NVIDIA tiene timeout de 5s para no acumular demasiado delay
   const chain: string[] = [];
+  if (process.env.GROQ_API_KEY) chain.push('groq/llama-3.3-70b-versatile');
+  if (process.env.GOOGLE_GENAI_API_KEY) chain.push('googleai/gemini-2.5-flash');
   if (process.env.NVIDIA_API_KEY) {
     chain.push('minimaxai/minimax-m2.7');
     chain.push('nvidia/nemotron-4-340b-instruct');
     chain.push('nvidia/llama-3.3-nemotron-super-49b-v1.5');
     chain.push('meta/llama-3.3-70b-instruct');
   }
-  if (process.env.GOOGLE_GENAI_API_KEY) chain.push('googleai/gemini-2.5-flash');
-  if (process.env.GROQ_API_KEY) chain.push('groq/llama-3.3-70b-versatile');
   return chain;
 }
 
@@ -200,7 +195,7 @@ function shouldRotateToNext(error: any): boolean {
 
 async function callNvidia(model: string, options: { prompt: string; config?: any }): Promise<string> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000); // 15s hard timeout
+  const timeout = setTimeout(() => controller.abort(), 5_000); // 5s hard timeout — NVIDIA es lento/falla a menudo
   try {
     const result = await nvidiaChat({
       model,
@@ -214,10 +209,12 @@ async function callNvidia(model: string, options: { prompt: string; config?: any
     return result.text;
   } catch (e: any) {
     clearTimeout(timeout);
-    // Transform AbortError into timeout error for shouldRotateToNext
     if (e?.name === 'AbortError' || /aborted/i.test(e?.message || '')) {
-      throw new Error(`NVIDIA timeout after 15s`);
+      throw new Error(`NVIDIA timeout after 5s`);
     }
+    throw e;
+  }
+}
     throw e;
   }
 }
