@@ -3,6 +3,62 @@ import { googleAI } from '@genkit-ai/google-genai';
 import { groq } from 'genkitx-groq';
 import { nvidiaChat, nvidiaGenerateText, NvidiaAuthError, NvidiaRateLimitError } from './nvidia-client';
 
+const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
+
+async function callGroq(model: string, options: { prompt: string; config?: any }): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error('GROQ_API_KEY not set');
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const resp = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: model.replace('groq/', ''),
+        messages: [{ role: 'user', content: options.prompt }],
+        temperature: options.config?.temperature ?? 0.7,
+        max_tokens: options.config?.maxOutputTokens ?? 2048,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!resp.ok) {
+      const err = await resp.text();
+      throw new Error(`Groq error ${resp.status}: ${err.substring(0, 200)}`);
+    }
+    const data = await resp.json();
+    return data?.choices?.[0]?.message?.content ?? '';
+  } catch (e: any) {
+    clearTimeout(timeout);
+    if (e?.name === 'AbortError' || /aborted/i.test(e?.message || '')) {
+      throw new Error('Groq timeout after 10s');
+    }
+    throw e;
+  }
+}
+
+function isGroqModel(model: unknown): boolean {
+  return typeof model === 'string' && model.startsWith('groq/');
+}
+
+function isNvidiaModel(model: unknown): boolean {
+  if (typeof model !== 'string') return false;
+  return (
+    model.startsWith('minimaxai/') ||
+    model.startsWith('nvidia/') ||
+    model.startsWith('meta/') ||
+    model.startsWith('mistralai/') ||
+    model.startsWith('qwen/') ||
+    model.startsWith('deepseek-ai/') ||
+    model === PRIMARY_MODEL
+  );
+}
+
 // Plugins registrados para que genkit pueda usar Groq y Gemini cuando los llamamos expl├¡citamente.
 const plugins: any[] = [];
 
@@ -199,7 +255,7 @@ function shouldRotateToNext(error: any): boolean {
 
 async function callNvidia(model: string, options: { prompt: string; config?: any }): Promise<string> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12_000); // 12s para que minimax/m3 pueda arrancar
+  const timeout = setTimeout(() => controller.abort(), 12_000);
   try {
     const result = await nvidiaChat({
       model,
@@ -216,9 +272,6 @@ async function callNvidia(model: string, options: { prompt: string; config?: any
     if (e?.name === 'AbortError' || /aborted/i.test(e?.message || '')) {
       throw new Error(`NVIDIA timeout after 12s`);
     }
-    throw e;
-  }
-}
     throw e;
   }
 }
@@ -270,9 +323,14 @@ export async function generateWithFallback(options: {
   for (const model of chain) {
     try {
       console.log(`[Nimbus] Trying model: ${typeof model === 'string' ? model : '<model-ref>'}`);
-      const text = isNvidiaModel(model)
-        ? await callNvidia(model as string, options)
-        : await callGenkitModel(model, options);
+      let text: string;
+      if (isGroqModel(model)) {
+        text = await callGroq(model as string, options);
+      } else if (isNvidiaModel(model)) {
+        text = await callNvidia(model as string, options);
+      } else {
+        text = await callGenkitModel(model, options);
+      }
       if (text && text.trim().length > 0) {
         console.log(`[Nimbus] ${typeof model === 'string' ? model : '<model-ref>'} succeeded (${text.length} chars)`);
         return text;
@@ -304,9 +362,14 @@ export async function safeGenerate(options: {
   const explicitModel = options.model || defaultChainModel;
 
   try {
-    const text = isNvidiaModel(explicitModel)
-      ? await callNvidia(explicitModel, options)
-      : await callGenkitModel(explicitModel, options);
+    let text: string;
+    if (isGroqModel(explicitModel)) {
+      text = await callGroq(explicitModel as string, options);
+    } else if (isNvidiaModel(explicitModel)) {
+      text = await callNvidia(explicitModel as string, options);
+    } else {
+      text = await callGenkitModel(explicitModel, options);
+    }
     return { text };
   } catch (error: any) {
     if (!shouldRotateToNext(error)) throw error;
