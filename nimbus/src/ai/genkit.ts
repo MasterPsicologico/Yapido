@@ -276,19 +276,6 @@ async function callNvidia(model: string, options: { prompt: string; config?: any
   }
 }
 
-function isNvidiaModel(model: unknown): boolean {
-  if (typeof model !== 'string') return false;
-  return (
-    model.startsWith('minimaxai/') ||
-    model.startsWith('nvidia/') ||
-    model.startsWith('meta/') ||
-    model.startsWith('mistralai/') ||
-    model.startsWith('qwen/') ||
-    model.startsWith('deepseek-ai/') ||
-    model === PRIMARY_MODEL
-  );
-}
-
 async function callGenkitModel(modelRef: any, options: { prompt: string; config?: any }): Promise<string> {
   const callWithModel = (modelValue?: any) =>
     ai.generate({
