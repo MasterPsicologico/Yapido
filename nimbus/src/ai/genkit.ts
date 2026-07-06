@@ -163,16 +163,20 @@ const _origGenerate = (ai as any).generate.bind(ai);
  * Solo se incluyen los modelos para los que existe API key.
  */
 export function getFallbackChain(): string[] {
-  // ORDEN: minimax primero (el más inteligente libre), groq segundo (funciona), google, luego otros NVIDIA
+  // ORDEN: minimax primero (el más inteligente), groq segundo (funciona rápido), luego otros NVIDIA, google
   const chain: string[] = [];
   if (process.env.NVIDIA_API_KEY) {
-    chain.push('minimaxai/minimax-m2.7');       // 1. el mejor gratis
-    chain.push('minimaxai/minimax-m3');           // 2. versión nueva
-    chain.push('nvidia/nemotron-4-340b-instruct'); // 3. 340B
-    chain.push('nvidia/llama-3.3-nemotron-super-49b-v1.5'); // 4. 49B
-    chain.push('meta/llama-3.3-70b-instruct');    // 5. último NVIDIA
+    chain.push('minimaxai/minimax-m2.7');              // 1. el mejor gratis
+    chain.push('minimaxai/minimax-m3');                // 2. versión nueva
   }
-  if (process.env.GROQ_API_KEY) chain.push('groq/llama-3.3-70b-versatile');
+  if (process.env.GROQ_API_KEY) {
+    chain.push('groq/llama-3.3-70b-versatile');         // 3. groq funciona (116ms)
+  }
+  if (process.env.NVIDIA_API_KEY) {
+    chain.push('nvidia/nemotron-4-340b-instruct');      // 4. otros NVIDIA
+    chain.push('nvidia/llama-3.3-nemotron-super-49b-v1.5');
+    chain.push('meta/llama-3.3-70b-instruct');
+  }
   if (process.env.GOOGLE_GENAI_API_KEY) chain.push('googleai/gemini-2.5-flash');
   return chain;
 }
