@@ -1,26 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAdminDb, Timestamp } from '@/lib/server/firebase-admin';
+import { ensureCron } from '@/lib/server/guards';
 
-// Forzar ejecución dinámica — nunca se ejecuta en build time
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
-
-// Lazy init de Firebase Admin para evitar errores en build
-function getAdminDb() {
-  const { getApps, initializeApp, cert } = require('firebase-admin/app');
-  const { getFirestore } = require('firebase-admin/firestore');
-  if (!getApps().length) {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-  }
-  return getFirestore();
-}
 
 /**
  * POST /api/stores/purge-trash
@@ -28,16 +13,11 @@ function getAdminDb() {
  * Llamado por Vercel Cron (diariamente a las 2am UTC) con header X-CRON-SECRET.
  */
 export async function POST(req: NextRequest) {
-  const cronSecret = req.headers.get('X-CRON-SECRET');
-  const isAuthorized = cronSecret === process.env.CRON_SECRET || process.env.NODE_ENV === 'development';
-
-  if (!isAuthorized) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const guard = await ensureCron(req);
+  if (guard) return guard as unknown as NextResponse;
 
   try {
     const db = getAdminDb();
-    const { Timestamp } = require('firebase-admin/firestore');
     const cutoffTime = Timestamp.fromMillis(Date.now() - TWENTY_FOUR_HOURS_MS);
 
     const snapshot = await db
@@ -53,7 +33,7 @@ export async function POST(req: NextRequest) {
     const batch = db.batch();
     const purgedIds: string[] = [];
 
-    snapshot.docs.forEach((docSnap: any) => {
+    snapshot.docs.forEach((docSnap) => {
       batch.delete(docSnap.ref);
       purgedIds.push(docSnap.id);
     });
@@ -77,19 +57,15 @@ export async function POST(req: NextRequest) {
  * Consulta cuántas tiendas están en papelera con su tiempo restante.
  */
 export async function GET(req: NextRequest) {
-  const cronSecret = req.headers.get('X-CRON-SECRET');
-  const isAuthorized = cronSecret === process.env.CRON_SECRET || process.env.NODE_ENV === 'development';
-
-  if (!isAuthorized) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const guard = await ensureCron(req);
+  if (guard) return guard as unknown as NextResponse;
 
   try {
     const db = getAdminDb();
     const snapshot = await db.collection('stores').where('status', '==', 'trashed').get();
     const now = Date.now();
 
-    const stores = snapshot.docs.map((d: any) => {
+    const stores = snapshot.docs.map((d) => {
       const data = d.data();
       const trashedAt = data.trashedAt?.toMillis?.() || 0;
       const hoursLeft = Math.max(0, 24 - (now - trashedAt) / (1000 * 60 * 60));
@@ -104,6 +80,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ trashed: stores, total: stores.length });
   } catch (error: any) {
+    console.error('[PURGE-TRASH] Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

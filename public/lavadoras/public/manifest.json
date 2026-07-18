@@ -1,0 +1,28 @@
+{
+  "name": "Lavadoras — Alquiler de lavadoras",
+  "short_name": "Lavadoras",
+  "description": "Reserva, recibe y devuelve lavadoras con logística propia.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A0E1A",
+  "theme_color": "#00B871",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "lifestyle", "utilities"],
+  "lang": "es-CO",
+  "dir": "ltr"
+}

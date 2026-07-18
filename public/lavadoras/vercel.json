@@ -1,26 +1,30 @@
 {
-  "rewrites": [
-    {
-      "source": "/finanzas",
-      "destination": "https://finanzas-beige-ten.vercel.app/"
-    },
-    {
-      "source": "/finanzas/:match*",
-      "destination": "https://finanzas-beige-ten.vercel.app/:match*"
-    },
-    {
-      "source": "/nimbus",
-      "destination": "https://nimbus-sepia-alpha.vercel.app/nimbus"
-    },
-    {
-      "source": "/nimbus/:match*",
-      "destination": "https://nimbus-sepia-alpha.vercel.app/nimbus/:match*"
-    }
-  ],
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
       "path": "/api/stores/purge-trash",
       "schedule": "0 2 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
     }
   ]
 }

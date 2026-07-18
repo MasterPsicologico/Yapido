@@ -6,26 +6,14 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function hasMinLength(str, min) {
-      return str is string && str.size() >= min;
-    }
-
-    function hasMaxLength(str, max) {
-      return str is string && str.size() <= max;
-    }
-
     function isValidPrice(price) {
       return price is number && price >= 0 && price <= 10000000;
     }
 
     function isValidLatLng(lat, lng) {
-      return lat is number && lng is number && 
-             lat >= -90 && lat <= 90 && 
+      return lat is number && lng is number &&
+             lat >= -90 && lat <= 90 &&
              lng >= -180 && lng <= 180;
-    }
-
-    function isValidCoordinate(lat, lng) {
-      return lat != null && lng != null && isValidLatLng(lat, lng);
     }
 
     function getUserData() {
@@ -33,55 +21,23 @@ service cloud.firestore {
     }
 
     function isSuperAdmin() {
-      return isSignedIn() && 
+      return isSignedIn() &&
              get(/databases/$(database)/documents/appConfig/superAdmins).data.adminIds[request.auth.uid] == true;
     }
 
     function isAdmin() {
-      return isSignedIn() && (
-        isSuperAdmin() || 
-        getUserData().role == 'admin'
-      );
-    }
-
-    function isOwner() {
-      return isSignedIn() && (
-        isAdmin() || 
-        getUserData().role == 'dueño'
-      );
+      return isSignedIn() && (isSuperAdmin() || getUserData().role == 'admin');
     }
 
     function isRepartidor() {
-      return isSignedIn() && (
-        getUserData().role == 'repartidor' || 
-        isAdmin()
-      );
+      return isSignedIn() && (getUserData().role == 'repartidor' || isAdmin());
     }
 
-    function isAuthenticatedUserOrAdmin(userId) {
-      return isSignedIn() && (request.auth.uid == userId || isAdmin());
-    }
-
-    function canAccessOrderData(orderData) {
-      return request.auth.uid == orderData.customerId ||
-             request.auth.uid == orderData.storeOwnerId ||
-             ('assignedDriverId' in orderData && request.auth.uid in orderData.assignedDriverId) ||
-             ('participants' in orderData && request.auth.uid in orderData.participants) ||
+    function canAccessRental(rentalData) {
+      return request.auth.uid == rentalData.customerId ||
+             request.auth.uid == rentalData.driverId ||
              isAdmin() ||
-             (isRepartidor() && (
-               orderData.get('isLogisticsPublic', false) == true ||
-               orderData.get('storeId', '') == getUserData().get('linkedStoreId', 'NO_STORE')
-             ));
-    }
-
-    function canAccessOrder(orderId) {
-      return canAccessOrderData(get(/databases/$(database)/documents/orders/$(orderId)).data);
-    }
-
-    function isValidOrderData() {
-      let data = request.resource.data;
-      return data.get('totalPrice', 0) <= 10000000 &&
-             data.get('totalPrice', 0) >= 0;
+             (isRepartidor() && rentalData.get('status', '') in ['waiting', 'assigned', 'in_transit', 'returning']);
     }
 
     match /appConfig/superAdmins {
@@ -91,174 +47,135 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isSignedIn();
-      
-      allow create: if isSignedIn() && 
+      allow create: if isSignedIn() &&
         request.auth.uid == userId &&
         request.resource.data.keys().hasAll(['email', 'role']);
-      
-      allow update: if isAuthenticatedUserOrAdmin(userId);
+      allow update: if isSignedIn() &&
+        (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
+    }
 
-      match /ia-vs-ia-sessions/{sessionId} {
-        allow read, write: if isSignedIn() && request.auth.uid == userId;
+    // ============ LAVADORAS — entidades específicas ============
 
-        match /messages/{messageId} {
-          allow read, write: if isSignedIn() && request.auth.uid == userId;
-        }
-        match /learningStates/{stateId} {
-          allow read, write: if isSignedIn() && request.auth.uid == userId;
-        }
-        match /emergent-chat/{chatId} {
-          allow read, write: if isSignedIn() && request.auth.uid == userId;
-        }
+    match /washerRentals/{rentalId} {
+      allow read: if isSignedIn() && canAccessRental(resource.data);
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasAll(['customerId', 'washerType', 'hours', 'status', 'pricing', 'address', 'cityId']) &&
+        request.resource.data.customerId == request.auth.uid &&
+        isValidPrice(request.resource.data.pricing.totalPrice);
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.customerId ||
+        (canAccessRental(resource.data) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'driverId', 'updatedAt']))
+      );
+      allow delete: if isAdmin() ||
+        (request.auth.uid == resource.data.customerId && resource.data.status == 'waiting');
+
+      match /messages/{messageId} {
+        allow read, write: if isSignedIn() && canAccessRental(get(/databases/$(database)/documents/washerRentals/$(rentalId)).data);
       }
     }
 
-    match /mainCategories/{categoryId} {
+    match /washerInventory/{unitId} {
       allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /washerPricing/{pricingId} {
+      allow read: if true;
+      allow create: if false;
+      allow update, delete: if isAdmin();
+    }
+
+    // ============ Catálogo compartido (lectura pública) ============
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasAll(['name', 'price', 'storeId']) &&
+        isValidPrice(request.resource.data.price);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     match /stores/{storeId} {
       allow read: if true;
-      
       allow create: if isSignedIn() &&
         request.resource.data.keys().hasAll(['name', 'ownerId']) &&
         request.resource.data.ownerId == request.auth.uid;
-      
-      allow update: if isSignedIn() && (
-        isAdmin() ||
-        request.auth.uid == resource.data.ownerId
-      );
-      
+      allow update: if isSignedIn() && (isAdmin() || request.auth.uid == resource.data.ownerId);
       allow delete: if isAdmin();
-
-      match /categories/{catId} {
-        allow read: if true;
-        allow write: if isSignedIn() && (
-          isAdmin() ||
-          request.auth.uid == get(/databases/$(database)/documents/stores/$(storeId)).data.ownerId
-        );
-        
-        match /products/{prodId} {
-          allow read: if true;
-          allow write: if isSignedIn() && (
-            isAdmin() ||
-            request.auth.uid == get(/databases/$(database)/documents/stores/$(storeId)).data.ownerId
-          );
-        }
-      }
     }
 
-    match /products/{productId} {
+    match /mainCategories/{categoryId} {
       allow read: if true;
-      allow create: if isSignedIn() && 
-        request.resource.data.keys().hasAll(['name', 'price', 'storeId']);
-      allow update: if isSignedIn() && (
-        isAdmin() ||
-        request.auth.uid == resource.data.storeOwnerId
-      );
-      allow delete: if isAdmin() || 
-        (isSignedIn() && request.auth.uid == resource.data.storeOwnerId);
-    }
-
-    match /orders/{orderId} {
-      allow read: if isSignedIn() && canAccessOrderData(resource.data);
-
-      allow create: if isSignedIn() &&
-        request.resource.data.keys().hasAll(['customerId', 'storeId', 'totalPrice']) &&
-        request.resource.data.customerId == request.auth.uid &&
-        isValidPrice(request.resource.data.totalPrice);
-
-      allow update: if isSignedIn() && (
-        isAdmin() ||
-        (canAccessOrderData(resource.data) && request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'eta', 'driverLocation'])) ||
-        (request.auth.uid == resource.data.customerId && request.resource.data.status in ['pending', 'confirmed'])
-      );
-      
-      allow delete: if isSignedIn() && (
-        isAdmin() ||
-        request.auth.uid == resource.data.storeOwnerId ||
-        (request.auth.uid == resource.data.customerId && resource.data.status == 'pending')
-      );
-
-      match /messages/{messageId} {
-        allow read, write: if isSignedIn() && canAccessOrder(orderId);
-      }
-
-      match /offers/{offerId} {
-        allow read: if isSignedIn() && canAccessOrder(orderId);
-        allow create: if isSignedIn() && isRepartidor();
-      }
-    }
-
-    match /machines/{machineId} {
-      allow read: if true;
-      allow create: if isSignedIn() && (
-        isAdmin() ||
-        request.resource.data.ownerId == request.auth.uid
-      );
-      allow update, delete: if isAdmin() || 
-        (isSignedIn() && request.auth.uid == resource.data.ownerId);
-    }
-
-    match /incidents/{incidentId} {
-      allow create: if isSignedIn();
-      allow read: if isSignedIn() && (
-        isAdmin() ||
-        request.auth.uid == resource.data.userId
-      );
-      allow update, delete: if isAdmin();
+      allow write: if isAdmin();
     }
 
     match /cities/{cityId} {
       allow read: if true;
       allow write: if isAdmin();
-      
       match /zones/{zoneId} {
         allow read: if true;
         allow write: if isAdmin();
       }
     }
 
-    match /appConfig/{configId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    // ============ Componentes compartidos con el ecosistema ============
+
+    match /driverProfiles/{uid} {
+      allow read: if isSignedIn() && (isAdmin() || request.auth.uid == uid || isRepartidor());
+      allow write: if isSignedIn() && (request.auth.uid == uid || isAdmin());
     }
 
-    match /coupons/{couponId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /driverLocations/{locationId} {
+    match /fleetMissions/{missionId} {
       allow read: if isSignedIn() && (
         isAdmin() ||
-        isRepartidor() ||
-        request.auth.uid == locationId
+        request.auth.uid == resource.data.driverId ||
+        resource.data.rentalId in get(/databases/$(database)/documents/users/$(request.auth.uid)/data).get('rentals', []).asList()
       );
-      allow write: if isSignedIn() && request.auth.uid == locationId;
+      allow create: if isAdmin() || isRepartidor();
+      allow update: if isSignedIn() && (isAdmin() || request.auth.uid == resource.data.driverId);
+      allow delete: if isAdmin();
     }
 
-    match /fleetMetrics/{driverId} {
-      allow read: if isAdmin() || request.auth.uid == driverId;
+    match /fleetVehicles/{vehicleId} {
+      allow read: if isAdmin() ||
+        (isSignedIn() && request.auth.uid == resource.data.ownerDriverId);
+      allow write: if isAdmin() ||
+        (isSignedIn() && request.auth.uid == resource.data.ownerDriverId);
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isSignedIn() && (
+        isAdmin() ||
+        request.auth.uid == resource.data.uid ||
+        (resource.data.rentalId != null &&
+         get(/databases/$(database)/documents/washerRentals/$(resource.data.rentalId)).data.customerId == request.auth.uid)
+      );
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /payouts/{payoutId} {
+      allow read: if isSignedIn() && (isAdmin() || request.auth.uid == resource.data.driverUid);
       allow write: if isAdmin();
     }
 
-    match /geographicData/{geoId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    match /ratings/{ratingId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() &&
+        request.resource.data.raterUid == request.auth.uid &&
+        request.resource.data.score is number &&
+        request.resource.data.score >= 1 && request.resource.data.score <= 5;
+      allow update, delete: if isAdmin();
     }
 
-    match /analytics/{analyticsId} {
-      allow read: if isAdmin();
-      allow write: if isAdmin();
-    }
-
-    // CineStream — colección pública de películas
-    match /cinestream_movies/{movieId} {
-      allow read: if true;
-      allow write: if isAdmin();
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && request.auth.uid == resource.data.uid;
+      allow write: if isAdmin() || request.auth.uid == resource.data.uid;
     }
   }
 }

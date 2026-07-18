@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Orquestador de Liberación de Pedidos.
@@ -11,6 +10,7 @@ import { soporteAgent } from '@/ai/agents/soporte';
 import { pagosAgent } from '@/ai/agents/pagos';
 import { asignadorAgent } from '@/ai/agents/asignador';
 import { notificacionesAgent } from '@/ai/agents/notificaciones';
+import { FieldValue, getAdminDb } from '@/lib/server/firebase-admin';
 
 const ReleaseOrderInputSchema = z.object({
   orderId: z.string(),
@@ -38,29 +38,18 @@ const releaseOrderFlow = ai.defineFlow(
     }),
   },
   async (input) => {
-    const logs: string[] = ["Protocolo de liberación activado"];
+    const logs: string[] = ['Protocolo de liberación activado'];
     let debtApplied = 0;
 
-    // DETERMINAR SI ES UNA ALARMA CRÍTICA (Basado en palabras clave)
-    const isAlarm = ["pinchado", "gasolina", "accidente"].some(k => input.reason.toLowerCase().includes(k));
+    const isAlarm = ['pinchado', 'gasolina', 'accidente'].some((k) =>
+      input.reason.toLowerCase().includes(k),
+    );
 
     try {
-      // 0. Actualizar el pedido en base de datos con permisos de Admin
-      const { getApps, initializeApp, cert } = require('firebase-admin/app');
-      const { getFirestore, FieldValue } = require('firebase-admin/firestore');
-      if (!getApps().length) {
-        initializeApp({
-          credential: cert({
-            project_id: process.env.FIREBASE_PROJECT_ID,
-            client_email: process.env.FIREBASE_CLIENT_EMAIL,
-            private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-          }),
-        });
-      }
-      const db = getFirestore();
+      const db = getAdminDb();
       const orderRef = db.collection('orders').doc(input.orderId);
-      
-      logs.push("Actualizando estado del pedido en la base de datos de forma segura...");
+
+      logs.push('Actualizando estado del pedido en la base de datos de forma segura...');
       await orderRef.update({
         status: 'ready_for_pickup',
         deliveryDriverId: null,
@@ -70,43 +59,47 @@ const releaseOrderFlow = ai.defineFlow(
         releasedBy: input.driverId,
         releasedAt: FieldValue.serverTimestamp(),
         releaseReason: input.reason,
-        participants: FieldValue.arrayRemove(input.driverId)
+        participants: FieldValue.arrayRemove(input.driverId),
       });
-      logs.push("Pedido liberado con éxito en el servidor.");
+      logs.push('Pedido liberado con éxito en el servidor.');
 
-      logs.push("Sincronizando agentes especializados...");
-      
+      logs.push('Sincronizando agentes especializados...');
+
       const agentPromises = [
-        // 1. Soporte: Registro de incidente con flag de Alerta si es necesario
         soporteAgent({
           orderId: input.orderId,
           issueDescription: `LIBERACIÓN URGENTE: ${input.reason}. Con Carga: ${input.hasProducts}`,
           reporterRole: 'repartidor',
-          context: { 
-            driverId: input.driverId, 
-            orderData: { value: input.orderValue }
-          }
-        }).then(() => isAlarm ? "Agente Soporte: ALARMA ENVIADA AL PATRÓN." : "Agente Soporte: Incidente registrado."),
+          context: {
+            driverId: input.driverId,
+            orderData: { value: input.orderValue },
+          },
+        }).then(
+          () =>
+            isAlarm
+              ? 'Agente Soporte: ALARMA ENVIADA AL PATRÓN.'
+              : 'Agente Soporte: Incidente registrado.',
+        ),
 
-        // 2. Pagos (Si hay productos o es por falla técnica)
-        input.hasProducts ? pagosAgent({
-          orderId: input.orderId,
-          customerId: "SYSTEM",
-          totalAmount: input.orderValue,
-          deliveryFee: 0,
-          paymentMethod: 'digital',
-          currentState: 'PAYMENT_PENDING',
-          context: { 
-            reason: `LIBERACION_CON_CARGA_${input.reason.toUpperCase().replace(/\s/g, '_')}`,
-            isCancelled: true,
-            isDelivered: false
-          }
-        }).then(() => {
-          debtApplied = input.orderValue;
-          return "Agente Pagos: Saldo de repartidor afectado por productos.";
-        }) : Promise.resolve("Agente Pagos: Sin cargos adicionales."),
+        input.hasProducts
+          ? pagosAgent({
+              orderId: input.orderId,
+              customerId: 'SYSTEM',
+              totalAmount: input.orderValue,
+              deliveryFee: 0,
+              paymentMethod: 'digital',
+              currentState: 'PAYMENT_PENDING',
+              context: {
+                reason: `LIBERACION_CON_CARGA_${input.reason.toUpperCase().replace(/\s/g, '_')}`,
+                isCancelled: true,
+                isDelivered: false,
+              },
+            }).then(() => {
+              debtApplied = input.orderValue;
+              return 'Agente Pagos: Saldo de repartidor afectado por productos.';
+            })
+          : Promise.resolve('Agente Pagos: Sin cargos adicionales.'),
 
-        // 3. Asignador: Devolver al pool inmediatamente
         asignadorAgent({
           orderId: input.orderId,
           storeLocation: { lat: 0, lng: 0 },
@@ -115,23 +108,24 @@ const releaseOrderFlow = ai.defineFlow(
           currentState: 'REASSIGNING',
           isMultiOrder: false,
           demandLevel: 'NORMAL',
-          priorityLevel: 1
-        }).then(() => "Agente Asignador: Ruta devuelta al pool público."),
+          priorityLevel: 1,
+        }).then(() => 'Agente Asignador: Ruta devuelta al pool público.'),
 
-        // 4. Notificaciones: Alerta Maestra
         notificacionesAgent({
           orderId: input.orderId,
-          event: isAlarm ? "DRIVER_EMERGENCY" : "DRIVER_UNASSIGNED",
-          status: "searching",
-          recipients: [{
-            userId: input.storeId || "SYSTEM",
-            role: "tienda",
-            name: input.storeName || "Sistema",
-            contactInfo: {}
-          }],
-          priority: isAlarm ? "urgent" : "high",
-          context: { reason: input.reason, eta: "INMEDIATO" }
-        }).then(() => "Agente Notificaciones: Patrón notificado con prioridad crítica.")
+          event: isAlarm ? 'DRIVER_EMERGENCY' : 'DRIVER_UNASSIGNED',
+          status: 'searching',
+          recipients: [
+            {
+              userId: input.storeId || 'SYSTEM',
+              role: 'tienda',
+              name: input.storeName || 'Sistema',
+              contactInfo: {},
+            },
+          ],
+          priority: isAlarm ? 'urgent' : 'high',
+          context: { reason: input.reason, eta: 'INMEDIATO' },
+        }).then(() => 'Agente Notificaciones: Patrón notificado con prioridad crítica.'),
       ];
 
       const results = await Promise.all(agentPromises);
@@ -140,17 +134,18 @@ const releaseOrderFlow = ai.defineFlow(
       return {
         success: true,
         debtApplied,
-        message: isAlarm ? "Alarma enviada. Tu patrón ha sido notificado." : "Liberación completada.",
-        agentLogs: logs
+        message: isAlarm
+          ? 'Alarma enviada. Tu patrón ha sido notificado.'
+          : 'Liberación completada.',
+        agentLogs: logs,
       };
-
     } catch (e: any) {
-      console.error("Error en Flow de Liberación:", e);
+      console.error('Error en Flow de Liberación:', e);
       return {
         success: false,
-        message: "Error en la orquestación de seguridad",
-        agentLogs: [...logs, `ERROR: ${e.message}`]
+        message: 'Error en la orquestación de seguridad',
+        agentLogs: [...logs, `ERROR: ${e.message}`],
       };
     }
-  }
+  },
 );

@@ -1,19 +1,8 @@
 import { NextResponse } from 'next/server';
+import { FieldValue, getAdminDb } from '@/lib/server/firebase-admin';
 
-function getAdminDb() {
-  const { getApps, initializeApp, cert } = require('firebase-admin/app');
-  const { getFirestore } = require('firebase-admin/firestore');
-  if (!getApps().length) {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      }),
-    });
-  }
-  return getFirestore();
-}
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * Endpoint (Webhook) para recibir notificaciones de Nequi.
@@ -22,8 +11,7 @@ function getAdminDb() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    
-    // Nequi enviará información como el transactionId, status, y reference (nuestro orderId)
+
     const { transactionId, status, reference } = body;
 
     if (!reference || !transactionId) {
@@ -31,16 +19,13 @@ export async function POST(req: Request) {
     }
 
     const db = getAdminDb();
-    const { FieldValue } = require('firebase-admin/firestore');
-    
-    // Actualizamos el estado del pago en la base de datos
     const orderRef = db.collection('orders').doc(reference);
-    
+
     await orderRef.update({
       paymentStatus: status === 'APPROVED' ? 'paid' : 'failed',
       paymentMethod: 'nequi',
       nequiTransactionId: transactionId,
-      updatedAt: FieldValue.serverTimestamp()
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     return NextResponse.json({ success: true });
