@@ -17,8 +17,10 @@
 /.next/
 /out/
 
-# production
+# production (build intermediate)
 /build
+/android/app/build/
+/android/build/
 
 # misc
 .DS_Store
@@ -47,20 +49,34 @@ next-env.d.ts
 firebase-debug.log
 firestore-debug.log
 .vercel
+.firebase/
+.firebaserc
+
+# ⚠️ SIGNING KEYS — NUNCA COMMITEAR
+*.jks
+*.keystore
+release-key*
+/secrets/
+# Permitir commits del .gitkeep para que la carpeta exista en git
+!secrets/.gitkeep
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+/bin/
+/gen/
+local.properties
+proguard/
+*.hprof
 
 # project specific
 *.zip
-*.apk
-*.txt
-*.py
 .agents/
 .vscode/
-.firebase/
-.firebaserc
 .original_*
 scratch/
-# Ya no se ignoran — ahora son parte de la documentación oficial
-# MANIFEST.md
-# APK_STRUCTURE.md
 Yapido_Universal.apk
 project.zip

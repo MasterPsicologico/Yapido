@@ -1,25 +1,65 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "click.yapido.app"
+    namespace = "click.yapido.lavadoras"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "click.yapido.app"
-        minSdkVersion rootProject.ext.minSdkVersion
+        applicationId "click.yapido.lavadoras"
+        minSdkVersion 24
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.0"
+        versionCode 3
+        versionName "1.0.0"
+        resourceConfigurations += ['es', 'en']
+        manifestPlaceholders = [
+            'appName': 'Lavadoras',
+            'appUrl': 'https://lavadoras.yapido.click'
+        ]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
-             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
-             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
+    signingConfigs {
+        // Lee credenciales de variables de entorno (.env.local NO; gradle.properties local SÍ).
+        // Si faltan LAV_KEYSTORE_PATH/LAV_KEYSTORE_PASS/LAV_KEY_ALIAS/LAV_KEY_PASS,
+        // este bloque firma con el debug keystore (útil solo para local). Ver DEPLOY_GUIDE.md.
+        release {
+            def ksPath = System.getenv('LAV_KEYSTORE_PATH') ?: ''
+            def ksPass = System.getenv('LAV_KEYSTORE_PASS') ?: ''
+            def keyAlias = System.getenv('LAV_KEY_ALIAS') ?: ''
+            def keyPass = System.getenv('LAV_KEY_PASS') ?: ''
+            if (ksPath && ksPass && keyAlias && keyPass) {
+                storeFile file(ksPath)
+                storePassword ksPass
+                keyAlias keyAlias
+                keyPassword keyPass
+            } else {
+                // Fallback: firma debug para no romper local builds.
+                storeFile file(System.getProperty('user.home') + '/.android/debug.keystore')
+                storePassword 'android'
+                keyAlias 'androiddebugkey'
+                keyPassword 'android'
+            }
+        }
+    }
+
     buildTypes {
         release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        debug {
+            // Para testing local: minify off para stack traces legibles
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging true
         }
     }
 }
