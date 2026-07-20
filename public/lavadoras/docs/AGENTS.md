@@ -187,7 +187,7 @@ Flujos encadenados viven en `src/ai/flows/`. Cada agente expone `input` y `outpu
   - [ ] Deep linking `lavadoras.yapido.click` → app via `@capacitor/app` + `intent-filter` en AndroidManifest.
   - [ ] Iconos profesionales para `android/app/src/main/res` (reemplazar los default de Capacitor).
 - [ ] **Drift:**
-  - [ ] `capacitor.config.ts`: cambiar `appId` a `click.yapido.lavadoras` y `appName` a `Lavadoras` (con plan de migración de Play Store).
+  - [ ] `capacitor.config.ts`: cambiar `appId` a `lavadoras.yapido.click` y `appName` a `Lavadoras` (con plan de migración de Play Store).
   - [ ] Crear `scripts/setup-superadmin.ts` y `scripts/seed-washer-inventory.ts`.
   - [ ] Auditar y recortar `firestore.rules`.
 - [ ] **PWA offline:** cachear `/washer` + `/stores` + `/products` + `/profile` vía Workbox-like strategy.

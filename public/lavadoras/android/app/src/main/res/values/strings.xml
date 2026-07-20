@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Lavadoras</string>
     <string name="title_activity_main">Lavadoras</string>
-    <string name="package_name">click.yapido.lavadoras</string>
+    <string name="package_name">lavadoras.yapido.click</string>
     <string name="custom_url_scheme">lavadoras</string>
     <string name="default_web_client_id">294212274372-0o91m9db3733jv5dkhnugfsmi75ho6ui.apps.googleusercontent.com</string>
 </resources>

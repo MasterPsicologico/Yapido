@@ -26,7 +26,7 @@
 -keep class javax.annotation.** { *; }
 
 # Nuestro modelo
--keep class click.yapido.lavadoras.model.** { *; }
+-keep class lavadoras.yapido.click.model.** { *; }
 
 # Fragment reflection
 -keep class * implements androidx.fragment.app.Fragment { *; }

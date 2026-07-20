@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "click.yapido.lavadoras"
+    namespace = "lavadoras.yapido.click"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "click.yapido.lavadoras"
+        applicationId "lavadoras.yapido.click"
         minSdkVersion 24
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 3
@@ -74,7 +74,7 @@ dependencies {
 apply from: 'capacitor.build.gradle'
 
 try {
-    // TODO: regenerar con packageName 'click.yapido.lavadoras' en Firebase Console.
+    // TODO: regenerar con packageName 'lavadoras.yapido.click' en Firebase Console.
     // Mientras tanto, no aplicamos google-services para no romper release builds.
     def servicesJSON = file('google-services.json')
     if (false && servicesJSON.text) {

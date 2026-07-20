@@ -98,7 +98,7 @@ await setPersistence(auth, browserLocalPersistence);
 | Superficie | Branding |
 |------------|----------|
 | `lavadoras.yapido.click` → web | "Lavadoras" (verde yapido + acento violeta) |
-| APK | `com.click.yapido.lavadoras` · appName "Lavadoras" |
+| APK | `lavadoras.yapido.click` · appName "Lavadoras" |
 | Yapido padre (home, footer) | Mantiene referencias a "Lavadoras" → link externo |
 
 ---
