@@ -80,3 +80,8 @@ proguard/
 scratch/
 Yapido_Universal.apk
 project.zip
+
+# Release artifacts (firmados); mantener manifest.json para trazabilidad
+/dist/*.apk
+/dist/*.aab
+!/dist/artifact-manifest.json

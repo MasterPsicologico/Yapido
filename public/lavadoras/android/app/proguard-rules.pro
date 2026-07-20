@@ -1,30 +1,38 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-
+# Capacitor + auto-rules
 -keepattributes Signature, *Annotation*, EnclosingMethod, InnerClasses
 -keepattributes SourceFile, LineNumberTable
 
-# Capacitor (incluye navegación nativa y reflection)
+# Capacitor core
 -keep class com.getcapacitor.** { *; }
 -keep class com.capacitorjs.plugins.** { *; }
--keep @com.getcapacitor.Plugin annotation class * { *; }
+-keep @interface com.getcapacitor.Plugin
+-keep @com.getcapacitor.Plugin class * { *; }
 
-# Firebase (gms google-services)
--keep class com.google.firebase.** { *; }
--keep class com.google.android.gms.** { *; }
+# Capacitor app plugin
+-keep class com.capacitorjs.** { *; }
+
+# Aparajita biometric-auth
+-keep class com.apeper.utility.** { *; }
+
+# Firebase (si lo agregamos después)
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
 
-# Apache Cordova plugins que Capacitor carga
+# Apache Cordova plugins
 -keep class org.apache.cordova.** { *; }
 
-# Keep JSR-305 annotations for compile-time checks
+# JSR-305
 -dontwarn javax.annotation.**
 -keep class javax.annotation.** { *; }
 
-# Keep our model classes
+# Nuestro modelo
 -keep class click.yapido.lavadoras.model.** { *; }
 
-# Reflection sobre clases críticas de Capacitor
+# Fragment reflection
 -keep class * implements androidx.fragment.app.Fragment { *; }
+
+# Apache HTTP legacy (Capacitor internals usan a veces)
+-dontwarn org.apache.**
+
+# R8 default safe
+-dontoptimize

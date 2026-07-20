@@ -1,0 +1,41 @@
+{
+  "app": "lavadoras",
+  "packageName": "click.yapido.lavadoras",
+  "versionName": "1.0.0",
+  "versionCode": 3,
+  "minSdk": 24,
+  "targetSdk": 34,
+  "buildType": "release",
+  "signedByAlias": "lavadoras-upload",
+  "signerDN": "CN=Lavadoras Yapido, OU=Yapido Click, O=Yapido Click, L=Aguachica, ST=Cesar, C=CO",
+  "signerSha256Fingerprint": "a8e0c54b2a1c6970d011d44fdd28be4dabca436d43a592cb27c5d13d011d99e7",
+  "signatureSchemes": ["v2"],
+  "capabilities": {
+    "biometric": true,
+    "haptics": true,
+    "splash": true,
+    "googleServices": false,
+    "minification": false
+  },
+  "artifacts": {
+    "apk": {
+      "path": "dist/lavadoras-1.0.0-release.apk",
+      "sizeMB": 7.87,
+      "sha256": "9fff773393c95f932c802f96acbd529061ba39f8475491b793b5f5cc29e42bd6"
+    },
+    "aab": {
+      "path": "dist/lavadoras-1.0.0-release.aab",
+      "sizeMB": 7.42,
+      "sha256": "76bd25be61091dec31a7158aa5b1f0b2e719cc1d1b84c0f99ff45ab891c7323a"
+    }
+  },
+  "generatedAt": "2026-07-20T12:20:00Z",
+  "gradle": "8.14.3",
+  "capacitor": "8.x",
+  "nodeTarget": "20",
+  "warnings": [
+    "R8/ProGuard desactivado (minifyEnabled=false): reintentar antes de subir a producción para reducir tamaño.",
+    "google-services.json no aplicado (package mismatch): regenerar tras Firebase Console → Add Android app.",
+    "minSdk 24: verificar que la consola Play no esté configurada para 23."
+  ]
+}

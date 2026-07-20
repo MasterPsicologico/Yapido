@@ -21,45 +21,34 @@ android {
     }
 
     signingConfigs {
-        // Lee credenciales de variables de entorno (.env.local NO; gradle.properties local SÍ).
-        // Si faltan LAV_KEYSTORE_PATH/LAV_KEYSTORE_PASS/LAV_KEY_ALIAS/LAV_KEY_PASS,
-        // este bloque firma con el debug keystore (útil solo para local). Ver DEPLOY_GUIDE.md.
         release {
-            def ksPath = System.getenv('LAV_KEYSTORE_PATH') ?: ''
-            def ksPass = System.getenv('LAV_KEYSTORE_PASS') ?: ''
-            def keyAlias = System.getenv('LAV_KEY_ALIAS') ?: ''
-            def keyPass = System.getenv('LAV_KEY_PASS') ?: ''
-            if (ksPath && ksPass && keyAlias && keyPass) {
-                storeFile file(ksPath)
-                storePassword ksPass
-                keyAlias keyAlias
-                keyPassword keyPass
-            } else {
-                // Fallback: firma debug para no romper local builds.
-                storeFile file(System.getProperty('user.home') + '/.android/debug.keystore')
-                storePassword 'android'
-                keyAlias 'androiddebugkey'
-                keyPassword 'android'
+            String ksPath = rootProject.file('../secrets/lav-release.jks').absolutePath
+            String ksPass = System.getenv('LAV_KEYSTORE_PASS') ?: ''
+            String aliasName = System.getenv('LAV_KEY_ALIAS') ?: 'lavadoras-upload'
+            String keyPass = System.getenv('LAV_KEY_PASS') ?: ksPass
+            String ksEnvPath = System.getenv('LAV_KEYSTORE_PATH')
+            if (ksEnvPath != null && !ksEnvPath.isEmpty()) {
+                ksPath = ksEnvPath
             }
+            storeFile file(ksPath)
+            storePassword ksPass
         }
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
+
+            System.getenv('LAV_KEY_ALIAS')?.with { aliasVal ->
+                signingConfig.keyAlias = (System.getenv('LAV_KEY_ALIAS') ?: 'lavadoras-upload')
+                signingConfig.keyPassword = (System.getenv('LAV_KEY_PASS') ?: signingConfig.storePassword)
+            }
         }
         debug {
-            // Para testing local: minify off para stack traces legibles
             minifyEnabled false
-        }
-    }
-
-    packagingOptions {
-        jniLibs {
-            useLegacyPackaging true
         }
     }
 }
@@ -85,8 +74,10 @@ dependencies {
 apply from: 'capacitor.build.gradle'
 
 try {
+    // TODO: regenerar con packageName 'click.yapido.lavadoras' en Firebase Console.
+    // Mientras tanto, no aplicamos google-services para no romper release builds.
     def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
+    if (false && servicesJSON.text) {
         apply plugin: 'com.google.gms.google-services'
     }
 } catch(Exception e) {
