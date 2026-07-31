@@ -108,3 +108,23 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
     throw error;
   });
 }
+
+/**
+ * Inicia sesión con Google usando el ID token que devuelve Google One Tap.
+ * One Tap entrega un ID token (JWt) directamente, sin popup, sin redirect.
+ * Lo pasamos a Firebase Auth con signInWithCredential(GoogleAuthProvider.credential(idToken)).
+ *
+ * @param authInstance - instancia de Auth de Firebase
+ * @param idToken - ID token JWT que devuelve google.accounts.id.prompt() callback
+ * @returns UserCredential de Firebase
+ */
+export async function initiateGoogleSignInWithOneTap(
+  authInstance: Auth,
+  idToken: string
+): Promise<import('firebase/auth').UserCredential> {
+  const credential = GoogleAuthProvider.credential(idToken);
+  return signInWithCredential(authInstance, credential).catch((error) => {
+    handleAuthError(error);
+    throw error;
+  });
+}

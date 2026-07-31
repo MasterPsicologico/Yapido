@@ -7,6 +7,8 @@ import { Camera, Loader2, LogIn, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { useDoc, useFirestore, updateDocumentNonBlocking, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { GOOGLE_CLIENT_ID } from '@/firebase/config';
+import { useGoogleOneTap } from '@/hooks/use-google-one-tap';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
@@ -48,6 +50,24 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
   }, [appConfig?.coverImageUrl, localCoverImage]);
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // Dispara Google One Tap automaticamente en cuanto el componente monta.
+  // Si el usuario hace click en el cuadro flotante de Google, login entra sin
+  // abandonar la pagina (experiencia estilo OpenAI). El hook tiene fallback
+  // silencioso: si One Tap no se muestra, el usuario aun puede usar el boton
+  // INGRESAR que dispara el popup tradicional.
+  useGoogleOneTap({
+    auth,
+    clientId: GOOGLE_CLIENT_ID,
+    enabled: !user,
+    onSuccess: () => {
+      setIsLoggingIn(false);
+    },
+    onError: () => {
+      setIsLoggingIn(false);
+    },
+  });
+
   const handleLogin = async () => {
     if (isLoggingIn) return;
     setIsLoggingIn(true);
