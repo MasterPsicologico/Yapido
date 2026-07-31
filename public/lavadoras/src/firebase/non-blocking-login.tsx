@@ -205,3 +205,22 @@ export async function initiateGoogleSignInWithOneTap(
     throw error;
   });
 }
+
+/**
+ * Flag de diagnostico para confirmar que el bundle actual contiene el listener
+ * AndroidAuthBridge. Si este simbolo aparece en window.__diagnostics__, sabemos
+ * que el chunk firebase 7855 que se esta sirviendo en produccion incluye el codigo.
+ *
+ * Si en consola del navegador (F12) ves este simbolo en window.__diagnostics__,
+ * el codigo AndroidAuthBridge llego al usuario.
+ */
+export const __ANDROID_BRIDGE_BUILD_MARKER__ = (() => {
+  const buildId = 'force-v3-' + (typeof performance !== 'undefined' ? performance.timeOrigin : Date.now());
+  if (typeof window !== 'undefined') {
+    (window as any).__diagnostics__ = (window as any).__diagnostics__ || {};
+    (window as any).__diagnostics__.androidBridge = true;
+    (window as any).__diagnostics__.buildId = buildId;
+    (window as any).__diagnostics__.timestamp = new Date().toISOString();
+  }
+  return buildId;
+})();

@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { Camera, Loader2, LogIn, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
+import { initiateGoogleSignIn, __ANDROID_BRIDGE_BUILD_MARKER__ } from '@/firebase/non-blocking-login';
 import { useDoc, useFirestore, updateDocumentNonBlocking, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { GOOGLE_CLIENT_ID } from '@/firebase/config';
 import { useGoogleOneTap } from '@/hooks/use-google-one-tap';
