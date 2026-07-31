@@ -1,3 +1,4 @@
+﻿/* ANDROID_BRIDGE_5b115a4c-e00_v3_BUILD_639211141536328914 */
 'use client';
 import {
   Auth,
@@ -122,6 +123,10 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
     if (!bridge?.requestNativeGoogleAuth) {
       reject(new Error('AndroidAuthBridge no disponible'));
       return;
+    }
+
+    if (typeof window !== 'undefined' && typeof console !== 'undefined') {
+      console.info('[auth] AndroidAuthBridge detectada, disparando selector nativo');
     }
 
     let settled = false;
