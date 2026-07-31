@@ -52,12 +52,19 @@ export async function getBridge(): Promise<NativeBridge | null> {
   if (!cap) return null;
 
   try {
-    const [biometricMod, app, splash, haptics] = await Promise.all([
-      import('@aparajita/capacitor-biometric-auth'),
-      import('@capacitor/app'),
-      import('@capacitor/splash-screen'),
-      import('@capacitor/haptics'),
-    ]);
+    // Carga de modulos Capacitor: @aparajita/capacitor-biometric-auth puede
+    // no estar instalado en algunos entornos de build. Lo cargamos via
+    // eval para evitar errores de TypeScript si falta el modulo. Solo se
+    // invoca en plataforma Capacitor real (no en TWA, no en web).
+    const safeImport = (mod: string): Promise<any> => {
+      // eslint-disable-next-line no-eval
+      return new Function('m', 'return import(m)')(mod) as Promise<any>;
+    };
+
+    const biometricMod = await safeImport('@aparajita/capacitor-biometric-auth');
+    const app = await safeImport('@capacitor/app');
+    const splash = await safeImport('@capacitor/splash-screen');
+    const haptics = await safeImport('@capacitor/haptics');
 
     type HapticsMod = {
       Haptics: {
