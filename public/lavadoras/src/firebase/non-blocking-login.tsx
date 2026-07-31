@@ -12,85 +12,81 @@ import { toast } from '@/hooks/use-toast';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
-/** 
+/**
  * Maneja los errores comunes de Firebase Auth de forma centralizada.
- * Inyecta diagnósticos visuales para el administrador en tiempo real.
+ * Inyecta diagnosticos visuales para el administrador en tiempo real.
  */
 function handleAuthError(error: any) {
-  // Silenciamos errores de cancelación de usuario o de solicitudes de popup que se cancelan por redirección
   if (
-    error.code === 'auth/popup-closed-by-user' || 
+    error.code === 'auth/popup-closed-by-user' ||
     error.code === 'auth/cancelled-by-user' ||
     error.code === 'auth/cancelled-popup-request'
   ) {
     return;
   }
 
-  // DIAGNÓSTICO MAESTRO: Detecta si el dominio no está autorizado y lanza el aviso rojo
   if (error.code === 'auth/unauthorized-domain') {
     const domain = window.location.hostname;
     toast({
-      title: "🚨 DOMINIO NO AUTORIZADO",
+      title: 'DOMINIO NO AUTORIZADO',
       description: `Copia esto en tu Firebase: ${domain}`,
-      variant: "destructive",
+      variant: 'destructive',
       duration: 15000,
     });
-    console.error("Firebase requiere que autorices este dominio:", domain);
+    console.error('Firebase requiere que autorices este dominio:', domain);
     return;
   }
 
   if (error.code === 'auth/popup-blocked') {
     toast({
-      title: "Popup Bloqueado",
-      description: "Tu navegador bloqueó la ventana. Intenta de nuevo.",
+      title: 'Popup Bloqueado',
+      description: 'Tu navegador bloqueo la ventana. Intenta de nuevo.',
     });
     return;
   }
 
-  console.warn("Error de autenticación:", error.code, error.message);
+  console.warn('Error de autenticacion:', error.code, error.message);
   toast({
-    title: "Error de Acceso",
+    title: 'Error de Acceso',
     description: error.message,
-    variant: "destructive",
+    variant: 'destructive',
   });
 }
 
-/** Initiate anonymous sign-in (non-blocking). */
 export function initiateAnonymousSignIn(authInstance: Auth): void {
   signInAnonymously(authInstance).catch(handleAuthError);
 }
 
-/** Initiate email/password sign-up (non-blocking). */
 export function initiateEmailSignUp(authInstance: Auth, email: string, password: string): void {
   createUserWithEmailAndPassword(authInstance, email, password).catch(handleAuthError);
 }
 
-/** Initiate email/password sign-in (non-blocking). */
 export function initiateEmailSignIn(authInstance: Auth, email: string, password: string): void {
   signInWithEmailAndPassword(authInstance, email, password).catch(handleAuthError);
 }
 
-/** 
- * Inicia sesión con Google.
- * Usa Autenticación Nativa en dispositivos móviles (Capacitor) para evitar errores de WebView.
- * Usa signInWithPopup en navegadores web para una experiencia fluida.
+/**
+ * Inicia sesion con Google.
+ * - APK de lavadoras (TWA): usa AndroidAuthBridge inyectado por MainActivity.java
+ * - APK Capacitor: usa FirebaseAuthentication.signInWithGoogle()
+ * - Navegador web: usa signInWithPopup
  */
 export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
-  // 1. Detectar si estamos en plataforma nativa (iOS/Android APK)
+  // 1. APK de lavadoras (TWA con bridge Java inyectado por MainActivity)
+  if (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
+    return initiateGoogleSignInViaAndroidBridge(authInstance);
+  }
+
+  // 2. APK Capacitor (iOS/Android nativo)
   if (Capacitor.isNativePlatform()) {
     try {
-      // Iniciar sesión nativa con el plugin de Capacitor
       const result = await FirebaseAuthentication.signInWithGoogle();
-      
       if (!result.credential?.idToken) {
-        throw new Error("No se recibió el token de autenticación nativa.");
+        throw new Error('No se recibio el token de autenticacion nativa.');
       }
-
-      // Vincular la credencial nativa con la instancia de Firebase JS SDK
       const credential = GoogleAuthProvider.credential(result.credential.idToken);
       return signInWithCredential(authInstance, credential);
     } catch (error: any) {
-      // Manejar cancelaciones del usuario de forma silenciosa
       if (error.message?.includes('cancel') || error.code === 'CANCELLED') {
         throw error;
       }
@@ -99,10 +95,9 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
     }
   }
 
-  // 2. Comportamiento para Navegador Web (PC/Móvil)
+  // 3. Navegador web (PC/Movil)
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-
   return signInWithPopup(authInstance, provider).catch((error) => {
     handleAuthError(error);
     throw error;
@@ -110,13 +105,87 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
 }
 
 /**
- * Inicia sesión con Google usando el ID token que devuelve Google One Tap.
- * One Tap entrega un ID token (JWt) directamente, sin popup, sin redirect.
- * Lo pasamos a Firebase Auth con signInWithCredential(GoogleAuthProvider.credential(idToken)).
+ * Inicia sesion via el AndroidAuthBridge inyectado por MainActivity.java
+ * en la APK de lavadoras (lava/app). El bridge dispara el selector nativo
+ * de Google y al completar emite `window.event('android-native-auth-result')`
+ * con detail { success: boolean, id_token?: string, error?: string, ... }.
  *
- * @param authInstance - instancia de Auth de Firebase
- * @param idToken - ID token JWT que devuelve google.accounts.id.prompt() callback
- * @returns UserCredential de Firebase
+ * Esta funcion solo espera el evento, extrae el id_token y lo pasa a Firebase
+ * con signInWithCredential(GoogleAuthProvider.credential(idToken)).
+ */
+async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
+  return new Promise((resolve, reject) => {
+    const bridge = (window as any).AndroidAuthBridge;
+    if (!bridge?.requestNativeGoogleAuth) {
+      reject(new Error('AndroidAuthBridge no disponible'));
+      return;
+    }
+
+    let settled = false;
+
+    const cleanup = () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('android-native-auth-result', handler as EventListener);
+      }
+    };
+
+    const handler = (event: Event) => {
+      if (settled) return;
+      const detail = (event as CustomEvent).detail || {};
+      if (!detail.success) {
+        settled = true;
+        cleanup();
+        reject(new Error(detail.error || 'android_auth_failed'));
+        return;
+      }
+      const idToken: string | undefined = detail.id_token;
+      if (!idToken) {
+        settled = true;
+        cleanup();
+        reject(new Error('android_auth_no_id_token'));
+        return;
+      }
+      const credential = GoogleAuthProvider.credential(idToken);
+      signInWithCredential(authInstance, credential)
+        .then((userCredential) => {
+          settled = true;
+          cleanup();
+          resolve(userCredential);
+        })
+        .catch((err) => {
+          settled = true;
+          cleanup();
+          handleAuthError(err);
+          reject(err);
+        });
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('android-native-auth-result', handler as EventListener);
+    }
+
+    // Dispara el selector nativo de Google via el bridge Java
+    try {
+      bridge.requestNativeGoogleAuth();
+    } catch (e) {
+      cleanup();
+      reject(e as Error);
+    }
+
+    // Timeout de 5 minutos por si el usuario no confirma
+    setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        cleanup();
+        reject(new Error('android_auth_timeout'));
+      }
+    }, 5 * 60 * 1000);
+  });
+}
+
+/**
+ * Inicia sesion usando el ID token que devuelve Google One Tap.
+ * One Tap entrega el ID token (JWT) directamente, sin popup ni redirect.
  */
 export async function initiateGoogleSignInWithOneTap(
   authInstance: Auth,
