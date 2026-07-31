@@ -112,6 +112,9 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
  *
  * Esta funcion solo espera el evento, extrae el id_token y lo pasa a Firebase
  * con signInWithCredential(GoogleAuthProvider.credential(idToken)).
+ *
+ * El listener se limpia siempre: en exito, en error y en timeout. Evita memory
+ * leaks que dejaban la app en blanco tras el login.
  */
 async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
   return new Promise((resolve, reject) => {
@@ -122,10 +125,10 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
     }
 
     let settled = false;
-
     const cleanup = () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('android-native-auth-result', handler as EventListener);
+        if (timeoutId) clearTimeout(timeoutId);
       }
     };
 
@@ -164,6 +167,15 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
       window.addEventListener('android-native-auth-result', handler as EventListener);
     }
 
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    timeoutId = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        cleanup();
+        reject(new Error('android_auth_timeout'));
+      }
+    }, 5 * 60 * 1000);
+
     // Dispara el selector nativo de Google via el bridge Java
     try {
       bridge.requestNativeGoogleAuth();
@@ -171,15 +183,6 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
       cleanup();
       reject(e as Error);
     }
-
-    // Timeout de 5 minutos por si el usuario no confirma
-    setTimeout(() => {
-      if (!settled) {
-        settled = true;
-        cleanup();
-        reject(new Error('android_auth_timeout'));
-      }
-    }, 5 * 60 * 1000);
   });
 }
 
