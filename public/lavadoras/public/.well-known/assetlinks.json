@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "lavadorasx.yapido.click",
+      "sha256_cert_fingerprints": [
+        "1B:C3:01:3E:7A:91:FE:A9:15:37:78:79:3C:42:42:0E:AD:67:86:73:B6:D5:57:67:B7:C6:19:14:20:17:D2:09"
+      ]
+    }
+  }
+]
