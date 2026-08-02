@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth } from '@/firebase';
-import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
+import { initiateGoogleSignIn } from '@/firebase/non-blocking-login-v8';
 import { useProfile } from '@/firebase/auth/use-profile';
 
 // Submódulos Atómicos

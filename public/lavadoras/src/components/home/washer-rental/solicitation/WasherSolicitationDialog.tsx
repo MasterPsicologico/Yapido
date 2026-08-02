@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useUser, useAuth, useFirestore } from '@/firebase';
-import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
+import { initiateGoogleSignIn } from '@/firebase/non-blocking-login-v8';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import { LogIn, Sparkles, ShieldCheck, ChevronDown, ChevronUp, Settings2, Check, Circle } from 'lucide-react';

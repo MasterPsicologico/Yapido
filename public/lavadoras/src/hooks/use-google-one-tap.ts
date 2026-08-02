@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import type { Auth } from 'firebase/auth';
-import { initiateGoogleSignInWithOneTap } from '@/firebase/non-blocking-login';
+import { initiateGoogleSignInWithOneTap } from '@/firebase/non-blocking-login-v8';
 
 interface GoogleCredential {
   credential: string;

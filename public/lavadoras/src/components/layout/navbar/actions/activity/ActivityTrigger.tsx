@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth } from '@/firebase';
 import { toast } from '@/hooks/use-toast';
-import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
+import { initiateGoogleSignIn } from '@/firebase/non-blocking-login-v8';
 
 interface ActivityTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   count: number;
