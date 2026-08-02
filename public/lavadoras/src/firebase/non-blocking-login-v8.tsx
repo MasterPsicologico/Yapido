@@ -1,4 +1,4 @@
-﻿/* TWA_REAL_AUTH_V8_FORCE_NEW_CHUNK_HASH_20260801_a8f3e9c1d2e7b4a9 */
+﻿/* TWA_REAL_AUTH_V9_FORCE_NEW_CHUNK_HASH_20260801_b9e7a3f4c1d2e5b8 */
 'use client';
 import {
   Auth,
@@ -62,6 +62,28 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
   if (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
     return initiateGoogleSignInViaAndroidBridge(authInstance);
+  }
+  // Fallback TWA: si MainActivity ya inyecto el listener defensivo (window.__yapidoTwaInjected)
+  // y hay un id_token pendiente, usarlo directamente
+  if (typeof window !== 'undefined' && (window as any).__yapidoTwaInjected && (window as any).__pendingIdToken) {
+    const pendingIdToken = (window as any).__pendingIdToken as string;
+    (window as any).__pendingIdToken = null;
+    const credential = GoogleAuthProvider.credential(pendingIdToken);
+    return signInWithCredential(authInstance, credential);
+  }
+  // Si el listener defensivo se dispara y no hay nadie escuchando, guardarlo
+  if (typeof window !== 'undefined') {
+    window.addEventListener('yapido-pending-auth', async (e: any) => {
+      const detail = e.detail || {};
+      const idToken = detail.id_token;
+      if (!idToken) return;
+      const credential = GoogleAuthProvider.credential(idToken);
+      try {
+        await signInWithCredential(authInstance, credential);
+      } catch (err) {
+        console.warn('[auth] yapido-pending-auth fallback failed', err);
+      }
+    });
   }
   if (Capacitor.isNativePlatform()) {
     try {
