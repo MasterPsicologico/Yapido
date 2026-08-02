@@ -11,6 +11,11 @@ import { CartProvider } from '@/context/CartContext';
 import { GlobalOrderChatModal } from '@/components/chat/GlobalOrderChatModal';
 import { AutoRatingTrigger } from '@/components/rating/AutoRatingTrigger';
 import { AndroidBackButtonHandler } from '@/components/system/AndroidBackButtonHandler';
+import {
+  initiateGoogleSignIn,
+  initiateGoogleSignInWithOneTap,
+  __ANDROID_BRIDGE_BUILD_MARKER__,
+} from '@/firebase/non-blocking-login-v8';
 
 export const metadata: Metadata = {
   title: 'Yapido.click - Logística y Alquiler de Lavadoras',
@@ -22,6 +27,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Side-effect imports para garantizar inclusion del modulo de auth en el chunk inicial
+  if (typeof window !== 'undefined') {
+    void initiateGoogleSignIn;
+    void initiateGoogleSignInWithOneTap;
+    void __ANDROID_BRIDGE_BUILD_MARKER__;
+  }
   return (
     <html lang="es">
       <head>
