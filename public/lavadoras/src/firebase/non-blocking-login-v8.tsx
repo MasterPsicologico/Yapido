@@ -1,5 +1,4 @@
-﻿/* TWA_REAL_AUTH_V9_FORCE_NEW_CHUNK_HASH_20260801_b9e7a3f4c1d2e5b8 */
-'use client';
+﻿'use client';
 import {
   Auth,
   signInAnonymously,
@@ -10,8 +9,6 @@ import {
   signInWithCredential,
 } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
-import { Capacitor } from '@capacitor/core';
-import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 function handleAuthError(error: any) {
   if (
@@ -60,76 +57,12 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 }
 
 export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
+  // 1. APK de lavadoras (TWA con bridge Java inyectado por MainActivity)
   if (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
     return initiateGoogleSignInViaAndroidBridge(authInstance);
   }
-  // Fallback TWA: si MainActivity ya inyecto el listener defensivo (window.__yapidoTwaInjected)
-  // y hay un id_token pendiente, usarlo directamente
-  if (typeof window !== 'undefined' && (window as any).__yapidoTwaInjected && (window as any).__pendingIdToken) {
-    const pendingIdToken = (window as any).__pendingIdToken as string;
-    (window as any).__pendingIdToken = null;
-    const credential = GoogleAuthProvider.credential(pendingIdToken);
-    return signInWithCredential(authInstance, credential);
-  }
-  // Si el listener defensivo se dispara y no hay nadie escuchando, guardarlo
-  if (typeof window !== 'undefined') {
-    window.addEventListener('yapido-pending-auth', async (e: any) => {
-      const detail = e.detail || {};
-      const idToken = detail.id_token;
-      if (!idToken) return;
-      const credential = GoogleAuthProvider.credential(idToken);
-      try {
-        await signInWithCredential(authInstance, credential);
-      } catch (err) {
-        console.warn('[auth] yapido-pending-auth fallback failed', err);
-      }
-    });
-  }
-  // TWA APK: si __twaBlockPopup esta presente, NUNCA hacer popup — usar AndroidAuthBridge
-  if (typeof window !== 'undefined' && (window as any).__twaBlockPopup) {
-    if ((window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
-      return initiateGoogleSignInViaAndroidBridge(authInstance);
-    }
-    // android-auth-result se escucha via listener defensivo.
-    // Disparar el bridge nativo directamente.
-    (window as any).AndroidAuthBridge?.requestNativeGoogleAuth();
-    return new Promise((resolve, reject) => {
-      const handler = (e: any) => {
-        const detail = e.detail || {};
-        if (!detail.success) {
-          reject(new Error(detail.error || 'native_auth_failed'));
-          return;
-        }
-        const idToken = detail.id_token;
-        if (!idToken) {
-          reject(new Error('no_id_token_from_bridge'));
-          return;
-        }
-        const credential = GoogleAuthProvider.credential(idToken);
-        signInWithCredential(authInstance, credential)
-          .then(resolve)
-          .catch(reject);
-        window.removeEventListener('android-native-auth-result', handler);
-      };
-      window.addEventListener('android-native-auth-result', handler, { once: true });
-    });
-  }
-  if (Capacitor.isNativePlatform()) {
-    try {
-      const result = await FirebaseAuthentication.signInWithGoogle();
-      if (!result.credential?.idToken) {
-        throw new Error('No se recibio el token de autenticacion nativa.');
-      }
-      const credential = GoogleAuthProvider.credential(result.credential.idToken);
-      return signInWithCredential(authInstance, credential);
-    } catch (error: any) {
-      if (error.message?.includes('cancel') || error.code === 'CANCELLED') {
-        throw error;
-      }
-      handleAuthError(error);
-      throw error;
-    }
-  }
+
+  // 2. Navegador web (PC/Movil)
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   return signInWithPopup(authInstance, provider).catch((error) => {
@@ -215,16 +148,3 @@ export async function initiateGoogleSignInWithOneTap(
     throw error;
   });
 }
-
-export const __ANDROID_BRIDGE_BUILD_MARKER__ = (() => {
-  const buildId = 'twa-real-v7-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
-  if (typeof window !== 'undefined') {
-    (window as any).__diagnostics__ = (window as any).__diagnostics__ || {};
-    (window as any).__diagnostics__.androidBridge = true;
-    (window as any).__diagnostics__.buildId = buildId;
-    (window as any).__diagnostics__.timestamp = new Date().toISOString();
-  }
-  return buildId;
-})();
-
-export const __FORCE_CHUNK_INVALIDATION_V7__ = 'twa-real-v7-' + Date.now();
