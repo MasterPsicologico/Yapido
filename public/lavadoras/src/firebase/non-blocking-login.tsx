@@ -1,4 +1,4 @@
-﻿/* ANDROID_BRIDGE_FORCE_INVALIDATE_20260731_v4_BUILD_TWA_REAL */
+﻿/* ANDROID_BRIDGE_FORCE_INVALIDATE_20260801_v5_BUILD_TWA_REAL_CACHE_BUST_HASH_a8f3e9c1 */
 'use client';
 import {
   Auth,
@@ -215,7 +215,7 @@ export async function initiateGoogleSignInWithOneTap(
  * el codigo AndroidAuthBridge llego al usuario.
  */
 export const __ANDROID_BRIDGE_BUILD_MARKER__ = (() => {
-  const buildId = 'force-v3-' + (typeof performance !== 'undefined' ? performance.timeOrigin : Date.now());
+  const buildId = 'twa-real-v5-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
   if (typeof window !== 'undefined') {
     (window as any).__diagnostics__ = (window as any).__diagnostics__ || {};
     (window as any).__diagnostics__.androidBridge = true;
@@ -224,3 +224,5 @@ export const __ANDROID_BRIDGE_BUILD_MARKER__ = (() => {
   }
   return buildId;
 })();
+
+export const __FORCE_CHUNK_INVALIDATION_V5__ = 'twa-real-' + Date.now();
