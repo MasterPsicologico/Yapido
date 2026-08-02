@@ -1,5 +1,4 @@
-﻿/* ANDROID_BRIDGE_FORCE_INVALIDATE_20260801_v5_BUILD_TWA_REAL_CACHE_BUST_HASH_a8f3e9c1 */
-'use client';
+﻿'use client';
 import {
   Auth,
   signInAnonymously,
@@ -13,10 +12,6 @@ import { toast } from '@/hooks/use-toast';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
-/**
- * Maneja los errores comunes de Firebase Auth de forma centralizada.
- * Inyecta diagnosticos visuales para el administrador en tiempo real.
- */
 function handleAuthError(error: any) {
   if (
     error.code === 'auth/popup-closed-by-user' ||
@@ -25,7 +20,6 @@ function handleAuthError(error: any) {
   ) {
     return;
   }
-
   if (error.code === 'auth/unauthorized-domain') {
     const domain = window.location.hostname;
     toast({
@@ -37,7 +31,6 @@ function handleAuthError(error: any) {
     console.error('Firebase requiere que autorices este dominio:', domain);
     return;
   }
-
   if (error.code === 'auth/popup-blocked') {
     toast({
       title: 'Popup Bloqueado',
@@ -45,7 +38,6 @@ function handleAuthError(error: any) {
     });
     return;
   }
-
   console.warn('Error de autenticacion:', error.code, error.message);
   toast({
     title: 'Error de Acceso',
@@ -66,19 +58,10 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
   signInWithEmailAndPassword(authInstance, email, password).catch(handleAuthError);
 }
 
-/**
- * Inicia sesion con Google.
- * - APK de lavadoras (TWA): usa AndroidAuthBridge inyectado por MainActivity.java
- * - APK Capacitor: usa FirebaseAuthentication.signInWithGoogle()
- * - Navegador web: usa signInWithPopup
- */
 export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
-  // 1. APK de lavadoras (TWA con bridge Java inyectado por MainActivity)
   if (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
     return initiateGoogleSignInViaAndroidBridge(authInstance);
   }
-
-  // 2. APK Capacitor (iOS/Android nativo)
   if (Capacitor.isNativePlatform()) {
     try {
       const result = await FirebaseAuthentication.signInWithGoogle();
@@ -95,8 +78,6 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
       throw error;
     }
   }
-
-  // 3. Navegador web (PC/Movil)
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   return signInWithPopup(authInstance, provider).catch((error) => {
@@ -105,18 +86,6 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
   });
 }
 
-/**
- * Inicia sesion via el AndroidAuthBridge inyectado por MainActivity.java
- * en la APK de lavadoras (lava/app). El bridge dispara el selector nativo
- * de Google y al completar emite `window.event('android-native-auth-result')`
- * con detail { success: boolean, id_token?: string, error?: string, ... }.
- *
- * Esta funcion solo espera el evento, extrae el id_token y lo pasa a Firebase
- * con signInWithCredential(GoogleAuthProvider.credential(idToken)).
- *
- * El listener se limpia siempre: en exito, en error y en timeout. Evita memory
- * leaks que dejaban la app en blanco tras el login.
- */
 async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
   return new Promise((resolve, reject) => {
     const bridge = (window as any).AndroidAuthBridge;
@@ -124,19 +93,17 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
       reject(new Error('AndroidAuthBridge no disponible'));
       return;
     }
-
     if (typeof window !== 'undefined' && typeof console !== 'undefined') {
       console.info('[auth] AndroidAuthBridge detectada, disparando selector nativo');
     }
-
     let settled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const cleanup = () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('android-native-auth-result', handler as EventListener);
         if (timeoutId) clearTimeout(timeoutId);
       }
     };
-
     const handler = (event: Event) => {
       if (settled) return;
       const detail = (event as CustomEvent).detail || {};
@@ -167,12 +134,9 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
           reject(err);
         });
     };
-
     if (typeof window !== 'undefined') {
       window.addEventListener('android-native-auth-result', handler as EventListener);
     }
-
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     timeoutId = setTimeout(() => {
       if (!settled) {
         settled = true;
@@ -180,8 +144,6 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
         reject(new Error('android_auth_timeout'));
       }
     }, 5 * 60 * 1000);
-
-    // Dispara el selector nativo de Google via el bridge Java
     try {
       bridge.requestNativeGoogleAuth();
     } catch (e) {
@@ -191,10 +153,6 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
   });
 }
 
-/**
- * Inicia sesion usando el ID token que devuelve Google One Tap.
- * One Tap entrega el ID token (JWT) directamente, sin popup ni redirect.
- */
 export async function initiateGoogleSignInWithOneTap(
   authInstance: Auth,
   idToken: string
@@ -206,16 +164,8 @@ export async function initiateGoogleSignInWithOneTap(
   });
 }
 
-/**
- * Flag de diagnostico para confirmar que el bundle actual contiene el listener
- * AndroidAuthBridge. Si este simbolo aparece en window.__diagnostics__, sabemos
- * que el chunk firebase 7855 que se esta sirviendo en produccion incluye el codigo.
- *
- * Si en consola del navegador (F12) ves este simbolo en window.__diagnostics__,
- * el codigo AndroidAuthBridge llego al usuario.
- */
 export const __ANDROID_BRIDGE_BUILD_MARKER__ = (() => {
-  const buildId = 'twa-real-v5-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+  const buildId = 'twa-real-v7-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
   if (typeof window !== 'undefined') {
     (window as any).__diagnostics__ = (window as any).__diagnostics__ || {};
     (window as any).__diagnostics__.androidBridge = true;
@@ -225,4 +175,4 @@ export const __ANDROID_BRIDGE_BUILD_MARKER__ = (() => {
   return buildId;
 })();
 
-export const __FORCE_CHUNK_INVALIDATION_V5__ = 'twa-real-' + Date.now();
+export const __FORCE_CHUNK_INVALIDATION_V7__ = 'twa-real-v7-' + Date.now();
