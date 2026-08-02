@@ -85,6 +85,35 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
       }
     });
   }
+  // TWA APK: si __twaBlockPopup esta presente, NUNCA hacer popup — usar AndroidAuthBridge
+  if (typeof window !== 'undefined' && (window as any).__twaBlockPopup) {
+    if ((window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
+      return initiateGoogleSignInViaAndroidBridge(authInstance);
+    }
+    // android-auth-result se escucha via listener defensivo.
+    // Disparar el bridge nativo directamente.
+    (window as any).AndroidAuthBridge?.requestNativeGoogleAuth();
+    return new Promise((resolve, reject) => {
+      const handler = (e: any) => {
+        const detail = e.detail || {};
+        if (!detail.success) {
+          reject(new Error(detail.error || 'native_auth_failed'));
+          return;
+        }
+        const idToken = detail.id_token;
+        if (!idToken) {
+          reject(new Error('no_id_token_from_bridge'));
+          return;
+        }
+        const credential = GoogleAuthProvider.credential(idToken);
+        signInWithCredential(authInstance, credential)
+          .then(resolve)
+          .catch(reject);
+        window.removeEventListener('android-native-auth-result', handler);
+      };
+      window.addEventListener('android-native-auth-result', handler, { once: true });
+    });
+  }
   if (Capacitor.isNativePlatform()) {
     try {
       const result = await FirebaseAuthentication.signInWithGoogle();
