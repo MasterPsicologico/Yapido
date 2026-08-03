@@ -148,3 +148,14 @@ export async function initiateGoogleSignInWithOneTap(
     throw error;
   });
 }
+
+export const __ANDROID_BRIDGE_BUILD_MARKER__ = (() => {
+  const buildId = 'twa-real-v13-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+  if (typeof window !== 'undefined') {
+    (window as any).__diagnostics__ = (window as any).__diagnostics__ || {};
+    (window as any).__diagnostics__.androidBridge = true;
+    (window as any).__diagnostics__.buildId = buildId;
+    (window as any).__diagnostics__.timestamp = new Date().toISOString();
+  }
+  return buildId;
+})();
