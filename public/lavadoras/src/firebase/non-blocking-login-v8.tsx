@@ -92,6 +92,7 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
     const handler = (event: Event) => {
       if (settled) return;
       const detail = (event as CustomEvent).detail || {};
+      console.log('[auth] android-native-auth-result recibido:', detail);
       if (!detail.success) {
         settled = true;
         cleanup();
@@ -106,13 +107,16 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
         return;
       }
       const credential = GoogleAuthProvider.credential(idToken);
+      console.log('[auth] Llamando signInWithCredential con id_token');
       signInWithCredential(authInstance, credential)
         .then((userCredential) => {
+          console.log('[auth] signInWithCredential ÉXITO:', userCredential.user?.uid);
           settled = true;
           cleanup();
           resolve(userCredential);
         })
         .catch((err) => {
+          console.error('[auth] signInWithCredential FALLÓ:', err?.code, err?.message);
           settled = true;
           cleanup();
           handleAuthError(err);
@@ -121,17 +125,21 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
     };
     if (typeof window !== 'undefined') {
       window.addEventListener('android-native-auth-result', handler as EventListener);
+      console.log('[auth] Listener android-native-auth-result registrado');
     }
     timeoutId = setTimeout(() => {
       if (!settled) {
+        console.warn('[auth] Timeout esperando android-native-auth-result');
         settled = true;
         cleanup();
         reject(new Error('android_auth_timeout'));
       }
     }, 5 * 60 * 1000);
     try {
+      console.log('[auth] Llamando bridge.requestNativeGoogleAuth()');
       bridge.requestNativeGoogleAuth();
     } catch (e) {
+      console.error('[auth] Error llamando requestNativeGoogleAuth:', e);
       cleanup();
       reject(e as Error);
     }
