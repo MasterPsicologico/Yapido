@@ -71,6 +71,21 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
   });
 }
 
+export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
+  // 1. APK de lavadoras (TWA con bridge Java inyectado por MainActivity)
+  if (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
+    return initiateGoogleSignInViaAndroidBridge(authInstance);
+  }
+
+  // 2. Navegador web (PC/Movil)
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  return signInWithPopup(authInstance, provider).catch((error) => {
+    handleAuthError(error);
+    throw error;
+  });
+}
+
 async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
   return new Promise((resolve, reject) => {
     const bridge = (window as any).AndroidAuthBridge;
@@ -83,12 +98,31 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
     }
     let settled = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    
+    // FALLBACK 1: Verificar si el listener defensivo ya capturó el token
+    if (typeof window !== 'undefined' && (window as any).__pendingIdToken) {
+      console.log('[auth] Token pendiente encontrado en window.__pendingIdToken, usando fallback inmediato');
+      const pendingIdToken = (window as any).__pendingIdToken as string;
+      (window as any).__pendingIdToken = null;
+      const credential = GoogleAuthProvider.credential(pendingIdToken);
+      signInWithCredential(authInstance, credential)
+        .then(resolve)
+        .catch((err) => {
+          console.error('[auth] Fallback inmediato falló:', err?.code, err?.message);
+          reject(err);
+        });
+      return;
+    }
+
     const cleanup = () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('android-native-auth-result', handler as EventListener);
+        window.removeEventListener('yapido-pending-auth', pendingHandler as EventListener);
         if (timeoutId) clearTimeout(timeoutId);
       }
     };
+    
+    // Handler principal: evento android-native-auth-result
     const handler = (event: Event) => {
       if (settled) return;
       const detail = (event as CustomEvent).detail || {};
@@ -123,23 +157,70 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
           reject(err);
         });
     };
+    
+    // FALLBACK 2: Listener para yapido-pending-auth (evento defensivo inyectado por MainActivity)
+    const pendingHandler = (event: Event) => {
+      if (settled) return;
+      const detail = (event as CustomEvent).detail || {};
+      const idToken = detail.id_token;
+      console.log('[auth] yapido-pending-auth recibido:', !!idToken);
+      if (!idToken) return;
+      settled = true;
+      cleanup();
+      const credential = GoogleAuthProvider.credential(idToken);
+      signInWithCredential(authInstance, credential)
+        .then(resolve)
+        .catch(reject);
+    };
+    
     if (typeof window !== 'undefined') {
       window.addEventListener('android-native-auth-result', handler as EventListener);
-      console.log('[auth] Listener android-native-auth-result registrado');
+      window.addEventListener('yapido-pending-auth', pendingHandler as EventListener);
+      console.log('[auth] Listeners registrados: android-native-auth-result, yapido-pending-auth');
     }
+    
+    // FALLBACK 3: Polling cada 500ms por window.__pendingIdToken (último recurso)
+    let pollCount = 0;
+    const maxPolls = 60; // 30 segundos
+    const pollInterval = setInterval(() => {
+      if (settled) {
+        clearInterval(pollInterval);
+        return;
+      }
+      pollCount++;
+      if (typeof window !== 'undefined' && (window as any).__pendingIdToken) {
+        console.log('[auth] Polling detectó __pendingIdToken');
+        clearInterval(pollInterval);
+        settled = true;
+        cleanup();
+        const pendingIdToken = (window as any).__pendingIdToken as string;
+        (window as any).__pendingIdToken = null;
+        const credential = GoogleAuthProvider.credential(pendingIdToken);
+        signInWithCredential(authInstance, credential)
+          .then(resolve)
+          .catch(reject);
+      } else if (pollCount >= maxPolls) {
+        console.warn('[auth] Polling timeout sin token');
+        clearInterval(pollInterval);
+      }
+    }, 500);
+    
     timeoutId = setTimeout(() => {
       if (!settled) {
-        console.warn('[auth] Timeout esperando android-native-auth-result');
+        console.warn('[auth] Timeout general esperando autenticación nativa');
+        clearInterval(pollInterval);
         settled = true;
         cleanup();
         reject(new Error('android_auth_timeout'));
       }
     }, 5 * 60 * 1000);
+    
     try {
       console.log('[auth] Llamando bridge.requestNativeGoogleAuth()');
       bridge.requestNativeGoogleAuth();
     } catch (e) {
       console.error('[auth] Error llamando requestNativeGoogleAuth:', e);
+      clearInterval(pollInterval);
       cleanup();
       reject(e as Error);
     }
