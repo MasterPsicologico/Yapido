@@ -1,0 +1,55 @@
+/* admin.css
+ */
+
+.admin-panel { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.admin-panel .admin-metric { background: var(--lava-accent-dark); color: white; }
+.admin-panel .admin-metric .metric-label { color: rgba(255,255,255,.85); }
+.admin-panel .admin-metric .metric-value { color: white; }
+.admin-panel .admin-metric .metric-sub { color: rgba(255,255,255,.85); }
+
+.tiendas-prioridad-list {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  padding: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.prioridad-header, .tienda-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 100px 1fr;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+.prioridad-header {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border-bottom: 2px solid var(--border-strong);
+}
+
+.tienda-row .pos {
+  background: var(--lava-primary);
+  color: white;
+  font-weight: 800;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tienda-row .tienda-info strong { display: block; font-size: 15px; }
+.tienda-row .auto-label { font-size: 12px; padding: 4px 8px; border-radius: 999px; text-align: center; }
+.tienda-row .auto-label { background: var(--bg-muted); color: var(--text-muted); }
+
+.tienda-row .actions { display: flex; gap: var(--space-1); }
+.tienda-row .actions .btn { padding: 6px 10px; font-size: 13px; }
+
+.prioridad-top-actions { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); }

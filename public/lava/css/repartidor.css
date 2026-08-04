@@ -1,0 +1,17 @@
+/* repartidor.css
+ */
+
+.repartidor-panel { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.ganancias-card {
+  background: linear-gradient(135deg, var(--lava-primary) 0%, var(--lava-accent) 100%);
+  color: white;
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+.ganancias-card .label { font-size: 13px; opacity: .85; margin-top: var(--space-2); }
+.ganancias-card .porcentaje { font-size: 36px; font-weight: 800; }
+.ganancias-card .valor { font-size: 28px; font-weight: 700; }
+.tienda-ref { color: var(--text-muted); }

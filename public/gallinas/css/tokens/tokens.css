@@ -1,0 +1,92 @@
+/* ============================================
+   GALLINAS — Design Tokens
+   Sistema de gestion avicola
+   ============================================ */
+
+:root {
+  /* Paleta principal — tierra / granja / productividad */
+  --color-bg: #0f1410;
+  --color-bg-elev: #161d18;
+  --color-bg-elev-2: #1d2620;
+  --color-surface: #232f27;
+  --color-border: #2f3d34;
+  --color-border-strong: #3d4f43;
+
+  --color-text: #e8efe9;
+  --color-text-muted: #9aa8a0;
+  --color-text-dim: #6b7a72;
+
+  /* Acento — amarillo huevo */
+  --color-accent: #f2b705;
+  --color-accent-soft: #f2b70520;
+  --color-accent-hover: #ffc834;
+
+  /* Estados */
+  --color-success: #4ade80;
+  --color-success-soft: #4ade8022;
+  --color-warn: #fbbf24;
+  --color-warn-soft: #fbbf2422;
+  --color-danger: #f87171;
+  --color-danger-soft: #f8717122;
+  --color-info: #60a5fa;
+  --color-info-soft: #60a5fa22;
+
+  /* Tipografia */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-display: "Archivo Black", "Inter", sans-serif;
+
+  --fs-xs: 0.72rem;
+  --fs-sm: 0.84rem;
+  --fs-base: 0.95rem;
+  --fs-md: 1.06rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.6rem;
+  --fs-2xl: 2.2rem;
+  --fs-3xl: 3rem;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-black: 900;
+
+  /* Espaciado */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* Radios */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 999px;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.35);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,.45);
+
+  /* Layout */
+  --sidebar-w: 240px;
+  --sidebar-w-collapsed: 64px;
+  --header-h: 60px;
+
+  /* Transiciones */
+  --t-fast: 120ms ease;
+  --t-base: 200ms ease;
+  --t-slow: 320ms cubic-bezier(.4,0,.2,1);
+
+  /* Z-index */
+  --z-sidebar: 100;
+  --z-header: 90;
+  --z-modal: 1000;
+  --z-toast: 1100;
+}

@@ -1,0 +1,153 @@
+/* cards.css
+ */
+
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+
+.login-card {
+  max-width: 380px;
+  margin: 80px auto 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.app-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--lava-primary);
+  margin-bottom: var(--space-1);
+}
+
+/* Tarjetas de tienda */
+.tiendas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-4);
+}
+.tienda-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.tienda-card h3 { font-size: 17px; color: var(--lava-primary-dark); }
+.tienda-card p { margin-bottom: 0; font-size: 14px; color: var(--text-muted); }
+
+/* Tarjetas de pedido */
+.pedidos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.pedido-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--text-faint);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+.pedido-card.asignado { border-left-color: var(--lava-warning); }
+.pedido-card.aceptado { border-left-color: var(--lava-info); background: var(--lava-info-bg); }
+.pedido-card.confirmado { border-left-color: var(--lava-primary); }
+.pedido-card.en_camino { border-left-color: var(--lava-info); }
+.pedido-card.llegada {
+  border-left-color: var(--lava-accent);
+  background: var(--lava-accent);
+  color: white;
+  animation: pulse 1s infinite;
+}
+.pedido-card.entregado { border-left-color: var(--lava-accent-dark); }
+.pedido-card.completado { border-left-color: var(--lava-success); background: var(--lava-success-bg); }
+.pedido-card.cancelado { border-left-color: var(--lava-danger); opacity: .7; }
+.pedido-card .row { margin: 0; font-size: 14px; }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 191, 165, .5); }
+  50% { box-shadow: 0 0 0 12px rgba(0, 191, 165, 0); }
+}
+
+.alert-llegada {
+  background: var(--lava-accent);
+  color: white;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  margin-top: var(--space-2);
+  text-align: center;
+}
+
+/* Tarjetas de repartidor */
+.repartidores-lista { display: flex; flex-direction: column; gap: var(--space-3); }
+.repartidor-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 14px;
+}
+.repartidor-card .row { gap: var(--space-1); }
+
+/* Metricas */
+.metricas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+.metric-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  text-align: center;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.metric-label { font-size: 13px; color: var(--text-faint); }
+.metric-value { font-size: 22px; font-weight: 800; color: var(--text); margin: var(--space-1) 0; }
+.metric-sub { font-size: 12px; color: var(--text-muted); }
+
+/* User card del perfil */
+.user-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+.user-card .avatar { width: 80px; height: 80px; border-radius: 50%; box-shadow: var(--shadow-sm); }
+.user-name { font-size: 20px; font-weight: 800; }
+.user-meta { color: var(--text-muted); font-size: 14px; }
+.user-rol { color: var(--lava-primary); font-weight: 600; font-size: 13px; padding-top: var(--space-1); }
+
+.action-block {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin: var(--space-4) 0;
+  border: 1px solid var(--border);
+}
+.action-block h3 { margin-bottom: var(--space-2); }
+
+.tienda-info-summary {
+  background: var(--bg-muted);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  margin-bottom: var(--space-3);
+}
+.tienda-info-summary:hover { background: #dde3ec; }
+.tienda-info-summary .sub { color: var(--text-faint); font-size: 12px; }

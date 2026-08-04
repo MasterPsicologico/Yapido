@@ -1,0 +1,44 @@
+/* responsive.css
+ */
+
+/* Mobile-first: en pantallas < 600 px se simplifica la navegacion */
+
+@media (max-width: 600px) {
+  #app-header { padding: 0 var(--space-3); gap: var(--space-2); }
+  #app-header .logo { font-size: 18px; }
+  #app-header .main-nav { gap: 4px; margin-left: var(--space-2); flex-wrap: wrap; }
+  #app-header .perfil-btn { padding: 6px 10px; max-width: 90px; font-size: 13px; }
+  #app-main { padding: var(--space-4) var(--space-3); }
+
+  .colombia-selector { grid-template-columns: 1fr; }
+  .tiendas-grid { grid-template-columns: 1fr; }
+
+  .metricas-grid { grid-template-columns: 1fr 1fr; }
+
+  .prioridad-header, .tienda-row {
+    grid-template-columns: 40px 1fr auto;
+    font-size: 13px;
+  }
+  .prioridad-header span:nth-child(3),
+  .prioridad-header span:nth-child(4),
+  .tienda-row .auto-label,
+  .tienda-row .tienda-info .sub:nth-of-type(2) { display: none; }
+
+  .tienda-row .actions { display: flex; flex-wrap: wrap; }
+
+  .banners-container { top: 56px; max-width: calc(100% - 16px); }
+  .notif-banner { padding: 10px; font-size: 13px; }
+
+  .login-card { margin-top: var(--space-5); }
+
+  .codigo-display { font-size: 24px; letter-spacing: 4px; }
+}
+
+@media (max-width: 380px) {
+  #app-header .main-nav .nav-btn { padding: 5px 8px; font-size: 12px; }
+  #app-header .perfil-btn { display: none; }
+}
+
+@media (min-width: 1100px) {
+  #app-main { max-width: 1080px; }
+}

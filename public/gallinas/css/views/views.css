@@ -1,0 +1,10 @@
+/* ============================================
+   Vistas — ajustes especificos por pantalla
+   ============================================ */
+
+/* Dashboard quick cards */
+.quick-card { transition: transform var(--t-fast); }
+.quick-card:hover { transform: translateY(-2px); border-color: var(--color-accent); }
+
+/* Mejor scroll horizontal en tablas dentro de modal */
+.modal-body .table { overflow-x: auto; display: block; max-width: 100%; }

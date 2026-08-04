@@ -1,0 +1,33 @@
+/**
+ * styles.css
+ * Importa modularmente los estilos пришлось.
+ * Como este no es un proyecto de build, simplemente @import el contenido.
+ * CSS modular por area:
+ *  - tokens.css  : variables CSS (colores, tipografia)
+ *  - base.css    : reset y base
+ *  - layout.css  : header, main, navegacion
+ *  - buttons.css : botones genericos y por tipo
+ *  - forms.css   : inputs, selects, switchs
+ *  - cards.css   : tarjetas de tienda, pedido, repartidor, metricas
+ *  - cliente.css : vista del cliente (selector de ciudad, grid de tiendas, mis pedidos)
+ *  - dueno.css   : panel de dueno (codigo de vinculacion, lista de repartidores, metricas)
+ *  - repartidor.css: panel de repartidor (tarjeta de ganancias)
+ *  - admin.css   : panel de admin principal (rows de prioridad)
+ *  - notif.css   : banners y toasts
+ *  - modal.css   : ventanas modales
+ *  - responsive.css: ajustes mobile-first
+ */
+
+@import url("tokens.css");
+@import url("base.css");
+@import url("layout.css");
+@import url("buttons.css");
+@import url("forms.css");
+@import url("cards.css");
+@import url("cliente.css");
+@import url("dueno.css");
+@import url("repartidor.css");
+@import url("admin.css");
+@import url("notif.css");
+@import url("modal.css");
+@import url("responsive.css");

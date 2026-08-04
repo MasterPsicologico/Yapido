@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f1410" />
+  <title>Gallinas — Sistema de Gestion Avicola</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐔</text></svg>" />
+
+  <!-- Tipografias -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <!-- CSS modular -->
+  <link rel="stylesheet" href="css/tokens/tokens.css" />
+  <link rel="stylesheet" href="css/tokens/reset.css" />
+  <link rel="stylesheet" href="css/components/ui.css" />
+  <link rel="stylesheet" href="css/components/layout.css" />
+  <link rel="stylesheet" href="css/components/utilities.css" />
+  <link rel="stylesheet" href="css/views/views.css" />
+</head>
+<body>
+
+  <!-- Scrim mobile -->
+  <div class="scrim" id="scrim" data-close-sidebar></div>
+
+  <!-- Layout principal -->
+  <div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-mark">🐔</div>
+        <div>
+          <div class="sidebar-brand-text">Gallinas</div>
+          <div class="sidebar-brand-sub">Gestion avicola</div>
+        </div>
+      </div>
+
+      <nav class="nav-section">
+        <div class="nav-section-label">Principal</div>
+        <div class="nav-item active" data-route="dashboard"><span class="nav-icon">📊</span> Dashboard</div>
+      </nav>
+
+      <nav class="nav-section">
+        <div class="nav-section-label">Operacion</div>
+        <div class="nav-item" data-route="gallinero"><span class="nav-icon">🏠</span> Gallineros</div>
+        <div class="nav-item" data-route="aves"><span class="nav-icon">🐤</span> Aves</div>
+        <div class="nav-item" data-route="postura"><span class="nav-icon">🥚</span> Postura diaria</div>
+        <div class="nav-item" data-route="incubadora"><span class="nav-icon">🐣</span> Incubadora</div>
+      </nav>
+
+      <nav class="nav-section">
+        <div class="nav-section-label">Negocio</div>
+        <div class="nav-item" data-route="ventas"><span class="nav-icon">💵</span> Ventas</div>
+        <div class="nav-item" data-route="finanzas"><span class="nav-icon">💰</span> Finanzas</div>
+        <div class="nav-item" data-route="inventario"><span class="nav-icon">📦</span> Inventario</div>
+      </nav>
+
+      <nav class="nav-section">
+        <div class="nav-section-label">Inteligencia</div>
+        <div class="nav-item" data-route="ia"><span class="nav-icon">🧠</span> IA AsiBrain</div>
+        <div class="nav-item" data-route="prediccion"><span class="nav-icon">🔮</span> Prediccion</div>
+      </nav>
+
+      <nav class="nav-section">
+        <div class="nav-section-label">Sistema</div>
+        <div class="nav-item" data-route="ajustes"><span class="nav-icon">⚙️</span> Ajustes</div>
+      </nav>
+
+      <div class="sidebar-footer">
+        v1.0 · Datos locales<br />
+        <button class="btn btn-ghost btn-sm" id="exportData" style="margin-top:6px">⬇ Exportar</button>
+        <button class="btn btn-ghost btn-sm" id="importData" style="margin-top:6px">⬆ Importar</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none" />
+      </div>
+    </aside>
+
+    <!-- Header -->
+    <header class="header">
+      <div class="flex gap-3" style="align-items:center">
+        <button class="btn btn-ghost btn-sm sidebar-toggle" id="sidebarToggle">☰</button>
+        <div>
+          <div class="header-title" id="headerTitle">Dashboard</div>
+          <div class="header-sub" id="headerSub">Resumen general</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="hide-mobile">
+          <div class="header-date" id="headerDate"></div>
+        </div>
+        <span class="badge badge-accent" id="aiBadge">🧠 IA activa</span>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="main" id="main">
+      <!-- Las vistas se inyectan aqui via router -->
+    </main>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Modales se inyectan aqui -->
+
+  <!-- JS CORE (orden estricto) -->
+  <script src="js/core/storage.js"></script>
+  <script src="js/core/state.js"></script>
+  <script src="js/core/ui.js"></script>
+  <script src="js/core/modal.js"></script>
+  <script src="js/core/toast.js"></script>
+  <script src="js/core/router.js"></script>
+  <script src="js/utils/format.js"></script>
+  <script src="js/utils/chart.js"></script>
+  <script src="js/utils/helpers.js"></script>
+
+  <!-- DATOS / seed -->
+  <script src="js/data/seed.js"></script>
+
+  <!-- MODULOS -->
+  <script src="js/modules/gallinero/gallinero.service.js"></script>
+  <script src="js/modules/gallinero/gallinero.view.js"></script>
+  <script src="js/modules/aves/aves.service.js"></script>
+  <script src="js/modules/aves/aves.view.js"></script>
+  <script src="js/modules/aves/postura.view.js"></script>
+  <script src="js/modules/incubadora/incubadora.service.js"></script>
+  <script src="js/modules/incubadora/incubadora.view.js"></script>
+  <script src="js/modules/ventas/ventas.service.js"></script>
+  <script src="js/modules/ventas/ventas.view.js"></script>
+  <script src="js/modules/finanzas/finanzas.service.js"></script>
+  <script src="js/modules/finanzas/finanzas.view.js"></script>
+  <script src="js/modules/finanzas/inventario.view.js"></script>
+  <script src="js/modules/ia/ia.service.js"></script>
+  <script src="js/modules/ia/ia.view.js"></script>
+  <script src="js/modules/ia/prediccion.view.js"></script>
+  <script src="js/modules/dashboard/dashboard.view.js"></script>
+  <script src="js/modules/dashboard/ajustes.view.js"></script>
+
+  <!-- BOOT -->
+  <script src="js/core/boot.js"></script>
+</body>
+</html>

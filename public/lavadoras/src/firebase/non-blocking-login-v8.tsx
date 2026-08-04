@@ -98,21 +98,32 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
     }
     let settled = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    
-    // FALLBACK 1: Verificar si el listener defensivo ya capturó el token
-    if (typeof window !== 'undefined' && (window as any).__pendingIdToken) {
-      console.log('[auth] Token pendiente encontrado en window.__pendingIdToken, usando fallback inmediato');
-      const pendingIdToken = (window as any).__pendingIdToken as string;
-      (window as any).__pendingIdToken = null;
-      const credential = GoogleAuthProvider.credential(pendingIdToken);
-      signInWithCredential(authInstance, credential)
-        .then(resolve)
-        .catch((err) => {
-          console.error('[auth] Fallback inmediato falló:', err?.code, err?.message);
-          reject(err);
-        });
-      return;
-    }
+
+    const consumePendingToken = (source: string) => {
+      try {
+        let pendingIdToken: string | null = null;
+        if ((window as any).__pendingIdToken) {
+          pendingIdToken = (window as any).__pendingIdToken as string;
+          (window as any).__pendingIdToken = null;
+        } else {
+          try {
+            pendingIdToken = localStorage.getItem('__twa_pending_id_token');
+            if (pendingIdToken) localStorage.removeItem('__twa_pending_id_token');
+          } catch (_) {}
+        }
+        if (!pendingIdToken) return false;
+        console.log('[auth] Token pendiente consumido desde', source);
+        const credential = GoogleAuthProvider.credential(pendingIdToken);
+        signInWithCredential(authInstance, credential)
+          .then((uc) => { settled = true; cleanup(); resolve(uc); })
+          .catch((err) => { settled = true; cleanup(); handleAuthError(err); reject(err); });
+        return true;
+      } catch (_) {
+        return false;
+      }
+    };
+
+    if (consumePendingToken('fallback-inmediato')) return;
 
     const cleanup = () => {
       if (typeof window !== 'undefined') {
@@ -179,7 +190,7 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
       console.log('[auth] Listeners registrados: android-native-auth-result, yapido-pending-auth');
     }
     
-    // FALLBACK 3: Polling cada 500ms por window.__pendingIdToken (último recurso)
+    // FALLBACK 3: Polling cada 500ms por window.__pendingIdToken O localStorage (último recurso)
     let pollCount = 0;
     const maxPolls = 60; // 30 segundos
     const pollInterval = setInterval(() => {
@@ -188,18 +199,26 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
         return;
       }
       pollCount++;
-      if (typeof window !== 'undefined' && (window as any).__pendingIdToken) {
-        console.log('[auth] Polling detectó __pendingIdToken');
-        clearInterval(pollInterval);
-        settled = true;
-        cleanup();
-        const pendingIdToken = (window as any).__pendingIdToken as string;
-        (window as any).__pendingIdToken = null;
-        const credential = GoogleAuthProvider.credential(pendingIdToken);
-        signInWithCredential(authInstance, credential)
-          .then(resolve)
-          .catch(reject);
-      } else if (pollCount >= maxPolls) {
+      if (typeof window !== 'undefined') {
+        if ((window as any).__pendingIdToken) {
+          console.log('[auth] Polling detectó __pendingIdToken');
+          clearInterval(pollInterval);
+          consumePendingToken('polling');
+          return;
+        }
+        try {
+          const fromLs = localStorage.getItem('__twa_pending_id_token');
+          if (fromLs) {
+            console.log('[auth] Polling detectó token en localStorage');
+            clearInterval(pollInterval);
+            (window as any).__pendingIdToken = fromLs;
+            localStorage.removeItem('__twa_pending_id_token');
+            consumePendingToken('polling-localstorage');
+            return;
+          }
+        } catch (_) {}
+      }
+      if (pollCount >= maxPolls) {
         console.warn('[auth] Polling timeout sin token');
         clearInterval(pollInterval);
       }

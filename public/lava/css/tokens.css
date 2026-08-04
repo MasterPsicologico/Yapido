@@ -1,0 +1,67 @@
+/* tokens.css
+ * Variables de disenio de LavaGo.
+ * Colores y tipografias inspirados en una identidad fresca y colombiana.
+ */
+
+:root {
+  /* Colores base */
+  --lava-primary: #1976d2;
+  --lava-primary-dark: #0d47a1;
+  --lava-primary-light: #63a4ff;
+  --lava-accent: #00bfa5;
+  --lava-accent-dark: #008e76;
+
+  --lava-success: #2e7d32;
+  --lava-success-bg: #e8f5e9;
+  --lava-warning: #f9a825;
+  --lava-warning-bg: #fff8e1;
+  --lava-danger: #c62828;
+  --lava-danger-bg: #ffebee;
+  --lava-info: #0288d1;
+  --lava-info-bg: #e1f5fe;
+
+  /* Nequi brand */
+  --nequi: #ff0067;
+  --nequi-dark: #d40052;
+  --nequi-bg: #fff0f5;
+
+  /* Superficies */
+  --bg: #f4f6fa;
+  --bg-card: #ffffff;
+  --bg-muted: #eef2f7;
+  --border: #e0e6ec;
+  --border-strong: #c4ccd6;
+
+  /* Texto */
+  --text: #1b1f23;
+  --text-muted: #5b6573;
+  --text-faint: #8a94a3;
+  --text-white: #ffffff;
+
+  /* Tipografia */
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+  /* Espaciado */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Bordes */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  --shadow-md: 0 4px 14px rgba(0,0,0,.08);
+  --shadow-lg: 0 12px 36px rgba(0,0,0,.14);
+
+  /* Topbar */
+  --topbar-height: 60px;
+}

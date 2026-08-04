@@ -1,0 +1,70 @@
+/* buttons.css
+ */
+
+.btn {
+  display: inline-block;
+  background: var(--bg-muted);
+  color: var(--text);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 18px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  text-align: center;
+  transition: background .18s ease, transform .08s ease, box-shadow .18s ease;
+  user-select: none;
+}
+.btn:hover { background: #dde3ec; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary { background: var(--lava-primary); color: white; }
+.btn-primary:hover { background: var(--lava-primary-dark); }
+.btn-secondary { background: var(--bg-muted); color: var(--text); }
+.btn-secondary:hover { background: #d2dae6; }
+.btn-ghost { background: transparent; color: var(--text-muted); border: 1px dashed var(--border); }
+.btn-ghost:hover { background: var(--bg-muted); }
+.btn-danger { background: var(--lava-danger); color: white; }
+.btn-danger:hover { background: #a41e1e; }
+
+/* Especiales */
+.btn-nequi {
+  display: inline-block;
+  padding: 14px 22px;
+  background: var(--nequi);
+  color: white;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  text-decoration: none;
+  margin: var(--space-3) 0;
+  text-align: center;
+}
+.btn-nequi:hover { background: var(--nequi-dark); text-decoration: none; }
+
+.btn-google {
+  background: white;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+}
+.btn-google::before { content: "G "; color: #ea4335; font-weight: 800; margin-right: 6px; }
+
+.btn-phone {
+  background: #25d366;
+  color: white;
+}
+.btn-phone:hover { background: #1ea751; }
+
+.btn-anonimo {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+}
+
+.btn-close {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0 var(--space-3);
+}

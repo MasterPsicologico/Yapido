@@ -1,0 +1,92 @@
+/* forms.css
+ */
+
+.input {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 15px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--text);
+  transition: border-color .15s;
+  margin-bottom: var(--space-3);
+}
+.input:focus { outline: none; border-color: var(--lava-primary); box-shadow: 0 0 0 3px rgba(25, 118, 210, .15); }
+
+textarea.input { resize: vertical; min-height: 60px; }
+
+select.input, select.dep-select, select.ciu-select {
+  padding: 10px 12px;
+  font-size: 15px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: white;
+  width: 100%;
+  cursor: pointer;
+}
+select.input:focus, select.dep-select:focus, select.ciu-select:focus {
+  outline: none; border-color: var(--lava-primary);
+}
+
+select:disabled { background: var(--bg-muted); cursor: not-allowed; color: var(--text-faint); }
+
+/* Switch */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  margin-bottom: var(--space-3);
+  font-size: 15px;
+}
+.switch input[type="checkbox"] {
+  appearance: none;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: #c4ccd6;
+  position: relative;
+  cursor: pointer;
+  transition: background .2s;
+}
+.switch input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: white;
+  left: 2px;
+  top: 2px;
+  transition: left .2s;
+  box-shadow: var(--shadow-sm);
+}
+.switch input[type="checkbox"]:checked { background: var(--lava-accent); }
+.switch input[type="checkbox"]:checked::after { left: 20px; }
+
+.codigo-display {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 8px;
+  background: var(--bg-muted);
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--text);
+  margin-bottom: var(--space-3);
+  user-select: all;
+}
+
+.precio-preview {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--lava-primary);
+  padding: var(--space-2) var(--space-3);
+  background: var(--lava-info-bg);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-3);
+}

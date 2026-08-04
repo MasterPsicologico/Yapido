@@ -1,0 +1,13 @@
+/* dueno.css
+ */
+
+.dueno-panel .panel-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.codigo-wrap { margin-bottom: var(--space-4); }
+.codigo-wrap h3 { margin-bottom: var(--space-2); }
+.dueno-registro { max-width: 600px; }
