@@ -71,21 +71,6 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
   });
 }
 
-export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
-  // 1. APK de lavadoras (TWA con bridge Java inyectado por MainActivity)
-  if (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
-    return initiateGoogleSignInViaAndroidBridge(authInstance);
-  }
-
-  // 2. Navegador web (PC/Movil)
-  const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
-  return signInWithPopup(authInstance, provider).catch((error) => {
-    handleAuthError(error);
-    throw error;
-  });
-}
-
 async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
   return new Promise((resolve, reject) => {
     const bridge = (window as any).AndroidAuthBridge;
