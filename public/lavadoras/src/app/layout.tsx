@@ -41,11 +41,20 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased bg-background text-foreground min-h-screen">
+        {/* Solo cargar Google Identity Services si NO es Android APK (evita conflicto con AndroidAuthBridge) */}
         <Script
           src="https://accounts.google.com/gsi/client"
           strategy="afterInteractive"
           async
           defer
+          onLoad={() => {
+            if (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
+              try {
+                (window as any).google.accounts.id.cancel();
+                console.log('[auth] Anulando GIS porque AndroidAuthBridge está activo');
+              } catch (_) {}
+            }
+          }}
         />
         <FirebaseClientProvider>
           <CartProvider>
