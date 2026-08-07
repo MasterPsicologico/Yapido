@@ -143,13 +143,6 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
           console.log('[auth] signInWithCredential ÉXITO:', userCredential.user?.uid);
           settled = true;
           cleanup();
-          // Forzar reload para que React tome el user state nuevo y el redirect condicional funcione
-          try {
-            localStorage.setItem('__twa_post_login_reload', '1');
-          } catch (_) {}
-          setTimeout(() => {
-            try { window.location.reload(); } catch (_) {}
-          }, 250);
           resolve(userCredential);
         })
         .catch((err) => {
@@ -172,13 +165,7 @@ async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise
       cleanup();
       const credential = GoogleAuthProvider.credential(idToken);
       signInWithCredential(authInstance, credential)
-        .then((uc) => {
-          try { localStorage.setItem('__twa_post_login_reload', '1'); } catch (_) {}
-          setTimeout(() => {
-            try { window.location.reload(); } catch (_) {}
-          }, 250);
-          resolve(uc);
-        })
+        .then(resolve)
         .catch(reject);
     };
     
