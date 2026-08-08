@@ -14,8 +14,8 @@ const config: CapacitorConfig = {
     cleartext: false,
   },
   plugins: {
-        FirebaseAuthentication: {
-      skipNativeAuth: true,  // <<< Anulamos para que Capacitor NO abra selector nativo
+    FirebaseAuthentication: {
+      skipNativeAuth: false,
       providers: ['google.com'],
     },
     SplashScreen: {

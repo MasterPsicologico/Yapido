@@ -103,11 +103,7 @@ export function useGoogleOneTap({
       (typeof (window as any).AndroidAuthBridge !== 'undefined' ||
         /; wv\)/.test(navigator.userAgent));
 
-    // En TWA puver el UA no incluye 'wv' — igualmente anulamos si el bridge está cargado.
-    if (
-      isAndroidWebView ||
-      (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth)
-    ) {
+    if (isAndroidWebView) {
       return;
     }
 
