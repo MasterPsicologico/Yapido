@@ -1,4 +1,4 @@
-{
+﻿{
   "project_info": {
     "project_number": "294212274372",
     "project_id": "studio-4796645076-6f375",
@@ -7,12 +7,20 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:294212274372:android:58514b627da5eeb7152191",
+        "mobilesdk_app_id": "1:294212274372:android:cae05a729abbc425152191",
         "android_client_info": {
-          "package_name": "click.yapido.app"
+          "package_name": "lavadorasx.yapido.click"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "294212274372-d580td8e5k473ek8vq1rkek44sfmkrdn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "lavadorasx.yapido.click",
+            "certificate_hash": "f0c6049281d56a8fe4d7a0bcf587cc42876e8d92"
+          }
+        },
         {
           "client_id": "294212274372-0o91m9db3733jv5dkhnugfsmi75ho6ui.apps.googleusercontent.com",
           "client_type": 3

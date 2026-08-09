@@ -1,13 +1,13 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'lavadoras.yapido.click',
+  appId: 'lavadorasx.yapido.click',
   appName: 'Lavadoras',
   webDir: 'out',
   android: {
     allowMixedContent: false,
     captureInput: true,
-    webContentsDebuggingEnabled: false,
+    webContentsDebuggingEnabled: true,
   },
   server: {
     url: 'https://lavadoras.yapido.click',
@@ -19,8 +19,8 @@ const config: CapacitorConfig = {
       providers: ['google.com'],
     },
     SplashScreen: {
-      launchShowDuration: 800,
-      launchAutoHide: false,
+      launchShowDuration: 4000,
+      launchAutoHide: true,
       backgroundColor: '#0A0E1A',
       androidSplashResourceName: 'splash',
       androidScaleType: 'CENTER_CROP',

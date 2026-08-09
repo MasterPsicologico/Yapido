@@ -1,14 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "lavadoras.yapido.click"
+    namespace = "lavadorasx.yapido.click"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "lavadoras.yapido.click"
+        applicationId "lavadorasx.yapido.click"
         minSdkVersion 24
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
-        versionName "1.0.0"
+        versionCode 38
+        versionName "1.4.6"
         resourceConfigurations += ['es', 'en']
         manifestPlaceholders = [
             'appName': 'Lavadoras',
@@ -30,8 +30,17 @@ android {
             if (ksEnvPath != null && !ksEnvPath.isEmpty()) {
                 ksPath = ksEnvPath
             }
+            String lavaJksPath = 'C:\\Users\\dcard\\OneDrive\\Escritorio\\lava.jks'
+            if (new File(lavaJksPath).exists()) {
+                ksPath = lavaJksPath
+                ksPass = 'Oscar161991'
+                aliasName = 'key0'
+                keyPass = 'Oscar161991'
+            }
             storeFile file(ksPath)
             storePassword ksPass
+            keyAlias aliasName
+            keyPassword keyPass
         }
     }
 
@@ -74,11 +83,15 @@ dependencies {
 apply from: 'capacitor.build.gradle'
 
 try {
-    // TODO: regenerar con packageName 'lavadoras.yapido.click' en Firebase Console.
-    // Mientras tanto, no aplicamos google-services para no romper release builds.
     def servicesJSON = file('google-services.json')
-    if (false && servicesJSON.text) {
+    def servicesText = servicesJSON.exists() ? servicesJSON.text : ''
+    if (servicesText && servicesText.contains('lavadorasx.yapido.click')) {
         apply plugin: 'com.google.gms.google-services'
+        logger.lifecycle("google-services plugin applied for lavadorasx.yapido.click")
+    } else if (servicesText) {
+        logger.warn("google-services.json exists but package_name does not match 'lavadorasx.yapido.click'. Reemplaza el archivo descargandolo de Firebase Console (proyecto studio-4796645076-6f375).")
+    } else {
+        logger.warn("google-services.json not found, google-services plugin not applied.")
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")

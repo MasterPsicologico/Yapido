@@ -1,10 +1,10 @@
 export const firebaseConfig = {
-  "projectId": "lavadoras-yapido",
-  "appId": "1:219835294681:web:a91eaaa8eb52b80d486fc8",
-  "apiKey": "AIzaSyAp__NEmviMhYxaijdjcSkzKh5BbZG2dJo",
-  "authDomain": "lavadoras-yapido.firebaseapp.com",
-  "measurementId": "G-QP10BCM5Y8",
-  "messagingSenderId": "219835294681"
+  "projectId": "studio-4796645076-6f375",
+  "appId": "1:294212274372:web:58514b627da5eeb7152191",
+  "apiKey": "AIzaSyBkcF4SKkIrIk43qioUfys9bsyRD2MVKW0",
+  "authDomain": "studio-4796645076-6f375.firebaseapp.com",
+  "storageBucket": "studio-4796645076-6f375.firebasestorage.app",
+  "messagingSenderId": "294212274372"
 };
 
 /**
@@ -18,4 +18,4 @@ export const firebaseConfig = {
  */
 export const GOOGLE_CLIENT_ID =
   process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
-  '219835294681-a8cre4pf6mq4jr1uprm97m2a4pcjbat5.apps.googleusercontent.com';
+  '294212274372-0o91m9db3733jv5dkhnugfsmi75ho6ui.apps.googleusercontent.com';

@@ -6,6 +6,8 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithCredential,
 } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
@@ -80,10 +82,32 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
   }
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
+  // En WebView (Capacitor sin plugin nativo), signInWithPopup falla porque el popup
+  // esta bloqueado.signInWithRedirect abre Google en una pestaña del sistema y vuelve
+  // via deep link /"". Requiere que getRedirectResult() se procese en el provider.
+  if (Capacitor.isNativePlatform() || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    return signInWithRedirect(authInstance, provider).catch((error) => {
+      handleAuthError(error);
+      throw error;
+    });
+  }
   return signInWithPopup(authInstance, provider).catch((error) => {
     handleAuthError(error);
     throw error;
   });
+}
+
+/**
+ * Procesa el resultado de un signInWithRedirect cuando la app vuelve a primer plano.
+ * Llamar desde el FirebaseProvider/useEffect al iniciar.
+ */
+export async function handleRedirectResult(authInstance: Auth): Promise<import('firebase/auth').UserCredential | null> {
+  try {
+    return await getRedirectResult(authInstance);
+  } catch (error: any) {
+    handleAuthError(error);
+    throw error;
+  }
 }
 
 async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
