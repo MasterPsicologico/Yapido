@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import type { Auth } from 'firebase/auth';
 import { initiateGoogleSignInWithOneTap } from '@/firebase/non-blocking-login-v8';
+import { Capacitor } from '@capacitor/core';
 
 interface GoogleCredential {
   credential: string;
@@ -95,7 +96,7 @@ export function useGoogleOneTap({
       return;
     }
 
-    // No intentar One Tap en WebView que sabemos no soporta bien GIS.
+    // No intentar One Tap en WebView/Capacitor nativo que no soporta bien GIS.
     const isAndroidWebView =
       typeof navigator !== 'undefined' &&
       /Android/.test(navigator.userAgent) &&
@@ -103,7 +104,10 @@ export function useGoogleOneTap({
       (typeof (window as any).AndroidAuthBridge !== 'undefined' ||
         /; wv\)/.test(navigator.userAgent));
 
-    if (isAndroidWebView) {
+    // Deshabilitar One Tap en Capacitor nativo (Android/iOS)
+    const isCapacitorNative = Capacitor.isNativePlatform();
+
+    if (isAndroidWebView || isCapacitorNative) {
       return;
     }
 

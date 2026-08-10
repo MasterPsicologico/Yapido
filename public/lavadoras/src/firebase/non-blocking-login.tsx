@@ -6,8 +6,6 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   signInWithCredential,
 } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
@@ -61,14 +59,18 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 }
 
 export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
-  if (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
-    return initiateGoogleSignInViaAndroidBridge(authInstance);
-  }
+  // En plataforma nativa (Android/iOS Capacitor), SOLO flujo nativo via plugin.
+  // NO fallback a redirect/popup — rompen en WebView por sessionStorage.
   if (Capacitor.isNativePlatform()) {
+    // 1. Intentar bridge nativo custom (AndroidAuthBridge)
+    if (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
+      return initiateGoogleSignInViaAndroidBridge(authInstance);
+    }
+    // 2. Plugin oficial @capacitor-firebase/authentication
     try {
       const result = await FirebaseAuthentication.signInWithGoogle();
       if (!result.credential?.idToken) {
-        throw new Error('No se recibio el token de autenticacion nativa.');
+        throw new Error('No se recibió el token de autenticación nativa. Verifica que el plugin @capacitor-firebase/authentication esté sincronizado (npx cap sync) y que google-services.json tenga el package_name correcto.');
       }
       const credential = GoogleAuthProvider.credential(result.credential.idToken);
       return signInWithCredential(authInstance, credential);
@@ -76,21 +78,15 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
       if (error.message?.includes('cancel') || error.code === 'CANCELLED') {
         throw error;
       }
-      handleAuthError(error);
-      throw error;
+      // NO fallback a redirect/popup — dan error 'missing initial state' en WebView.
+      const msg = error.message || 'Error en Google Sign-In nativo. Asegúrate de: (1) @capacitor-firebase/authentication sincronizado, (2) google-services.json con package_name=lavadorasx.yapido.click, (3) SHA-1 de Play App Signing en Firebase Console.';
+      handleAuthError({ code: 'auth/native-signin-failed', message: msg });
+      throw new Error(msg);
     }
   }
+  // Solo en web (no nativo): popup normal
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-  // En WebView (Capacitor sin plugin nativo), signInWithPopup falla porque el popup
-  // esta bloqueado.signInWithRedirect abre Google en una pestaña del sistema y vuelve
-  // via deep link /"". Requiere que getRedirectResult() se procese en el provider.
-  if (Capacitor.isNativePlatform() || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    return signInWithRedirect(authInstance, provider).catch((error) => {
-      handleAuthError(error);
-      throw error;
-    });
-  }
   return signInWithPopup(authInstance, provider).catch((error) => {
     handleAuthError(error);
     throw error;

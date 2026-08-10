@@ -7,7 +7,7 @@ android {
         applicationId "lavadorasx.yapido.click"
         minSdkVersion 24
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 38
+        versionCode 47
         versionName "1.4.6"
         resourceConfigurations += ['es', 'en']
         manifestPlaceholders = [
@@ -50,11 +50,6 @@ android {
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
-
-            System.getenv('LAV_KEY_ALIAS')?.with { aliasVal ->
-                signingConfig.keyAlias = (System.getenv('LAV_KEY_ALIAS') ?: 'lavadoras-upload')
-                signingConfig.keyPassword = (System.getenv('LAV_KEY_PASS') ?: signingConfig.storePassword)
-            }
         }
         debug {
             minifyEnabled false
