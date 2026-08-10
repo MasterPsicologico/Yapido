@@ -4,10 +4,10 @@
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useRef } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { Auth, User, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
+import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from './non-blocking-updates';
-import { handleRedirectResult } from './non-blocking-login';
+// handleRedirectResult eliminado - no usamos redirect flow (causa 'missing initial state' en WebView)
 
 interface UserAuthState {
   user: User | null;
@@ -60,10 +60,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   useEffect(() => {
     if (!auth) return;
-
-    getRedirectResult(auth).catch((error) => {
-      console.warn('getRedirectResult error:', error);
-    });
 
     const unsubscribe = onAuthStateChanged(
       auth,

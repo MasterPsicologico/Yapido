@@ -8,6 +8,7 @@ import {
   signInWithPopup,
   signInWithCredential,
 } from 'firebase/auth';
+// Nota: getRedirectResult eliminado - causaba 'missing initial state' en WebView. No usamos redirect.
 import { toast } from '@/hooks/use-toast';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
@@ -91,19 +92,6 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
     handleAuthError(error);
     throw error;
   });
-}
-
-/**
- * Procesa el resultado de un signInWithRedirect cuando la app vuelve a primer plano.
- * Llamar desde el FirebaseProvider/useEffect al iniciar.
- */
-export async function handleRedirectResult(authInstance: Auth): Promise<import('firebase/auth').UserCredential | null> {
-  try {
-    return await getRedirectResult(authInstance);
-  } catch (error: any) {
-    handleAuthError(error);
-    throw error;
-  }
 }
 
 async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
