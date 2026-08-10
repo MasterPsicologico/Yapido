@@ -9,27 +9,8 @@ import {
   signInWithCredential,
 } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
-
-function isAndroidNative(): boolean {
-  if (typeof window === 'undefined') return false;
-  const w = window as any;
-  if (w.Capacitor?.isNativePlatform?.()) return true;
-  if (w.Capacitor?.getPlatform?.() === 'android') return true;
-  if (w.AndroidAuthBridge?.requestNativeGoogleAuth) return true;
-  if (/; wv\)/.test(navigator.userAgent) && /Android/.test(navigator.userAgent)) return true;
-  if (/Capacitor/i.test(navigator.userAgent)) return true;
-  return false;
-}
-
-async function callFirebaseAuthPlugin(): Promise<any> {
-  const w = window as any;
-  const plugins = w.Capacitor?.Plugins;
-  if (plugins?.FirebaseAuthentication?.signInWithGoogle) {
-    return await plugins.FirebaseAuthentication.signInWithGoogle();
-  }
-  const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-  return await FirebaseAuthentication.signInWithGoogle();
-}
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 function handleAuthError(error: any) {
   if (
@@ -48,13 +29,6 @@ function handleAuthError(error: any) {
       duration: 15000,
     });
     console.error('Firebase requiere que autorices este dominio:', domain);
-    return;
-  }
-  if (error.code === 'auth/popup-blocked') {
-    toast({
-      title: 'Popup Bloqueado',
-      description: 'Tu navegador bloqueo la ventana. Intenta de nuevo.',
-    });
     return;
   }
   console.warn('Error de autenticacion:', error.code, error.message);
@@ -78,34 +52,28 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 }
 
 export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
-  const native = isAndroidNative();
-  console.log('[auth] initiateGoogleSignIn - isAndroidNative:', native, '- userAgent:', navigator.userAgent.substring(0, 100));
+  const isNative = Capacitor.isNativePlatform();
+  console.log('[auth-v8] isNativePlatform:', isNative, '| platform:', Capacitor.getPlatform());
 
-  if (native) {
+  if (isNative) {
     try {
-      console.log('[auth] Intentando FirebaseAuthentication.signInWithGoogle() nativo');
-      const result = await callFirebaseAuthPlugin();
-      console.log('[auth] Plugin nativo resultado:', !!result, '- idToken:', !!result?.idToken);
-      if (!result?.idToken) {
-        throw new Error('No se recibio idToken del plugin nativo. Verifica SHA-1 en Firebase y google-services.json.');
+      console.log('[auth-v8] Llamando FirebaseAuthentication.signInWithGoogle()');
+      const result = await FirebaseAuthentication.signInWithGoogle();
+      console.log('[auth-v8] Resultado del plugin:', JSON.stringify({ hasIdToken: !!result?.credential?.idToken }));
+      if (!result?.credential?.idToken) {
+        throw new Error('No se recibio idToken del plugin nativo.');
       }
-      const credential = GoogleAuthProvider.credential(result.idToken);
+      const credential = GoogleAuthProvider.credential(result.credential.idToken);
       return await signInWithCredential(authInstance, credential);
     } catch (error: any) {
-      console.error('[auth] Error en plugin nativo:', error.code, error.message);
+      console.error('[auth-v8] Error plugin nativo, intentando fallback web:', error?.code, error?.message);
       if (error.message?.includes('cancel') || error.code === 'CANCELLED') {
         throw error;
       }
-      toast({
-        title: 'Error de Google Sign-In',
-        description: 'Error nativo: ' + (error.message || 'Verifica que Google Play Services este actualizado'),
-        variant: 'destructive',
-        duration: 10000,
-      });
-      throw error;
     }
   }
 
+  console.log('[auth-v8] Usando signInWithPopup (web o fallback)');
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   return signInWithPopup(authInstance, provider).catch((error) => {
@@ -125,16 +93,5 @@ export async function initiateGoogleSignInWithOneTap(
   });
 }
 
-export const __ANDROID_BRIDGE_BUILD_MARKER__ = (() => {
-  const buildId = 'native-v15-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
-  if (typeof window !== 'undefined') {
-    (window as any).__diagnostics__ = (window as any).__diagnostics__ || {};
-    (window as any).__diagnostics__.androidBridge = true;
-    (window as any).__diagnostics__.buildId = buildId;
-    (window as any).__diagnostics__.timestamp = new Date().toISOString();
-    (window as any).__diagnostics__.isNative = isAndroidNative();
-  }
-  return buildId;
-})();
-
-export const __FORCE_CHUNK_INVALIDATION_V7__ = 'native-v15-' + Date.now();
+export const __ANDROID_BRIDGE_BUILD_MARKER__ = 'native-v16-' + Date.now();
+export const __FORCE_CHUNK_INVALIDATION_V7__ = 'native-v16-' + Date.now();
