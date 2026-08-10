@@ -9,6 +9,8 @@ import {
   signInWithCredential,
 } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 function handleAuthError(error: any) {
   if (
@@ -57,12 +59,26 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 }
 
 export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
-  // 1. APK de lavadoras (TWA con bridge Java inyectado por MainActivity)
-  if (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
-    return initiateGoogleSignInViaAndroidBridge(authInstance);
+  // En Capacitor nativo (Android/iOS): SOLO plugin nativo @capacitor-firebase/authentication
+  // Esto abre el BOTTOM SHEET nativo de Google Play Services (modal overlay, no web)
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const result = await FirebaseAuthentication.signInWithGoogle();
+      if (!result.credential?.idToken) {
+        throw new Error('No se recibio idToken del plugin nativo. Verifica SHA-1 en Firebase y google-services.json.');
+      }
+      const credential = GoogleAuthProvider.credential(result.credential.idToken);
+      return signInWithCredential(authInstance, credential);
+    } catch (error: any) {
+      if (error.message?.includes('cancel') || error.code === 'CANCELLED') {
+        throw error;
+      }
+      handleAuthError({ code: 'auth/native-signin-failed', message: error.message || 'Error en Google Sign-In nativo' });
+      throw error;
+    }
   }
 
-  // 2. Navegador web (PC/Movil)
+  // Web: popup normal
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   return signInWithPopup(authInstance, provider).catch((error) => {
