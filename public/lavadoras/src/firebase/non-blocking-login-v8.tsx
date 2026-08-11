@@ -61,19 +61,27 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
       const result = await FirebaseAuthentication.signInWithGoogle();
       console.log('[auth-v8] Resultado del plugin:', JSON.stringify({ hasIdToken: !!result?.credential?.idToken }));
       if (!result?.credential?.idToken) {
-        throw new Error('No se recibio idToken del plugin nativo.');
+        throw new Error('No se recibio idToken del plugin nativo. Verifica SHA-1 en Firebase y google-services.json.');
       }
       const credential = GoogleAuthProvider.credential(result.credential.idToken);
       return await signInWithCredential(authInstance, credential);
     } catch (error: any) {
-      console.error('[auth-v8] Error plugin nativo, intentando fallback web:', error?.code, error?.message);
+      console.error('[auth-v8] Error plugin nativo:', error?.code, error?.message);
       if (error.message?.includes('cancel') || error.code === 'CANCELLED') {
         throw error;
       }
+      const msg = error.message || 'Error en Google Sign-In nativo. Verifica SHA-1, serverClientId y google-services.json.';
+      toast({
+        title: 'Error de Google',
+        description: msg,
+        variant: 'destructive',
+        duration: 10000,
+      });
+      throw new Error(msg);
     }
   }
 
-  console.log('[auth-v8] Usando signInWithPopup (web o fallback)');
+  console.log('[auth-v8] Web real - usando signInWithPopup');
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   return signInWithPopup(authInstance, provider).catch((error) => {

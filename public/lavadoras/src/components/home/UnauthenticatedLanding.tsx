@@ -5,13 +5,14 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { Camera, Loader2, LogIn, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { initiateGoogleSignIn, __ANDROID_BRIDGE_BUILD_MARKER__ } from '@/firebase/non-blocking-login-v8';
+import { initiateGoogleSignIn } from '@/firebase/non-blocking-login-v8';
 import { useDoc, useFirestore, updateDocumentNonBlocking, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { GOOGLE_CLIENT_ID } from '@/firebase/config';
 import { useGoogleOneTap } from '@/hooks/use-google-one-tap';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
+import { Capacitor } from '@capacitor/core';
 
 interface UnauthenticatedLandingProps {
   auth: any;
@@ -51,25 +52,13 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // Detectar si estamos dentro de la APK (TWA con AndroidAuthBridge inyectado).
-  // En ese caso, el bridge nativo se encarga del login. No necesitamos One Tap.
-  const isAndroidApk =
-    typeof window !== 'undefined' &&
-    !!(window as any).AndroidAuthBridge?.requestNativeGoogleAuth;
+  // Desactivar One Tap en Capacitor nativo (Android/iOS) — usa plugin nativo FirebaseAuthentication
+  const isNativeCapacitor = Capacitor.isNativePlatform();
 
-  // Dispara Google One Tap automaticamente en cuanto el componente monta.
-  // Si el usuario hace click en el cuadro flotante de Google, login entra sin
-  // abandonar la pagina (experiencia estilo OpenAI). El hook tiene fallback
-  // silencioso: si One Tap no se muestra, el usuario aun puede usar el boton
-  // INGRESAR que dispara el popup tradicional.
-  //
-  // Importante: no se activa dentro de la APK Android porque alli el bridge
-  // nativo (AndroidAuthBridge) ya hace el trabajo y One Tap puede romper el
-  // render del WebView si intenta renderizar su UI.
   useGoogleOneTap({
     auth,
     clientId: GOOGLE_CLIENT_ID,
-    enabled: !user && !isAndroidApk,
+    enabled: !user && !isNativeCapacitor,
     onSuccess: () => {
       setIsLoggingIn(false);
     },
