@@ -1,18 +1,18 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "lavadoras.yapido.click"
+    namespace = "lavadorasx.yapido.click"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "lavadoras.yapido.click"
+        applicationId "lavadorasx.yapido.click"
         minSdkVersion 24
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
-        versionName "1.0.0"
+        versionCode 70
+        versionName "1.4.12"
         resourceConfigurations += ['es', 'en']
         manifestPlaceholders = [
             'appName': 'Lavadoras',
-            'appUrl': 'https://lavadoras.yapido.click'
+            'appUrl': 'https://lavadorasx.yapido.click'
         ]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -30,8 +30,17 @@ android {
             if (ksEnvPath != null && !ksEnvPath.isEmpty()) {
                 ksPath = ksEnvPath
             }
+            String lavaJksPath = 'C:\\Users\\dcard\\OneDrive\\Escritorio\\lava.jks'
+            if (new File(lavaJksPath).exists()) {
+                ksPath = lavaJksPath
+                ksPass = 'Oscar161991'
+                aliasName = 'key0'
+                keyPass = 'Oscar161991'
+            }
             storeFile file(ksPath)
             storePassword ksPass
+            keyAlias aliasName
+            keyPassword keyPass
         }
     }
 
@@ -41,11 +50,6 @@ android {
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
-
-            System.getenv('LAV_KEY_ALIAS')?.with { aliasVal ->
-                signingConfig.keyAlias = (System.getenv('LAV_KEY_ALIAS') ?: 'lavadoras-upload')
-                signingConfig.keyPassword = (System.getenv('LAV_KEY_PASS') ?: signingConfig.storePassword)
-            }
         }
         debug {
             minifyEnabled false
@@ -74,10 +78,9 @@ dependencies {
 apply from: 'capacitor.build.gradle'
 
 try {
-    // TODO: regenerar con packageName 'lavadoras.yapido.click' en Firebase Console.
-    // Mientras tanto, no aplicamos google-services para no romper release builds.
+    // TODO: regenerar con packageName 'lavadorasx.yapido.click' en Firebase Console.
     def servicesJSON = file('google-services.json')
-    if (false && servicesJSON.text) {
+    if (servicesJSON.text) {
         apply plugin: 'com.google.gms.google-services'
     }
 } catch(Exception e) {
