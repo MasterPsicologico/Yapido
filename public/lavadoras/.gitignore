@@ -85,3 +85,4 @@ project.zip
 /dist/*.apk
 /dist/*.aab
 !/dist/artifact-manifest.json
+.env*

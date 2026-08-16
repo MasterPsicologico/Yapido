@@ -80,7 +80,7 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
         throw error;
       }
       // NO fallback a redirect/popup — dan error 'missing initial state' en WebView.
-      const msg = error.message || 'Error en Google Sign-In nativo. Asegúrate de: (1) @capacitor-firebase/authentication sincronizado, (2) google-services.json con package_name=lavadorasx.yapido.click, (3) SHA-1 de Play App Signing en Firebase Console.';
+      const msg = error.message || 'Error en Google Sign-In nativo. Asegúrate de: (1) @capacitor-firebase/authentication sincronizado, (2) google-services.json con package_name=lava.yapido.click, (3) SHA-1 de Play App Signing en Firebase Console.';
       handleAuthError({ code: 'auth/native-signin-failed', message: msg });
       throw new Error(msg);
     }

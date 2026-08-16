@@ -1,4 +1,4 @@
-package lavadorasx.yapido.click;
+package lava.yapido.click;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -27,7 +27,7 @@ export default function OAuthCallbackPage() {
     }
 
     const bridge = (window as any).AndroidAuthBridge;
-    const DEEP_LINK = `lavadorasx.yapido.click.oauth://callback?code=${encodeURIComponent(code)}`;
+    const INTENT_LINK = `intent://auth-success#Intent;scheme=lava.yapido.click.oauth;package=lava.yapido.click;end`;
 
     if (bridge && typeof bridge.submitAuthCode === 'function') {
       bridge.submitAuthCode(code);
@@ -40,7 +40,7 @@ export default function OAuthCallbackPage() {
     }
 
     try {
-      window.location.href = DEEP_LINK;
+      window.location.href = INTENT_LINK;
       setStatus('success');
       setDetail('Volviendo a la app...');
       setTimeout(() => {

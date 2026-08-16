@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'lavadorasx.yapido.click',
+  appId: 'lava.yapido.click',
   appName: 'Lavadoras',
   webDir: 'out',
   android: {

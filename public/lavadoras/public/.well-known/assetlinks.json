@@ -1,14 +1,8 @@
-[
-  {
-    "relation": [
-      "delegate_permission/common.handle_all_urls"
-    ],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "lavadorasx.yapido.click",
-      "sha256_cert_fingerprints": [
-        "1B:C3:01:3E:7A:91:FE:A9:15:37:78:79:3C:42:42:0E:AD:67:86:73:B6:D5:57:67:B7:C6:19:14:20:17:D2:09"
-      ]
-    }
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "lava.yapido.click",
+    "sha256_cert_fingerprints": ["1bc3013e7a91fea9153778793c42420ead678673b6d55767b7c619142017d209", "c3583cf51dc0fa868e1a408f19e17dbb90a7bcbbdc1395ac9a367b68a8777378", "e292a4609fe000ebff4cb3750b46b42a00abd4066294eb76adb96ab3ecc3ee7a"]
   }
-]
+}]

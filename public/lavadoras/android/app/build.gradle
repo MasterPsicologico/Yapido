@@ -1,14 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "lavadorasx.yapido.click"
+    namespace = "lava.yapido.click"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "lavadorasx.yapido.click"
+        applicationId "lava.yapido.click"
         minSdkVersion 24
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 54
-        versionName "1.4.6"
+        versionCode 50
+        versionName "1.4.9"
         resourceConfigurations += ['es', 'en']
         manifestPlaceholders = [
             'appName': 'Lavadoras',
@@ -77,17 +77,17 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
-try {
-    def servicesJSON = file('google-services.json')
-    def servicesText = servicesJSON.exists() ? servicesJSON.text : ''
-    if (servicesText && servicesText.contains('lavadorasx.yapido.click')) {
-        apply plugin: 'com.google.gms.google-services'
-        logger.lifecycle("google-services plugin applied for lavadorasx.yapido.click")
-    } else if (servicesText) {
-        logger.warn("google-services.json exists but package_name does not match 'lavadorasx.yapido.click'. Reemplaza el archivo descargandolo de Firebase Console (proyecto studio-4796645076-6f375).")
-    } else {
-        logger.warn("google-services.json not found, google-services plugin not applied.")
+    try {
+        def servicesJSON = file('google-services.json')
+        def servicesText = servicesJSON.exists() ? servicesJSON.text : ''
+        if (servicesText && servicesText.contains('lava.yapido.click')) {
+            apply plugin: 'com.google.gms.google-services'
+            logger.lifecycle("google-services plugin applied for lava.yapido.click")
+        } else if (servicesText) {
+            logger.warn("google-services.json exists but package_name does not match 'lava.yapido.click'. Reemplaza el archivo descargandolo de Firebase Console (proyecto studio-4796645076-6f375).")
+        } else {
+            logger.warn("google-services.json not found, google-services plugin not applied.")
+        }
+    } catch(Exception e) {
+        logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
     }
-} catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
-}

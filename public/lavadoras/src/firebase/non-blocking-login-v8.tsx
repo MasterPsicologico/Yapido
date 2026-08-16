@@ -31,6 +31,13 @@ function handleAuthError(error: any) {
     console.error('Firebase requiere que autorices este dominio:', domain);
     return;
   }
+  if (error.code === 'auth/popup-blocked') {
+    toast({
+      title: 'Popup Bloqueado',
+      description: 'Tu navegador bloqueo la ventana. Intenta de nuevo.',
+    });
+    return;
+  }
   console.warn('Error de autenticacion:', error.code, error.message);
   toast({
     title: 'Error de Acceso',
@@ -52,41 +59,196 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 }
 
 export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
-  const isNative = Capacitor.isNativePlatform();
-  console.log('[auth-v8] isNativePlatform:', isNative, '| platform:', Capacitor.getPlatform());
-
-  if (isNative) {
+  // 1. APK de lavadoras (Capacitor nativo con plugin FirebaseAuthentication)
+  if (Capacitor.isNativePlatform()) {
+    // Intentar bridge nativo custom (AndroidAuthBridge) si existe
+    if (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
+      return initiateGoogleSignInViaAndroidBridge(authInstance);
+    }
+    // Plugin oficial @capacitor-firebase/authentication
     try {
-      console.log('[auth-v8] Llamando FirebaseAuthentication.signInWithGoogle()');
       const result = await FirebaseAuthentication.signInWithGoogle();
-      console.log('[auth-v8] Resultado del plugin:', JSON.stringify({ hasIdToken: !!result?.credential?.idToken }));
-      if (!result?.credential?.idToken) {
-        throw new Error('No se recibio idToken del plugin nativo. Verifica SHA-1 en Firebase y google-services.json.');
+      if (!result.credential?.idToken) {
+        throw new Error('No se recibió el token de autenticación nativa. Verifica que el plugin @capacitor-firebase/authentication esté sincronizado (npx cap sync) y que google-services.json tenga el package_name correcto.');
       }
       const credential = GoogleAuthProvider.credential(result.credential.idToken);
-      return await signInWithCredential(authInstance, credential);
+      return signInWithCredential(authInstance, credential);
     } catch (error: any) {
-      console.error('[auth-v8] Error plugin nativo:', error?.code, error?.message);
       if (error.message?.includes('cancel') || error.code === 'CANCELLED') {
         throw error;
       }
-      const msg = error.message || 'Error en Google Sign-In nativo. Verifica SHA-1, serverClientId y google-services.json.';
-      toast({
-        title: 'Error de Google',
-        description: msg,
-        variant: 'destructive',
-        duration: 10000,
-      });
+      const msg = error.message || 'Error en Google Sign-In nativo. Asegúrate de: (1) @capacitor-firebase/authentication sincronizado, (2) google-services.json con package_name=lava.yapido.click, (3) SHA-1 de Play App Signing en Firebase Console.';
+      handleAuthError({ code: 'auth/native-signin-failed', message: msg });
       throw new Error(msg);
     }
   }
 
-  console.log('[auth-v8] Web real - usando signInWithPopup');
+  // 2. Navegador web (PC/Movil)
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   return signInWithPopup(authInstance, provider).catch((error) => {
     handleAuthError(error);
     throw error;
+  });
+}
+
+async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
+  return new Promise((resolve, reject) => {
+    const bridge = (window as any).AndroidAuthBridge;
+    if (!bridge?.requestNativeGoogleAuth) {
+      reject(new Error('AndroidAuthBridge no disponible'));
+      return;
+    }
+    if (typeof window !== 'undefined' && typeof console !== 'undefined') {
+      console.info('[auth] AndroidAuthBridge detectada, disparando selector nativo');
+    }
+    let settled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const consumePendingToken = (source: string) => {
+      try {
+        let pendingIdToken: string | null = null;
+        if ((window as any).__pendingIdToken) {
+          pendingIdToken = (window as any).__pendingIdToken as string;
+          (window as any).__pendingIdToken = null;
+        } else {
+          try {
+            pendingIdToken = localStorage.getItem('__twa_pending_id_token');
+            if (pendingIdToken) localStorage.removeItem('__twa_pending_id_token');
+          } catch (_) {}
+        }
+        if (!pendingIdToken) return false;
+        console.log('[auth] Token pendiente consumido desde', source);
+        const credential = GoogleAuthProvider.credential(pendingIdToken);
+        signInWithCredential(authInstance, credential)
+          .then((uc) => { settled = true; cleanup(); resolve(uc); })
+          .catch((err) => { settled = true; cleanup(); handleAuthError(err); reject(err); });
+        return true;
+      } catch (_) {
+        return false;
+      }
+    };
+
+    if (consumePendingToken('fallback-inmediato')) return;
+
+    const cleanup = () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('android-native-auth-result', handler as EventListener);
+        window.removeEventListener('yapido-pending-auth', pendingHandler as EventListener);
+        if (timeoutId) clearTimeout(timeoutId);
+      }
+    };
+    
+    // Handler principal: evento android-native-auth-result
+    const handler = (event: Event) => {
+      if (settled) return;
+      const detail = (event as CustomEvent).detail || {};
+      console.log('[auth] android-native-auth-result recibido:', detail);
+      if (!detail.success) {
+        settled = true;
+        cleanup();
+        reject(new Error(detail.error || 'android_auth_failed'));
+        return;
+      }
+      const idToken: string | undefined = detail.id_token;
+      if (!idToken) {
+        settled = true;
+        cleanup();
+        reject(new Error('android_auth_no_id_token'));
+        return;
+      }
+      const credential = GoogleAuthProvider.credential(idToken);
+      console.log('[auth] Llamando signInWithCredential con id_token');
+      signInWithCredential(authInstance, credential)
+        .then((userCredential) => {
+          console.log('[auth] signInWithCredential ÉXITO:', userCredential.user?.uid);
+          settled = true;
+          cleanup();
+          resolve(userCredential);
+        })
+        .catch((err) => {
+          console.error('[auth] signInWithCredential FALLÓ:', err?.code, err?.message);
+          settled = true;
+          cleanup();
+          handleAuthError(err);
+          reject(err);
+        });
+    };
+    
+    // FALLBACK 2: Listener para yapido-pending-auth (evento defensivo inyectado por MainActivity)
+    const pendingHandler = (event: Event) => {
+      if (settled) return;
+      const detail = (event as CustomEvent).detail || {};
+      const idToken = detail.id_token;
+      console.log('[auth] yapido-pending-auth recibido:', !!idToken);
+      if (!idToken) return;
+      settled = true;
+      cleanup();
+      const credential = GoogleAuthProvider.credential(idToken);
+      signInWithCredential(authInstance, credential)
+        .then(resolve)
+        .catch(reject);
+    };
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('android-native-auth-result', handler as EventListener);
+      window.addEventListener('yapido-pending-auth', pendingHandler as EventListener);
+      console.log('[auth] Listeners registrados: android-native-auth-result, yapido-pending-auth');
+    }
+    
+    // FALLBACK 3: Polling cada 500ms por window.__pendingIdToken O localStorage (último recurso)
+    let pollCount = 0;
+    const maxPolls = 60; // 30 segundos
+    const pollInterval = setInterval(() => {
+      if (settled) {
+        clearInterval(pollInterval);
+        return;
+      }
+      pollCount++;
+      if (typeof window !== 'undefined') {
+        if ((window as any).__pendingIdToken) {
+          console.log('[auth] Polling detectó __pendingIdToken');
+          clearInterval(pollInterval);
+          consumePendingToken('polling');
+          return;
+        }
+        try {
+          const fromLs = localStorage.getItem('__twa_pending_id_token');
+          if (fromLs) {
+            console.log('[auth] Polling detectó token en localStorage');
+            clearInterval(pollInterval);
+            (window as any).__pendingIdToken = fromLs;
+            localStorage.removeItem('__twa_pending_id_token');
+            consumePendingToken('polling-localstorage');
+            return;
+          }
+        } catch (_) {}
+      }
+      if (pollCount >= maxPolls) {
+        console.warn('[auth] Polling timeout sin token');
+        clearInterval(pollInterval);
+      }
+    }, 500);
+    
+    timeoutId = setTimeout(() => {
+      if (!settled) {
+        console.warn('[auth] Timeout general esperando autenticación nativa');
+        clearInterval(pollInterval);
+        settled = true;
+        cleanup();
+        reject(new Error('android_auth_timeout'));
+      }
+    }, 5 * 60 * 1000);
+    
+    try {
+      console.log('[auth] Llamando bridge.requestNativeGoogleAuth()');
+      bridge.requestNativeGoogleAuth();
+    } catch (e) {
+      console.error('[auth] Error llamando requestNativeGoogleAuth:', e);
+      clearInterval(pollInterval);
+      cleanup();
+      reject(e as Error);
+    }
   });
 }
 
@@ -101,5 +263,13 @@ export async function initiateGoogleSignInWithOneTap(
   });
 }
 
-export const __ANDROID_BRIDGE_BUILD_MARKER__ = 'native-v16-' + Date.now();
-export const __FORCE_CHUNK_INVALIDATION_V7__ = 'native-v16-' + Date.now();
+export const __ANDROID_BRIDGE_BUILD_MARKER__ = (() => {
+  const buildId = 'twa-real-v13-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+  if (typeof window !== 'undefined') {
+    (window as any).__diagnostics__ = (window as any).__diagnostics__ || {};
+    (window as any).__diagnostics__.androidBridge = true;
+    (window as any).__diagnostics__.buildId = buildId;
+    (window as any).__diagnostics__.timestamp = new Date().toISOString();
+  }
+  return buildId;
+})();
