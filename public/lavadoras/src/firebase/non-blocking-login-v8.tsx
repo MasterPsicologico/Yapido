@@ -66,8 +66,13 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
       return initiateGoogleSignInViaAndroidBridge(authInstance);
     }
     // Plugin oficial @capacitor-firebase/authentication
+    // useCredentialManager: false => usa GoogleSignInClient clasico (mas robusto)
+    // en vez de CredentialManager (que lanza "No credentials available" cuando
+    // el OAuth Web Client no esta vinculado al Android Client en Cloud Console).
     try {
-      const result = await FirebaseAuthentication.signInWithGoogle();
+      const result = await FirebaseAuthentication.signInWithGoogle({
+        useCredentialManager: false,
+      });
       if (!result.credential?.idToken) {
         throw new Error('No se recibió el token de autenticación nativa. Verifica que el plugin @capacitor-firebase/authentication esté sincronizado (npx cap sync) y que google-services.json tenga el package_name correcto.');
       }
