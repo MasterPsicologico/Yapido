@@ -100,70 +100,27 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
 }
 
 async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
-  return new Promise((resolve, reject) => {
-    const bridge = (window as any).AndroidAuthBridge;
-    if (!bridge?.requestNativeGoogleAuth) {
-      reject(new Error('AndroidAuthBridge no disponible'));
-      return;
-    }
-    if (typeof window !== 'undefined' && typeof console !== 'undefined') {
-      console.info('[auth] AndroidAuthBridge detectada, disparando selector nativo');
-    }
-    let settled = false;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    const cleanup = () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('android-native-auth-result', handler as EventListener);
-        if (timeoutId) clearTimeout(timeoutId);
-      }
-    };
-    const handler = (event: Event) => {
-      if (settled) return;
-      const detail = (event as CustomEvent).detail || {};
-      if (!detail.success) {
-        settled = true;
-        cleanup();
-        reject(new Error(detail.error || 'android_auth_failed'));
-        return;
-      }
-      const idToken: string | undefined = detail.id_token;
-      if (!idToken) {
-        settled = true;
-        cleanup();
-        reject(new Error('android_auth_no_id_token'));
-        return;
-      }
-      const credential = GoogleAuthProvider.credential(idToken);
-      signInWithCredential(authInstance, credential)
-        .then((userCredential) => {
-          settled = true;
-          cleanup();
-          resolve(userCredential);
-        })
-        .catch((err) => {
-          settled = true;
-          cleanup();
-          handleAuthError(err);
-          reject(err);
-        });
-    };
-    if (typeof window !== 'undefined') {
-      window.addEventListener('android-native-auth-result', handler as EventListener);
-    }
-    timeoutId = setTimeout(() => {
-      if (!settled) {
-        settled = true;
-        cleanup();
-        reject(new Error('android_auth_timeout'));
-      }
-    }, 5 * 60 * 1000);
-    try {
-      bridge.requestNativeGoogleAuth();
-    } catch (e) {
-      cleanup();
-      reject(e as Error);
-    }
-  });
+  const bridge = (window as any).AndroidAuthBridge;
+  if (!bridge?.requestNativeGoogleAuth) {
+    throw new Error('AndroidAuthBridge no disponible');
+  }
+  console.info('[auth] AndroidAuthBridge detectada, disparando Chrome Custom Tab con Google OAuth');
+
+  const result = await bridge.requestNativeGoogleAuth();
+  console.log('[auth] Resultado del bridge:', result);
+
+  if (!result?.success) {
+    throw new Error(result?.error || 'android_auth_failed');
+  }
+
+  const idToken = result.id_token;
+  if (!idToken) {
+    throw new Error('android_auth_no_id_token');
+  }
+
+  console.log('[auth] Llamando signInWithCredential con id_token');
+  const credential = GoogleAuthProvider.credential(idToken);
+  return signInWithCredential(authInstance, credential);
 }
 
 export async function initiateGoogleSignInWithOneTap(
