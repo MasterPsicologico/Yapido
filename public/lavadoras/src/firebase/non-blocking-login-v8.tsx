@@ -59,13 +59,15 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 }
 
 export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
-  // 1. APK de lavadoras (Capacitor nativo con plugin FirebaseAuthentication)
+  // 1. APK de lavadoras (Capacitor nativo con custom bridge)
   if (Capacitor.isNativePlatform()) {
-    // Intentar bridge nativo custom (AndroidAuthBridge) si existe
-    if (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
+    // Verificar bridge custom via Capacitor.Plugins (solo en nativo)
+    // @ts-ignore - Plugins solo existe en runtime nativo
+    const { AndroidAuthBridge } = Capacitor.Plugins;
+    if (AndroidAuthBridge?.requestNativeGoogleAuth) {
       return initiateGoogleSignInViaAndroidBridge(authInstance);
     }
-    // Plugin oficial @capacitor-firebase/authentication
+    // Fallback: Plugin oficial @capacitor-firebase/authentication
     // useCredentialManager: false => usa GoogleSignInClient clasico (mas robusto)
     // en vez de CredentialManager (que lanza "No credentials available" cuando
     // el OAuth Web Client no esta vinculado al Android Client en Cloud Console).
@@ -98,14 +100,16 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
 }
 
 async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
-  const bridge = (window as any).AndroidAuthBridge;
-  if (!bridge?.requestNativeGoogleAuth) {
-    throw new Error('AndroidAuthBridge no disponible');
+  // Acceder al plugin via Capacitor.Plugins (no window)
+  // @ts-ignore - Plugins solo existe en runtime nativo
+  const { AndroidAuthBridge } = Capacitor.Plugins;
+  if (!AndroidAuthBridge?.requestNativeGoogleAuth) {
+    throw new Error('AndroidAuthBridge no disponible en Capacitor.Plugins');
   }
-  console.info('[auth] AndroidAuthBridge detectada, disparando Chrome Custom Tab con Google OAuth');
+  console.info('[auth] AndroidAuthBridge detectada en Capacitor.Plugins, disparando Chrome Custom Tab con Google OAuth');
 
   // The plugin call returns a Promise that resolves with { success: true, id_token: "..." }
-  const result = await bridge.requestNativeGoogleAuth();
+  const result = await AndroidAuthBridge.requestNativeGoogleAuth();
   console.log('[auth] Resultado del bridge:', result);
 
   if (!result?.success) {

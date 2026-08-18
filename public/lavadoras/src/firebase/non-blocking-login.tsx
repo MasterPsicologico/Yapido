@@ -63,8 +63,10 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
   // En plataforma nativa (Android/iOS Capacitor), SOLO flujo nativo via plugin.
   // NO fallback a redirect/popup — rompen en WebView por sessionStorage.
   if (Capacitor.isNativePlatform()) {
-    // 1. Intentar bridge nativo custom (AndroidAuthBridge)
-    if (typeof window !== 'undefined' && (window as any).AndroidAuthBridge?.requestNativeGoogleAuth) {
+    // 1. Intentar bridge nativo custom (AndroidAuthBridge) via Capacitor.Plugins
+    // @ts-ignore - Plugins solo existe en runtime nativo
+    const { AndroidAuthBridge } = Capacitor.Plugins;
+    if (AndroidAuthBridge?.requestNativeGoogleAuth) {
       return initiateGoogleSignInViaAndroidBridge(authInstance);
     }
     // 2. Plugin oficial @capacitor-firebase/authentication
@@ -100,13 +102,15 @@ export async function initiateGoogleSignIn(authInstance: Auth): Promise<import('
 }
 
 async function initiateGoogleSignInViaAndroidBridge(authInstance: Auth): Promise<import('firebase/auth').UserCredential> {
-  const bridge = (window as any).AndroidAuthBridge;
-  if (!bridge?.requestNativeGoogleAuth) {
-    throw new Error('AndroidAuthBridge no disponible');
+  // Acceder al plugin via Capacitor.Plugins (no window)
+  // @ts-ignore - Plugins solo existe en runtime nativo
+  const { AndroidAuthBridge } = Capacitor.Plugins;
+  if (!AndroidAuthBridge?.requestNativeGoogleAuth) {
+    throw new Error('AndroidAuthBridge no disponible en Capacitor.Plugins');
   }
-  console.info('[auth] AndroidAuthBridge detectada, disparando Chrome Custom Tab con Google OAuth');
+  console.info('[auth] AndroidAuthBridge detectada en Capacitor.Plugins, disparando Chrome Custom Tab con Google OAuth');
 
-  const result = await bridge.requestNativeGoogleAuth();
+  const result = await AndroidAuthBridge.requestNativeGoogleAuth();
   console.log('[auth] Resultado del bridge:', result);
 
   if (!result?.success) {
