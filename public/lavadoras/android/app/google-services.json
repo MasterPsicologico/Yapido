@@ -1,10 +1,38 @@
-﻿{
-  "project_info": {
+﻿{  "project_info": {
     "project_number": "294212274372",
     "project_id": "studio-4796645076-6f375",
     "storage_bucket": "studio-4796645076-6f375.firebasestorage.app"
   },
   "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:294212274372:android:58514b627da5eeb7152191",
+        "android_client_info": {
+          "package_name": "click.yapido.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "294212274372-0o91m9db3733jv5dkhnugfsmi75ho6ui.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkcF4SKkIrIk43qioUfys9bsyRD2MVKW0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "294212274372-0o91m9db3733jv5dkhnugfsmi75ho6ui.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
     {
       "client_info": {
         "mobilesdk_app_id": "1:294212274372:android:92ee375c3465f27f152191",
@@ -27,6 +55,67 @@
           "android_info": {
             "package_name": "lava.yapido.click",
             "certificate_hash": "b621befbdbf85aeaa028b7503fc62f6d18698acf"
+          }
+        },
+        {
+          "client_id": "294212274372-ta1e5vf2hc1ois0klfn78sas0vhgilh1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "lava.yapido.click",
+            "certificate_hash": "b4311f258d1a38ce119a7cd80e9ee77010e34c55"
+          }
+        },
+        {
+          "client_id": "294212274372-0o91m9db3733jv5dkhnugfsmi75ho6ui.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkcF4SKkIrIk43qioUfys9bsyRD2MVKW0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "294212274372-0o91m9db3733jv5dkhnugfsmi75ho6ui.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:294212274372:android:cae05a729abbc425152191",
+        "android_client_info": {
+          "package_name": "lavadorasx.yapido.click"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "294212274372-d580td8e5k473ek8vq1rkek44sfmkrdn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "lavadorasx.yapido.click",
+            "certificate_hash": "f0c6049281d56a8fe4d7a0bcf587cc42876e8d92"
+          }
+        },
+        {
+          "client_id": "294212274372-i247nacmojingg0qekaujfr6loh0n2jn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "lavadorasx.yapido.click",
+            "certificate_hash": "7960674bdda09ae340e7580786151f9eddc18dce"
+          }
+        },
+        {
+          "client_id": "294212274372-m50s3hg2mraug38p0qdjgcu42bht3adn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "lavadorasx.yapido.click",
+            "certificate_hash": "0cc473a2d296a6148f73ee98b66b83a38d4d7e8b"
           }
         },
         {
