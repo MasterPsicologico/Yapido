@@ -1,0 +1,1 @@
+export { authService, useAuth, handleEmailLinkCompletion, type AuthUser, type AuthState, type AuthMethod } from './AuthService';

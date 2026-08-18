@@ -32,6 +32,16 @@ export function initializeFirebase() {
   return getSdks(getApp());
 }
 
+// Export auth instance getter for use in other modules
+let _authInstance: ReturnType<typeof getAuth> | null = null;
+export function getAuthInstance() {
+  if (!_authInstance) {
+    const sdks = initializeFirebase();
+    _authInstance = sdks.auth;
+  }
+  return _authInstance;
+}
+
 export function getSdks(firebaseApp: FirebaseApp) {
   return {
     firebaseApp,
