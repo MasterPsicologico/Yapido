@@ -32,12 +32,32 @@ export function initializeFirebase() {
   return getSdks(getApp());
 }
 
+// Export auth instance getter for use in other modules
+let _authInstance: ReturnType<typeof getAuth> | null = null;
+export function getAuthInstance() {
+  if (!_authInstance) {
+    const sdks = initializeFirebase();
+    _authInstance = sdks.auth;
+  }
+  return _authInstance;
+}
+
 export function getSdks(firebaseApp: FirebaseApp) {
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
     firestore: getFirestore(firebaseApp)
   };
+}
+
+// Export firestore instance getter for use in other modules
+let _firestoreInstance: ReturnType<typeof getFirestore> | null = null;
+export function getFirestoreInstance() {
+  if (!_firestoreInstance) {
+    const sdks = initializeFirebase();
+    _firestoreInstance = sdks.firestore;
+  }
+  return _firestoreInstance;
 }
 
 export * from './provider';

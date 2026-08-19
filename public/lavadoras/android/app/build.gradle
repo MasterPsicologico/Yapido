@@ -1,18 +1,18 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "lavadorasx.yapido.click"
+    namespace = "lavadoras.yapido.click"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "lavadorasx.yapido.click"
+        applicationId "lavadoras.yapido.click"
         minSdkVersion 24
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 70
-        versionName "1.4.12"
+        versionCode 73
+        versionName "1.4.15"
         resourceConfigurations += ['es', 'en']
         manifestPlaceholders = [
             'appName': 'Lavadoras',
-            'appUrl': 'https://lavadorasx.yapido.click'
+            'appUrl': 'https://lavadoras.yapido.click'
         ]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -23,19 +23,12 @@ android {
     signingConfigs {
         release {
             String ksPath = rootProject.file('../secrets/lav-release.jks').absolutePath
-            String ksPass = System.getenv('LAV_KEYSTORE_PASS') ?: ''
+            String ksPass = System.getenv('LAV_KEYSTORE_PASS') ?: '4bob9A0vp0QWUDKa4m36fVr4UwCrh4dW'
             String aliasName = System.getenv('LAV_KEY_ALIAS') ?: 'lavadoras-upload'
-            String keyPass = System.getenv('LAV_KEY_PASS') ?: ksPass
+            String keyPass = System.getenv('LAV_KEY_PASS') ?: 'Y6f2s9nlqIPQfTIRxnuFpCBdseoqLkoh'
             String ksEnvPath = System.getenv('LAV_KEYSTORE_PATH')
             if (ksEnvPath != null && !ksEnvPath.isEmpty()) {
                 ksPath = ksEnvPath
-            }
-            String lavaJksPath = 'C:\\Users\\dcard\\OneDrive\\Escritorio\\lava.jks'
-            if (new File(lavaJksPath).exists()) {
-                ksPath = lavaJksPath
-                ksPass = 'Oscar161991'
-                aliasName = 'key0'
-                keyPass = 'Oscar161991'
             }
             storeFile file(ksPath)
             storePassword ksPass

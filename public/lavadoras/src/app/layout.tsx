@@ -30,12 +30,6 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased bg-background text-foreground min-h-screen">
-        <Script
-          src="https://accounts.google.com/gsi/client"
-          strategy="afterInteractive"
-          async
-          defer
-        />
         <FirebaseClientProvider>
           <CartProvider>
             {/* El ChatNotificationListener gestiona audio y toasts */}
