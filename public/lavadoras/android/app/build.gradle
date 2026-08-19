@@ -7,8 +7,8 @@ android {
         applicationId "lava.yapido.click"
         minSdkVersion 24
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 60
-        versionName "1.4.19"
+        versionCode 62
+        versionName "1.4.22"
         resourceConfigurations += ['es', 'en']
         manifestPlaceholders = [
             'appName': 'Lavadoras',
