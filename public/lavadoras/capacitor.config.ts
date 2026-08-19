@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'lavadorasx.yapido.click',
+  appId: 'lavadoras.yapido.click',
   appName: 'Lavadoras',
   webDir: 'out',
   android: {
@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
     webContentsDebuggingEnabled: false,
   },
   server: {
-    url: 'https://lavadorasx.yapido.click',
+    url: 'https://lavadoras.yapido.click',
     cleartext: false,
   },
   plugins: {

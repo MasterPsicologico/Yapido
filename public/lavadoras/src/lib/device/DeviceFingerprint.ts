@@ -3,13 +3,18 @@
 /**
  * DeviceFingerprint Service
  * Genera una huella digital única del dispositivo que persiste tras desinstalar/reinstalar
+ * Usa Firebase Installation ID (FID) como identificador principal que persiste tras reinstalación
  * Combina múltiples señales del dispositivo para crear un identificador único
  */
+
+import { getInstallations, getId } from 'firebase/installations';
+import { getAuthInstance } from '@/firebase';
 
 export interface DeviceFingerprint {
   fingerprint: string;
   components: {
     androidId?: string;
+    firebaseInstallationId?: string;
     installTime?: number;
     appVersion?: string;
     screenResolution?: string;
@@ -32,7 +37,7 @@ class DeviceFingerprintService {
   private static instance: DeviceFingerprintService;
   private fingerprint: DeviceFingerprint | null = null;
   private readonly STORAGE_KEY = 'lavadoras_device_fingerprint';
-  private readonly VERSION = '2.0.0';
+  private readonly VERSION = '3.0.0';
 
   static getInstance(): DeviceFingerprintService {
     if (!DeviceFingerprintService.instance) {
@@ -43,6 +48,7 @@ class DeviceFingerprintService {
 
   /**
    * Obtiene la huella digital del dispositivo (cacheada)
+   * Prioridad: Firebase Installation ID (FID) > Android ID > Generated UUID
    */
   async getFingerprint(): Promise<DeviceFingerprint> {
     if (this.fingerprint) {
@@ -73,21 +79,34 @@ class DeviceFingerprintService {
 
   /**
    * Genera huella digital combinando múltiples señales
+   * Prioridad: Firebase Installation ID > Android ID > Generated UUID
    */
   private async generateFingerprint(): Promise<DeviceFingerprint> {
     const components: DeviceFingerprint['components'] = {};
 
-    // 1. Android ID (persistente tras reinstalación en Android 8.0+)
+    // 1. Firebase Installation ID (FID) - PERSISTE TRAS REINSTALACIÓN
+    try {
+      const installations = getInstallations();
+      const fid = await getId(installations);
+      components.firebaseInstallationId = fid;
+    } catch {
+      // Ignore if Firebase Installations not available
+    }
+
+    // 2. Android ID (persistente tras reinstalación en Android 8.0+)
     if (typeof window !== 'undefined' && 'Android' in window) {
       try {
         // En Capacitor/Android, podemos acceder al Android ID
-        components.androidId = await this.getAndroidId();
+        const androidId = await this.getAndroidId();
+        if (androidId) {
+          components.androidId = androidId;
+        }
       } catch {
         // Ignore
       }
     }
 
-    // 2. Timestamp de instalación (persistente en localStorage)
+    // 3. Timestamp de instalación (persistente en localStorage)
     let installTime = localStorage.getItem('lavadoras_install_time');
     if (!installTime) {
       installTime = Date.now().toString();
@@ -112,7 +131,7 @@ class DeviceFingerprintService {
     // 7. Platform
     components.platform = navigator.platform || 'unknown';
 
-    // 7. User Agent
+    // 8. User Agent
     components.userAgent = navigator.userAgent || 'unknown';
 
     // 8. Hardware concurrency

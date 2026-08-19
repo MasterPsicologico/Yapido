@@ -197,6 +197,19 @@ class AuthService {
       const deviceFingerprintStr = deviceFp.fingerprint;
       console.log('[AuthService] Device fingerprint:', deviceFingerprintStr);
 
+      // 0. Check if user is already authenticated (not anonymous)
+      if (this.auth.currentUser && !this.auth.currentUser.isAnonymous) {
+        console.log('[AuthService] User already authenticated, restoring session');
+        this.currentUser = this.mapFirebaseUser(this.auth.currentUser);
+        this.currentState = 'authenticated';
+        this.callbacks?.onStateChange(this.currentState, this.currentUser);
+        
+        // Load local data and start listener
+        await this.loadLocalData();
+        this.startAuthListener();
+        return;
+      }
+
       // 1. Check for email link completion
       if (isSignInWithEmailLink(this.auth, window.location.href)) {
         const email = getStorageItem('auth_email_for_link') || 
@@ -211,12 +224,14 @@ class AuthService {
       const linkedPhone = await phoneAuth.getPhoneByDeviceFingerprint(deviceFingerprintStr);
       
       if (linkedPhone) {
-        // Device is linked to a phone - need phone verification
-        console.log('[AuthService] Device linked to phone:', linkedPhone);
+        // Device is linked to a phone - auto-restore account by sending SMS code
+        console.log('[AuthService] Device linked to phone, auto-restoring:', linkedPhone);
         this.currentState = 'phone_verification_needed';
         this.callbacks?.onStateChange(this.currentState, null);
         // Store linked phone for verification UI
         setStorageItem('linked_phone_for_verification', linkedPhone);
+        // Auto-send SMS code for instant auto-restore
+        await this.sendWhatsAppCode(linkedPhone);
       } else {
         // Auto-instant anonymous auth (INSTANT) - first time user
         await this.ensureAuthenticated();
@@ -557,6 +572,23 @@ class AuthService {
         this.formatPhoneNumber(phoneNumber),
         this.recaptchaVerifier
       );
+      
+      // Set up WebOTP API for auto-fill on Android
+      if ('OTPCredential' in window) {
+        try {
+          const otp = await (window as any).navigator.credentials.get({
+            otp: { transport: ['sms'] },
+            signal: AbortSignal.timeout(60000) // 60 second timeout
+          });
+          if (otp && (otp as any).code) {
+            // Auto-verify the code when it arrives
+            this.verifyWhatsAppCode((otp as any).code).catch(() => {});
+          }
+        } catch {
+          // WebOTP not supported or permission denied, continue normally
+        }
+      }
+      
       this.callbacks?.onLinkSent('whatsapp');
     } catch (error) {
       const msg = this.getErrorMessage(error);

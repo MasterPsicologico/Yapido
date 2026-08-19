@@ -41,7 +41,6 @@ export default function PublicProfilePage() {
   const userRef = useMemoFirebase(() => (!firestore || !id) ? null : doc(firestore, 'users', id), [firestore, id]);
   const { data: userProfile, isLoading } = useDoc(userRef);
 
-  // FETCH: Tienda vinculada si existe (Ej: Empresa de Alquiler de Lavadoras)
   const linkedStoreRef = useMemoFirebase(() => 
     (!firestore || !userProfile?.linkedStoreId) ? null : doc(firestore, 'stores', userProfile.linkedStoreId), 
     [firestore, userProfile?.linkedStoreId]
@@ -104,7 +103,7 @@ export default function PublicProfilePage() {
                 {isRepartidor ? "Repartidor Verificado" : `Nivel ${userProfile.role === 'admin' ? 'Elite' : 'Comunidad'}`}
               </Badge>
             </div>
-            <CardTitle className="text-5xl font-black italic tracking-tighter uppercase leading-none text-slate-900">
+            <CardTitle className="text-5xl font-black italic uppercase tracking-tighter leading-none text-slate-900">
               {userProfile.displayName || 'Usuario'}
             </CardTitle>
             <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em] mt-3 flex items-center justify-center gap-2">
@@ -113,7 +112,6 @@ export default function PublicProfilePage() {
           </CardHeader>
 
           <CardContent className="p-8 space-y-10">
-            {/* VINCULACIÓN A EMPRESA PRIVADA: IDENTIDAD DE FLOTA */}
             {isRepartidor && linkedStore && (
               <Link href={`/stores/${linkedStore.id}`}>
                 <Card className="border-none rounded-[36px] bg-slate-900 text-white p-8 shadow-2xl overflow-hidden relative group hover:scale-[1.02] transition-all">
