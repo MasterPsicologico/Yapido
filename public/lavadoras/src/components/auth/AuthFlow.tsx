@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Mail, Phone, User, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, Mail, Phone, User, X, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react';
 
 export function AuthFlow() {
+  const router = useRouter();
+  const pathname = usePathname();
   const {
     state,
     user,
@@ -26,7 +29,7 @@ export function AuthFlow() {
     clearError,
   } = useAuth();
 
-  const [step, setStep] = useState<'welcome' | 'anonymous' | 'upgrade' | 'email-link' | 'whatsapp-code' | 'success'>('welcome');
+  const [step, setStep] = useState<'welcome' | 'upgrade' | 'email-link' | 'whatsapp-code' | 'success'>('welcome');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
@@ -41,12 +44,31 @@ export function AuthFlow() {
     }
   }, []);
 
+  // Auto-redirect after successful auth (anonymous or permanent)
+  useEffect(() => {
+    if (state !== 'loading' && (isAnonymous || isAuthenticated) && pathname === '/auth') {
+      // Small delay to show success feedback
+      const timer = setTimeout(() => {
+        router.push('/');
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [state, isAnonymous, isAuthenticated, pathname, router]);
+
+  // Check for email link completion on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'signIn' && params.get('email')) {
+      handleEmailLinkComplete(params.get('email')!);
+    }
+  }, []);
+
   const handleAnonymousLogin = async () => {
     setLoading(true);
     setLocalError(null);
     try {
       await signInAnonymously();
-      setStep('anonymous');
+      // Auto-redirect handled by useEffect above
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : 'Error al entrar como invitado');
     } finally {
@@ -172,34 +194,6 @@ export function AuthFlow() {
           </Card>
         );
 
-      case 'anonymous':
-        return (
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-              <CardTitle>¡Ya estás dentro!</CardTitle>
-              <p className="text-muted-foreground text-sm">
-                Modo invitado activo - Tu actividad se guarda temporalmente
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="p-3 bg-muted rounded-lg text-center text-sm">
-                <User className="w-4 h-4 mx-auto mb-1 text-muted-foreground" />
-                <p>Usuario temporal: <span className="font-mono">{user?.uid?.slice(0, 8)}...</span></p>
-              </div>
-              <Button className="w-full" onClick={handleUpgrade}>
-                <User className="mr-2 h-4 w-4" />
-                Hacer mi cuenta permanente
-              </Button>
-              <Button variant="outline" className="w-full" onClick={handleSignOut}>
-                Salir
-              </Button>
-            </CardContent>
-          </Card>
-        );
-
       case 'upgrade':
         return (
           <Card className="w-full max-w-md">
@@ -221,9 +215,9 @@ export function AuthFlow() {
                 <Phone className="mr-2 h-4 w-4" />
                 WhatsApp (SMS)
               </Button>
-              <Button variant="ghost" className="w-full" onClick={() => setStep('anonymous')}>
+              <Button variant="ghost" className="w-full" onClick={() => setStep('welcome')}>
                 <X className="mr-2 h-4 w-4" />
-                Seguir como invitado
+                Volver al inicio
               </Button>
             </CardContent>
           </Card>

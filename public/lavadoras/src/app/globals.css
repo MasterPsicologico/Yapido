@@ -1050,6 +1050,21 @@ small { font-size: 0.875rem; }
   }
 }
 
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s var(--ease-luxe) forwards;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    SCROLL-DRIVEN ANIMATIONS (Interop 2026)
    ═══════════════════════════════════════════════════════════════════════ */

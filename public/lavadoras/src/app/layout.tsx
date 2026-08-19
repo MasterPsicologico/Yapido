@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { ChatNotificationListener } from '@/components/chat/ChatNotificationListener';
 import { VisualNotificationListener } from '@/components/notification/VisualNotificationListener';
 import { NativeNotificationListener } from '@/components/notification/NativeNotificationListener';
+import { GuestBanner } from '@/components/auth/GuestBanner';
 import { CartProvider } from '@/context/CartContext';
 import { GlobalOrderChatModal } from '@/components/chat/GlobalOrderChatModal';
 import { AutoRatingTrigger } from '@/components/rating/AutoRatingTrigger';
@@ -59,6 +60,7 @@ export default function RootLayout({
             <AutoRatingTrigger />
             <AndroidBackButtonHandler />
             {children}
+            <GuestBanner />
             <Toaster />
           </CartProvider>
         </FirebaseClientProvider>
