@@ -18,7 +18,7 @@ interface SolicitationHeaderProps {
  */
 export function SolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: SolicitationHeaderProps) {
   return (
-    <div className="min-h-[140px] bg-[#050505] flex items-center justify-between px-4 shrink-0 relative overflow-hidden border-b border-yellow-500/20 z-10 py-6">
+    <div className="min-h-[140px] bg-[#050505] flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 relative overflow-hidden border-b border-yellow-500/20 z-10 py-6">
       {/* CAPA ATMOSFÉRICA DORADA */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 animate-pulse [animation-duration:6s]" />
       
@@ -33,7 +33,7 @@ export function SolicitationHeader({ isAdmin, onOpenAdminSettings, onClose }: So
       </div>
 
       {/* Título Dorado Corregido: FORMULARIO DE SOLICITUD */}
-      <div className="flex-1 px-1 text-center relative z-10 flex flex-col items-center">
+      <div className="flex-1 px-1 sm:px-2 text-center relative z-10 flex flex-col items-center">
         <DialogHeader className="p-0 space-y-0 text-center items-center w-full">
           <DialogTitle className={cn(
             "font-black italic uppercase tracking-tighter leading-tight text-sm sm:text-lg pr-4",
