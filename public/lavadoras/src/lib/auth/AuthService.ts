@@ -143,6 +143,19 @@ export interface AuthServiceCallbacks {
   onSyncComplete: (synced: boolean) => void;
 }
 
+// ==========================================
+// REMEMBERED ACCOUNT TYPE
+// ==========================================
+interface RememberedAccount {
+  uid: string;
+  displayName?: string | null;
+  phoneNumber?: string | null;
+  email?: string | null;
+  photoURL?: string | null;
+  isAnonymous: boolean;
+  rememberedAt: string;
+}
+
 class AuthService {
   private auth: Auth;
   private callbacks: AuthServiceCallbacks | null = null;
@@ -842,16 +855,6 @@ return this.currentUser;
   // ==========================================
   // REMEMBERED ACCOUNT (for quick re-login after logout)
   // ==========================================
-
-  interface RememberedAccount {
-    uid: string;
-    displayName?: string | null;
-    phoneNumber?: string | null;
-    email?: string | null;
-    photoURL?: string | null;
-    isAnonymous: boolean;
-    rememberedAt: string;
-  }
 
   private saveRememberedAccount(): void {
     if (!this.currentUser) return;
