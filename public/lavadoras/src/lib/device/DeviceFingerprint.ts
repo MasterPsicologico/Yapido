@@ -78,8 +78,9 @@ class DeviceFingerprintService {
   }
 
   /**
-   * Genera huella digital combinando múltiples señales
-   * Prioridad: Firebase Installation ID > Android ID > Generated UUID
+   * Genera huella digital ESTABLE usando SOLO identificadores persistentes
+   * Prioridad: Firebase Installation ID (FID) > Android ID > UUID generado
+   * NO incluye datos que cambian (installTime, appVersion, screenResolution, etc.)
    */
   private async generateFingerprint(): Promise<DeviceFingerprint> {
     const components: DeviceFingerprint['components'] = {};
@@ -96,7 +97,6 @@ class DeviceFingerprintService {
     // 2. Android ID (persistente tras reinstalación en Android 8.0+)
     if (typeof window !== 'undefined' && 'Android' in window) {
       try {
-        // En Capacitor/Android, podemos acceder al Android ID
         const androidId = await this.getAndroidId();
         if (androidId) {
           components.androidId = androidId;
@@ -106,51 +106,11 @@ class DeviceFingerprintService {
       }
     }
 
-    // 3. Timestamp de instalación (persistente en localStorage)
-    let installTime = localStorage.getItem('lavadoras_install_time');
-    if (!installTime) {
-      installTime = Date.now().toString();
-      localStorage.setItem('lavadoras_install_time', installTime);
-    }
-    components.installTime = parseInt(installTime);
+    // NO incluimos: installTime, appVersion, screenResolution, timezone, language, 
+    // platform, userAgent, hardwareConcurrency, deviceMemory, colorDepth, pixelRatio, touchSupport
+    // YA QUE ESTOS CAMBIAN Y ROMPEN LA PERSISTENCIA TRAS REINSTALACIÓN
 
-    // 3. App version
-    components.appVersion = this.getAppVersion();
-
-    // 4. Screen resolution
-    if (typeof screen !== 'undefined') {
-      components.screenResolution = `${screen.width}x${screen.height}`;
-    }
-
-    // 5. Timezone
-    components.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-    // 6. Language
-    components.language = navigator.language || 'unknown';
-
-    // 7. Platform
-    components.platform = navigator.platform || 'unknown';
-
-    // 8. User Agent
-    components.userAgent = navigator.userAgent || 'unknown';
-
-    // 8. Hardware concurrency
-    components.hardwareConcurrency = navigator.hardwareConcurrency || 0;
-
-    // 9. Device memory
-    components.deviceMemory = (navigator as any).deviceMemory || 0;
-
-    // 10. Color depth
-    components.colorDepth = screen.colorDepth || 0;
-
-    // 11. Pixel ratio
-    components.pixelRatio = window.devicePixelRatio || 1;
-
-    // 12. Touch support
-    components.touchSupport = 'ontouchstart' in window;
-    components.maxTouchPoints = navigator.maxTouchPoints || 0;
-
-    // Crear fingerprint hash
+    // Crear fingerprint hash SOLO con identificadores persistentes
     const fingerprintString = this.componentsToString(components);
     const fingerprint = await this.hashString(fingerprintString);
 

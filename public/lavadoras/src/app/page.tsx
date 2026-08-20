@@ -8,6 +8,8 @@ import { HomeCategorySection } from '@/components/home/HomeCategorySection';
 import { HomePromoBanner } from '@/components/home/HomePromoBanner';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
+import { useAuth } from '@/lib/auth/AuthService';
+import { AccountSelectionScreen } from '@/components/auth/AccountSelectionScreen';
 import { collection, query, doc, orderBy, where } from 'firebase/firestore';
 import { Cpu, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +22,7 @@ import { cn } from '@/lib/utils';
  */
 export default function Home() {
   const { user, isUserLoading } = useUser();
+  const { state: authState } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -30,6 +33,17 @@ export default function Home() {
       }
     }
   }, [user, isUserLoading, router]);
+
+  // Handle account_selection state - show account selection screen
+  if (authState === 'account_selection') {
+    return (
+      <div className="flex flex-col w-full h-[100dvh] bg-[#050505] overflow-hidden">
+        <main className="flex-1 w-full overflow-x-hidden relative">
+          <AccountSelectionScreen />
+        </main>
+      </div>
+    );
+  }
 
   // Si no está autenticado, NO renderizamos Navbar ni permitimos scroll
   return (

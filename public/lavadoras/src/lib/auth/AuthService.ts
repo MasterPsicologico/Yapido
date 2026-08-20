@@ -25,7 +25,7 @@ import { deviceFingerprint } from '@/lib/device/DeviceFingerprint';
 import { phoneAuth } from './PhoneAuthService';
 
 export type AuthMethod = 'anonymous' | 'email-link' | 'whatsapp' | 'recovery-code';
-export type AuthState = 'loading' | 'anonymous' | 'authenticated' | 'phone_verification_needed' | 'error';
+export type AuthState = 'loading' | 'anonymous' | 'authenticated' | 'phone_verification_needed' | 'account_selection' | 'error';
 
 // AuthUser type - plain interface with only the properties we need
 export interface AuthUser {
@@ -63,6 +63,7 @@ const STORAGE_KEYS = {
   USER_PROFILE: 'lavadoras_user_profile',
   LAST_SYNC: 'lavadoras_last_sync',
   PENDING_SYNC: 'lavadoras_pending_sync',
+  REMEMBERED_ACCOUNT: 'lavadoras_remembered_account',
 } as const;
 
 // Safe localStorage access (SSR-safe)
@@ -220,11 +221,23 @@ class AuthService {
         }
       }
 
-      // 2. Check if device is already linked to a phone number
+      // 2. Check for remembered account (from previous logout)
+      const rememberedAccount = this.getRememberedAccount();
+      
+      // 3. Check if device is already linked to a phone number
       const linkedPhone = await phoneAuth.getPhoneByDeviceFingerprint(deviceFingerprintStr);
       
-      if (linkedPhone) {
-        // Device is linked to a phone - auto-restore account by sending SMS code
+      if (linkedPhone && rememberedAccount) {
+        // Device is linked to a phone AND there's a remembered account
+        // Show account selection screen instead of auto-sending SMS
+        console.log('[AuthService] Remembered account found with device-phone link:', rememberedAccount.displayName);
+        this.currentState = 'account_selection';
+        this.callbacks?.onStateChange(this.currentState, null);
+        // Store linked phone for quick restore
+        setStorageItem('linked_phone_for_verification', linkedPhone);
+      } else if (linkedPhone) {
+        // Device is linked to a phone but no remembered account (new install or cleared data)
+        // Auto-restore account by sending SMS code
         console.log('[AuthService] Device linked to phone, auto-restoring:', linkedPhone);
         this.currentState = 'phone_verification_needed';
         this.callbacks?.onStateChange(this.currentState, null);
@@ -260,6 +273,8 @@ class AuthService {
     if (this.auth.currentUser) {
       this.currentUser = this.mapFirebaseUser(this.auth.currentUser);
       this.currentState = this.auth.currentUser.isAnonymous ? 'anonymous' : 'authenticated';
+      // Sync local data to cloud for both anonymous and authenticated users
+      await this.syncToCloud();
       return;
     }
 
@@ -270,6 +285,8 @@ class AuthService {
     
     // Initialize local data for new user
     await this.initializeLocalData(result.user.uid);
+    // Sync local data to cloud for anonymous user
+    await this.syncToCloud();
   }
 
   private async initializeLocalData(uid: string): Promise<void> {
@@ -475,11 +492,11 @@ class AuthService {
   }
 
   // ==========================================
-  // SYNC TO CLOUD (when user upgrades)
+  // SYNC TO CLOUD (when user upgrades OR for anonymous users)
   // ==========================================
 
   async syncToCloud(): Promise<boolean> {
-    if (!this.currentUser || this.currentUser.isAnonymous) {
+    if (!this.currentUser) {
       return false;
     }
 
@@ -487,8 +504,23 @@ class AuthService {
       const localData = this.getLocalData();
       if (!localData) return false;
 
-      // Here you would sync to Firestore
-      // For now, mark as synced locally
+      const db = getFirestoreInstance();
+      const userRef = doc(db, 'users', this.currentUser.uid);
+      
+      // Prepare data to sync
+      const syncData = {
+        ...localData,
+        uid: this.currentUser.uid,
+        isAnonymous: this.currentUser.isAnonymous,
+        deviceFingerprint: await deviceFingerprint.getFingerprintString(),
+        lastSync: serverTimestamp(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Sync to Firestore
+      await setDoc(doc(db, 'users', this.currentUser.uid), syncData, { merge: true });
+      
+      // Mark as synced locally
       await this.saveLocalData({ synced: true });
       setStorageItem(STORAGE_KEYS.LAST_SYNC, new Date().toISOString());
       
@@ -638,6 +670,10 @@ class AuthService {
 
     const result = await linkWithCredential(anonymousUser, credential);
     this.confirmationResult = null;
+    
+    // Link device fingerprint to phone number in Firestore
+    const deviceFingerprintStr = await deviceFingerprint.getFingerprintString();
+    await phoneAuth.linkDeviceToPhone(deviceFingerprintStr, formattedPhone);
     
     await this.syncToCloud();
     
@@ -803,15 +839,87 @@ return this.currentUser;
     this.callbacks.onStateChange(this.currentState, this.currentUser);
   }
 
+  // ==========================================
+  // REMEMBERED ACCOUNT (for quick re-login after logout)
+  // ==========================================
+
+  interface RememberedAccount {
+    uid: string;
+    displayName?: string | null;
+    phoneNumber?: string | null;
+    email?: string | null;
+    photoURL?: string | null;
+    isAnonymous: boolean;
+    rememberedAt: string;
+  }
+
+  private saveRememberedAccount(): void {
+    if (!this.currentUser) return;
+    const remembered: RememberedAccount = {
+      uid: this.currentUser.uid,
+      displayName: this.currentUser.displayName,
+      phoneNumber: this.currentUser.phoneNumber,
+      email: this.currentUser.email,
+      photoURL: this.currentUser.photoURL,
+      isAnonymous: this.currentUser.isAnonymous,
+      rememberedAt: new Date().toISOString(),
+    };
+    setStorageItem(STORAGE_KEYS.REMEMBERED_ACCOUNT, JSON.stringify(remembered));
+  }
+
+  getRememberedAccount(): RememberedAccount | null {
+    try {
+      const data = getStorageItem(STORAGE_KEYS.REMEMBERED_ACCOUNT);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  clearRememberedAccount(): void {
+    removeStorageItem(STORAGE_KEYS.REMEMBERED_ACCOUNT);
+  }
+
   async signOut(): Promise<void> {
-    // Clear local data but keep recovery code for account recovery
-    removeStorageItem(STORAGE_KEYS.GUEST_DATA);
-    removeStorageItem(STORAGE_KEYS.USER_PROFILE);
-    removeStorageItem(STORAGE_KEYS.PENDING_SYNC);
+    // Save current user as "remembered account" for quick re-login
+    this.saveRememberedAccount();
+    
+    // Keep local data (GUEST_DATA, USER_PROFILE) for seamless restore
+    // Keep recovery code
+    // Keep device-phone link in Firestore (don't unlink)
+    
     await this.auth.signOut();
     this.currentUser = null;
     this.currentState = 'loading';
     this.callbacks?.onStateChange(this.currentState, null);
+  }
+
+  /**
+   * Quick restore: re-authenticate using device fingerprint + phone link
+   * This triggers auto-SMS which WebOTP will auto-fill on Android
+   */
+  async quickRestoreAccount(): Promise<AuthUser | null> {
+    try {
+      // Check if device is linked to a phone
+      const deviceFp = await deviceFingerprint.getFingerprint();
+      const linkedPhone = await phoneAuth.getPhoneByDeviceFingerprint(deviceFp.fingerprint);
+      
+      if (!linkedPhone) {
+        return null;
+      }
+
+      // Set state to phone_verification_needed and auto-send SMS
+      this.currentState = 'phone_verification_needed';
+      this.callbacks?.onStateChange(this.currentState, null);
+      setStorageItem('linked_phone_for_verification', linkedPhone);
+      await this.sendWhatsAppCode(linkedPhone);
+      
+      // Return null - the auth state will change to 'authenticated' when SMS is verified
+      return null;
+    } catch (error) {
+      console.error('[AuthService] Quick restore error:', error);
+      return null;
+    }
   }
 
   destroy() {
@@ -936,6 +1044,19 @@ export function useAuth() {
     return authService.signOut();
   }, []);
 
+  const getRememberedAccount = useCallback(() => {
+    return authService.getRememberedAccount();
+  }, []);
+
+  const clearRememberedAccount = useCallback(() => {
+    return authService.clearRememberedAccount();
+  }, []);
+
+  const quickRestoreAccount = useCallback(async () => {
+    setError(null);
+    return authService.quickRestoreAccount();
+  }, []);
+
   const clearError = useCallback(() => setError(null), []);
 
   return {
@@ -963,6 +1084,9 @@ export function useAuth() {
     addNotification,
     getLocalData,
     signOut,
+    getRememberedAccount,
+    clearRememberedAccount,
+    quickRestoreAccount,
     clearError,
   };
 }

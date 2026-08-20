@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Phone, Mail, MapPin, User, CheckCircle, Save, Shield, Save as SaveIcon, Edit, Copy, Key, Phone as PhoneIcon, Mail as MailIcon, MapPin as MapPinIcon, Shield as ShieldIcon } from 'lucide-react';
+import { Loader2, Phone, Mail, MapPin, User, CheckCircle, Save, Shield, Save as SaveIcon, Edit, Copy, Key, MapPin as MapPinIcon, Shield as ShieldIcon } from 'lucide-react';
 
 export function ProfileScreen() {
-  const { user, isAnonymous, isAuthenticated, updateProfile, saveLocalData, loadLocalData, getLocalData, sendWhatsAppCode, sendEmailLink, upgradeWithPhone, upgradeWithEmail, getRecoveryCode } = useAuth();
+  const { user, isAnonymous, isAuthenticated, updateProfile, saveLocalData, loadLocalData, getLocalData, getRecoveryCode } = useAuth();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -117,38 +117,7 @@ export function ProfileScreen() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground">Mi Perfil</h1>
-          <p className="text-muted-foreground text-sm">
-            Gestiona tu información personal y preferencias
-          </p>
-        </div>
-
-        {/* Status Banner */}
-        <div className={`mb-6 p-4 rounded-xl ${isAnonymous ? 'bg-amber-50 border border-amber-200' : 'bg-green-50 border border-green-200'}`}>
-          <div className="flex items-center gap-3">
-            <span className={`w-8 h-8 rounded-full flex items-center justify-center ${isAnonymous ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}>
-              {isAnonymous ? (
-                <Shield className="w-5 h-5" />
-              ) : (
-                <CheckCircle className="w-5 h-5" />
-              )}
-            </span>
-            <div>
-              <p className="font-medium text-sm">
-                {isAnonymous ? 'Modo Invitado' : 'Cuenta Permanente'}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {isAnonymous 
-                  ? 'Vincula tu teléfono para recuperar tu cuenta en cualquier dispositivo' 
-                  : 'Tu cuenta está vinculada y sincronizada en la nube'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Recovery Code */}
+        
         <Card className="mb-6 border-amber-200 bg-amber-50">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -296,31 +265,6 @@ export function ProfileScreen() {
                 </Button>
               )}
             </div>
-
-            {/* Upgrade Section - Only for anonymous users */}
-            {isAnonymous && (
-              <div className="mt-6 pt-6 border-t space-y-3">
-                <div className="text-center text-sm text-muted-foreground">
-                  ¿Quieres recuperar tu cuenta en cualquier dispositivo?
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => alert('Función WhatsApp: se enviaría código SMS al teléfono ingresado')}
-                >
-                  <PhoneIcon className="mr-2 h-4 w-4" />
-                  Vincular WhatsApp (SMS)
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="w-full"
-                  onClick={() => alert('Función Email: se enviaría enlace mágico al correo ingresado')}
-                >
-                  <MailIcon className="mr-2 h-4 w-4" />
-                  Vincular Email (Enlace Mágico)
-                </Button>
-              </div>
-            )}
 
             {/* Recovery Code */}
             <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">

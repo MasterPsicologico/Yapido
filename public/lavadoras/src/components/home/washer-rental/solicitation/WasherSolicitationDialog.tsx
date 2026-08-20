@@ -11,7 +11,7 @@ import { useUser, useAuth, useFirestore } from '@/firebase';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
-import { LogIn, Sparkles, ShieldCheck, ChevronDown, ChevronUp, Settings2, Check, Circle } from 'lucide-react';
+import { LogIn, Sparkles, ShieldCheck, ChevronDown, ChevronUp, Settings2, Check, Circle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Importación de Componentes Atómicos
@@ -56,7 +56,7 @@ export function WasherSolicitationDialog({
 }: WasherSolicitationDialogProps) {
   const router = useRouter();
   const { user } = useUser();
-  const auth = useAuth();
+  const { state: authState, verifyWhatsAppCode } = useAuth();
   const firestore = useFirestore();
   
   const [tempName, setTempName] = useState("");
@@ -81,6 +81,19 @@ export function WasherSolicitationDialog({
   const [isServiceDataCollapsed, setIsServiceDataCollapsed] = useState(false);
   const [saveStatuses, setSaveStatuses] = useState<Record<string, 'idle' | 'typing' | 'saved'>>({});
   const prevIsCompleteRef = useRef(false);
+
+  // Phone verification state
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [linkedPhone, setLinkedPhone] = useState<string | null>(null);
+
+  // Load linked phone from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const phone = localStorage.getItem('linked_phone_for_verification');
+      if (phone) setLinkedPhone(phone);
+    }
+  }, []);
 
   // CEREBRO GEOGRÁFICO: Carga la configuración de la ciudad y zona seleccionada
   const { cityConfig, activeCities, activeCitiesLoading, activeZones, hasMultipleZones, resolvedPricing } = useCityConfig({
@@ -331,6 +344,22 @@ export function WasherSolicitationDialog({
     }
   };
 
+  const handleVerifyCode = async () => {
+    if (verificationCode.length !== 6 || isVerifying) return;
+    
+    setIsVerifying(true);
+    try {
+      await verifyWhatsAppCode(verificationCode);
+      // Auth state will change to 'authenticated' via AuthService callback
+      // The dialog will close and user will be logged in
+    } catch (error) {
+      toast({ title: "Código inválido", description: "Intenta de nuevo.", variant: "destructive" });
+      setVerificationCode("");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(v) => { if (orderStatus === 'idle') onOpenChange(v); }}>
       <DialogContent className="max-w-none w-screen h-[100dvh] top-0 left-0 translate-x-0 translate-y-0 rounded-none border-none shadow-none bg-slate-900/30 backdrop-blur-[50px] p-0 overflow-hidden flex flex-col z-[600] animate-in slide-in-from-bottom duration-500 [&>button:last-child]:hidden">
@@ -344,7 +373,95 @@ export function WasherSolicitationDialog({
         <div className="flex-1 overflow-y-auto no-scrollbar bg-white rounded-t-[40px] mt-2 border-t-4 border-slate-950">
           <div className="max-w-md mx-auto py-8 px-6 space-y-10 pb-32">
             
-            {!user && orderStatus === 'idle' ? (
+            {authState === 'phone_verification_needed' && linkedPhone ? (
+              // Phone Verification Screen - Auto-restore via device fingerprint
+              <div className="relative py-14 px-6 flex flex-col items-center text-center space-y-10 animate-in fade-in zoom-in duration-700 bg-gradient-to-b from-slate-900 to-black rounded-[40px] border border-slate-800 shadow-2xl overflow-hidden -mx-2 mt-4">
+                {/* Holographic background flares */}
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                  <div className="absolute -top-[30%] -left-[20%] w-[80%] h-[60%] bg-primary/20 blur-[100px] rounded-full mix-blend-screen animate-pulse" />
+                  <div className="absolute top-[40%] -right-[20%] w-[60%] h-[60%] bg-rose-500/10 blur-[80px] rounded-full mix-blend-screen" />
+                </div>
+
+                {/* Central Identity Artifact */}
+                <div className="relative z-10">
+                  <div className="absolute inset-0 bg-primary/30 rounded-[32px] blur-2xl animate-ping [animation-duration:3s]" />
+                  <div className="relative w-28 h-28 bg-slate-950/80 backdrop-blur-xl rounded-[32px] flex items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10 group duration-500 hover:scale-105">
+                    <div className="absolute inset-2 border border-white/5 rounded-[24px]" />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-primary/20 to-transparent -skew-x-12 animate-shimmer rounded-[32px]" />
+                    <ShieldCheck className="w-14 h-14 text-white drop-shadow-lg group-hover:scale-110 transition-transform duration-500" />
+                    <Sparkles className="absolute -top-4 -right-4 w-10 h-10 text-yellow-400 animate-pulse drop-shadow-[0_0_15px_rgba(250,204,21,1)]" />
+                  </div>
+                </div>
+                
+                <div className="space-y-4 relative z-10">
+                  <h3 className="text-2xl sm:text-4xl font-black italic uppercase tracking-tighter text-white leading-none drop-shadow-xl">
+                    RESTAURANDO<br/><span className="text-primary">SESION</span>
+                  </h3>
+                  <p className="text-slate-400 font-bold text-xs sm:text-sm uppercase tracking-[0.2em] max-w-[280px] mx-auto leading-relaxed">
+                    Enviamos un código SMS a <span className="text-primary font-mono">{linkedPhone.replace(/(\+\d{2})(\d{3})(\d{3})(\d{4})/, '$1 $2 $3 $4')}</span>
+                  </p>
+                  <p className="text-slate-500 text-xs sm:text-sm max-w-[280px] mx-auto">
+                    En Android se completará automáticamente. Si no, ingrésalo manualmente.
+                  </p>
+                </div>
+                
+                {/* Code Input */}
+                <div className="w-full relative z-10 group mt-4">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && verificationCode.length === 6) {
+                        handleVerifyCode();
+                      }
+                    }}
+                    placeholder="Código de 6 dígitos"
+                    className="w-full h-16 rounded-[16px] bg-slate-900/50 border-2 border-slate-700 text-center text-2xl sm:text-3xl font-mono tracking-widest text-white placeholder-slate-500 focus:border-primary focus:outline-none transition-colors"
+                    disabled={isVerifying}
+                    autoFocus
+                  />
+                  {verificationCode.length === 6 && !isVerifying && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-400">
+                      <ShieldCheck className="w-6 h-6" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Verify Button */}
+                <div className="w-full relative z-10 group mt-4">
+                  <div className="absolute inset-0 bg-primary/40 blur-xl rounded-[32px] transition-all duration-500 group-hover:bg-primary/60 group-hover:blur-2xl" />
+                  <Button 
+                    onClick={handleVerifyCode}
+                    disabled={isVerifying || verificationCode.length !== 6}
+                    className="relative w-full h-16 rounded-[32px] bg-white text-slate-950 font-black text-sm sm:text-lg gap-4 shadow-2xl active:scale-95 transition-all overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-slate-300/50 to-transparent skew-x-[-30deg] group-hover:animate-[shimmer_1.5s_infinite]" />
+                    {isVerifying ? (
+                      <>
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                        <span className="tracking-wide">VERIFICANDO...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-primary group-hover:scale-110 transition-transform duration-300" />
+                        <span className="tracking-wide">VERIFICAR CÓDIGO</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="flex flex-col items-center gap-4 relative z-10">
+                  <div className="flex items-center gap-2 text-slate-300 bg-white/5 px-4 py-2 rounded-full border border-white/10 backdrop-blur-md">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em]">Conexión Encriptada & Segura</span>
+                  </div>
+                </div>
+              </div>
+            ) : !user && orderStatus === 'idle' ? (
               <div className="relative py-14 px-6 flex flex-col items-center text-center space-y-10 animate-in fade-in zoom-in duration-700 bg-gradient-to-b from-slate-900 to-black rounded-[40px] border border-slate-800 shadow-2xl overflow-hidden -mx-2 mt-4">
                 {/* Holographic background flares */}
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
