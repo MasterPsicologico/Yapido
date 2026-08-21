@@ -5,7 +5,8 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { User, Loader2, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUser, useAuth } from '@/firebase';
+import { useUser } from '@/firebase';
+import { useAuth } from '@/lib/auth/AuthService';
 import { useProfile } from '@/firebase/auth/use-profile';
 
 // Submódulos Atómicos
