@@ -14,7 +14,7 @@ interface ZoneSelectorProps {
   saveStatus?: 'idle' | 'typing' | 'saved';
 }
 
-export function ZoneSelector({ zones, cityConfig, selectedZoneId, onZoneChange, error }: ZoneSelectorProps) {
+export const ZoneSelector = React.memo(function ZoneSelector({ zones, cityConfig, selectedZoneId, onZoneChange, error }: ZoneSelectorProps) {
   if (zones.length <= 1) return null;
 
   const selectedZone = zones.find(z => z.id === selectedZoneId) || null;
@@ -58,11 +58,11 @@ export function ZoneSelector({ zones, cityConfig, selectedZoneId, onZoneChange, 
       </div>
       {selectedZone && (
         <div className="flex items-center gap-2 ml-4 animate-in fade-in duration-300">
-          <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest">
+          <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest truncate max-w-[200px]">
             Mín. {pricing.minHours}h • Desde ${pricing.rateAuto.toLocaleString()}/h
           </span>
         </div>
       )}
     </div>
   );
-}
+});

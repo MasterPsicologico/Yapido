@@ -1,11 +1,10 @@
 "use client";
 
-import * as React from 'react';
+import React from 'react';
 import { Zap, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { SaveIndicator } from './SaveIndicator';
 
 interface PhoneFieldProps {
   value: string;
@@ -15,7 +14,7 @@ interface PhoneFieldProps {
   hasError?: boolean;
 }
 
-export const PhoneField = React.forwardRef<HTMLDivElement, PhoneFieldProps>(
+export const PhoneField = React.memo(React.forwardRef<HTMLDivElement, PhoneFieldProps>(
   ({ value, onChange, onBlur, saveStatus, hasError }, ref) => {
     return (
       <div ref={ref} className={cn("space-y-2 group transition-all duration-300", hasError && "animate-shake-strong")}>
@@ -51,12 +50,10 @@ export const PhoneField = React.forwardRef<HTMLDivElement, PhoneFieldProps>(
             )}
             placeholder="Número de contacto..." 
           />
-
-          <SaveIndicator status={saveStatus} className="right-4" />
         </div>
       </div>
     );
   }
-);
+));
 
 PhoneField.displayName = "PhoneField";

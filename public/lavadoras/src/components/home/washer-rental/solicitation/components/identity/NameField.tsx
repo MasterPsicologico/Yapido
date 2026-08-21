@@ -1,11 +1,10 @@
 "use client";
 
-import * as React from 'react';
+import React from 'react';
 import { User as UserIcon, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { SaveIndicator } from './SaveIndicator';
 
 interface NameFieldProps {
   value: string;
@@ -15,7 +14,7 @@ interface NameFieldProps {
   hasError?: boolean;
 }
 
-export const NameField = React.forwardRef<HTMLDivElement, NameFieldProps>(
+export const NameField = React.memo(React.forwardRef<HTMLDivElement, NameFieldProps>(
   ({ value, onChange, onBlur, saveStatus, hasError }, ref) => {
     return (
       <div ref={ref} className={cn("space-y-2 group transition-all duration-300", hasError && "animate-shake-strong")}>
@@ -51,12 +50,10 @@ export const NameField = React.forwardRef<HTMLDivElement, NameFieldProps>(
             )}
             placeholder="Tu identidad maestra..." 
           />
-
-          <SaveIndicator status={saveStatus} className="right-4" />
         </div>
       </div>
     );
   }
-);
+));
 
 NameField.displayName = "NameField";

@@ -24,7 +24,7 @@ interface CitySelectorProps {
   saveStatus?: 'idle' | 'typing' | 'saved';
 }
 
-export function CitySelector({ 
+export const CitySelector = React.memo(function CitySelector({ 
   selectedCityId, 
   onCityChange, 
   activeCities,
@@ -81,11 +81,11 @@ export function CitySelector({
       {selectedCity && (
         <div className="flex items-center gap-2 ml-4 mt-1 animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.2em]">
+          <span className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.2em] truncate max-w-[200px]">
             Mín. {selectedCity.minHours}h • Desde ${new Intl.NumberFormat('es-CO').format(selectedCity.rateAuto)}/h
           </span>
         </div>
       )}
     </div>
   );
-}
+});

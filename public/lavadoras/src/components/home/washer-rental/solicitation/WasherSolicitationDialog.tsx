@@ -134,7 +134,7 @@ export function WasherSolicitationDialog({
 
   const handleFieldChange = (field: string, value: string, setter: (v: string) => void) => {
     setter(value);
-    setSaveStatuses(prev => ({ ...prev, [field]: 'typing' }));
+    // No actualizar saveStatus en cada keystroke - solo en onBlur para evitar re-renders masivos
   };
 
   const handleFieldBlur = (field: string, value: string, dbKey: string) => {

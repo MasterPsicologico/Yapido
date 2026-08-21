@@ -1,11 +1,10 @@
 "use client";
 
-import * as React from 'react';
+import React from 'react';
 import { MapPin, Sparkles, Navigation } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { SaveIndicator } from './SaveIndicator';
 
 interface AddressFieldProps {
   address: string;
@@ -20,7 +19,7 @@ interface AddressFieldProps {
   errorAddress?: boolean;
 }
 
-export function AddressField({ 
+export const AddressField = React.memo(function AddressField({ 
   address, 
   onAddressChange, 
   onAddressBlur,
@@ -68,7 +67,6 @@ export function AddressField({
             )}
             placeholder="Ej: Barrio El Centro o Sector Norte" 
           />
-          <SaveIndicator status={sectorSaveStatus} className="right-4 sm:right-5" />
         </div>
       </div>
 
@@ -106,9 +104,8 @@ export function AddressField({
             )}
             placeholder="Calle 10 No 23-56" 
           />
-          <SaveIndicator status={addressSaveStatus} className="right-4 sm:right-5" />
         </div>
       </div>
     </div>
   );
-}
+});
