@@ -21,11 +21,12 @@
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
+    "@aparajita/capacitor-biometric-auth": "^10.0.0",
     "@capacitor-firebase/authentication": "^8.2.0",
     "@capacitor/android": "^8.3.1",
     "@capacitor/app": "^8.1.0",
-    "@aparajita/capacitor-biometric-auth": "^10.0.0",
     "@capacitor/core": "^8.3.1",
+    "@capacitor/device": "^8.0.3",
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/push-notifications": "^8.0.3",
     "@capacitor/splash-screen": "^8.0.2",

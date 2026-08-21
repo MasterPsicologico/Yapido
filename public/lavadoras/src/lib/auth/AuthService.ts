@@ -164,10 +164,22 @@ class AuthService {
   private currentState: AuthState = 'loading';
   private initPromise: Promise<void> | null = null;
   private recaptchaVerifier: RecaptchaVerifier | null = null;
+  private initialized: boolean = false;
 
   constructor() {
     this.auth = getAuthInstance();
-    this.initPromise = this.initializeAuth();
+    // Don't initialize in constructor - wait for client-side
+    if (typeof window !== 'undefined') {
+      this.initPromise = this.initializeAuth();
+    }
+  }
+
+  private ensureInitialized(): Promise<void> {
+    if (!this.initialized && typeof window !== 'undefined') {
+      this.initialized = true;
+      this.initPromise = this.initializeAuth();
+    }
+    return this.initPromise || Promise.resolve();
   }
 
   // Error handling helper - defined early so it's available to all methods
@@ -994,6 +1006,9 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Ensure auth is initialized on client side
+    authService.ensureInitialized();
+
     authService.setCallbacks({
       onStateChange: (newState, newUser) => {
         setState(newState);
