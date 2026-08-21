@@ -1,0 +1,83 @@
+Cargando credenciales de C:\Users\dcard\OneDrive\Escritorio\Uix\public\lavadoras\scripts\..\secrets\keystore.env
+
+1/4 next build
+
+> nextn@0.1.0 build
+> cross-env NODE_ENV=production next build
+
+   ▲ Next.js 15.5.9
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 25.0s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/22) ...
+   Generating static pages (5/22) 
+   Generating static pages (10/22) 
+   Generating static pages (16/22) 
+ ✓ Generating static pages (22/22)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                     4.9 kB         370 kB
+├ ○ /_not-found                             1 kB         103 kB
+├ ○ /about                                 200 B         301 kB
+├ ○ /admin/agents                         3.8 kB         304 kB
+├ ƒ /admin/agents/[id]                   9.86 kB         255 kB
+├ ○ /admin/business-plan                 3.76 kB         304 kB
+├ ○ /admin/fleet                         4.98 kB         306 kB
+├ ○ /admin/geography                     9.17 kB         310 kB
+├ ○ /admin/inventory                     2.52 kB         303 kB
+├ ○ /admin/orders                        10.8 kB         833 kB
+├ ƒ /admin/washer/[id]                   7.56 kB         311 kB
+├ ƒ /api/debug/fix-stores                  143 B         102 kB
+├ ƒ /api/offline-snapshot                  143 B         102 kB
+├ ƒ /api/payments/nequi                    143 B         102 kB
+├ ƒ /api/stores/purge-trash                143 B         102 kB
+├ ƒ /api/washer-rentals                    143 B         102 kB
+├ ƒ /categories/[id]                     8.46 kB         379 kB
+├ ○ /checkout                            6.69 kB         307 kB
+├ ○ /delivery/approved                   2.53 kB         303 kB
+├ ○ /delivery/dashboard                   158 kB         986 kB
+├ ○ /delivery/recycled                   3.21 kB         315 kB
+├ ○ /delivery/register                   1.15 kB         103 kB
+├ ○ /delivery/release-success            1.03 kB         302 kB
+├ ○ /oauth-callback                      1.05 kB         103 kB
+├ ○ /oauth2callback                      1.14 kB         103 kB
+├ ○ /p                                   2.35 kB         104 kB
+├ ƒ /products/[id]                       2.48 kB         303 kB
+├ ○ /profile                             3.85 kB         304 kB
+├ ƒ /profile/[id]                        3.04 kB         304 kB
+├ ƒ /stores/[id]                         12.6 kB         321 kB
+└ ƒ /washer/waiting-room/[id]            6.86 kB         307 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/1255-de0c1abd22c7cccd.js      45.2 kB
+  ├ chunks/4bd1b696-182b6b13bdad92e3.js  54.2 kB
+  └ other shared chunks (total)           2.3 kB
+
+
+ƒ Middleware                             33.3 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+2/4 cap sync android
+[warn] Cannot copy web assets from out to android\app\src\main\assets\public
+       Web asset directory specified by webDir does not exist. This is not an error because server.url is set in config.
+√ Creating capacitor.config.json in android\app\src\main\assets in 2.79ms
+√ copy android in 154.33ms
+√ Updating Android plugins in 41.41ms
+[info] Found 6 Capacitor plugins for android:
+       @capacitor-firebase/authentication@8.2.0
+       @capacitor/app@8.1.1
+       @aparajita/capacitor-biometric-auth@10.0.0
+       @capacitor/haptics@8.0.2
+       @capacitor/push-notifications@8.0.3
+       @capacitor/splash-screen@8.0.2
+√ update android in 358.95ms
+[info] Sync finished in 0.752s
+
+3/4 gradlew bundleRelease (aab)

@@ -1,0 +1,38 @@
+ âš  Compiled with warnings in 16.8s
+
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@opentelemetry/sdk-node/build/src/sdk.js
+./node_modules/@opentelemetry/sdk-node/build/src/index.js
+./node_modules/@genkit-ai/core/lib/tracing/node-telemetry-provider.js
+./node_modules/@genkit-ai/core/lib/node.js
+./node_modules/genkit/lib/common.js
+./node_modules/genkit/lib/index.mjs
+./src/ai/flows/order-orchestrator.ts
+
+Automatic initialization failed. Falling back to firebase config object. Error [FirebaseError]: Firebase: Need to provide options, when not being deployed to hosting via source. (app/no-options).
+    at K (C:\Users\dcard\OneDrive\Escritorio\Uix\public\lavadoras\.next\server\chunks\6247.js:1:162643)
+    at m (C:\Users\dcard\OneDrive\Escritorio\Uix\public\lavadoras\.next\server\chunks\7741.js:2:3451)
+    at <unknown> (C:\Users\dcard\OneDrive\Escritorio\Uix\public\lavadoras\.next\server\chunks\7741.js:1:825)
+    at h (C:\Users\dcard\OneDrive\Escritorio\Uix\public\lavadoras\.next\server\chunks\7741.js:1:812) {
+  code: 'app/no-options',
+  customData: {}
+}
+ 
+ERROR: JAVA_HOME is set to an invalid directory: C:\Program Files\Android\Android Studio\jbr\bin 
+ 
+Please set the JAVA_HOME variable in your environment to match the 
+location of your Java installation. 
+gradlew bundleRelease fallo.
+En C:\Users\dcard\OneDrive\Escritorio\Uix\public\lavadoras\scripts\build-release.ps1: 101 Car cter: 36
++ ...     if ($LASTEXITCODE -ne 0) { throw 'gradlew bundleRelease fallo.' }
++                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (gradlew bundleRelease fallo.:String) [], RuntimeException
+    + FullyQualifiedErrorId : gradlew bundleRelease fallo.
+ 

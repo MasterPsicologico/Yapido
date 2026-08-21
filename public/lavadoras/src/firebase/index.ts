@@ -50,6 +50,16 @@ export function getSdks(firebaseApp: FirebaseApp) {
   };
 }
 
+// Export firestore instance getter for use in other modules
+let _firestoreInstance: ReturnType<typeof getFirestore> | null = null;
+export function getFirestoreInstance() {
+  if (!_firestoreInstance) {
+    const sdks = initializeFirebase();
+    _firestoreInstance = sdks.firestore;
+  }
+  return _firestoreInstance;
+}
+
 export * from './provider';
 export * from './client-provider';
 export * from './firestore/use-collection';

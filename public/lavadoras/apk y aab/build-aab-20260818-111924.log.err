@@ -1,0 +1,16 @@
+ âš  Specified "rewrites" will not automatically work with "output: export". See more info here: https://nextjs.org/docs/messages/export-no-custom-routes
+ âš  Specified "headers" will not automatically work with "output: export". See more info here: https://nextjs.org/docs/messages/export-no-custom-routes
+ âš  Specified "rewrites" will not automatically work with "output: export". See more info here: https://nextjs.org/docs/messages/export-no-custom-routes
+ âš  Specified "headers" will not automatically work with "output: export". See more info here: https://nextjs.org/docs/messages/export-no-custom-routes
+
+> Build error occurred
+[Error: Page "/admin/agents/[id]/page" cannot use both "use client" and export function "generateStaticParams()".] {
+  type: 'Error'
+}
+next build fallÇü.
+En C:\Users\dcard\OneDrive\Escritorio\Uix\public\lavadoras\scripts\build-release.ps1: 59 Car cter: 28
++ if ($LASTEXITCODE -ne 0) { throw 'next build fallÇü.' }
++                            ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (next build fallÇü.:String) [], RuntimeException
+    + FullyQualifiedErrorId : next build fallÇü.
+ 

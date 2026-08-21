@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import {
   Auth,
   User,
@@ -20,9 +21,13 @@ import {
 } from 'firebase/auth';
 import { getAuthInstance } from '@/firebase';
 import { Capacitor } from '@capacitor/core';
+import { deviceFingerprint } from '@/lib/device/DeviceFingerprint';
+import { phoneAuth } from './PhoneAuthService';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestoreInstance } from '@/firebase';
 
 export type AuthMethod = 'anonymous' | 'email-link' | 'whatsapp' | 'recovery-code';
-export type AuthState = 'loading' | 'anonymous' | 'authenticated' | 'error';
+export type AuthState = 'loading' | 'anonymous' | 'authenticated' | 'phone_verification_needed' | 'account_selection' | 'error';
 
 // AuthUser type - plain interface with only the properties we need
 export interface AuthUser {
@@ -60,6 +65,7 @@ const STORAGE_KEYS = {
   USER_PROFILE: 'lavadoras_user_profile',
   LAST_SYNC: 'lavadoras_last_sync',
   PENDING_SYNC: 'lavadoras_pending_sync',
+  REMEMBERED_ACCOUNT: 'lavadoras_remembered_account',
 } as const;
 
 // Safe localStorage access (SSR-safe)
@@ -139,6 +145,17 @@ export interface AuthServiceCallbacks {
   onSyncComplete: (synced: boolean) => void;
 }
 
+// Remembered Account type
+interface RememberedAccount {
+  uid: string;
+  displayName?: string | null;
+  phoneNumber?: string | null;
+  email?: string | null;
+  photoURL?: string | null;
+  isAnonymous: boolean;
+  rememberedAt: string;
+}
+
 class AuthService {
   private auth: Auth;
   private callbacks: AuthServiceCallbacks | null = null;
@@ -153,15 +170,61 @@ class AuthService {
     this.initPromise = this.initializeAuth();
   }
 
+  // Error handling helper - defined early so it's available to all methods
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      const code = (error as AuthError).code;
+      switch (code) {
+        case 'auth/invalid-email':
+          return 'Correo electrónico inválido';
+        case 'auth/invalid-phone-number':
+          return 'Número de teléfono inválido. Formato: +573001234567';
+        case 'auth/invalid-verification-code':
+        case 'auth/invalid-verification-id':
+          return 'Código de verificación inválido o expirado';
+        case 'auth/code-expired':
+          return 'El código ha expirado. Solicita uno nuevo';
+        case 'auth/too-many-requests':
+          return 'Demasiados intentos. Espera unos minutos';
+        case 'auth/credential-already-in-use':
+          return 'Esta cuenta ya está vinculada a otro usuario';
+        case 'auth/operation-not-allowed':
+          return 'Método de autenticación no habilitado en Firebase Console';
+        case 'auth/unauthorized-domain':
+          return `Dominio no autorizado: ${window.location.hostname}. Agrégalo en Firebase Console`;
+        case 'auth/network-request-failed':
+          return 'Error de conexión. Verifica tu internet';
+        default:
+          return error.message || 'Error de autenticación';
+      }
+    }
+    return 'Error desconocido';
+  }
+
   // ==========================================
-  // INITIALIZATION - AUTO INSTANT AUTH
+  // INITIALIZATION - AUTO INSTANT AUTH WITH DEVICE FINGERPRINT
   // ==========================================
   private async initializeAuth(): Promise<void> {
     try {
-      // 1. Check for existing recovery code in localStorage
-      const existingRecoveryCode = getStorageItem(STORAGE_KEYS.RECOVERY_CODE);
-      
-      // 2. Check for email link completion
+      // 1. Get device fingerprint (persistent across reinstalls)
+      const deviceFp = await deviceFingerprint.getFingerprint();
+      const deviceFingerprintStr = deviceFp.fingerprint;
+      console.log('[AuthService] Device fingerprint:', deviceFingerprintStr);
+
+      // 0. Check if user is already authenticated (not anonymous)
+      if (this.auth.currentUser && !this.auth.currentUser.isAnonymous) {
+        console.log('[AuthService] User already authenticated, restoring session');
+        this.currentUser = this.mapFirebaseUser(this.auth.currentUser);
+        this.currentState = 'authenticated';
+        this.callbacks?.onStateChange(this.currentState, this.currentUser);
+        
+        // Load local data and start listener
+        await this.loadLocalData();
+        this.startAuthListener();
+        return;
+      }
+
+      // 1. Check for email link completion
       if (isSignInWithEmailLink(this.auth, window.location.href)) {
         const email = getStorageItem('auth_email_for_link') || 
           new URLSearchParams(window.location.search).get('email');
@@ -171,12 +234,39 @@ class AuthService {
         }
       }
 
-      // 3. Auto-instant anonymous auth (INSTANT)
-      await this.ensureAuthenticated();
+      // 2. Check for remembered account (from previous logout)
+      const rememberedAccount = this.getRememberedAccount();
       
-      // 4. Generate recovery code if doesn't exist
-      if (!existingRecoveryCode) {
-        await this.generateAndStoreRecoveryCode();
+      // 3. Check if device is already linked to a phone number
+      const linkedPhone = await phoneAuth.getPhoneByDeviceFingerprint(deviceFingerprintStr);
+      
+      if (linkedPhone && rememberedAccount) {
+        // Device is linked to a phone AND there's a remembered account
+        // Show account selection screen instead of auto-sending SMS
+        console.log('[AuthService] Remembered account found with device-phone link:', rememberedAccount.displayName);
+        this.currentState = 'account_selection';
+        this.callbacks?.onStateChange(this.currentState, null);
+        // Store linked phone for quick restore
+        setStorageItem('linked_phone_for_verification', linkedPhone);
+      } else if (linkedPhone) {
+        // Device is linked to a phone but no remembered account (new install or cleared data)
+        // Auto-restore account by sending SMS code
+        console.log('[AuthService] Device linked to phone, auto-restoring:', linkedPhone);
+        this.currentState = 'phone_verification_needed';
+        this.callbacks?.onStateChange(this.currentState, null);
+        // Store linked phone for verification UI
+        setStorageItem('linked_phone_for_verification', linkedPhone);
+        // Auto-send SMS code for instant auto-restore
+        await this.sendWhatsAppCode(linkedPhone);
+      } else {
+        // Auto-instant anonymous auth (INSTANT) - first time user
+        await this.ensureAuthenticated();
+        
+        // Generate recovery code if doesn't exist
+        const existingRecoveryCode = getStorageItem(STORAGE_KEYS.RECOVERY_CODE);
+        if (!existingRecoveryCode) {
+          await this.generateAndStoreRecoveryCode();
+        }
       }
 
       // 5. Load local data
@@ -196,6 +286,8 @@ class AuthService {
     if (this.auth.currentUser) {
       this.currentUser = this.mapFirebaseUser(this.auth.currentUser);
       this.currentState = this.auth.currentUser.isAnonymous ? 'anonymous' : 'authenticated';
+      // Sync local data to cloud for both anonymous and authenticated users
+      await this.syncToCloud();
       return;
     }
 
@@ -206,10 +298,13 @@ class AuthService {
     
     // Initialize local data for new user
     await this.initializeLocalData(result.user.uid);
+    // Sync local data to cloud for anonymous user
+    await this.syncToCloud();
   }
 
   private async initializeLocalData(uid: string): Promise<void> {
-    const recoveryCode = this.generateRecoveryCode();
+    // Get or create permanent recovery code from Firestore
+    const recoveryCode = await this.getOrCreatePermanentRecoveryCode(uid);
     
     const localData: LocalUserData = {
       uid,
@@ -231,13 +326,52 @@ class AuthService {
     this.callbacks?.onRecoveryCodeGenerated?.(recoveryCode);
   }
 
+  // ==========================================
+  // RECOVERY CODE - PERMANENT IN FIRESTORE
+  // ==========================================
+
+  private async getOrCreatePermanentRecoveryCode(uid: string): Promise<string> {
+    try {
+      const db = getFirestoreInstance();
+      const userRef = doc(db, 'users', uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists() && userDoc.data().recoveryCode) {
+        const existingCode = userDoc.data().recoveryCode;
+        console.log('[AuthService] Using existing permanent recovery code from Firestore');
+        return existingCode;
+      }
+    } catch (error) {
+      console.warn('[AuthService] Could not read recovery code from Firestore:', error);
+    }
+
+    // Generate new permanent recovery code
+    const newCode = this.generateRecoveryCode();
+    
+    // Save to Firestore permanently
+    try {
+      const db = getFirestoreInstance();
+      const userRef = doc(db, 'users', uid);
+      await setDoc(userRef, {
+        recoveryCode: newCode,
+        recoveryCodeCreatedAt: serverTimestamp(),
+      }, { merge: true });
+      console.log('[AuthService] Generated and saved new permanent recovery code to Firestore');
+    } catch (error) {
+      console.error('[AuthService] Failed to save recovery code to Firestore:', error);
+    }
+
+    return newCode;
+  }
+
   private generateRecoveryCode(): string {
     // Generate 6-digit code
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
   private async generateAndStoreRecoveryCode(): Promise<string> {
-    const code = this.generateRecoveryCode();
+    if (!this.currentUser) return '';
+    const code = await this.getOrCreatePermanentRecoveryCode(this.currentUser.uid);
     setStorageItem(STORAGE_KEYS.RECOVERY_CODE, code);
     this.callbacks?.onRecoveryCodeGenerated?.(code);
     return code;
@@ -411,11 +545,11 @@ class AuthService {
   }
 
   // ==========================================
-  // SYNC TO CLOUD (when user upgrades)
+  // SYNC TO CLOUD (when user upgrades OR for anonymous users)
   // ==========================================
 
   async syncToCloud(): Promise<boolean> {
-    if (!this.currentUser || this.currentUser.isAnonymous) {
+    if (!this.currentUser) {
       return false;
     }
 
@@ -423,8 +557,23 @@ class AuthService {
       const localData = this.getLocalData();
       if (!localData) return false;
 
-      // Here you would sync to Firestore
-      // For now, mark as synced locally
+      const db = getFirestoreInstance();
+      const userRef = doc(db, 'users', this.currentUser.uid);
+      
+      // Prepare data to sync
+      const syncData = {
+        ...localData,
+        uid: this.currentUser.uid,
+        isAnonymous: this.currentUser.isAnonymous,
+        deviceFingerprint: await deviceFingerprint.getFingerprintString(),
+        lastSync: serverTimestamp(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Sync to Firestore
+      await setDoc(doc(db, 'users', this.currentUser.uid), syncData, { merge: true });
+      
+      // Mark as synced locally
       await this.saveLocalData({ synced: true });
       setStorageItem(STORAGE_KEYS.LAST_SYNC, new Date().toISOString());
       
@@ -508,6 +657,23 @@ class AuthService {
         this.formatPhoneNumber(phoneNumber),
         this.recaptchaVerifier
       );
+      
+      // Set up WebOTP API for auto-fill on Android
+      if ('OTPCredential' in window) {
+        try {
+          const otp = await (window as any).navigator.credentials.get({
+            otp: { transport: ['sms'] },
+            signal: AbortSignal.timeout(60000) // 60 second timeout
+          });
+          if (otp && (otp as any).code) {
+            // Auto-verify the code when it arrives
+            this.verifyWhatsAppCode((otp as any).code).catch(() => {});
+          }
+        } catch {
+          // WebOTP not supported or permission denied, continue normally
+        }
+      }
+      
       this.callbacks?.onLinkSent('whatsapp');
     } catch (error) {
       const msg = this.getErrorMessage(error);
@@ -558,6 +724,10 @@ class AuthService {
     const result = await linkWithCredential(anonymousUser, credential);
     this.confirmationResult = null;
     
+    // Link device fingerprint to phone number in Firestore
+    const deviceFingerprintStr = await deviceFingerprint.getFingerprintString();
+    await phoneAuth.linkDeviceToPhone(deviceFingerprintStr, formattedPhone);
+    
     await this.syncToCloud();
     
     this.currentUser = this.mapFirebaseUser(result.user);
@@ -580,7 +750,7 @@ class AuthService {
   }
 
   // ==========================================
-  // ACCOUNT RECOVERY BY 6-DIGIT CODE
+  // ACCOUNT RECOVERY BY 6-DIGIT CODE (PERMANENT IN FIRESTORE)
   // ==========================================
 
   async recoverAccountByCode(code: string): Promise<AuthUser> {
@@ -588,26 +758,113 @@ class AuthService {
       throw new Error('Código de recuperación debe tener 6 dígitos');
     }
 
-    const storedCode = getStorageItem(STORAGE_KEYS.RECOVERY_CODE);
-    if (!storedCode || storedCode !== code) {
-      throw new Error('Código de recuperación inválido');
-    }
-
-    // Sign in anonymously first (to get a user session)
-    await this.ensureAuthenticated();
-    
-    // Load local data associated with this code
-    const localData = getStorageItem(STORAGE_KEYS.GUEST_DATA);
-    if (localData) {
-      const parsed = JSON.parse(localData);
-      if (parsed.recoveryCode === code) {
-        // Data matches - restore local data
-        this.currentUser = this.currentUser ? { ...this.currentUser, localData: parsed } : null;
-        return this.currentUser!;
+    try {
+      // Look up the code in Firestore
+      const db = getFirestoreInstance();
+      const usersRef = doc(db, 'users'); // We need to query by recoveryCode
+      
+      // For now, use the simple local check (will be improved with a proper query)
+      const storedCode = getStorageItem(STORAGE_KEYS.RECOVERY_CODE);
+      if (storedCode && storedCode === code) {
+        // Code matches locally - restore local data
+        const localData = getStorageItem(STORAGE_KEYS.GUEST_DATA);
+        if (localData) {
+          const parsed = JSON.parse(localData);
+          if (parsed.recoveryCode === code) {
+            // Data matches - restore local data
+            await this.ensureAuthenticated();
+            this.currentUser = this.currentUser ? { ...this.currentUser, localData: parsed } : null;
+            return this.currentUser!;
+          }
+        }
       }
-    }
 
-    throw new Error('No se encontraron datos para este código de recuperación');
+      // Try to find user by recovery code in Firestore
+      // This requires a Firestore query - for now fallback to local
+      throw new Error('Código de recuperación inválido');
+    } catch (error) {
+      if (error instanceof Error) throw error;
+      throw new Error('Error recuperando cuenta');
+    }
+  }
+
+  // ==========================================
+  // REMEMBERED ACCOUNT (for quick re-login after logout)
+  // ==========================================
+
+  private saveRememberedAccount(): void {
+    if (!this.currentUser) return;
+    const remembered: RememberedAccount = {
+      uid: this.currentUser.uid,
+      displayName: this.currentUser.displayName,
+      phoneNumber: this.currentUser.phoneNumber,
+      email: this.currentUser.email,
+      photoURL: this.currentUser.photoURL,
+      isAnonymous: this.currentUser.isAnonymous,
+      rememberedAt: new Date().toISOString(),
+    };
+    setStorageItem(STORAGE_KEYS.REMEMBERED_ACCOUNT, JSON.stringify(remembered));
+  }
+
+  getRememberedAccount(): RememberedAccount | null {
+    try {
+      const data = getStorageItem(STORAGE_KEYS.REMEMBERED_ACCOUNT);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  clearRememberedAccount(): void {
+    removeStorageItem(STORAGE_KEYS.REMEMBERED_ACCOUNT);
+  }
+
+  async signOut(): Promise<void> {
+    // Save current user as "remembered account" for quick re-login
+    this.saveRememberedAccount();
+    
+    // Keep local data (GUEST_DATA, USER_PROFILE) for seamless restore
+    // Keep recovery code
+    // Keep device-phone link in Firestore (don't unlink)
+    
+    await this.auth.signOut();
+    this.currentUser = null;
+    this.currentState = 'loading';
+    this.callbacks?.onStateChange(this.currentState, null);
+  }
+
+  /**
+   * Quick restore: re-authenticate using device fingerprint + phone link
+   * This triggers auto-SMS which WebOTP will auto-fill on Android
+   */
+  async quickRestoreAccount(): Promise<AuthUser | null> {
+    try {
+      // Check if device is linked to a phone
+      const deviceFp = await deviceFingerprint.getFingerprint();
+      const linkedPhone = await phoneAuth.getPhoneByDeviceFingerprint(deviceFp.fingerprint);
+      
+      if (!linkedPhone) {
+        return null;
+      }
+
+      // Set state to phone_verification_needed and auto-send SMS
+      this.currentState = 'phone_verification_needed';
+      this.callbacks?.onStateChange(this.currentState, null);
+      setStorageItem('linked_phone_for_verification', linkedPhone);
+      await this.sendWhatsAppCode(linkedPhone);
+      
+      // Return null - the auth state will change to 'authenticated' when SMS is verified
+      return null;
+    } catch (error) {
+      console.error('[AuthService] Quick restore error:', error);
+      return null;
+    }
+  }
+
+  destroy() {
+    this.unsubscribe?.();
+    this.unsubscribe = null;
+    this.callbacks = null;
   }
 
   // ==========================================
@@ -642,6 +899,10 @@ class AuthService {
     return this.currentUser;
   }
 
+  // ==========================================
+  // GOOGLE OAUTH - LEGACY (kept for compatibility)
+  // ==========================================
+
   private async initiateGoogleSignInViaAndroidBridge(): Promise<AuthUser> {
     // @ts-ignore - Capacitor.Plugins exists at runtime but not in types
     const { AndroidAuthBridge } = Capacitor.Plugins;
@@ -663,24 +924,59 @@ class AuthService {
     return this.currentUser;
   }
 
-// ==========================================
-// UTILITIES
-// ==========================================
+  // ==========================================
+  // PHONE AUTH - AUTO LOGIN WITH DEVICE FINGERPRINT
+  // ==========================================
+
+  /**
+   * Inicia sesión con teléfono (para auto-login con device fingerprint)
+   */
+  async signInWithPhone(phoneNumber: string): Promise<AuthUser> {
+    try {
+      // Send verification code
+      const result = await phoneAuth.sendCode(phoneNumber);
+      if (!result.success) {
+        throw new Error(result.error || 'Error enviando código');
+      }
+
+      // Wait for user to enter code (this would be handled by UI)
+      // For auto-login, we need to store the verificationId and wait for user input
+      // This is handled by the UI component
+      throw new Error('PHONE_VERIFICATION_REQUIRED');
+    } catch (error: any) {
+      if (error.message === 'PHONE_VERIFICATION_REQUIRED') {
+        throw error;
+      }
+      const msg = this.getErrorMessage(error);
+      throw new Error(msg);
+    }
+  }
+
+  /**
+   * Verifica código SMS y completa login con teléfono
+   */
+  async verifyPhoneCode(code: string): Promise<AuthUser> {
+    const result = await phoneAuth.verifyCode(code);
+    if (!result.success || !result.user) {
+      throw new Error(result.error || 'Código inválido');
+    }
+
+    await this.syncToCloud();
+    
+    this.currentUser = this.mapFirebaseUser(result.user!);
+    this.currentState = 'authenticated';
+    this.callbacks?.onStateChange(this.currentState, this.currentUser);
+    
+    return this.currentUser;
+  }
+
+  // ==========================================
+  // UTILITIES
+  // ==========================================
 
   setCallbacks(callbacks: AuthServiceCallbacks) {
     this.callbacks = callbacks;
     this.callbacks.onStateChange(this.currentState, this.currentUser);
-  }
-
-  async signOut(): Promise<void> {
-    // Clear local data but keep recovery code for account recovery
-    removeStorageItem(STORAGE_KEYS.GUEST_DATA);
-    removeStorageItem(STORAGE_KEYS.USER_PROFILE);
-    removeStorageItem(STORAGE_KEYS.PENDING_SYNC);
-    await this.auth.signOut();
-    this.currentUser = null;
-    this.currentState = 'loading';
-    this.callbacks?.onStateChange(this.currentState, null);
   }
 
   destroy() {
@@ -688,45 +984,9 @@ class AuthService {
     this.unsubscribe = null;
     this.callbacks = null;
   }
-
-  private getErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-      const code = (error as AuthError).code;
-      switch (code) {
-        case 'auth/invalid-email':
-          return 'Correo electrónico inválido';
-        case 'auth/invalid-phone-number':
-          return 'Número de teléfono inválido. Formato: +573001234567';
-        case 'auth/invalid-verification-code':
-        case 'auth/invalid-verification-id':
-          return 'Código de verificación inválido o expirado';
-        case 'auth/code-expired':
-          return 'El código ha expirado. Solicita uno nuevo';
-        case 'auth/too-many-requests':
-          return 'Demasiados intentos. Espera unos minutos';
-        case 'auth/credential-already-in-use':
-          return 'Esta cuenta ya está vinculada a otro usuario';
-        case 'auth/operation-not-allowed':
-          return 'Método de autenticación no habilitado en Firebase Console';
-        case 'auth/unauthorized-domain':
-          return `Dominio no autorizado: ${window.location.hostname}. Agrégalo en Firebase Console`;
-        case 'auth/network-request-failed':
-          return 'Error de conexión. Verifica tu internet';
-        default:
-          return error.message || 'Error de autenticación';
-      }
-    }
-    return 'Error desconocido';
-  }
 }
 
-// ==========================================
-// SINGLETON & HOOK
-// ==========================================
-
 export const authService = new AuthService();
-
-import { useState, useEffect, useCallback } from 'react';
 
 export function useAuth() {
   const [state, setState] = useState<AuthState>('loading');
@@ -840,14 +1100,27 @@ export function useAuth() {
     return authService.signOut();
   }, []);
 
+  const getRememberedAccount = useCallback(() => {
+    return authService.getRememberedAccount();
+  }, []);
+
+  const clearRememberedAccount = useCallback(() => {
+    return authService.clearRememberedAccount();
+  }, []);
+
+  const quickRestoreAccount = useCallback(async () => {
+    setError(null);
+    return authService.quickRestoreAccount();
+  }, []);
+
   const clearError = useCallback(() => setError(null), []);
 
   return {
     state,
-    user: authService.getCurrentUser(),
+    user,
     error,
-    isAnonymous: authService.isAnonymous(),
-    isAuthenticated: !authService.isAnonymous(),
+    isAnonymous: user?.isAnonymous ?? true,
+    isAuthenticated: !user?.isAnonymous,
     signInAnonymously,
     sendEmailLink,
     completeEmailLink,
@@ -867,11 +1140,14 @@ export function useAuth() {
     addNotification,
     getLocalData,
     signOut,
+    getRememberedAccount,
+    clearRememberedAccount,
+    quickRestoreAccount,
     clearError,
   };
 }
 
-// Email link completion handler
+// Email link completion handler (call on /auth/complete page)
 export async function handleEmailLinkCompletion(): Promise<{ success: boolean; error?: string }> {
   const authInstance = getAuthInstance();
   if (isSignInWithEmailLink(authInstance, window.location.href)) {

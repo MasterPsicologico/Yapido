@@ -1,0 +1,9 @@
+
+çdata-extraction-rules*ô
+êcloud-backup*=
+5exclude"pathlav-offline.db"domaindatabase	<*A
+9exclude"pathlavSecureKey.xml"domain
+sharedpref
+@*X
+Pdevice-transfer*=
+5include"pathlav-offline.db"domaindatabase<

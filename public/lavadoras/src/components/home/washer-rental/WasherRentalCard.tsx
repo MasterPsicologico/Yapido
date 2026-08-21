@@ -11,12 +11,13 @@ import {
 import {
   Zap, Moon, LayoutGrid, ChevronDown,
   Loader2, Lock, Unlock, Smartphone, Monitor, X, CheckCircle2,
-  Truck, Clock, Sparkles, UserCheck
+  Truck, Clock, Sparkles, UserCheck, Key, Shield, RotateCcw
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/firebase';
+import { AccountRecoveryDialog } from '@/components/auth/AccountRecoveryDialog';
 
 interface WasherRentalCardProps {
   isAdmin: boolean;
@@ -76,6 +77,14 @@ export function WasherRentalCard({
     },
     [mouseX, mouseY]
   );
+
+  useEffect(() => {
+    const handleRecoveryOpen = () => {
+      document.dispatchEvent(new CustomEvent('open-account-recovery'));
+    };
+    window.addEventListener('open-account-recovery', handleRecoveryOpen);
+    return () => window.removeEventListener('open-account-recovery', handleRecoveryOpen);
+  }, []);
 
   useEffect(() => {
     const cachedMobile = localStorage.getItem(CACHE_MOBILE);
@@ -229,6 +238,7 @@ export function WasherRentalCard({
 
       {/* ═══ Social Proof (Bottom Left) ═══ */}
       <SocialProofWidget recentOrders={recentOrders} />
+      <AccountRecoveryDialog />
     </div>
   );
 }
@@ -305,9 +315,24 @@ function AppDock({
           </motion.div>
         </Link>
         
-        {/* Centro: Solicitar Ahora */}
-        <div className="mx-2 sm:mx-4 lg:mx-8 shrink-0 relative flex items-center justify-center">
+        {/* Centro: Solicitar Ahora + Recuperar Cuenta */}
+        <div className="mx-2 sm:mx-4 lg:mx-8 shrink-0 relative flex items-center justify-center gap-3">
           <HolographicCTA isOpen={isAnyStoreOpen} onClick={onOpenSolicitation} />
+          
+          {/* Botón Recuperar Cuenta - Solo para usuarios no autenticados o anónimos */}
+          {!user && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => document.dispatchEvent(new CustomEvent('open-account-recovery'))}
+              className="relative w-14 h-14 sm:w-12 lg:w-16 lg:h-16 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 hover:bg-amber-500/30 hover:text-amber-300 transition-all duration-300 shadow-[0_0_20px_rgba(245,158,11,0.2)] group/recv"
+            >
+              <Key className="w-5 h-5 lg:w-6 lg:h-6 group-hover/recv:animate-pulse" />
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900/90 text-[10px] sm:text-xs font-bold text-white rounded opacity-0 group-hover/recv:opacity-100 transition-opacity pointer-events-none border border-amber-500/20 whitespace-nowrap">
+                Recuperar cuenta
+              </div>
+            </motion.button>
+          )}
         </div>
 
         {/* Derecha Extrema: Admin PC */}

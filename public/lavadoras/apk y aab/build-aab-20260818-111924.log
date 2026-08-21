@@ -1,0 +1,11 @@
+Cargando credenciales de C:\Users\dcard\OneDrive\Escritorio\Uix\public\lavadoras\scripts\..\secrets\keystore.env
+
+1/4 next build
+
+> nextn@0.1.0 build
+> cross-env NODE_ENV=production next build
+
+   ▲ Next.js 15.5.9
+   - Environments: .env.local
+
+   Creating an optimized production build ...

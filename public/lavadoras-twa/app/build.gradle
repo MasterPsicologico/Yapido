@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'lavadoras.yapido.click'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'lavadoras.yapido.click'
+        minSdk 24
+        targetSdk 35
+        versionCode 19
+        versionName '1.2.0'
+        resourceConfigurations += ['es', 'en']
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('C:/Users/dcard/OneDrive/Escritorio/Uix/public/lavadoras/secrets/lav-release.jks')
+            storePassword System.getenv('LAV_KEYSTORE_PASS')
+            keyAlias 'lavadoras-upload'
+            keyPassword System.getenv('LAV_KEY_PASS')
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
+        }
+    }
+}
+
+configurations.all {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == 'org.jetbrains.kotlin' && details.requested.name.startsWith('kotlin-stdlib')) {
+            details.useVersion '1.9.22'
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}

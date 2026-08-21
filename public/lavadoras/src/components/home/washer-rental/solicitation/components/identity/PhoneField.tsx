@@ -43,7 +43,7 @@ export const PhoneField = React.forwardRef<HTMLDivElement, PhoneFieldProps>(
             onChange={(e) => onChange(e.target.value)} 
             onBlur={onBlur}
             className={cn(
-              "h-16 rounded-[24px] border-2 pl-16 pr-14 font-black text-slate-900 text-lg transition-all duration-500",
+              "h-14 sm:h-14 lg:h-16 rounded-[20px] sm:rounded-[24px] border-2 pl-12 sm:pl-14 lg:pl-16 pr-12 font-black text-base sm:text-lg transition-all duration-500",
               "bg-gradient-to-r from-yellow-50/50 to-white focus:bg-white",
               hasError 
                 ? "border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]" 

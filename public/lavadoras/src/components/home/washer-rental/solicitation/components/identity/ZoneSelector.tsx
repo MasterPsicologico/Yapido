@@ -42,7 +42,7 @@ export function ZoneSelector({ zones, cityConfig, selectedZoneId, onZoneChange, 
           value={selectedZoneId}
           onChange={(e) => onZoneChange(e.target.value)}
           className={cn(
-            "w-full h-16 rounded-[24px] border-2 pl-16 pr-12 font-black text-slate-900 text-lg appearance-none cursor-pointer transition-all duration-500",
+            "w-full h-14 sm:h-14 lg:h-16 rounded-[20px] sm:rounded-[24px] border-2 pl-12 sm:pl-14 lg:pl-16 pr-10 font-black text-base sm:text-lg transition-all duration-500 appearance-none cursor-pointer",
             "bg-gradient-to-r from-blue-50/50 to-white focus:bg-white",
             error
               ? "border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]"

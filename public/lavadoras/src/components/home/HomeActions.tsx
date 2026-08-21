@@ -11,6 +11,7 @@ import { compressImage } from '@/lib/image-compression';
 import { WasherRentalCard } from './washer-rental/WasherRentalCard';
 import { WasherSolicitationDialog } from './washer-rental/solicitation/WasherSolicitationDialog';
 import { WasherAdminPricingDialog } from './washer-rental/WasherAdminPricingDialog';
+import { AccountRecoveryDialog } from '@/components/auth/AccountRecoveryDialog';
 
 export const checkIsBusinessOpen = (openTime?: string, closeTime?: string) => {
   if (!openTime || !closeTime) return true;
@@ -248,6 +249,7 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
         onOpenAdminSettings={() => setShowAdminPricing(true)} onSubmitRequest={handleWasherRequest}
       />
       <WasherAdminPricingDialog isOpen={showAdminPricing} onOpenChange={setShowAdminPricing} pricingConfig={pricingConfig} onUpdatePricing={handleUpdatePricing} />
+      <AccountRecoveryDialog />
     </div>
   );
 }
