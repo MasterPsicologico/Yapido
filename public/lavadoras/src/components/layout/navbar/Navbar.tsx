@@ -22,7 +22,7 @@ const MODE_KEY = 'yapido_click_preferred_mode';
 export function Navbar() {
   const { user, isUserLoading } = useUser();
   const { profile, isOwner, isAdmin } = useProfile();
-  const { getRememberedAccount, signInWithRecoveryCode } = useAuth();
+  const { getRememberedAccount, signInWithRecoveryCode, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname() || '/';
 
@@ -79,7 +79,7 @@ export function Navbar() {
     // signOut() en AuthService ya guarda la remembered account
     // Disparamos evento para mostrar el botón de login con código
     setShowCodeLogin(true);
-    auth.signOut();
+    signOut();
   };
 
   const openCodeLogin = () => {
