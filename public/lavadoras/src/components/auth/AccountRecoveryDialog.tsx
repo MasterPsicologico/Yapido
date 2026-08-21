@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth/AuthService';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Key, Shield, X, CheckCircle, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -229,9 +229,9 @@ export function AccountRecoveryDialog() {
                 type="text"
                 maxLength={6 - code.length}
                 value={code.slice(code.length)}
-                onChange={(e) => setCode(code + e.target.value.replace(/\D/g, ''))}
+                onChange={(e) => setCode(code + (e.target as HTMLInputElement).value.replace(/\D/g, ''))}
                 onKeyDown={(e) => {
-                  if (e.key === 'Backspace' && code.length > 0 && !e.target.value) {
+                  if (e.key === 'Backspace' && code.length > 0 && !(e.target as HTMLInputElement).value) {
                     setCode(code.slice(0, -1));
                   }
                 }}

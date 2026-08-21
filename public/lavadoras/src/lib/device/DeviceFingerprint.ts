@@ -135,7 +135,8 @@ class DeviceFingerprintService {
       const { Device } = capacitorDevice;
       if (!Device) return undefined;
       const info = await Device.getInfo();
-      return info.uuid; // UUID único del dispositivo en Android 8.0+
+      // @ts-ignore - uuid property exists in runtime but not in types
+      return info.uuid || info.deviceId; // UUID único del dispositivo en Android 8.0+
     } catch {
       // Fallback: usar un identificador basado en características del navegador
       return undefined;

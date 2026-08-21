@@ -210,6 +210,7 @@ export function WasherRentalCard({
         activeStoresCount={activeStoresCount}
         onOpenSolicitation={onOpenSolicitation}
         onBannerUpload={onBannerUpload}
+        user={user}
       />
 
       {/* ═══ ADMIN: Lock Button ═══ */}
@@ -248,7 +249,7 @@ export function WasherRentalCard({
    ═══════════════════════════════════════════════════════════════ */
 
 function AppDock({
-  isAdmin, isUploadingBanner, userRole, isAnyStoreOpen, activeStoresCount, onOpenSolicitation, onBannerUpload
+  isAdmin, isUploadingBanner, userRole, isAnyStoreOpen, activeStoresCount, onOpenSolicitation, onBannerUpload, user
 }: {
   isAdmin?: boolean;
   isUploadingBanner?: boolean;
@@ -257,6 +258,7 @@ function AppDock({
   activeStoresCount?: number;
   onOpenSolicitation: () => void;
   onBannerUpload?: (e: React.ChangeEvent<HTMLInputElement>, target: 'mobile' | 'pc') => void;
+  user?: any;
 }) {
   const mobileInputRef = useRef<HTMLInputElement>(null);
   const desktopInputRef = useRef<HTMLInputElement>(null);

@@ -172,7 +172,7 @@ class AuthService {
     }
   }
 
-  private ensureInitialized(): Promise<void> {
+  ensureInitialized(): Promise<void> {
     if (!this.initialized && typeof window !== 'undefined') {
       this.initialized = true;
       this.initPromise = this.initializeAuth();
@@ -912,12 +912,6 @@ class AuthService {
       console.error('[AuthService] Quick restore error:', error);
       return null;
     }
-  }
-
-  destroy() {
-    this.unsubscribe?.();
-    this.unsubscribe = null;
-    this.callbacks = null;
   }
 
   // ==========================================
