@@ -933,6 +933,15 @@ class AuthService {
         this.currentState = 'authenticated';
         this.callbacks?.onStateChange(this.currentState, this.currentUser);
         
+        // Update device fingerprint link to this device (in case of device switch)
+        try {
+          const deviceFp = await deviceFingerprint.getFingerprint();
+          await phoneAuth.linkDeviceToPhone(deviceFp.fingerprint, fullData.phoneNumber || '');
+          console.log('[AuthService] Device fingerprint updated for same user login');
+        } catch (e) {
+          console.warn('[AuthService] Could not update device fingerprint link:', e);
+        }
+        
         return this.currentUser;
       }
 
@@ -968,6 +977,16 @@ class AuthService {
       this.currentUser.localData = localData;
       this.currentState = 'authenticated';
       this.callbacks?.onStateChange(this.currentState, this.currentUser);
+      
+      // IMPORTANT: Update device fingerprint link to point to this new device
+      // This effectively transfers the account to the new device
+      try {
+        const deviceFp = await deviceFingerprint.getFingerprint();
+        await phoneAuth.linkDeviceToPhone(deviceFp.fingerprint, fullData.phoneNumber || '');
+        console.log('[AuthService] Device fingerprint linked to phone for new device login');
+      } catch (e) {
+        console.warn('[AuthService] Could not update device fingerprint link:', e);
+      }
       
       // Sync this data back to Firestore under current UID
       await this.syncToCloud();

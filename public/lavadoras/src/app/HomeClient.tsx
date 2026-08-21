@@ -30,13 +30,13 @@ export function HomeClient() {
     }
   }, [user, isUserLoading, router]);
 
-  // Si no está autenticado, NO renderizamos Navbar ni permitimos scroll
+  // Navbar SIEMPRE se renderiza para mostrar "Ingresar con código" cuando no hay usuario
   return (
     <div className={cn(
       "flex flex-col w-full transition-colors duration-700",
       user ? "min-h-screen bg-[#f8fafc]" : "h-[100dvh] bg-[#050505] overflow-hidden"
     )}>
-      {user && <Navbar />}
+      <Navbar />
       <main className="flex-1 w-full overflow-x-hidden relative">
         <HomeContent user={user} isUserLoading={isUserLoading} />
       </main>
