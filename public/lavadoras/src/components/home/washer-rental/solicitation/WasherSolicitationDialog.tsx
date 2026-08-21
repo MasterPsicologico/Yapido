@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { useUser, useAuth, useFirestore } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
+import { useAuth } from '@/lib/auth/AuthService';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
