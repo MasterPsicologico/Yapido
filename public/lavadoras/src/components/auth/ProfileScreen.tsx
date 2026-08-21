@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Phone, Mail, MapPin, User, CheckCircle, Save, Shield, Save as SaveIcon, Edit, Copy, Key, MapPin as MapPinIcon, Shield as ShieldIcon } from 'lucide-react';
+import { Loader2, Phone, Mail, MapPin, User, CheckCircle, Save, Shield, Save as SaveIcon, Edit, Copy, MapPin as MapPinIcon, Shield as ShieldIcon } from 'lucide-react';
 
 export function ProfileScreen() {
-  const { user, isAnonymous, isAuthenticated, updateProfile, saveLocalData, loadLocalData, getLocalData, getRecoveryCode } = useAuth();
+  const { user, isAnonymous, isAuthenticated, updateProfile, saveLocalData, loadLocalData, getLocalData } = useAuth();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -24,7 +24,6 @@ export function ProfileScreen() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [recoveryCode, setRecoveryCode] = useState('');
 
   // Load profile data on mount
   useEffect(() => {
@@ -34,10 +33,6 @@ export function ProfileScreen() {
       setPhone(user.localData.profile.phone || '');
       setAddress(user.localData.profile.address || '');
     }
-    
-    // Load recovery code
-    const code = localStorage.getItem('lavadoras_recovery_code');
-    if (code) setRecoveryCode(code);
   }, [user]);
 
   // Auto-save on field change (debounced)
@@ -101,11 +96,6 @@ export function ProfileScreen() {
     setShowEmailLink(false);
   };
 
-  const handleCopyRecoveryCode = () => {
-    navigator.clipboard.writeText(recoveryCode);
-    alert('Código copiado al portapapeles');
-  };
-
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -118,35 +108,6 @@ export function ProfileScreen() {
     <div className="min-h-screen bg-background pb-20">
       <div className="max-w-2xl mx-auto px-4 py-8">
         
-        <Card className="mb-6 border-amber-200 bg-amber-50">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Shield className="w-4 h-4 text-amber-600" />
-                Código de Recuperación (6 dígitos)
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1 p-4 bg-white rounded-lg border border-amber-200 font-mono text-2xl tracking-widest text-center text-foreground select-all">
-                {recoveryCode || 'Generando...'}
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleCopyRecoveryCode}
-                className="whitespace-nowrap"
-              >
-                Copiar
-              </Button>
-            </div>
-            <p className="text-xs text-amber-700 mt-2 text-center">
-              Guarda este código. Con él podrás recuperar tu cuenta en cualquier dispositivo.
-            </p>
-          </CardContent>
-        </Card>
-
         {/* Profile Form */}
         <Card>
           <CardHeader>
