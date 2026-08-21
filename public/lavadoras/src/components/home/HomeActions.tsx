@@ -60,12 +60,14 @@ export function HomeActions({ isAdmin, profile, openStore, setOpenStore }: HomeA
     };
     window.addEventListener('open-direct-solicitation' as any, handleDirect);
     
-    // Auto-Reapertura después de Redirección Login Google (Memoria Evolutiva del Flujo)
+    // Auto-Reapertura SOLO tras redirección Login Google (verifica que venimos de auth)
     if (typeof window !== 'undefined') {
       const keepOpen = localStorage.getItem('keep_solicitation_open');
-      if (keepOpen === 'true') {
+      const fromAuth = sessionStorage.getItem('from_google_auth');
+      if (keepOpen === 'true' && fromAuth === 'true') {
         localStorage.removeItem('keep_solicitation_open');
-        setTimeout(() => setOpenWasher(true), 800); // 800ms delay enables user context to hydrate securely before showing
+        sessionStorage.removeItem('from_google_auth');
+        setTimeout(() => setOpenWasher(true), 800);
       }
     }
 

@@ -498,6 +498,7 @@ export function WasherSolicitationDialog({
                   <Button 
                     onClick={() => {
                       localStorage.setItem('keep_solicitation_open', 'true');
+                      sessionStorage.setItem('from_google_auth', 'true');
                       initiateGoogleSignIn(auth);
                     }}
                     className="relative w-full h-20 rounded-[32px] bg-white text-slate-950 font-black text-sm sm:text-lg gap-4 shadow-2xl active:scale-95 transition-all overflow-hidden"
