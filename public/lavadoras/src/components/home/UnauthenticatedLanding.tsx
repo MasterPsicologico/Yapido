@@ -48,6 +48,40 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
 
   const coverImage = localCoverImage || appConfig?.coverImageUrl || null;
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !isAdmin) return;
+
+    setIsUploading(true);
+    try {
+      const compressed = await compressImage(file, 1920, 1080, 0.8);
+      
+      if (appConfig) {
+        updateDocumentNonBlocking(configRef, {
+          coverImageUrl: compressed,
+          updatedAt: serverTimestamp(),
+          updatedBy: user?.uid
+        });
+      } else {
+        setDocumentNonBlocking(configRef, {
+          coverImageUrl: compressed,
+          createdAt: serverTimestamp(),
+          updatedBy: user?.uid
+        }, { merge: true });
+      }
+      
+      // Actualizar localmente también
+      setLocalCoverImage(compressed);
+      localStorage.setItem(CACHE_KEY, compressed);
+      
+      toast({ title: "Portada actualizada con éxito" });
+    } catch (error) {
+      toast({ title: "Error al actualizar portada", variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className={`relative ${isEditor ? 'h-full' : 'h-[100dvh]'} w-full overflow-hidden flex items-center justify-center bg-[#0a0a0a]`}>
       {/* Portada Universal con Caché */}
@@ -93,37 +127,3 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
     </div>
   );
 }
-
-const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file || !isAdmin) return;
-
-  setIsUploading(true);
-  try {
-    const compressed = await compressImage(file, 1920, 1080, 0.8);
-    
-    if (appConfig) {
-      updateDocumentNonBlocking(configRef, {
-        coverImageUrl: compressed,
-        updatedAt: serverTimestamp(),
-        updatedBy: user?.uid
-      });
-    } else {
-      setDocumentNonBlocking(configRef, {
-        coverImageUrl: compressed,
-        createdAt: serverTimestamp(),
-        updatedBy: user?.uid
-      }, { merge: true });
-    }
-    
-    // Actualizar localmente también
-    setLocalCoverImage(compressed);
-    localStorage.setItem(CACHE_KEY, compressed);
-    
-    toast({ title: "Portada actualizada con éxito" });
-  } catch (error) {
-    toast({ title: "Error al actualizar portada", variant: "destructive" });
-  } finally {
-    setIsUploading(false);
-  }
-};
