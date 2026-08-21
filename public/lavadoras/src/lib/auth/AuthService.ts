@@ -217,11 +217,24 @@ class AuthService {
   // INITIALIZATION - AUTO INSTANT AUTH WITH DEVICE FINGERPRINT
   // ==========================================
   private async initializeAuth(): Promise<void> {
+    // Wrap everything in try-catch to prevent app crashes
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined') {
+        console.warn('[AuthService] Running in non-browser environment, skipping auth init');
+        return;
+      }
+
       // 1. Get device fingerprint (persistent across reinstalls)
-      const deviceFp = await deviceFingerprint.getFingerprint();
-      const deviceFingerprintStr = deviceFp.fingerprint;
-      console.log('[AuthService] Device fingerprint:', deviceFingerprintStr);
+      let deviceFingerprintStr = '';
+      try {
+        const deviceFp = await deviceFingerprint.getFingerprint();
+        deviceFingerprintStr = deviceFp.fingerprint;
+        console.log('[AuthService] Device fingerprint:', deviceFingerprintStr);
+      } catch (fpError) {
+        console.warn('[AuthService] Failed to get device fingerprint, using fallback:', fpError);
+        deviceFingerprintStr = 'fallback-' + Math.random().toString(36).substring(7);
+      }
 
       // 0. Check if user is already authenticated (not anonymous)
       if (this.auth.currentUser && !this.auth.currentUser.isAnonymous) {
@@ -241,7 +254,11 @@ class AuthService {
         const email = getStorageItem('auth_email_for_link') || 
           new URLSearchParams(window.location.search).get('email');
         if (email) {
-          await this.completeEmailLinkSignIn(email, window.location.href);
+          try {
+            await this.completeEmailLinkSignIn(email, window.location.href);
+          } catch (e) {
+            console.warn('[AuthService] Email link sign-in failed:', e);
+          }
           return;
         }
       }
@@ -250,7 +267,12 @@ class AuthService {
       const rememberedAccount = this.getRememberedAccount();
       
       // 3. Check if device is already linked to a phone number
-      const linkedPhone = await phoneAuth.getPhoneByDeviceFingerprint(deviceFingerprintStr);
+      let linkedPhone = null;
+      try {
+        linkedPhone = await phoneAuth.getPhoneByDeviceFingerprint(deviceFingerprintStr);
+      } catch (e) {
+        console.warn('[AuthService] Failed to check device-phone link:', e);
+      }
       
       if (linkedPhone && rememberedAccount) {
         // Device is linked to a phone AND there's a remembered account
@@ -269,27 +291,48 @@ class AuthService {
         // Store linked phone for verification UI
         setStorageItem('linked_phone_for_verification', linkedPhone);
         // Auto-send SMS code for instant auto-restore
-        await this.sendWhatsAppCode(linkedPhone);
+        try {
+          await this.sendWhatsAppCode(linkedPhone);
+        } catch (e) {
+          console.warn('[AuthService] Failed to send WhatsApp code:', e);
+        }
       } else {
         // Auto-instant anonymous auth (INSTANT) - first time user
-        await this.ensureAuthenticated();
+        try {
+          await this.ensureAuthenticated();
+        } catch (e) {
+          console.warn('[AuthService] Failed to ensure authentication:', e);
+        }
         
         // Generate recovery code if doesn't exist
         const existingRecoveryCode = getStorageItem(STORAGE_KEYS.RECOVERY_CODE);
         if (!existingRecoveryCode) {
-          await this.generateAndStoreRecoveryCode();
+          try {
+            await this.generateAndStoreRecoveryCode();
+          } catch (e) {
+            console.warn('[AuthService] Failed to generate recovery code:', e);
+          }
         }
       }
 
       // 5. Load local data
-      await this.loadLocalData();
+      try {
+        await this.loadLocalData();
+      } catch (e) {
+        console.warn('[AuthService] Failed to load local data:', e);
+      }
 
       // 6. Start auth state listener
-      this.startAuthListener();
+      try {
+        this.startAuthListener();
+      } catch (e) {
+        console.warn('[AuthService] Failed to start auth listener:', e);
+      }
 
     } catch (error) {
       console.error('[AuthService] Initialization error:', error);
-      this.currentState = 'error';
+      // Don't crash the app - set error state but allow UI to render
+      this.currentState = 'anonymous';
       this.callbacks?.onStateChange(this.currentState, null);
     }
   }
