@@ -7,11 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { useUser, useAuth, useFirestore } from '@/firebase';
-import { initiateGoogleSignIn } from '@/firebase/non-blocking-login-v8';
+import { useUser, useFirestore } from '@/firebase';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
-import { LogIn, Sparkles, ShieldCheck, ChevronDown, ChevronUp, Settings2, Check, Circle } from 'lucide-react';
+import { Sparkles, ShieldCheck, ChevronDown, ChevronUp, Settings2, Check, Circle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Importación de Componentes Atómicos
@@ -56,7 +55,6 @@ export function WasherSolicitationDialog({
 }: WasherSolicitationDialogProps) {
   const router = useRouter();
   const { user } = useUser();
-  const auth = useAuth();
   const firestore = useFirestore();
   
   const [tempName, setTempName] = useState("");
@@ -366,28 +364,25 @@ export function WasherSolicitationDialog({
                 
                 <div className="space-y-4 relative z-10">
                   <h3 className="text-2xl sm:text-4xl font-black italic uppercase tracking-tighter text-white leading-none drop-shadow-xl">
-                    IDENTIDAD<br/><span className="text-primary">REQUERIDA</span>
+                    SESIÓN<br/><span className="text-primary">AUTOMÁTICA</span>
                   </h3>
                   <p className="text-slate-400 font-bold text-xs sm:text-sm uppercase tracking-[0.2em] max-w-[280px] mx-auto leading-relaxed">
-                    INICIA SESIÓN DE FORMA RÁPIDA Y SEGURA PARA CONTINUAR.
+                    TU SESIÓN SE CREA AUTOMÁTICAMENTE AL ENTRAR. RECARGUE LA PÁGINA PARA CONTINUAR.
                   </p>
                 </div>
                 
-                {/* Access Button */}
+                {/* Auto Auth Message */}
                 <div className="w-full relative z-10 group mt-4">
-                  <div className="absolute inset-0 bg-primary/40 blur-xl rounded-[32px] transition-all duration-500 group-hover:bg-primary/60 group-hover:blur-2xl" />
-                  <Button 
-                    onClick={() => {
-                      localStorage.setItem('keep_solicitation_open', 'true');
-                      sessionStorage.setItem('from_google_auth', 'true');
-                      initiateGoogleSignIn(auth);
-                    }}
-                    className="relative w-full h-20 rounded-[32px] bg-white text-slate-950 font-black text-sm sm:text-lg gap-4 shadow-2xl active:scale-95 transition-all overflow-hidden"
-                  >
-                    <div className="absolute inset-0 -translate-x-[150%] bg-gradient-to-r from-transparent via-slate-300/50 to-transparent skew-x-[-30deg] group-hover:animate-[shimmer_1.5s_infinite]" />
-                    <LogIn className="w-6 h-6 sm:w-7 sm:h-7 text-primary group-hover:scale-110 transition-transform duration-300" /> 
-                    <span className="tracking-wide">CONTINUAR CON GOOGLE</span>
-                  </Button>
+                  <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-[32px] p-6 text-center">
+                    <div className="flex items-center justify-center gap-3 text-emerald-400 mb-3">
+                      <ShieldCheck className="w-6 h-6" />
+                      <span className="text-sm sm:text-lg font-black uppercase tracking-wide">Autenticación Instantánea</span>
+                    </div>
+                    <p className="text-slate-300 text-xs sm:text-sm max-w-[300px] mx-auto">
+                      Se ha creado una sesión anónima segura vinculada a tu dispositivo. 
+                      Tus datos se guardan localmente y se sincronizan automáticamente.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex flex-col items-center gap-4 relative z-10">

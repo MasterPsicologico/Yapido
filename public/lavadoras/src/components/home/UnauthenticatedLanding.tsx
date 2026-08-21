@@ -3,16 +3,12 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { Camera, Loader2, LogIn, ChevronRight } from 'lucide-react';
+import { Camera, Loader2, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { initiateGoogleSignIn } from '@/firebase/non-blocking-login-v8';
 import { useDoc, useFirestore, updateDocumentNonBlocking, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
-import { GOOGLE_CLIENT_ID } from '@/firebase/config';
-import { useGoogleOneTap } from '@/hooks/use-google-one-tap';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { compressImage } from '@/lib/image-compression';
-import { Capacitor } from '@capacitor/core';
 
 interface UnauthenticatedLandingProps {
   auth: any;
@@ -50,69 +46,6 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
     }
   }, [appConfig?.coverImageUrl, localCoverImage]);
 
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-
-  // Desactivar One Tap en Capacitor nativo (Android/iOS) — usa plugin nativo FirebaseAuthentication
-  const isNativeCapacitor = Capacitor.isNativePlatform();
-
-  useGoogleOneTap({
-    auth,
-    clientId: GOOGLE_CLIENT_ID,
-    enabled: !user && !isNativeCapacitor,
-    onSuccess: () => {
-      setIsLoggingIn(false);
-    },
-    onError: () => {
-      setIsLoggingIn(false);
-    },
-  });
-
-  const handleLogin = async () => {
-    if (isLoggingIn) return;
-    setIsLoggingIn(true);
-    try {
-      await initiateGoogleSignIn(auth);
-    } catch (error) {
-      // Error already handled in non-blocking-login
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !isAdmin) return;
-
-    setIsUploading(true);
-    try {
-      const compressed = await compressImage(file, 1920, 1080, 0.8);
-      
-      if (appConfig) {
-        updateDocumentNonBlocking(configRef, {
-          coverImageUrl: compressed,
-          updatedAt: serverTimestamp(),
-          updatedBy: user?.uid
-        });
-      } else {
-        setDocumentNonBlocking(configRef, {
-          coverImageUrl: compressed,
-          createdAt: serverTimestamp(),
-          updatedBy: user?.uid
-        }, { merge: true });
-      }
-      
-      // Actualizar localmente también
-      setLocalCoverImage(compressed);
-      localStorage.setItem(CACHE_KEY, compressed);
-      
-      toast({ title: "Portada actualizada con éxito" });
-    } catch (error) {
-      toast({ title: "Error al actualizar portada", variant: "destructive" });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const coverImage = localCoverImage || appConfig?.coverImageUrl || null;
 
   return (
@@ -130,25 +63,6 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
         )}
         <div className="absolute inset-0 bg-black/5"></div>
       </div>
-
-      {/* Acceso Superior Derecho Minimalista (Evita obstrucción) */}
-      {!user && !isEditor && (
-        <div 
-          onClick={!isLoggingIn ? handleLogin : undefined}
-          className={`absolute top-6 right-6 z-30 flex items-center gap-3 cursor-pointer group ${isLoggingIn ? 'opacity-50 pointer-events-none' : ''}`}
-        >
-          <span className="text-white/40 group-hover:text-white/90 transition-colors text-[11px] font-black uppercase tracking-[0.3em] italic">
-            {isLoggingIn ? 'AUTENTICANDO...' : 'INGRESAR'}
-          </span>
-          <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center shadow-2xl group-hover:bg-white/20 transition-all">
-            {isLoggingIn ? (
-              <Loader2 className="w-4 h-4 text-white/60 animate-spin" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white" />
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Control Maestro de Imagen (Centro - Solo Admin) */}
       {isAdmin && (
@@ -179,3 +93,37 @@ export function UnauthenticatedLanding({ auth, isAdmin, user, isEditor = false }
     </div>
   );
 }
+
+const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file || !isAdmin) return;
+
+  setIsUploading(true);
+  try {
+    const compressed = await compressImage(file, 1920, 1080, 0.8);
+    
+    if (appConfig) {
+      updateDocumentNonBlocking(configRef, {
+        coverImageUrl: compressed,
+        updatedAt: serverTimestamp(),
+        updatedBy: user?.uid
+      });
+    } else {
+      setDocumentNonBlocking(configRef, {
+        coverImageUrl: compressed,
+        createdAt: serverTimestamp(),
+        updatedBy: user?.uid
+      }, { merge: true });
+    }
+    
+    // Actualizar localmente también
+    setLocalCoverImage(compressed);
+    localStorage.setItem(CACHE_KEY, compressed);
+    
+    toast({ title: "Portada actualizada con éxito" });
+  } catch (error) {
+    toast({ title: "Error al actualizar portada", variant: "destructive" });
+  } finally {
+    setIsUploading(false);
+  }
+};

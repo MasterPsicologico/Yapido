@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth } from '@/firebase';
 import { toast } from '@/hooks/use-toast';
-import { initiateGoogleSignIn } from '@/firebase/non-blocking-login-v8';
 
 interface CartTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   totalItems: number;
@@ -24,15 +23,7 @@ export const CartTrigger = React.forwardRef<HTMLButtonElement, CartTriggerProps>
         e.stopPropagation();
         toast({
           title: "Carrito Protegido",
-          description: "Tienes que estar autenticado para ver tu carrito de pedidos.",
-          action: (
-            <button 
-              onClick={() => initiateGoogleSignIn(auth)}
-              className="bg-primary text-white px-3 py-1 rounded-md text-[10px] font-black uppercase"
-            >
-              INGRESAR
-            </button>
-          )
+          description: "Tu sesión se crea automáticamente al entrar. Recarga la página para acceder.",
         });
         return;
       }

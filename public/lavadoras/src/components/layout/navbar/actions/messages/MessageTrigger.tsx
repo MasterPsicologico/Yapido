@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth } from '@/firebase';
 import { toast } from '@/hooks/use-toast';
-import { initiateGoogleSignIn } from '@/firebase/non-blocking-login-v8';
 
 interface MessageTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   count: number;
@@ -25,15 +24,7 @@ export const MessageTrigger = React.forwardRef<HTMLButtonElement, MessageTrigger
         e.stopPropagation();
         toast({
           title: "Bandeja Privada",
-          description: "Inicia sesión para ver tus conversaciones.",
-          action: (
-            <button 
-              onClick={() => initiateGoogleSignIn(auth)}
-              className="bg-primary text-white px-3 py-1 rounded-md text-[10px] font-black uppercase"
-            >
-              INGRESAR
-            </button>
-          )
+          description: "Tu sesión se crea automáticamente al entrar. Recarga la página para acceder.",
         });
         return;
       }

@@ -6,7 +6,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import { User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth } from '@/firebase';
-import { initiateGoogleSignIn } from '@/firebase/non-blocking-login-v8';
 import { useProfile } from '@/firebase/auth/use-profile';
 
 // Submódulos Atómicos
@@ -64,18 +63,6 @@ export function Navbar() {
     }, 30);
   };
 
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const handleLogin = async () => {
-    if (isLoggingIn) return;
-    setIsLoggingIn(true);
-    try {
-      await initiateGoogleSignIn(auth);
-    } catch (error) {
-      // Handled in auth utility
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
   const handleLogout = () => {
     localStorage.removeItem(MODE_KEY);
     auth.signOut();
@@ -89,7 +76,7 @@ export function Navbar() {
         <div className="flex items-center gap-1 sm:gap-3 shrink-0">
           <NavbarSidebar 
             user={user} profile={profile} canAccessManage={canAccessManage} 
-            isRepartidor={isRepartidor} onLogin={handleLogin} onLogout={handleLogout} 
+            isRepartidor={isRepartidor} onLogin={() => {}} onLogout={handleLogout} 
           />
           
           {!isUserLoading && user && showModeSwitcher && (
@@ -119,19 +106,9 @@ export function Navbar() {
           )}
 
           {!isUserLoading && !user && (
-            <Button 
-              onClick={handleLogin} 
-              disabled={isLoggingIn}
-              variant="default" 
-              className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-4 font-black shadow-lg shadow-secondary/20 h-9 text-[10px] uppercase tracking-widest min-w-[100px]"
-            >
-              {isLoggingIn ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <User className="w-4 h-4" />
-              )}
-              <span className="hidden xs:inline">{isLoggingIn ? 'Entrando...' : 'Ingresar'}</span>
-            </Button>
+            <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest hidden xs:inline">
+              Sesión automática
+            </span>
           )}
         </div>
       </div>

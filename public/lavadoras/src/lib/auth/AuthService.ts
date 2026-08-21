@@ -9,7 +9,6 @@ import {
   isSignInWithEmailLink,
   sendSignInLinkToEmail,
   linkWithCredential,
-  EmailAuthProvider,
   PhoneAuthProvider,
   signInWithPhoneNumber,
   RecaptchaVerifier,
@@ -20,7 +19,6 @@ import {
   AuthError,
 } from 'firebase/auth';
 import { getAuthInstance } from '@/firebase';
-import { Capacitor } from '@capacitor/core';
 import { deviceFingerprint } from '@/lib/device/DeviceFingerprint';
 import { phoneAuth } from './PhoneAuthService';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -920,63 +918,6 @@ class AuthService {
     this.unsubscribe?.();
     this.unsubscribe = null;
     this.callbacks = null;
-  }
-
-  // ==========================================
-  // GOOGLE OAUTH (LEGACY - kept for compatibility)
-  // ==========================================
-
-  async signInWithGoogle(): Promise<AuthUser> {
-    // @ts-ignore - Capacitor.Plugins exists at runtime but not in types
-    const { AndroidAuthBridge } = Capacitor.Plugins;
-    if (AndroidAuthBridge?.requestNativeGoogleAuth) {
-      return this.initiateGoogleSignInViaAndroidBridge();
-    }
-
-    const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-    const result = await FirebaseAuthentication.signInWithGoogle({
-      useCredentialManager: false,
-    });
-
-    if (!result.credential?.idToken) {
-      throw new Error('No se recibió token de autenticación');
-    }
-
-    const credential = EmailAuthProvider.credential(result.credential.idToken, result.credential.accessToken || '');
-    const result2 = await signInWithCredential(this.auth, credential);
-    
-    await this.syncToCloud();
-    
-    this.currentUser = this.mapFirebaseUser(result2.user);
-    this.currentState = 'authenticated';
-    this.callbacks?.onStateChange(this.currentState, this.currentUser);
-    
-    return this.currentUser;
-  }
-
-  // ==========================================
-  // GOOGLE OAUTH - LEGACY (kept for compatibility)
-  // ==========================================
-
-  private async initiateGoogleSignInViaAndroidBridge(): Promise<AuthUser> {
-    // @ts-ignore - Capacitor.Plugins exists at runtime but not in types
-    const { AndroidAuthBridge } = Capacitor.Plugins;
-    const result = await AndroidAuthBridge.requestNativeGoogleAuth();
-    
-    if (!result?.success || !result.id_token) {
-      throw new Error(result?.error || 'Error en Google Sign-In nativo');
-    }
-
-    const credential = EmailAuthProvider.credential(result.id_token, '');
-    const result2 = await signInWithCredential(this.auth, credential);
-    
-    await this.syncToCloud();
-    
-    this.currentUser = this.mapFirebaseUser(result2.user);
-    this.currentState = 'authenticated';
-    this.callbacks?.onStateChange(this.currentState, this.currentUser);
-    
-    return this.currentUser;
   }
 
   // ==========================================
