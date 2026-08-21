@@ -1,5 +1,6 @@
 "use client";
 
+import React from 'react';
 import { MapPin, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ZoneConfig, CityConfig } from '@/lib/city-config';
