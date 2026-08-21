@@ -342,7 +342,7 @@ export function WasherSolicitationDialog({
         <SolicitationHeader isAdmin={isAdmin} onOpenAdminSettings={onOpenAdminSettings} onClose={() => onOpenChange(false)} />
 
         <div className="flex-1 overflow-y-auto no-scrollbar bg-white rounded-t-[40px] mt-2 border-t-4 border-slate-950">
-          <div className="max-w-md mx-auto py-8 px-6 space-y-10 pb-32">
+          <div className="max-w-md sm:max-w-lg lg:max-w-xl mx-auto py-6 sm:py-10 px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10 lg:space-y-12 pb-20 sm:pb-24 lg:pb-32">
             
             {!user && orderStatus === 'idle' ? (
               <div className="relative py-14 px-6 flex flex-col items-center text-center space-y-10 animate-in fade-in zoom-in duration-700 bg-gradient-to-b from-slate-900 to-black rounded-[40px] border border-slate-800 shadow-2xl overflow-hidden -mx-2 mt-4">
@@ -379,6 +379,7 @@ export function WasherSolicitationDialog({
                   <Button 
                     onClick={() => {
                       localStorage.setItem('keep_solicitation_open', 'true');
+                      sessionStorage.setItem('from_google_auth', 'true');
                       initiateGoogleSignIn(auth);
                     }}
                     className="relative w-full h-20 rounded-[32px] bg-white text-slate-950 font-black text-sm sm:text-lg gap-4 shadow-2xl active:scale-95 transition-all overflow-hidden"
