@@ -21,11 +21,11 @@ import {
 import { getAuthInstance } from '@/firebase';
 import { deviceFingerprint } from '@/lib/device/DeviceFingerprint';
 import { phoneAuth } from './PhoneAuthService';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, query, where, limit, collection, getDocs } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/firebase';
 
 export type AuthMethod = 'anonymous' | 'email-link' | 'whatsapp' | 'recovery-code';
-export type AuthState = 'loading' | 'anonymous' | 'authenticated' | 'phone_verification_needed' | 'account_selection' | 'error';
+export type AuthState = 'loading' | 'anonymous' | 'authenticated' | 'phone_verification_needed' | 'account_selection' | 'code_login_needed' | 'error';
 
 // AuthUser type - plain interface with only the properties we need
 export interface AuthUser {
@@ -64,7 +64,17 @@ const STORAGE_KEYS = {
   LAST_SYNC: 'lavadoras_last_sync',
   PENDING_SYNC: 'lavadoras_pending_sync',
   REMEMBERED_ACCOUNT: 'lavadoras_remembered_account',
+  RECOVERY_ATTEMPTS: 'lavadoras_recovery_attempts',
 } as const;
+
+// Rate limiting config
+const RATE_LIMIT_MAX_ATTEMPTS = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hora
+
+interface RecoveryAttempt {
+  timestamp: number;
+  ip?: string;
+}
 
 // Safe localStorage access (SSR-safe)
 function getStorageItem(key: string): string | null {
@@ -100,6 +110,7 @@ function removeStorageItem(key: string): void {
 export interface LocalUserData {
   uid: string;
   recoveryCode: string;
+  originalUid?: string; // UID original si se recuperó con código diferente al actual
   profile: {
     name?: string;
     email?: string;
@@ -803,42 +814,175 @@ class AuthService {
   }
 
   // ==========================================
-  // ACCOUNT RECOVERY BY 6-DIGIT CODE (PERMANENT IN FIRESTORE)
+  // ACCOUNT RECOVERY / LOGIN BY 6-DIGIT CODE (PERMANENT IN FIRESTORE)
+  // Unified method: serves both recovery and login with code
   // ==========================================
 
-  async recoverAccountByCode(code: string): Promise<AuthUser> {
-    if (!code || code.length !== 6) {
-      throw new Error('Código de recuperación debe tener 6 dígitos');
+  private async checkRateLimit(uid: string): Promise<{ allowed: boolean; remainingAttempts: number }> {
+    if (typeof window === 'undefined') return { allowed: true, remainingAttempts: RATE_LIMIT_MAX_ATTEMPTS };
+    
+    try {
+      const stored = getStorageItem(STORAGE_KEYS.RECOVERY_ATTEMPTS);
+      const attempts: RecoveryAttempt[] = stored ? JSON.parse(stored) : [];
+      const now = Date.now();
+      const windowStart = now - RATE_LIMIT_WINDOW_MS;
+      
+      // Filter attempts within the last hour
+      const recentAttempts = attempts.filter(a => a.timestamp > windowStart);
+      
+      if (recentAttempts.length >= RATE_LIMIT_MAX_ATTEMPTS) {
+        return { allowed: false, remainingAttempts: 0 };
+      }
+      
+      return { allowed: true, remainingAttempts: RATE_LIMIT_MAX_ATTEMPTS - recentAttempts.length };
+    } catch {
+      return { allowed: true, remainingAttempts: RATE_LIMIT_MAX_ATTEMPTS };
+    }
+  }
+
+  private async recordRecoveryAttempt(uid: string): Promise<void> {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const stored = getStorageItem(STORAGE_KEYS.RECOVERY_ATTEMPTS);
+      const attempts: RecoveryAttempt[] = stored ? JSON.parse(stored) : [];
+      const now = Date.now();
+      
+      attempts.push({ timestamp: now });
+      
+      // Keep only last 24 hours of attempts
+      const dayAgo = now - 24 * 60 * 60 * 1000;
+      const filtered = attempts.filter(a => a.timestamp > dayAgo);
+      
+      setStorageItem(STORAGE_KEYS.RECOVERY_ATTEMPTS, JSON.stringify(filtered));
+    } catch {
+      // Ignore storage errors
+    }
+  }
+
+  /**
+   * Método unificado: Iniciar sesión / Recuperar cuenta con código de 6 dígitos
+   * Busca el código en Firestore, autentica al usuario y restaura TODOS sus datos
+   */
+  async signInWithRecoveryCode(code: string): Promise<AuthUser> {
+    if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
+      throw new Error('Código debe tener 6 dígitos numéricos');
+    }
+
+    // Rate limiting check (local, antes de consultar Firestore)
+    if (this.currentUser?.uid) {
+      const rateLimit = await this.checkRateLimit(this.currentUser.uid);
+      if (!rateLimit.allowed) {
+        throw new Error(`Demasiados intentos. Intenta de nuevo en 1 hora.`);
+      }
     }
 
     try {
-      // Look up the code in Firestore
       const db = getFirestoreInstance();
-      const usersRef = doc(db, 'users'); // We need to query by recoveryCode
       
-      // For now, use the simple local check (will be improved with a proper query)
-      const storedCode = getStorageItem(STORAGE_KEYS.RECOVERY_CODE);
-      if (storedCode && storedCode === code) {
-        // Code matches locally - restore local data
-        const localData = getStorageItem(STORAGE_KEYS.GUEST_DATA);
-        if (localData) {
-          const parsed = JSON.parse(localData);
-          if (parsed.recoveryCode === code) {
-            // Data matches - restore local data
-            await this.ensureAuthenticated();
-            this.currentUser = this.currentUser ? { ...this.currentUser, localData: parsed } : null;
-            return this.currentUser!;
-          }
+      // Query Firestore for user with this recovery code
+      const usersQuery = query(
+        collection(db, 'users'),
+        where('recoveryCode', '==', code),
+        limit(1)
+      );
+      
+      const snapshot = await getDocs(usersQuery);
+      
+      if (snapshot.empty) {
+        // Record failed attempt for rate limiting
+        if (this.currentUser?.uid) {
+          await this.recordRecoveryAttempt(this.currentUser.uid);
         }
+        throw new Error('Código de recuperación inválido. Verifica tu código de 6 dígitos.');
       }
 
-      // Try to find user by recovery code in Firestore
-      // This requires a Firestore query - for now fallback to local
-      throw new Error('Código de recuperación inválido');
+      const userDoc = snapshot.docs[0];
+      const userData = userDoc.data();
+      const targetUid = userDoc.id;
+
+      // Record attempt for rate limiting
+      await this.recordRecoveryAttempt(targetUid);
+
+      // Sign in anonymously first to get a valid auth session
+      await this.ensureAuthenticated();
+
+      // If we're already the right user, just restore data
+      if (this.currentUser?.uid === targetUid) {
+        // Load full data from Firestore
+        const fullData = userData as any;
+        const localData: LocalUserData = {
+          uid: targetUid,
+          recoveryCode: code,
+          profile: fullData.profile || {},
+          rentalHistory: fullData.rentalHistory || [],
+          favorites: fullData.favorites || [],
+          cart: fullData.cart || [],
+          notifications: fullData.notifications || [],
+          createdAt: fullData.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          synced: true,
+        };
+
+        // Save to localStorage
+        setStorageItem(STORAGE_KEYS.RECOVERY_CODE, code);
+        setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
+        
+        this.currentUser = this.mapFirebaseUser(this.auth.currentUser!);
+        this.currentUser.localData = localData;
+        this.currentState = 'authenticated';
+        this.callbacks?.onStateChange(this.currentState, this.currentUser);
+        
+        return this.currentUser;
+      }
+
+      // Different user - need to sign out and sign in as the target user
+      // For anonymous users, we can't directly switch UIDs, so we restore data to current session
+      // The key insight: the recovery code maps to a UID, but we're authenticated as anonymous
+      // We'll restore the data to the current anonymous session
+      
+      const fullData = userData as any;
+      const currentAuthUser = this.auth.currentUser;
+      if (!currentAuthUser) {
+        throw new Error('No hay sesión activa para restaurar datos');
+      }
+      const localData: LocalUserData = {
+        uid: currentAuthUser.uid, // Keep current UID for auth
+        originalUid: targetUid,    // Track original UID for reference
+        recoveryCode: code,
+        profile: fullData.profile || {},
+        rentalHistory: fullData.rentalHistory || [],
+        favorites: fullData.favorites || [],
+        cart: fullData.cart || [],
+        notifications: fullData.notifications || [],
+        createdAt: fullData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        synced: true,
+      };
+
+      // Save to localStorage
+      setStorageItem(STORAGE_KEYS.RECOVERY_CODE, code);
+      setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
+      
+      this.currentUser = this.mapFirebaseUser(this.auth.currentUser!);
+      this.currentUser.localData = localData;
+      this.currentState = 'authenticated';
+      this.callbacks?.onStateChange(this.currentState, this.currentUser);
+      
+      // Sync this data back to Firestore under current UID
+      await this.syncToCloud();
+      
+      return this.currentUser;
+
     } catch (error) {
       if (error instanceof Error) throw error;
-      throw new Error('Error recuperando cuenta');
+      throw new Error('Error al iniciar sesión con código');
     }
+  }
+
+  // Alias for backward compatibility
+  async recoverAccountByCode(code: string): Promise<AuthUser> {
+    return this.signInWithRecoveryCode(code);
   }
 
   // ==========================================
@@ -1049,6 +1193,11 @@ export function useAuth() {
     return authService.recoverAccountByCode(code);
   }, []);
 
+  const signInWithRecoveryCode = useCallback(async (code: string) => {
+    setError(null);
+    return authService.signInWithRecoveryCode(code);
+  }, []);
+
   const getRecoveryCode = useCallback(() => {
     return authService.getRecoveryCode();
   }, []);
@@ -1122,6 +1271,7 @@ export function useAuth() {
     upgradeWithEmail,
     upgradeWithPhone,
     recoverAccount,
+    signInWithRecoveryCode,
     getRecoveryCode,
     saveLocalData,
     loadLocalData,

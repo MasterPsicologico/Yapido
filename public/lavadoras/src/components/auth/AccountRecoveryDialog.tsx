@@ -1,17 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/AuthService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Key, Shield, X, CheckCircle, ArrowRight } from 'lucide-react';
+import { Loader2, Key, Shield, X, CheckCircle, ArrowRight, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AccountRecoveryDialog() {
   const { 
     state, 
-    recoverAccount, 
+    signInWithRecoveryCode, 
     quickRestoreAccount, 
     getRememberedAccount, 
     clearRememberedAccount,
@@ -24,20 +24,38 @@ export function AccountRecoveryDialog() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isQuickRestoring, setIsQuickRestoring] = useState(false);
+  const [mode, setMode] = useState<'recovery' | 'login'>('recovery');
 
   const rememberedAccount = getRememberedAccount();
   const showQuickRestore = state === 'account_selection' && rememberedAccount;
   const showPhoneVerification = state === 'phone_verification_needed';
 
-  // Auto-open for quick restore when device is linked
-  if (showQuickRestore && !isOpen) {
-    setIsOpen(true);
-  }
+  // Listen for global event to open dialog
+  useEffect(() => {
+    const handleOpen = (e: CustomEvent) => {
+      const detail = e.detail || {};
+      setMode(detail.mode || 'recovery');
+      setIsOpen(true);
+    };
+    
+    window.addEventListener('open-code-login', handleOpen as EventListener);
+    return () => window.removeEventListener('open-code-login', handleOpen as EventListener);
+  }, []);
 
-  if (showPhoneVerification && !isQuickRestoring) {
-    setIsQuickRestoring(true);
-    quickRestoreAccount().finally(() => setIsQuickRestoring(false));
-  }
+  // Auto-open for quick restore when device is linked
+  useEffect(() => {
+    if (showQuickRestore && !isOpen) {
+      setMode('recovery');
+      setIsOpen(true);
+    }
+  }, [showQuickRestore, isOpen]);
+
+  useEffect(() => {
+    if (showPhoneVerification && !isQuickRestoring) {
+      setIsQuickRestoring(true);
+      quickRestoreAccount().finally(() => setIsQuickRestoring(false));
+    }
+  }, [showPhoneVerification, isQuickRestoring]);
 
   const handleRecover = async () => {
     if (code.length !== 6) {
@@ -48,7 +66,7 @@ export function AccountRecoveryDialog() {
     setIsRecovering(true);
     setError(null);
     try {
-      await recoverAccount(code);
+      await signInWithRecoveryCode(code);
       setSuccess(true);
       setCode('');
       setTimeout(() => {
@@ -177,7 +195,14 @@ export function AccountRecoveryDialog() {
     );
   }
 
-  // Manual recovery code input
+  // Manual code input (for both login and recovery)
+  const isLoginMode = mode === 'login';
+  const title = isLoginMode ? 'Ingresar con código' : 'Recuperar cuenta';
+  const description = isLoginMode 
+    ? 'Introduce tu código único de 6 dígitos para acceder a tu cuenta'
+    : 'Ingresa tu código de 6 dígitos para restaurar tu cuenta';
+  const buttonText = isLoginMode ? 'Ingresar' : 'Recuperar cuenta';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <Card className="w-full max-w-md animate-in fade-in zoom-in duration-300">
@@ -185,9 +210,9 @@ export function AccountRecoveryDialog() {
           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
             <Key className="w-7 h-7 text-primary" />
           </div>
-          <CardTitle className="text-xl">Recuperar cuenta</CardTitle>
+          <CardTitle className="text-xl">{title}</CardTitle>
           <CardDescription className="text-muted-foreground">
-            Ingresa tu código de 6 dígitos para restaurar tu cuenta
+            {description}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
@@ -195,7 +220,7 @@ export function AccountRecoveryDialog() {
             <Alert className="bg-green-50 border-green-200">
               <CheckCircle className="w-5 h-5 text-green-600" />
               <AlertDescription className="text-green-800">
-                ¡Cuenta restaurada correctamente! Redirigiendo...
+                ¡{isLoginMode ? 'Sesión iniciada' : 'Cuenta restaurada'} correctamente! Redirigiendo...
               </AlertDescription>
             </Alert>
           )}
@@ -257,19 +282,19 @@ export function AccountRecoveryDialog() {
             {isRecovering ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                Restaurando...
+                {isLoginMode ? 'Ingresando...' : 'Restaurando...'}
               </>
             ) : (
               <>
                 <Shield className="w-5 h-5 mr-2" />
-                Recuperar cuenta
+                {buttonText}
               </>
             )}
           </Button>
 
           <Button 
             variant="ghost" 
-            onClick={() => setIsOpen(false)}
+            onClick={() => { setIsOpen(false); setCode(''); setError(null); }}
             className="w-full"
             disabled={isRecovering}
           >

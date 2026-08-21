@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Menu, ShoppingBag, LogOut, User } from 'lucide-react';
+import { Menu, ShoppingBag, LogOut, User, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -15,9 +15,10 @@ interface NavbarSidebarProps {
   isRepartidor: boolean;
   onLogin: () => void;
   onLogout: () => void;
+  showCodeLogin: boolean;
 }
 
-export function NavbarSidebar({ user, profile, canAccessManage, isRepartidor, onLogin, onLogout }: NavbarSidebarProps) {
+export function NavbarSidebar({ user, profile, canAccessManage, isRepartidor, onLogin, onLogout, showCodeLogin }: NavbarSidebarProps) {
   const { isAdmin } = useProfile();
 
   return (
@@ -49,9 +50,18 @@ export function NavbarSidebar({ user, profile, canAccessManage, isRepartidor, on
                   <LogOut className="w-5 h-5" /> Cerrar Sesión
                 </Button>
               ) : (
-                <Button onClick={onLogin} className="w-full h-14 rounded-2xl bg-secondary font-black text-lg gap-3 shadow-xl">
-                  <User className="w-5 h-5" /> Ingresar Ahora
-                </Button>
+                <>
+                  {showCodeLogin && (
+                    <Button onClick={onLogin} className="w-full h-14 rounded-2xl bg-secondary font-black text-lg gap-3 shadow-xl mb-2">
+                      <Key className="w-5 h-5" /> Ingresar con código
+                    </Button>
+                  )}
+                  {!showCodeLogin && (
+                    <span className="block text-center text-slate-400 text-[10px] font-black uppercase tracking-widest py-4">
+                      Sesión automática al entrar
+                    </span>
+                  )}
+                </>
               )}
             </div>
           </div>

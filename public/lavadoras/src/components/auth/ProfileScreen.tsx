@@ -9,11 +9,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Phone, Mail, MapPin, User, CheckCircle, Save, Shield, Save as SaveIcon, Edit, Copy, MapPin as MapPinIcon, Shield as ShieldIcon } from 'lucide-react';
 
 export function ProfileScreen() {
-  const { user, isAnonymous, isAuthenticated, updateProfile, saveLocalData, loadLocalData, getLocalData } = useAuth();
+  const { user, isAnonymous, isAuthenticated, updateProfile, saveLocalData, loadLocalData, getLocalData, getRecoveryCode } = useAuth();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Form fields
   const [name, setName] = useState('');
@@ -60,6 +61,15 @@ export function ProfileScreen() {
     }
   };
 
+  const copyRecoveryCode = () => {
+    const code = getRecoveryCode();
+    if (code) {
+      navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -67,6 +77,8 @@ export function ProfileScreen() {
       </div>
     );
   }
+
+  const recoveryCode = getRecoveryCode();
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -78,6 +90,44 @@ export function ProfileScreen() {
             Gestiona tu información personal y preferencias
           </p>
         </div>
+
+        {/* Recovery Code Section */}
+        {recoveryCode && (
+          <Card className="mb-6 border-primary/20 bg-primary/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-primary">
+                <Shield className="w-5 h-5" />
+                Mi código de acceso (6 dígitos)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-xl border border-primary/20">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Úsalo para ingresar en cualquier dispositivo</p>
+                  <code className="text-3xl font-mono font-bold text-primary tracking-widest select-all">{recoveryCode}</code>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={copyRecoveryCode}
+                  className="h-10 whitespace-nowrap"
+                >
+                  {copied ? (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+                      Copiado
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copiar
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Profile Form */}
         <Card>

@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { User, Loader2 } from 'lucide-react';
+import { User, Loader2, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser, useAuth } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -22,12 +22,23 @@ const MODE_KEY = 'yapido_click_preferred_mode';
 export function Navbar() {
   const { user, isUserLoading } = useUser();
   const { profile, isOwner, isAdmin } = useProfile();
-  const auth = useAuth();
+  const { getRememberedAccount, signInWithRecoveryCode } = useAuth();
   const router = useRouter();
   const pathname = usePathname() || '/';
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [showCodeLogin, setShowCodeLogin] = useState(false);
+
+  // Check if user has logged out before (has remembered account)
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      const remembered = getRememberedAccount();
+      setShowCodeLogin(!!remembered);
+    } else {
+      setShowCodeLogin(false);
+    }
+  }, [user, isUserLoading, getRememberedAccount]);
 
   const isDeliveryZone = pathname.startsWith('/delivery');
   const isRepartidor = profile?.role === 'repartidor';
@@ -65,7 +76,16 @@ export function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem(MODE_KEY);
+    // signOut() en AuthService ya guarda la remembered account
+    // Disparamos evento para mostrar el botón de login con código
+    setShowCodeLogin(true);
     auth.signOut();
+  };
+
+  const openCodeLogin = () => {
+    window.dispatchEvent(new CustomEvent('open-code-login', { 
+      detail: { mode: 'login' } 
+    }));
   };
 
   return (
@@ -76,7 +96,8 @@ export function Navbar() {
         <div className="flex items-center gap-1 sm:gap-3 shrink-0">
           <NavbarSidebar 
             user={user} profile={profile} canAccessManage={canAccessManage} 
-            isRepartidor={isRepartidor} onLogin={() => {}} onLogout={handleLogout} 
+            isRepartidor={isRepartidor} onLogin={openCodeLogin} onLogout={handleLogout} 
+            showCodeLogin={showCodeLogin}
           />
           
           {!isUserLoading && user && showModeSwitcher && (
@@ -105,7 +126,18 @@ export function Navbar() {
             </>
           )}
 
-          {!isUserLoading && !user && (
+          {!isUserLoading && !user && showCodeLogin && (
+            <Button 
+              onClick={openCodeLogin}
+              variant="default" 
+              className="bg-secondary hover:bg-secondary/90 flex items-center gap-2 rounded-full px-4 font-black shadow-lg shadow-secondary/20 h-9 text-[10px] uppercase tracking-widest min-w-[120px]"
+            >
+              <Key className="w-4 h-4" />
+              <span className="hidden xs:inline">Ingresar con código</span>
+            </Button>
+          )}
+
+          {!isUserLoading && !user && !showCodeLogin && (
             <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest hidden xs:inline">
               Sesión automática
             </span>
