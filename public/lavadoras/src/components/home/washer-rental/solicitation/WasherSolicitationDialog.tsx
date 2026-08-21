@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useAuth as useFirebaseAuth, useFirestore } from '@/firebase';
 import { useAuth } from '@/lib/auth/AuthService';
 import { initiateGoogleSignIn } from '@/firebase/non-blocking-login';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -58,6 +58,7 @@ export function WasherSolicitationDialog({
   const router = useRouter();
   const { user } = useUser();
   const { state: authState, verifyWhatsAppCode } = useAuth();
+  const { auth } = useFirebaseAuth();
   const firestore = useFirestore();
   
   const [tempName, setTempName] = useState("");
