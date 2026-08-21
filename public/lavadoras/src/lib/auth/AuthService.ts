@@ -555,9 +555,24 @@ class AuthService {
       if (this.currentUser) {
         this.currentUser.localData = updated;
       }
+      
+      // Auto-sync to cloud after local save (debounced)
+      this.scheduleSyncToCloud();
     } catch (error) {
       console.error('[AuthService] Error saving local data:', error);
     }
+  }
+
+  // Debounced sync to avoid too many Firestore writes
+  private syncTimeout: NodeJS.Timeout | null = null;
+  
+  private scheduleSyncToCloud(): void {
+    if (this.syncTimeout) {
+      clearTimeout(this.syncTimeout);
+    }
+    this.syncTimeout = setTimeout(() => {
+      this.syncToCloud().catch(console.error);
+    }, 1000); // 1 second debounce
   }
 
   async updateProfile(profile: Partial<LocalUserData['profile']>): Promise<void> {
@@ -565,6 +580,7 @@ class AuthService {
     await this.saveLocalData({
       profile: { ...(current?.profile || {}), ...profile },
     });
+    await this.syncToCloud(); // Immediate sync for profile changes
   }
 
   async addRentalHistory(rental: LocalUserData['rentalHistory'][0]): Promise<void> {
@@ -572,6 +588,7 @@ class AuthService {
     const history = current?.rentalHistory || [];
     history.unshift(rental);
     await this.saveLocalData({ rentalHistory: history });
+    await this.syncToCloud(); // Immediate sync - critical for history persistence
   }
 
   async addFavorite(washerId: string): Promise<void> {
@@ -579,6 +596,7 @@ class AuthService {
     const favorites = current?.favorites || [];
     if (!favorites.includes(washerId)) {
       await this.saveLocalData({ favorites: [...favorites, washerId] });
+      await this.syncToCloud();
     }
   }
 
@@ -586,10 +604,12 @@ class AuthService {
     const current = await this.loadLocalData();
     const favorites = (current?.favorites || []).filter(id => id !== washerId);
     await this.saveLocalData({ favorites });
+    await this.syncToCloud();
   }
 
   async updateCart(cart: LocalUserData['cart']): Promise<void> {
     await this.saveLocalData({ cart });
+    await this.syncToCloud();
   }
 
   async addNotification(notification: LocalUserData['notifications'][0]): Promise<void> {
@@ -597,6 +617,7 @@ class AuthService {
     const notifications = current?.notifications || [];
     notifications.unshift(notification);
     await this.saveLocalData({ notifications });
+    await this.syncToCloud();
   }
 
   getLocalData(): LocalUserData | null {
