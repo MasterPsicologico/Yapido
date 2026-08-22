@@ -21,7 +21,7 @@ import {
 import { getAuthInstance } from '@/firebase';
 import { deviceFingerprint } from '@/lib/device/DeviceFingerprint';
 import { phoneAuth } from './PhoneAuthService';
-import { doc, getDoc, setDoc, serverTimestamp, query, where, limit, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, query, where, limit, collection, getDocs, updateDoc } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/firebase';
 
 export type AuthMethod = 'anonymous' | 'email-link' | 'whatsapp' | 'recovery-code';
@@ -306,20 +306,87 @@ class AuthService {
           console.warn('[AuthService] Failed to send WhatsApp code:', e);
         }
       } else {
-        // Auto-instant anonymous auth (INSTANT) - first time user
+        // NEW: Check if this device fingerprint is linked to an existing UID in Firestore
+        // This allows seamless restore on same device after logout/reload
+        let linkedUid = null;
         try {
-          await this.ensureAuthenticated();
+          linkedUid = await this.getUidByDeviceFingerprint(deviceFingerprintStr);
         } catch (e) {
-          console.warn('[AuthService] Failed to ensure authentication:', e);
+          console.warn('[AuthService] Failed to check device fingerprint mapping:', e);
         }
         
-        // Generate recovery code if doesn't exist
-        const existingRecoveryCode = getStorageItem(STORAGE_KEYS.RECOVERY_CODE);
-        if (!existingRecoveryCode) {
+        if (linkedUid) {
+          // Device is linked to an existing UID - restore that session
+          console.log('[AuthService] Device fingerprint linked to existing UID, restoring:', linkedUid);
+          
+          // Sign in anonymously first to get a valid auth session
+          await this.ensureAuthenticated();
+          
+          // Now restore the data from the linked UID
           try {
-            await this.generateAndStoreRecoveryCode();
+            const db = getFirestoreInstance();
+            const userRef = doc(db, 'users', linkedUid);
+            const userDoc = await getDoc(userRef);
+            
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              const fullData = userData as any;
+              const currentAuthUser = this.auth.currentUser;
+              
+              if (currentAuthUser) {
+                const localData: LocalUserData = {
+                  uid: currentAuthUser.uid,
+                  originalUid: linkedUid,
+                  recoveryCode: fullData.recoveryCode || '',
+                  profile: fullData.profile || {},
+                  rentalHistory: fullData.rentalHistory || [],
+                  favorites: fullData.favorites || [],
+                  cart: fullData.cart || [],
+                  notifications: fullData.notifications || [],
+                  createdAt: fullData.createdAt || new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                  synced: true,
+                };
+
+                // Save to localStorage
+                setStorageItem(STORAGE_KEYS.RECOVERY_CODE, fullData.recoveryCode || '');
+                setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
+                
+                this.currentUser = this.mapFirebaseUser(this.auth.currentUser!);
+                this.currentUser.localData = localData;
+                this.currentState = 'authenticated';
+                this.callbacks?.onStateChange(this.currentState, this.currentUser);
+                
+                // Update device fingerprint link to current auth UID
+                await this.linkDeviceFingerprintToUid(currentAuthUser.uid);
+                
+                // Sync restored data to current UID
+                await this.syncToCloud();
+                
+                console.log('[AuthService] Session restored from linked UID:', linkedUid);
+              }
+            }
+          } catch (restoreError) {
+            console.warn('[AuthService] Failed to restore from linked UID, falling back to new session:', restoreError);
+            // Fall through to create new session
+            await this.ensureAuthenticated();
+          }
+        } else {
+          // No linked UID - first time user or new device
+          try {
+            await this.ensureAuthenticated();
           } catch (e) {
-            console.warn('[AuthService] Failed to generate recovery code:', e);
+            console.warn('[AuthService] Failed to ensure authentication:', e);
+          }
+          
+          // Generate recovery code if doesn't exist
+          const existingRecoveryCode = getStorageItem(STORAGE_KEYS.RECOVERY_CODE);
+          if (!existingRecoveryCode) {
+            try {
+              await this.generateAndStoreRecoveryCode();
+            } catch (e) {
+              console.warn('[AuthService] Failed to generate recovery code:', e);
+            }
           }
         }
       }
@@ -364,6 +431,76 @@ class AuthService {
     await this.initializeLocalData(result.user.uid);
     // Sync local data to cloud for anonymous user
     await this.syncToCloud();
+    
+    // Link device fingerprint to this new UID
+    await this.linkDeviceFingerprintToUid(result.user.uid);
+  }
+
+  // ==========================================
+  // DEVICE FINGERPRINT MAPPING (Firestore)
+  // ==========================================
+
+  /**
+   * Link device fingerprint to UID in Firestore for cross-device restore
+   * Creates/updates document in device_fingerprints collection
+   */
+  private async linkDeviceFingerprintToUid(uid: string): Promise<void> {
+    if (typeof window === 'undefined') return;
+    try {
+      const deviceFp = await deviceFingerprint.getFingerprint();
+      const deviceFingerprintStr = deviceFp.fingerprint;
+      const recoveryCode = getStorageItem(STORAGE_KEYS.RECOVERY_CODE);
+      
+      const db = getFirestoreInstance();
+      const linkRef = doc(db, 'device_fingerprints', deviceFingerprintStr);
+      
+      await setDoc(linkRef, {
+        uid,
+        recoveryCode: recoveryCode || '',
+        updatedAt: serverTimestamp(),
+        deviceInfo: deviceFp.components,
+      }, { merge: true });
+      
+      console.log('[AuthService] Device fingerprint linked to UID:', uid);
+    } catch (error) {
+      console.warn('[AuthService] Failed to link device fingerprint:', error);
+    }
+  }
+
+  /**
+   * Get UID associated with device fingerprint from Firestore
+   */
+  private async getUidByDeviceFingerprint(deviceFingerprintStr: string): Promise<string | null> {
+    try {
+      const db = getFirestoreInstance();
+      const linkRef = doc(db, 'device_fingerprints', deviceFingerprintStr);
+      const linkDoc = await getDoc(linkRef);
+      
+      if (linkDoc.exists()) {
+        const data = linkDoc.data();
+        return data.uid || null;
+      }
+      return null;
+    } catch (error) {
+      console.warn('[AuthService] Failed to get UID by device fingerprint:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Remove device fingerprint mapping (for complete logout)
+   */
+  private async unlinkDeviceFingerprint(deviceFingerprintStr: string): Promise<void> {
+    try {
+      const db = getFirestoreInstance();
+      const linkRef = doc(db, 'device_fingerprints', deviceFingerprintStr);
+      await updateDoc(linkRef, {
+        unlinkedAt: serverTimestamp(),
+        unlinked: true,
+      });
+    } catch (error) {
+      console.warn('[AuthService] Failed to unlink device fingerprint:', error);
+    }
   }
 
   private async initializeLocalData(uid: string): Promise<void> {
@@ -1057,6 +1194,17 @@ class AuthService {
   }
 
   async signOut(): Promise<void> {
+    // IMPORTANT: Link device fingerprint to current UID BEFORE signing out
+    // This enables auto-restore on next visit to this device
+    if (this.currentUser) {
+      try {
+        await this.linkDeviceFingerprintToUid(this.currentUser.uid);
+        console.log('[AuthService] Device fingerprint linked on signOut for auto-restore');
+      } catch (e) {
+        console.warn('[AuthService] Failed to link device fingerprint on signOut:', e);
+      }
+    }
+    
     // Save current user as "remembered account" for quick re-login
     this.saveRememberedAccount();
     
