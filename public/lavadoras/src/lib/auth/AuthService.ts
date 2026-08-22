@@ -311,6 +311,7 @@ class AuthService {
         let linkedUid = null;
         try {
           linkedUid = await this.getUidByDeviceFingerprint(deviceFingerprintStr);
+          console.log('[AuthService] Device fingerprint lookup result:', linkedUid ? `found UID: ${linkedUid}` : 'no linked UID found');
         } catch (e) {
           console.warn('[AuthService] Failed to check device fingerprint mapping:', e);
         }
@@ -367,6 +368,7 @@ class AuthService {
               }
             }
           } catch (restoreError) {
+            console.error('[AuthService] Failed to restore from linked UID:', restoreError);
             console.warn('[AuthService] Failed to restore from linked UID, falling back to new session:', restoreError);
             // Fall through to create new session
             await this.ensureAuthenticated();
@@ -1194,15 +1196,28 @@ class AuthService {
   }
 
   async signOut(): Promise<void> {
-    // IMPORTANT: Link device fingerprint to current UID BEFORE signing out
+    // CRITICAL: Link device fingerprint to current UID BEFORE signing out
     // This enables auto-restore on next visit to this device
+    let uidToLink: string | null = null;
     if (this.currentUser) {
+      uidToLink = this.currentUser.uid;
+    } else if (this.auth.currentUser) {
+      uidToLink = this.auth.currentUser.uid;
+    }
+    
+    if (uidToLink) {
       try {
-        await this.linkDeviceFingerprintToUid(this.currentUser.uid);
-        console.log('[AuthService] Device fingerprint linked on signOut for auto-restore');
+        // Force generate/get device fingerprint first
+        const deviceFp = await deviceFingerprint.getFingerprint();
+        console.log('[AuthService] Device fingerprint for signOut:', deviceFp.fingerprint);
+        
+        await this.linkDeviceFingerprintToUid(uidToLink);
+        console.log('[AuthService] Device fingerprint linked on signOut for auto-restore, UID:', uidToLink);
       } catch (e) {
-        console.warn('[AuthService] Failed to link device fingerprint on signOut:', e);
+        console.error('[AuthService] Failed to link device fingerprint on signOut:', e);
       }
+    } else {
+      console.warn('[AuthService] signOut called but no UID available to link device fingerprint');
     }
     
     // Save current user as "remembered account" for quick re-login
