@@ -91,44 +91,6 @@ export function ProfileScreen() {
           </p>
         </div>
 
-        {/* Recovery Code Section */}
-        {recoveryCode && (
-          <Card className="mb-6 border-primary/20 bg-primary/5">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-primary">
-                <Shield className="w-5 h-5" />
-                Mi código de acceso (6 dígitos)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-xl border border-primary/20">
-                <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">Úsalo para ingresar en cualquier dispositivo</p>
-                  <code className="text-3xl font-mono font-bold text-primary tracking-widest select-all">{recoveryCode}</code>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={copyRecoveryCode}
-                  className="h-10 whitespace-nowrap"
-                >
-                  {copied ? (
-                    <>
-                      <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
-                      Copiado
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copiar
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Profile Form */}
         <Card>
           <CardHeader>
@@ -211,6 +173,36 @@ export function ProfileScreen() {
               </div>
             </div>
 
+            {/* Mi código de acceso (6 dígitos) - Debajo de WhatsApp y Dirección, encima del botón actualizar */}
+            {recoveryCode && (
+              <div className="border-t pt-4 mt-2">
+                <div className="flex items-center justify-between gap-3 p-4 bg-primary/5 rounded-xl border border-primary/20">
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground mb-1">Tu código único para ingresar en cualquier dispositivo</p>
+                    <code className="text-2xl font-mono font-bold text-primary tracking-widest select-all bg-white/50 px-3 py-1.5 rounded border border-primary/20">{recoveryCode}</code>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={copyRecoveryCode}
+                    className="h-10 whitespace-nowrap self-end"
+                  >
+                    {copied ? (
+                      <>
+                        <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+                        Copiado
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copiar código
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-3 pt-4 border-t">
               {editing ? (
@@ -228,7 +220,7 @@ export function ProfileScreen() {
                     ) : (
                       <>
                         <Save className="mr-2 h-4 w-4" />
-                        Guardar cambios
+                        Actualizar mi perfil
                       </>
                     )}
                   </Button>
