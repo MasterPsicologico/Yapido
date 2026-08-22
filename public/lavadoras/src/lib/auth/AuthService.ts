@@ -671,25 +671,31 @@ class AuthService {
   async saveLocalData(data: Partial<LocalUserData>): Promise<void> {
     try {
       const existing = await this.loadLocalData();
+      // Preserve all existing fields, only update provided ones
+      const baseData = existing || {
+        uid: this.currentUser?.uid || '',
+        recoveryCode: this.getRecoveryCode() || '',
+        profile: {},
+        rentalHistory: [],
+        favorites: [],
+        cart: [],
+        notifications: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        synced: false,
+      };
+      
       const updated: LocalUserData = {
-        ...(existing || {
-          uid: this.currentUser?.uid || '',
-          recoveryCode: this.getRecoveryCode() || '',
-          profile: {},
-          rentalHistory: [],
-          favorites: [],
-          cart: [],
-          notifications: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          synced: false,
-        }),
+        ...baseData,
         ...data,
+        // Ensure nested objects are merged, not replaced
+        profile: { ...baseData.profile, ...(data.profile || {}) },
         updatedAt: new Date().toISOString(),
         synced: false,
       };
 
       setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(updated));
+      console.log('[AuthService] saveLocalData:', Object.keys(data).join(', '));
       
       if (this.currentUser) {
         this.currentUser.localData = updated;
@@ -774,12 +780,30 @@ class AuthService {
 
   async syncToCloud(): Promise<boolean> {
     if (!this.currentUser) {
+      console.warn('[AuthService] syncToCloud skipped: no currentUser');
       return false;
     }
 
     try {
       const localData = this.getLocalData();
-      if (!localData) return false;
+      if (!localData) {
+        console.warn('[AuthService] syncToCloud skipped: no localData');
+        return false;
+      }
+
+      // CRITICAL: Don't sync empty/default data - protect against data loss
+      const hasMeaningfulData = localData.rentalHistory?.length > 0 || 
+                                localData.favorites?.length > 0 || 
+                                localData.cart?.length > 0 || 
+                                localData.notifications?.length > 0 || 
+                                localData.profile?.name || 
+                                localData.profile?.phone || 
+                                localData.profile?.address;
+      
+      if (!hasMeaningfulData && !localData.synced) {
+        console.warn('[AuthService] syncToCloud skipped: no meaningful data to sync');
+        return false;
+      }
 
       const db = getFirestoreInstance();
       const userRef = doc(db, 'users', this.currentUser.uid);
@@ -796,9 +820,17 @@ class AuthService {
 
       // Sync to Firestore
       await setDoc(doc(db, 'users', this.currentUser.uid), syncData, { merge: true });
+      console.log('[AuthService] syncToCloud successful for UID:', this.currentUser.uid);
       
-      // Mark as synced locally
-      await this.saveLocalData({ synced: true });
+      // Mark as synced locally - USE DIRECT STORAGE to avoid infinite loop
+      const currentLocal = this.getLocalData();
+      if (currentLocal) {
+        const syncedLocal = { ...currentLocal, synced: true, updatedAt: new Date().toISOString() };
+        setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(syncedLocal));
+        if (this.currentUser) {
+          this.currentUser.localData = syncedLocal;
+        }
+      }
       setStorageItem(STORAGE_KEYS.LAST_SYNC, new Date().toISOString());
       
       this.callbacks?.onSyncComplete?.(true);
