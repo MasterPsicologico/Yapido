@@ -1522,12 +1522,33 @@ class AuthService {
       try {
         // Force generate/get device fingerprint first
         const deviceFp = await deviceFingerprint.getFingerprint();
-        console.log('[AuthService] Device fingerprint for signOut:', deviceFp.fingerprint);
+        const deviceFingerprintStr = deviceFp.fingerprint;
+        console.log('[AuthService] Device fingerprint for signOut:', deviceFingerprintStr);
         
+        // CRITICAL: Save current user data to device_data for auto-restore
+        const localData = this.getLocalData();
+        if (localData) {
+          const recoveryCode = getStorageItem(STORAGE_KEYS.RECOVERY_CODE) || localData.recoveryCode;
+          await this.saveDeviceData(deviceFingerprintStr, {
+            uid: uidToLink,
+            recoveryCode: recoveryCode || '',
+            profile: localData.profile || {},
+            rentalHistory: localData.rentalHistory || [],
+            favorites: localData.favorites || [],
+            cart: localData.cart || [],
+            notifications: localData.notifications || [],
+            createdAt: localData.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            synced: true,
+          });
+          console.log('[AuthService] Data saved to device_data on signOut for auto-restore');
+        }
+        
+        // Also link device fingerprint for legacy support
         await this.linkDeviceFingerprintToUid(uidToLink);
         console.log('[AuthService] Device fingerprint linked on signOut for auto-restore, UID:', uidToLink);
       } catch (e) {
-        console.error('[AuthService] Failed to link device fingerprint on signOut:', e);
+        console.error('[AuthService] Failed to save device data on signOut:', e);
       }
     } else {
       console.warn('[AuthService] signOut called but no UID available to link device fingerprint');
