@@ -21,7 +21,7 @@ import {
 import { getAuthInstance } from '@/firebase';
 import { deviceFingerprint } from '@/lib/device/DeviceFingerprint';
 import { phoneAuth } from './PhoneAuthService';
-import { doc, getDoc, setDoc, serverTimestamp, query, where, limit, collection, getDocs, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, query, where, limit, collection, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/firebase';
 
 export type AuthMethod = 'anonymous' | 'email-link' | 'whatsapp' | 'recovery-code';
@@ -306,38 +306,45 @@ class AuthService {
           console.warn('[AuthService] Failed to send WhatsApp code:', e);
         }
       } else {
-        // NEW: Check if this device fingerprint is linked to an existing UID in Firestore
-        // This allows seamless restore on same device after logout/reload
-        let linkedUid = null;
-        try {
-          linkedUid = await this.getUidByDeviceFingerprint(deviceFingerprintStr);
-          console.log('[AuthService] Device fingerprint lookup result:', linkedUid ? `found UID: ${linkedUid}` : 'no linked UID found');
-        } catch (e) {
-          console.warn('[AuthService] Failed to check device fingerprint mapping:', e);
-        }
+        // NEW ARCHITECTURE: Check device_data collection first (stable by device fingerprint)
+        console.log('[AuthService] Checking device_data for fingerprint:', deviceFingerprintStr);
+        const deviceData = await this.getDeviceData(deviceFingerprintStr);
         
-        if (linkedUid) {
-          // Device is linked to an existing UID - restore that session
-          console.log('[AuthService] Device fingerprint linked to existing UID, restoring:', linkedUid);
-          
-          // Sign in anonymously first to get a valid auth session
-          await this.ensureAuthenticated();
-          
-          // Now restore the data from the linked UID
+        if (deviceData) {
+          // EXISTING DATA ON THIS DEVICE → Restore session
+          console.log('[AuthService] Device data found, restoring session');
+          await this.restoreFromDeviceData(deviceFingerprintStr, deviceData);
+        } else {
+          // NO DATA ON THIS DEVICE → Check legacy mapping as fallback
+          console.log('[AuthService] No device data, checking legacy device_fingerprints mapping');
+          let linkedUid = null;
           try {
-            const db = getFirestoreInstance();
-            const userRef = doc(db, 'users', linkedUid);
-            const userDoc = await getDoc(userRef);
-            
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
-              const fullData = userData as any;
-              const currentAuthUser = this.auth.currentUser;
+            linkedUid = await this.getUidByDeviceFingerprint(deviceFingerprintStr);
+            console.log('[AuthService] Legacy mapping lookup:', linkedUid ? `found UID: ${linkedUid}` : 'no linked UID');
+          } catch (e) {
+            console.warn('[AuthService] Failed to check legacy mapping:', e);
+          }
+          
+          if (linkedUid) {
+            // LEGACY MAPPING EXISTS → Migrate to new architecture
+            console.log('[AuthService] Legacy mapping found, migrating to device_data');
+            try {
+              const db = getFirestoreInstance();
+              const userRef = doc(db, 'users', linkedUid);
+              const userDoc = await getDoc(userRef);
               
-              if (currentAuthUser) {
-                const localData: LocalUserData = {
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                const fullData = userData as any;
+                
+                // Sign in anonymously
+                await this.ensureAuthenticated();
+                const currentAuthUser = this.auth.currentUser;
+                if (!currentAuthUser) throw new Error('No auth user after ensureAuthenticated');
+                
+                // Restore data to device_data (NEW architecture)
+                const deviceData = {
                   uid: currentAuthUser.uid,
-                  originalUid: linkedUid,
                   recoveryCode: fullData.recoveryCode || '',
                   profile: fullData.profile || {},
                   rentalHistory: fullData.rentalHistory || [],
@@ -348,52 +355,58 @@ class AuthService {
                   updatedAt: new Date().toISOString(),
                   synced: true,
                 };
+                
+                // Save to device_data (NEW architecture)
+                await this.saveDeviceData(deviceFingerprintStr, deviceData);
+                
+                // Prepare local data
+                const localData: LocalUserData = {
+                  uid: currentAuthUser.uid,
+                  recoveryCode: deviceData.recoveryCode,
+                  profile: deviceData.profile,
+                  rentalHistory: deviceData.rentalHistory,
+                  favorites: deviceData.favorites,
+                  cart: deviceData.cart,
+                  notifications: deviceData.notifications,
+                  createdAt: deviceData.createdAt,
+                  updatedAt: new Date().toISOString(),
+                  synced: true,
+                };
 
-                // Save to localStorage
-                setStorageItem(STORAGE_KEYS.RECOVERY_CODE, fullData.recoveryCode || '');
+                setStorageItem(STORAGE_KEYS.RECOVERY_CODE, deviceData.recoveryCode);
                 setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
                 
-                this.currentUser = this.mapFirebaseUser(this.auth.currentUser!);
+                this.currentUser = this.mapFirebaseUser(currentAuthUser);
                 this.currentUser.localData = localData;
                 this.currentState = 'authenticated';
                 this.callbacks?.onStateChange(this.currentState, this.currentUser);
                 
-                // Update device fingerprint link to current auth UID
+                // Update canonical UID
+                this.setCanonicalUid(currentAuthUser.uid);
+                
+                // Update legacy mapping to current auth UID
                 await this.linkDeviceFingerprintToUid(currentAuthUser.uid);
                 
-                // Sync restored data to current UID
+                // Sync to users collection
                 await this.syncToCloud();
                 
-                console.log('[AuthService] Session restored from linked UID:', linkedUid);
+                console.log('[AuthService] Legacy migration complete, session restored');
+              } else {
+                // Legacy UID has no data, create new session
+                await this.createNewSession(deviceFingerprintStr);
               }
+            } catch (restoreError) {
+              console.error('[AuthService] Legacy migration failed:', restoreError);
+              await this.createNewSession(deviceFingerprintStr);
             }
-          } catch (restoreError) {
-            console.error('[AuthService] Failed to restore from linked UID:', restoreError);
-            console.warn('[AuthService] Failed to restore from linked UID, falling back to new session:', restoreError);
-            // Fall through to create new session
-            await this.ensureAuthenticated();
-          }
-        } else {
-          // No linked UID - first time user or new device
-          try {
-            await this.ensureAuthenticated();
-          } catch (e) {
-            console.warn('[AuthService] Failed to ensure authentication:', e);
-          }
-          
-          // Generate recovery code if doesn't exist
-          const existingRecoveryCode = getStorageItem(STORAGE_KEYS.RECOVERY_CODE);
-          if (!existingRecoveryCode) {
-            try {
-              await this.generateAndStoreRecoveryCode();
-            } catch (e) {
-              console.warn('[AuthService] Failed to generate recovery code:', e);
-            }
-          }
-        }
+          } else {
+            // NO DATA, NO LEGACY → First time on this device
+            await this.createNewSession(deviceFingerprintStr);
+}
       }
+    } // Close else block for linkedPhone check
 
-      // 5. Load local data
+    // 5. Load local data
       try {
         await this.loadLocalData();
       } catch (e) {
@@ -424,18 +437,47 @@ class AuthService {
       return;
     }
 
-    // Instant anonymous sign-in
+    // Check for canonical UID stored locally (stable across reloads)
+    const canonicalUid = this.getCanonicalUid();
+    
+    if (canonicalUid) {
+      // We have a canonical UID - create anonymous session and ensure data is linked
+      console.log('[AuthService] Using canonical UID:', canonicalUid);
+      const result = await signInAnonymously(this.auth);
+      const newUid = result.user.uid;
+      
+      // If the new UID differs from canonical, migrate data
+      if (newUid !== canonicalUid) {
+        console.log('[AuthService] Migrating data from canonical UID:', canonicalUid, 'to new UID:', newUid);
+        await this.migrateDeviceDataToUid(canonicalUid, newUid);
+        // Update canonical UID to new one
+        this.setCanonicalUid(newUid);
+      } else {
+        // Same UID, just ensure it's set
+        this.setCanonicalUid(newUid);
+      }
+      
+      this.currentUser = this.mapFirebaseUser(result.user);
+      this.currentState = 'anonymous';
+      await this.syncToCloud();
+      await this.linkDeviceFingerprintToUid(newUid);
+      return;
+    }
+
+    // No canonical UID - first time on this device
     const result = await signInAnonymously(this.auth);
+    const newUid = result.user.uid;
+    this.setCanonicalUid(newUid);
+    
     this.currentUser = this.mapFirebaseUser(result.user);
     this.currentState = 'anonymous';
     
     // Initialize local data for new user
-    await this.initializeLocalData(result.user.uid);
-    // Sync local data to cloud for anonymous user
+    await this.initializeLocalData(newUid);
     await this.syncToCloud();
     
     // Link device fingerprint to this new UID
-    await this.linkDeviceFingerprintToUid(result.user.uid);
+    await this.linkDeviceFingerprintToUid(newUid);
   }
 
   // ==========================================
@@ -502,6 +544,212 @@ class AuthService {
       });
     } catch (error) {
       console.warn('[AuthService] Failed to unlink device fingerprint:', error);
+    }
+  }
+
+  // ==========================================
+  // DEVICE DATA STORAGE (NEW ARCHITECTURE)
+  // Data stored by device fingerprint (stable), not UID
+  // ==========================================
+
+  /**
+   * Get device data from Firestore by device fingerprint
+   * This is the NEW primary data lookup - stable across UID changes
+   */
+  private async getDeviceData(deviceFingerprintStr: string): Promise<any | null> {
+    try {
+      const db = getFirestoreInstance();
+      const deviceDataRef = doc(db, 'device_data', deviceFingerprintStr);
+      const docSnap = await getDoc(deviceDataRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        console.log('[AuthService] Device data found for fingerprint:', deviceFingerprintStr);
+        return data;
+      }
+      console.log('[AuthService] No device data found for fingerprint:', deviceFingerprintStr);
+      return null;
+    } catch (error) {
+      console.warn('[AuthService] Failed to get device data:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Save device data to Firestore by device fingerprint
+   * This is the NEW primary data storage - stable across UID changes
+   */
+  private async saveDeviceData(deviceFingerprintStr: string, data: any): Promise<void> {
+    try {
+      const db = getFirestoreInstance();
+      const deviceDataRef = doc(db, 'device_data', deviceFingerprintStr);
+      
+      await setDoc(deviceDataRef, {
+        ...data,
+        deviceFingerprint: deviceFingerprintStr,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      
+      console.log('[AuthService] Device data saved for fingerprint:', deviceFingerprintStr);
+    } catch (error) {
+      console.error('[AuthService] Failed to save device data:', error);
+    }
+  }
+
+  /**
+   * Get or create canonical UID for this device
+   * Stored in localStorage to maintain stable UID across reloads
+   */
+  private getCanonicalUid(): string | null {
+    if (typeof window === 'undefined') return null;
+    return getStorageItem('lavadoras_canonical_uid');
+  }
+
+  private setCanonicalUid(uid: string): void {
+    if (typeof window === 'undefined') return;
+    setStorageItem('lavadoras_canonical_uid', uid);
+  }
+
+  /**
+   * Create new session for first-time user on this device
+   */
+  private async createNewSession(deviceFingerprintStr: string): Promise<void> {
+    console.log('[AuthService] Creating new session for device:', deviceFingerprintStr);
+    
+    // Create new anonymous user
+    const result = await signInAnonymously(this.auth);
+    const newUid = result.user.uid;
+    
+    // Set as canonical UID for this device
+    this.setCanonicalUid(newUid);
+    
+    // Initialize local data
+    const recoveryCode = await this.getOrCreatePermanentRecoveryCode(newUid);
+    const localData: LocalUserData = {
+      uid: newUid,
+      recoveryCode,
+      profile: {},
+      rentalHistory: [],
+      favorites: [],
+      cart: [],
+      notifications: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      synced: false,
+    };
+
+    setStorageItem(STORAGE_KEYS.RECOVERY_CODE, recoveryCode);
+    setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
+    setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify({}));
+    
+    // Save to device-based storage (NEW)
+    await this.saveDeviceData(deviceFingerprintStr, {
+      uid: newUid,
+      recoveryCode,
+      profile: {},
+      rentalHistory: [],
+      favorites: [],
+      cart: [],
+      notifications: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      synced: false,
+    });
+
+    // Link device fingerprint to this UID (legacy mapping)
+    await this.linkDeviceFingerprintToUid(newUid);
+    
+    this.currentUser = this.mapFirebaseUser(result.user);
+    this.currentUser.localData = localData;
+    this.currentState = 'anonymous';
+    this.callbacks?.onStateChange(this.currentState, this.currentUser);
+    
+    this.callbacks?.onRecoveryCodeGenerated?.(recoveryCode);
+    console.log('[AuthService] New session created with UID:', newUid);
+  }
+
+  /**
+   * Restore session from device data (existing user on this device)
+   */
+  private async restoreFromDeviceData(deviceFingerprintStr: string, deviceData: any): Promise<void> {
+    console.log('[AuthService] Restoring session from device data for:', deviceFingerprintStr);
+    
+    // Get or create canonical UID
+    let canonicalUid = this.getCanonicalUid();
+    
+    // If device data has a different UID, use that as canonical
+    if (deviceData.uid && deviceData.uid !== canonicalUid) {
+      console.log('[AuthService] Updating canonical UID from device data:', deviceData.uid);
+      canonicalUid = deviceData.uid;
+      this.setCanonicalUid(canonicalUid);
+    }
+    
+    // If no canonical UID, generate one and migrate
+    if (!canonicalUid) {
+      const result = await signInAnonymously(this.auth);
+      canonicalUid = result.user.uid;
+      this.setCanonicalUid(canonicalUid);
+      await this.migrateDeviceDataToUid(deviceFingerprintStr, canonicalUid);
+    }
+    
+    // Sign in anonymously to get valid auth session
+    await this.ensureAuthenticated();
+    
+    // Prepare local data from device data
+    const localData: LocalUserData = {
+      uid: canonicalUid,
+      recoveryCode: deviceData.recoveryCode || '',
+      profile: deviceData.profile || {},
+      rentalHistory: deviceData.rentalHistory || [],
+      favorites: deviceData.favorites || [],
+      cart: deviceData.cart || [],
+      notifications: deviceData.notifications || [],
+      createdAt: deviceData.createdAt || new Date().toISOString(),
+      updatedAt: deviceData.updatedAt || new Date().toISOString(),
+      synced: true,
+    };
+
+    // Save to localStorage
+    setStorageItem(STORAGE_KEYS.RECOVERY_CODE, deviceData.recoveryCode || '');
+    setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
+    setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(deviceData.profile || {}));
+    
+    // Update current user
+    const currentAuthUser = this.auth.currentUser;
+    if (currentAuthUser) {
+      this.currentUser = this.mapFirebaseUser(currentAuthUser);
+      this.currentUser.localData = localData;
+      this.currentState = 'authenticated';
+      this.callbacks?.onStateChange(this.currentState, this.currentUser);
+    }
+    
+    // Update device data with current canonical UID (in case it changed)
+    await this.saveDeviceData(deviceFingerprintStr, {
+      ...deviceData,
+      uid: canonicalUid,
+      updatedAt: serverTimestamp(),
+    });
+    
+    // Update legacy mapping
+    await this.linkDeviceFingerprintToUid(canonicalUid);
+    
+    console.log('[AuthService] Session restored from device data, UID:', canonicalUid);
+  }
+
+  /**
+   * Migrate device data to new canonical UID
+   */
+  private async migrateDeviceDataToUid(deviceFingerprintStr: string, newUid: string): Promise<void> {
+    try {
+      const db = getFirestoreInstance();
+      const deviceDataRef = doc(db, 'device_data', deviceFingerprintStr);
+      await updateDoc(deviceDataRef, {
+        uid: newUid,
+        updatedAt: serverTimestamp(),
+      });
+      console.log('[AuthService] Device data migrated to new UID:', newUid);
+    } catch (error) {
+      console.warn('[AuthService] Failed to migrate device data:', error);
     }
   }
 
@@ -818,9 +1066,30 @@ class AuthService {
         updatedAt: new Date().toISOString(),
       };
 
-      // Sync to Firestore
+      // Sync to users collection (legacy)
       await setDoc(doc(db, 'users', this.currentUser.uid), syncData, { merge: true });
       console.log('[AuthService] syncToCloud successful for UID:', this.currentUser.uid);
+      
+      // ALSO sync to device_data (NEW architecture - primary storage)
+      try {
+        const deviceFp = await deviceFingerprint.getFingerprint();
+        const deviceFingerprintStr = deviceFp.fingerprint;
+        await this.saveDeviceData(deviceFingerprintStr, {
+          uid: this.currentUser.uid,
+          recoveryCode: localData.recoveryCode,
+          profile: localData.profile,
+          rentalHistory: localData.rentalHistory,
+          favorites: localData.favorites,
+          cart: localData.cart,
+          notifications: localData.notifications,
+          createdAt: localData.createdAt,
+          updatedAt: new Date().toISOString(),
+          synced: true,
+        });
+        console.log('[AuthService] syncToCloud: device_data updated');
+      } catch (deviceError) {
+        console.warn('[AuthService] Failed to sync to device_data:', deviceError);
+      }
       
       // Mark as synced locally - USE DIRECT STORAGE to avoid infinite loop
       const currentLocal = this.getLocalData();
@@ -1228,6 +1497,18 @@ class AuthService {
   }
 
   async signOut(): Promise<void> {
+    // CRITICAL: Save current data to device_data BEFORE signing out
+    // This enables auto-restore on next visit to this device
+    if (this.currentUser) {
+      try {
+        // Save current state to device_data
+        await this.syncToCloud();
+        console.log('[AuthService] Data synced to device_data on signOut');
+      } catch (e) {
+        console.warn('[AuthService] Failed to sync on signOut:', e);
+      }
+    }
+    
     // CRITICAL: Link device fingerprint to current UID BEFORE signing out
     // This enables auto-restore on next visit to this device
     let uidToLink: string | null = null;
