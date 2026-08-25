@@ -22,7 +22,10 @@ import {
   ChevronRight,
   XCircle,
   BookOpen,
-  LineChart
+  LineChart,
+  Key,
+  Copy,
+  Check
 } from 'lucide-react';
 import { useProfile } from '@/firebase/auth/use-profile';
 import { useFirestore, updateDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
@@ -30,10 +33,12 @@ import { doc, serverTimestamp, collection, query, where, getDocs, arrayUnion, ar
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/lib/auth/AuthService';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { profile, user, isLoading, isOwner } = useProfile();
+  const { getRecoveryCode } = useAuth();
   const firestore = useFirestore();
   
   const [name, setName] = useState("");
@@ -43,6 +48,9 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLinking, setIsLinking] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const recoveryCode = getRecoveryCode();
 
   const linkedStoreRef = useMemoFirebase(() => 
     (!firestore || !profile?.linkedStoreId) ? null : doc(firestore, 'stores', profile.linkedStoreId), 
@@ -210,6 +218,36 @@ export default function ProfilePage() {
               <Label className="text-[10px] font-black uppercase text-slate-400 ml-1">WhatsApp de contacto</Label>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="300 000 0000" className="h-12 rounded-2xl bg-slate-50 border-none font-bold text-sm px-4" />
             </div>
+
+            {/* Código de acceso de 6 dígitos - Único por cuenta */}
+            {recoveryCode && (
+              <div className="space-y-2 pt-2 border-t border-slate-200">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-1 flex items-center gap-2">
+                  <Key className="w-3 h-3" />
+                  Código de acceso (6 dígitos)
+                </Label>
+                <div className="flex items-center gap-2 p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                  <code className="flex-1 text-xl font-mono font-bold text-primary tracking-widest select-all bg-white px-3 py-2 rounded border border-slate-200 text-center">{recoveryCode}</code>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(recoveryCode);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="h-10 w-10 shrink-0"
+                    aria-label={copied ? "Copiado" : "Copiar código"}
+                  >
+                    {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
+                  </Button>
+                </div>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                  Guarda este código. Te permite ingresar a tu cuenta en cualquier dispositivo sin contraseña.
+                </p>
+              </div>
+            )}
+
             <Button onClick={handleSave} disabled={isSaving} className="w-full h-12 rounded-2xl bg-primary text-white text-xs font-black gap-2 shadow-lg active:scale-95 uppercase tracking-widest">
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Actualizar Mi Perfil"}
             </Button>

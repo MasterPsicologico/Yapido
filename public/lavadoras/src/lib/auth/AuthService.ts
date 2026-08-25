@@ -254,6 +254,25 @@ class AuthService {
         
         // Load local data and start listener
         await this.loadLocalData();
+        
+        // Ensure recovery code is in localStorage for authenticated users
+        // (may be missing if user logged in via email/phone on this device for first time)
+        const hasRecoveryCode = getStorageItem(STORAGE_KEYS.RECOVERY_CODE);
+        if (!hasRecoveryCode) {
+          try {
+            const db = getFirestoreInstance();
+            const userRef = doc(db, 'users', this.auth.currentUser.uid);
+            const userDoc = await getDoc(userRef);
+            if (userDoc.exists() && userDoc.data().recoveryCode) {
+              const recoveryCode = userDoc.data().recoveryCode;
+              setStorageItem(STORAGE_KEYS.RECOVERY_CODE, recoveryCode);
+              console.log('[AuthService] Recovery code restored from Firestore for authenticated user');
+            }
+          } catch (e) {
+            console.warn('[AuthService] Could not restore recovery code from Firestore:', e);
+          }
+        }
+        
         this.startAuthListener();
         return;
       }
