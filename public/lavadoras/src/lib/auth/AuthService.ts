@@ -675,7 +675,7 @@ class AuthService {
     console.log('[AuthService] Restoring session from device data for:', deviceFingerprintStr);
     
     // Get or create canonical UID
-    let canonicalUid = this.getCanonicalUid();
+    let canonicalUid = this.getCanonicalUid() ?? '';
     
     // If device data has a different UID, use that as canonical
     if (deviceData.uid && deviceData.uid !== canonicalUid) {
