@@ -17,6 +17,8 @@ import {
   updateProfile,
   UserCredential,
   AuthError,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth';
 import { getAuthInstance } from '@/firebase';
 import { deviceFingerprint } from '@/lib/device/DeviceFingerprint';
@@ -24,7 +26,7 @@ import { phoneAuth } from './PhoneAuthService';
 import { doc, getDoc, setDoc, serverTimestamp, query, where, limit, collection, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/firebase';
 
-export type AuthMethod = 'anonymous' | 'email-link' | 'whatsapp' | 'recovery-code';
+export type AuthMethod = 'anonymous' | 'email-link' | 'whatsapp' | 'recovery-code' | 'google';
 export type AuthState = 'loading' | 'anonymous' | 'authenticated' | 'phone_verification_needed' | 'account_selection' | 'code_login_needed' | 'error';
 
 // AuthUser type - plain interface with only the properties we need
@@ -1294,6 +1296,38 @@ class AuthService {
   }
 
   // ==========================================
+  // GOOGLE AUTH
+  // ==========================================
+
+  async signInWithGoogle(): Promise<AuthUser> {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
+      const result = await signInWithPopup(this.auth, provider);
+      
+      // Sync to cloud to save/update user profile
+      await this.syncToCloud();
+      
+      this.currentUser = this.mapFirebaseUser(result.user);
+      this.currentState = 'authenticated';
+      this.callbacks?.onStateChange(this.currentState, this.currentUser);
+      
+      // Link device fingerprint for auto-restore
+      const deviceFingerprintStr = await deviceFingerprint.getFingerprintString();
+      await this.linkDeviceFingerprintToUid(result.user.uid);
+      
+      return this.currentUser;
+    } catch (error) {
+      const msg = this.getErrorMessage(error);
+      this.callbacks?.onError(msg, 'google');
+      throw new Error(msg);
+    }
+  }
+
+  // ==========================================
   // ACCOUNT RECOVERY / LOGIN BY 6-DIGIT CODE (PERMANENT IN FIRESTORE)
   // Unified method: serves both recovery and login with code
   // ==========================================
@@ -1754,6 +1788,11 @@ export function useAuth() {
     return authService.signInWithRecoveryCode(code);
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    setError(null);
+    return authService.signInWithGoogle();
+  }, []);
+
   const getRecoveryCode = useCallback(() => {
     return authService.getRecoveryCode();
   }, []);
@@ -1828,6 +1867,7 @@ export function useAuth() {
     upgradeWithPhone,
     recoverAccount,
     signInWithRecoveryCode,
+    signInWithGoogle,
     getRecoveryCode,
     saveLocalData,
     loadLocalData,

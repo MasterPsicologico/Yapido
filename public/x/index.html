@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AnimeStream - Reproductor de anime instantáneo con las mejores series">
+    <title>AnimeStream • Reproductor Instantáneo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+</head>
+<body>
+    <div class="app-shell">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">▶</span>
+                    <span class="logo-text">AnimeStream</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <span class="nav-section-title">BIBLIOTECA</span>
+                    <ul class="nav-list" id="seriesList">
+                        <!-- Series will be rendered here -->
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <span class="nav-section-title">ACCIONES</span>
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <button class="nav-btn primary" id="addSeriesBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                <span>Añadir Anime</span>
+                                <kbd class="shortcut">N</kbd>
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-btn" id="importBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <span>Importar JSON</span>
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-btn" id="exportBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                <span>Exportar JSON</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="stats" id="stats">
+                    <span class="stat"><strong id="totalSeries">0</strong> series</span>
+                    <span class="stat"><strong id="totalEpisodes">0</strong> episodios</span>
+                </div>
+                <div class="version">v1.0.0</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content" id="mainContent">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="search-wrapper">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Buscar anime, episodio..." autocomplete="off">
+                    <kbd class="search-shortcut">⌘K</kbd>
+                </div>
+                <div class="top-actions">
+                    <button class="icon-btn" id="themeToggle" aria-label="Toggle theme">
+                        <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+                    <button class="icon-btn" id="fullscreenToggle" aria-label="Toggle fullscreen">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Player Area -->
+            <section class="player-section" id="playerSection">
+                <div class="player-container" id="playerContainer">
+                    <!-- Custom Video Player -->
+                    <div class="video-player" id="videoPlayer">
+                        <video class="video-element" id="videoElement" playsinline></video>
+                        
+                        <!-- Loading Overlay -->
+                        <div class="loading-overlay" id="loadingOverlay">
+                            <div class="loader">
+                                <div class="loader-ring"></div>
+                                <div class="loader-ring"></div>
+                                <div class="loader-ring"></div>
+                            </div>
+                            <span class="loading-text" id="loadingText">Cargando...</span>
+                        </div>
+                        
+                        <!-- Error Overlay -->
+                        <div class="error-overlay hidden" id="errorOverlay">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                            <h3>Error de reproducción</h3>
+                            <p id="errorMessage">No se pudo cargar el video</p>
+                            <button class="btn retry-btn" id="retryBtn">Reintentar</button>
+                        </div>
+                        
+                        <!-- Player Controls -->
+                        <div class="player-controls" id="playerControls">
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress-track">
+                                    <div class="progress-buffered" id="progressBuffered"></div>
+                                    <div class="progress-fill" id="progressFill"></div>
+                                    <div class="progress-handle" id="progressHandle"></div>
+                                </div>
+                                <div class="preview-tooltip hidden" id="previewTooltip">
+                                    <img src="" alt="Preview" class="preview-image">
+                                    <span class="preview-time">00:00</span>
+                                </div>
+                            </div>
+                            
+                            <div class="controls-row">
+                                <div class="controls-left">
+                                    <button class="control-btn" id="playPauseBtn" aria-label="Play/Pause">
+                                        <svg class="play-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                        </svg>
+                                        <svg class="pause-icon hidden" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                            <rect x="6" y="4" width="4" height="16"></rect>
+                                            <rect x="14" y="4" width="4" height="16"></rect>
+                                        </svg>
+                                    </button>
+                                    <button class="control-btn" id="rewindBtn" aria-label="Rewind 10s">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polygon points="11 19 2 12 11 5 11 19"></polygon>
+                                            <path d="M22 12a10 10 0 1 1-20 0"></path>
+                                        </svg>
+                                    </button>
+                                    <button class="control-btn" id="forwardBtn" aria-label="Forward 10s">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polygon points="13 19 22 12 13 5 13 19"></polygon>
+                                            <path d="M2 12a10 10 0 1 0 20 0"></path>
+                                        </svg>
+                                    </button>
+                                    <div class="time-display">
+                                        <span class="current-time" id="currentTime">0:00</span>
+                                        <span class="time-separator">/</span>
+                                        <span class="duration" id="duration">0:00</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="controls-center">
+                                    <h3 class="episode-title" id="episodeTitle">Selecciona un episodio</h3>
+                                </div>
+                                
+                                <div class="controls-right">
+                                    <button class="control-btn" id="skipPrevBtn" aria-label="Episodio anterior">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                                            <rect x="5" y="4" width="4" height="16"></rect>
+                                        </svg>
+                                    </button>
+                                    <button class="control-btn" id="skipNextBtn" aria-label="Siguiente episodio">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                                            <rect x="15" y="4" width="4" height="16"></rect>
+                                        </svg>
+                                    </button>
+                                    <div class="volume-control">
+                                        <button class="control-btn" id="muteBtn" aria-label="Mute/Unmute">
+                                            <svg class="volume-high" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 11 11 5"></polygon>
+                                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                            </svg>
+                                            <svg class="volume-low hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 11 11 5"></polygon>
+                                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                            </svg>
+                                            <svg class="volume-mute hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 11 11 5"></polygon>
+                                                <line x1="23" y1="9" x2="17" y2="15"></line>
+                                                <line x1="17" y1="9" x2="23" y2="15"></line>
+                                            </svg>
+                                        </button>
+                                        <div class="volume-slider-container">
+                                            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.01" value="0.8">
+                                        </div>
+                                    </div>
+                                    <button class="control-btn" id="pipBtn" aria-label="Picture in Picture">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 9V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10c0 1.1.9 2 2 2h4"></path>
+                                            <rect x="2" y="2" width="10" height="7"></rect>
+                                        </svg>
+                                    </button>
+                                    <button class="control-btn" id="fullscreenBtn" aria-label="Fullscreen">
+                                        <svg class="fullscreen-enter" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                                        </svg>
+                                        <svg class="fullscreen-exit hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M8 3v3a2 2 0 0 0 2 2h3M17 3h3a2 2 0 0 1 2 2v3M3 16h3a2 2 0 0 0 2-2v-3M14 21v-3a2 2 0 0 1 2-2h3"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Episode Info Panel -->
+                    <div class="episode-info-panel" id="episodeInfoPanel">
+                        <div class="episode-meta">
+                            <div class="episode-thumbnail" id="episodeThumbnail">
+                                <img id="episodeThumbImg" src="" alt="">
+                                <div class="play-overlay">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="episode-details">
+                                <div class="episode-header">
+                                    <span class="episode-number" id="episodeNumber">EP 01</span>
+                                    <h2 class="episode-name" id="episodeName">Nombre del episodio</h2>
+                                </div>
+                                <p class="episode-synopsis" id="episodeSynopsis">Sinopsis del episodio...</p>
+                                <div class="episode-tags" id="episodeTags"></div>
+                            </div>
+                        </div>
+                        <div class="episode-actions">
+                            <button class="btn btn-primary" id="watchBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                                Ver ahora
+                            </button>
+                            <button class="btn btn-secondary" id="editEpisodeBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Editar
+                            </button>
+                            <button class="btn btn-ghost" id="shareBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                                Compartir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Episodes List Panel -->
+            <section class="episodes-panel" id="episodesPanel">
+                <div class="panel-header">
+                    <div class="series-info" id="seriesInfo">
+                        <img class="series-poster" id="seriesPoster" src="" alt="">
+                        <div class="series-meta">
+                            <h2 class="series-title" id="seriesTitle">Selecciona una serie</h2>
+                            <div class="series-meta-tags" id="seriesMetaTags"></div>
+                        </div>
+                    </div>
+                    <div class="panel-actions">
+                        <select class="season-select" id="seasonSelect" aria-label="Select season">
+                            <option value="all">Todas las temporadas</option>
+                        </select>
+                        <button class="btn btn-ghost" id="autoFetchBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 4v6h-6"></path>
+                                <path d="M1 20v-6h6"></path>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                            Auto-obtener capítulos
+                        </button>
+                        <button class="btn btn-primary" id="addEpisodeBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Añadir capítulo
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="episodes-list-wrapper">
+                    <ul class="episodes-list" id="episodesList">
+                        <!-- Episodes will be rendered here -->
+                    </ul>
+                </div>
+            </section>
+        </main>
+
+        <!-- Right Panel - Episode Editor / Series Manager -->
+        <aside class="right-panel" id="rightPanel">
+            <div class="panel-tabs" id="panelTabs">
+                <button class="tab-btn active" data-tab="editor">Editor</button>
+                <button class="tab-btn" data-tab="manager">Gestor</button>
+                <button class="tab-btn" data-tab="settings">Ajustes</button>
+            </div>
+            
+            <div class="panel-content">
+                <!-- Episode Editor Tab -->
+                <div class="tab-panel active" id="editorTab">
+                    <h3 class="panel-title">Editar Episodio</h3>
+                    <form class="editor-form" id="editorForm">
+                        <input type="hidden" id="editEpisodeId">
+                        <input type="hidden" id="editSeriesId">
+                        
+                        <div class="form-group">
+                            <label for="epNumber">Número de episodio</label>
+                            <input type="number" id="epNumber" min="1" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="epTitle">Título</label>
+                            <input type="text" id="epTitle" placeholder="Título del episodio" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="epSynopsis">Sinopsis</label>
+                            <textarea id="epSynopsis" rows="3" placeholder="Descripción del episodio..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="epVideoUrl">Enlace de video (MP4, M3U8, etc.)</label>
+                            <input type="url" id="epVideoUrl" placeholder="https://ejemplo.com/video.mp4" required>
+                            <span class="form-hint">Soporta enlaces directos .mp4, .m3u8, .webm, embeds</span>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="epThumbnail">Miniatura (URL)</label>
+                                <input type="url" id="epThumbnail" placeholder="https://ejemplo.com/thumb.jpg">
+                            </div>
+                            <div class="form-group">
+                                <label for="epDuration">Duración (segundos)</label>
+                                <input type="number" id="epDuration" min="0" placeholder="Auto">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="epTags">Etiquetas (separadas por comas)</label>
+                            <input type="text" id="epTags" placeholder="acción, canon, relleno, final">
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="saveEpisodeBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                    <polyline points="7 3 7 8 15 8"></polyline>
+                                </svg>
+                                Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Series Manager Tab -->
+                <div class="tab-panel" id="managerTab">
+                    <h3 class="panel-title">Gestor de Series</h3>
+                    <div class="manager-toolbar">
+                        <button class="btn btn-primary" id="newSeriesBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Nueva Serie
+                        </button>
+                        <button class="btn btn-secondary" id="bulkEditBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                            </svg>
+                            Edición múltiple
+                        </button>
+                    </div>
+                    <ul class="series-manager-list" id="seriesManagerList">
+                        <!-- Series for management -->
+                    </ul>
+                </div>
+                
+                <!-- Settings Tab -->
+                <div class="tab-panel" id="settingsTab">
+                    <h3 class="panel-title">Configuración</h3>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Reproducción automática</h4>
+                                <p>Reproducir automáticamente el siguiente episodio</p>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="autoPlaySetting" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Precarga de video</h4>
+                                <p>Precargar el siguiente episodio para inicio instantáneo</p>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="preloadSetting" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Saltar intro/outro</h4>
+                                <p>Marcar y saltar automáticamente opening/ending</p>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="skipIntrosSetting">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Modo cinematográfico</h4>
+                                <p>Ocultar controles automáticamente en fullscreen</p>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="cinemaSetting" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Calidad por defecto</h4>
+                            </div>
+                            <select class="select" id="defaultQuality">
+                                <option value="auto">Automático</option>
+                                <option value="1080">1080p</option>
+                                <option value="720">720p</option>
+                                <option value="480">480p</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Idioma subtítulos</h4>
+                            </div>
+                            <select class="select" id="subtitleLang">
+                                <option value="es">Español</option>
+                                <option value="en">English</option>
+                                <option value="ja">日本語</option>
+                                <option value="off">Desactivados</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-divider"></div>
+                    
+                    <h4 class="settings-subtitle">Datos y almacenamiento</h4>
+                    <div class="settings-actions">
+                        <button class="btn btn-secondary" id="clearCacheBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            Limpiar caché
+                        </button>
+                        <button class="btn btn-danger" id="resetDataBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18"></path>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            Resetear todo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal-overlay hidden" id="addSeriesModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Añadir nueva serie de anime</h2>
+                <button class="modal-close" id="closeAddSeriesModal">&times;</button>
+            </div>
+            <form id="addSeriesForm">
+                <div class="form-group">
+                    <label for="newSeriesTitle">Título *</label>
+                    <input type="text" id="newSeriesTitle" placeholder="Ej: Attack on Titan" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newSeriesYear">Año</label>
+                        <input type="number" id="newSeriesYear" min="1960" max="2030" placeholder="2024">
+                    </div>
+                    <div class="form-group">
+                        <label for="newSeriesStatus">Estado</label>
+                        <select id="newSeriesStatus">
+                            <option value="airing">En emisión</option>
+                            <option value="completed">Finalizado</option>
+                            <option value="upcoming">Próximamente</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="newSeriesGenres">Géneros (separados por comas)</label>
+                    <input type="text" id="newSeriesGenres" placeholder="acción, aventura, fantasía, shonen">
+                </div>
+                <div class="form-group">
+                    <label for="newSeriesPoster">URL del póster</label>
+                    <input type="url" id="newSeriesPoster" placeholder="https://ejemplo.com/poster.jpg">
+                </div>
+                <div class="form-group">
+                    <label for="newSeriesSynopsis">Sinopsis</label>
+                    <textarea id="newSeriesSynopsis" rows="3" placeholder="Descripción de la serie..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="autoFetchEpisodes" checked>
+                        <span>Intentar obtener episodios automáticamente</span>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelAddSeriesBtn">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear serie</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="episodeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="episodeModalTitle">Añadir capítulo</h2>
+                <button class="modal-close" id="closeEpisodeModal">&times;</button>
+            </div>
+            <form id="episodeForm">
+                <input type="hidden" id="episodeSeriesId">
+                <input type="hidden" id="episodeEditId">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="episodeNumberInput">Número *</label>
+                        <input type="number" id="episodeNumberInput" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="episodeSeason">Temporada</label>
+                        <input type="number" id="episodeSeason" min="1" value="1">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="episodeTitleInput">Título *</label>
+                    <input type="text" id="episodeTitleInput" placeholder="Título del capítulo" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="episodeVideoUrl">URL del video *</label>
+                    <input type="url" id="episodeVideoUrl" placeholder="https://ejemplo.com/video.mp4" required>
+                    <span class="form-hint">Enlace directo: .mp4, .m3u8, .webm, .mkv</span>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="episodeThumbnailInput">Miniatura</label>
+                        <input type="url" id="episodeThumbnailInput" placeholder="https://ejemplo.com/thumb.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label for="episodeDurationInput">Duración (seg)</label>
+                        <input type="number" id="episodeDurationInput" min="0" placeholder="Auto">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="episodeTagsInput">Etiquetas</label>
+                    <input type="text" id="episodeTagsInput" placeholder="canon, relleno, final, especial">
+                </div>
+                
+                <div class="form-group">
+                    <label for="episodeSynopsisInput">Sinopsis</label>
+                    <textarea id="episodeSynopsisInput" rows="2" placeholder="Descripción breve..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelEpisodeBtn">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="saveEpisodeModalBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        <span id="saveEpisodeBtnText">Guardar</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="confirmModal">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h2 id="confirmTitle">Confirmar</h2>
+            </div>
+            <p id="confirmMessage">¿Estás seguro?</p>
+            <div class="form-actions">
+                <button class="btn btn-secondary" id="confirmCancel">Cancelar</button>
+                <button class="btn btn-danger" id="confirmOk">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Keyboard Shortcuts Help -->
+    <div class="shortcuts-help hidden" id="shortcutsHelp">
+        <div class="shortcuts-content">
+            <h3>⌨️ Atajos de teclado</h3>
+            <div class="shortcuts-grid">
+                <div class="shortcut-item"><kbd>Espacio</kbd><span>Play / Pausa</span></div>
+                <div class="shortcut-item"><kbd>← / →</kbd><span>Retroceder / Adelantar 10s</span></div>
+                <div class="shortcut-item"><kbd>↑ / ↓</kbd><span>Subir / Bajar volumen</span></div>
+                <div class="shortcut-item"><kbd>M</kbd><span>Silenciar</span></div>
+                <div class="shortcut-item"><kbd>F</kbd><span>Pantalla completa</span></div>
+                <div class="shortcut-item"><kbd>P</kbd><span>Picture in Picture</span></div>
+                <div class="shortcut-item"><kbd>N</kbd><span>Siguiente episodio</span></div>
+                <div class="shortcut-item"><kbd>B</kbd><span>Episodio anterior</span></div>
+                <div class="shortcut-item"><kbd>⌘K</kbd><span>Buscar</span></div>
+                <div class="shortcut-item"><kbd>E</kbd><span>Editar episodio</span></div>
+                <div class="shortcut-item"><kbd>Escape</kbd><span>Cerrar modales / Salir fullscreen</span></div>
+                <div class="shortcut-item"><kbd>?</kbd><span>Mostrar esta ayuda</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

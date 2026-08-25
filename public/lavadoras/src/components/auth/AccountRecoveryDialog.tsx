@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth/AuthService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Key, Shield, X, CheckCircle, ArrowRight, Copy } from 'lucide-react';
+import { Loader2, Key, Shield, X, CheckCircle, ArrowRight, Copy, Chrome } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AccountRecoveryDialog() {
@@ -15,7 +15,8 @@ export function AccountRecoveryDialog() {
     quickRestoreAccount, 
     getRememberedAccount, 
     clearRememberedAccount,
-    signInAnonymously 
+    signInAnonymously,
+    signInWithGoogle 
   } = useAuth();
   
   const [isOpen, setIsOpen] = useState(false);
@@ -95,6 +96,23 @@ export function AccountRecoveryDialog() {
     clearRememberedAccount();
     await signInAnonymously();
     setIsOpen(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsRecovering(true);
+    setError(null);
+    try {
+      await signInWithGoogle();
+      setSuccess(true);
+      setTimeout(() => {
+        setIsOpen(false);
+        setSuccess(false);
+      }, 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesión con Google');
+    } finally {
+      setIsRecovering(false);
+    }
   };
 
   if (!isOpen && !showQuickRestore && !showPhoneVerification) {
@@ -290,6 +308,17 @@ export function AccountRecoveryDialog() {
                 {buttonText}
               </>
             )}
+          </Button>
+
+          {/* Google Sign In Button */}
+          <Button 
+            onClick={handleGoogleSignIn}
+            disabled={isRecovering || success}
+            variant="outline"
+            className="w-full h-12 gap-2"
+          >
+            <Chrome className="w-5 h-5" />
+            Continuar con Google
           </Button>
 
           <Button 
