@@ -193,6 +193,113 @@ class AuthService {
     return this.initPromise || Promise.resolve();
   }
 
+  // ==========================================
+  // AUTO-RESTORE & AUTH LISTENER
+  // ==========================================
+
+  private autoRestoreLock = false;
+
+  /**
+   * Initialize the auth state listener (call once on app mount)
+   */
+  initializeAuthListener(): void {
+    if (this.initialized || typeof window === 'undefined') return;
+    this.initialized = true;
+    this.startAuthListener();
+  }
+
+  /**
+   * Perform auto-restore of session from cloud/device data
+   * Called when user is already authenticated
+   */
+  async performAutoRestore(): Promise<void> {
+    if (!this.auth.currentUser) return;
+    if (this.currentState !== 'anonymous' && this.currentState !== 'authenticated') return;
+
+    // Prevent duplicate executions
+    if (this.autoRestoreLock) {
+      console.log('[AuthService] performAutoRestore: ALREADY RUNNING, skipping...');
+      return;
+    }
+    this.autoRestoreLock = true;
+
+    try {
+      // 1. READ FIRST FROM CLOUD (users/{uid}) - SOURCE OF TRUTH CROSS-DEVICE
+      console.log('[AuthService] performAutoRestore: reading users/{uid} from cloud...');
+      const userData = await this.getUserDataFromCloud(this.auth.currentUser.uid);
+      
+      if (userData) {
+        console.log('[AuthService] ✓ Data found in cloud, restoring...');
+        await this.restoreFromCloudData(userData);
+        
+        // Save to device_data for future fast local restores
+        const deviceFp = await deviceFingerprint.getFingerprint();
+        await this.addAccountToDeviceData(deviceFp.fingerprint, this.auth.currentUser.uid, {
+          ...userData,
+          synced: true,
+        });
+        await this.setCurrentAccount(deviceFp.fingerprint, this.auth.currentUser.uid);
+        await this.linkDeviceFingerprintToUid(this.auth.currentUser.uid);
+        
+        // Load local and sync
+        await this.loadLocalData();
+        await this.syncToCloud();
+        console.log('[AuthService] performAutoRestore COMPLETE (from cloud)');
+        return;
+      }
+
+      console.log('[AuthService] No data in cloud for UID:', this.auth.currentUser.uid);
+
+      // 2. FALLBACK: device_data (device-only)
+      console.log('[AuthService] No data in cloud, trying device_data...');
+      const deviceFp = await deviceFingerprint.getFingerprint();
+      const deviceFingerprintStr = deviceFp.fingerprint;
+      const deviceData = await this.getDeviceData(deviceFingerprintStr);
+      
+      if (deviceData) {
+        await this.restoreFromDeviceData(deviceFingerprintStr, deviceData);
+      } else {
+        // 3. FALLBACK: legacy mapping
+        let linkedUid = null;
+        try {
+          linkedUid = await this.getUidByDeviceFingerprint(deviceFingerprintStr);
+        } catch (e) {
+          console.warn('[AuthService] Failed to check legacy mapping:', e);
+        }
+
+        if (linkedUid) {
+          if (linkedUid === this.auth.currentUser?.uid) {
+            const localData = this.getLocalData();
+            if (localData) {
+              await this.addAccountToDeviceData(deviceFingerprintStr, this.auth.currentUser.uid, {
+                ...localData,
+                synced: true,
+              });
+            }
+          }
+          await this.linkDeviceFingerprintToUid(this.auth.currentUser.uid);
+        } else {
+          // First time on this device
+          await this.createNewSession(deviceFingerprintStr);
+        }
+      }
+
+      await this.loadLocalData();
+      await this.syncToCloud();
+
+    } catch (error) {
+      console.error('[AuthService] Auto-restore error:', error);
+      // Ensure user has minimal data
+      if (this.auth.currentUser && !this.getLocalData()) {
+        await this.initializeLocalData(this.auth.currentUser.uid);
+        await this.syncToCloud();
+      }
+    } finally {
+      // ALWAYS release the lock
+      this.autoRestoreLock = false;
+    }
+  }
+
   // Error handling helper - defined early so it's available to all methods
   private getErrorMessage(error: unknown): string {
     if (error instanceof Error) {
@@ -1708,6 +1815,126 @@ class AuthService {
     this.unsubscribe = null;
     this.callbacks = null;
   }
+
+  // ==========================================
+  // AUTO-RESTORE HELPER METHODS
+  // ==========================================
+
+  /**
+   * Get user data from cloud (users collection) - SOURCE OF TRUTH
+   */
+  private async getUserDataFromCloud(uid: string): Promise<any | null> {
+    try {
+      const db = getFirestoreInstance();
+      const userRef = doc(db, 'users', uid);
+      const userDoc = await getDoc(userRef);
+      if (userDoc.exists()) {
+        console.log('[AuthService] User data found in cloud:', uid);
+        return userDoc.data();
+      }
+      return null;
+    } catch (error) {
+      console.warn('[AuthService] Failed to get user data from cloud:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Restore session from cloud data (users collection)
+   */
+  private async restoreFromCloudData(userData: any): Promise<void> {
+    const currentAuthUser = this.auth.currentUser;
+    if (!currentAuthUser) throw new Error('No auth user');
+
+    const localData: LocalUserData = {
+      uid: currentAuthUser.uid,
+      recoveryCode: userData.recoveryCode || '',
+      profile: userData.profile || {},
+      rentalHistory: userData.rentalHistory || [],
+      favorites: userData.favorites || [],
+      cart: userData.cart || [],
+      notifications: userData.notifications || [],
+      createdAt: userData.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      synced: true,
+    };
+
+    setStorageItem(STORAGE_KEYS.RECOVERY_CODE, userData.recoveryCode || '');
+    setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
+    setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(userData.profile || {}));
+
+    this.currentUser = this.mapFirebaseUser(currentAuthUser);
+    this.currentUser.localData = localData;
+    this.currentState = 'authenticated';
+    this.callbacks?.onStateChange(this.currentState, this.currentUser);
+
+    // Save to device_data for future fast local restores
+    const deviceFp = await deviceFingerprint.getFingerprint();
+    await this.addAccountToDeviceData(deviceFp.fingerprint, currentAuthUser.uid, {
+      ...localData,
+      synced: true,
+    });
+    await this.setCurrentAccount(deviceFp.fingerprint, currentAuthUser.uid);
+    await this.linkDeviceFingerprintToUid(currentAuthUser.uid);
+
+    console.log('[AuthService] Session restored from cloud');
+  }
+
+  /**
+   * Add a new account to device_data.accounts without overwriting existing
+   */
+  private async addAccountToDeviceData(deviceFingerprintStr: string, uid: string, accountData: any): Promise<void> {
+    try {
+      const db = getFirestoreInstance();
+      const deviceDataRef = doc(db, 'device_data', deviceFingerprintStr);
+      const deviceDoc = await getDoc(deviceDataRef);
+      const accountKey = `accounts.${uid}`;
+      
+      if (deviceDoc.exists()) {
+        await setDoc(deviceDataRef, {
+          [accountKey]: {
+            ...accountData,
+            synced: true,
+          },
+          currentUid: uid,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      } else {
+        await setDoc(deviceDataRef, {
+          currentUid: uid,
+          accounts: {
+            [uid]: {
+              ...accountData,
+              synced: true,
+            },
+          },
+          updatedAt: serverTimestamp(),
+        });
+      }
+      
+      console.log('[AuthService] Account added to device_data:', uid);
+    } catch (error) {
+      console.error('[AuthService] Failed to add account to device_data:', error);
+    }
+  }
+
+  /**
+   * Set the current active account on this device
+   */
+  private async setCurrentAccount(deviceFingerprintStr: string, uid: string): Promise<void> {
+    try {
+      const db = getFirestoreInstance();
+      const deviceDataRef = doc(db, 'device_data', deviceFingerprintStr);
+      await setDoc(deviceDataRef, {
+        currentUid: uid,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+      console.log('[AuthService] Current account set to:', uid);
+    } catch (error) {
+      console.error('[AuthService] Failed to set current account:', error);
+    }
+  }
+
 }
 
 export const authService = new AuthService();

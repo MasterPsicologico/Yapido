@@ -1,4 +1,3 @@
-
 import type {Metadata} from 'next';
 import Script from 'next/script';
 import './globals.css';
@@ -11,6 +10,7 @@ import { CartProvider } from '@/context/CartContext';
 import { GlobalOrderChatModal } from '@/components/chat/GlobalOrderChatModal';
 import { AutoRatingTrigger } from '@/components/rating/AutoRatingTrigger';
 import { AndroidBackButtonHandler } from '@/components/system/AndroidBackButtonHandler';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export const metadata: Metadata = {
   title: 'Yapido.click - Logística y Alquiler de Lavadoras',
@@ -30,21 +30,25 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased bg-background text-foreground min-h-screen">
-        <FirebaseClientProvider>
-          <CartProvider>
-            {/* El ChatNotificationListener gestiona audio y toasts */}
-            <ChatNotificationListener />
-            {/* El VisualNotificationListener gestiona los diálogos inmersivos de pantalla completa */}
-            <VisualNotificationListener />
-            {/* Gestión de Alertas Nativas para APK (FCM) */}
-            <NativeNotificationListener />
-            <GlobalOrderChatModal />
-            <AutoRatingTrigger />
-            <AndroidBackButtonHandler />
-            {children}
-            <Toaster />
-          </CartProvider>
-        </FirebaseClientProvider>
+        <ErrorBoundary>
+          <FirebaseClientProvider>
+            <CartProvider>
+              <ErrorBoundary>
+                {/* El ChatNotificationListener gestiona audio y toasts */}
+                <ChatNotificationListener />
+                {/* El VisualNotificationListener gestiona los diálogos inmersivos de pantalla completa */}
+                <VisualNotificationListener />
+                {/* Gestión de Alertas Nativas para APK (FCM) */}
+                <NativeNotificationListener />
+                <GlobalOrderChatModal />
+                <AutoRatingTrigger />
+                <AndroidBackButtonHandler />
+                {children}
+                <Toaster />
+              </ErrorBoundary>
+            </CartProvider>
+          </FirebaseClientProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
