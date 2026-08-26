@@ -10,6 +10,7 @@ import { CartProvider } from '@/context/CartContext';
 import { GlobalOrderChatModal } from '@/components/chat/GlobalOrderChatModal';
 import { AutoRatingTrigger } from '@/components/rating/AutoRatingTrigger';
 import { AndroidBackButtonHandler } from '@/components/system/AndroidBackButtonHandler';
+import { AuthInitializer } from '@/components/auth/AuthInitializer';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default function RootLayout({
           <FirebaseClientProvider>
             <CartProvider>
               <ErrorBoundary>
+                <AuthInitializer />
                 {/* El ChatNotificationListener gestiona audio y toasts */}
                 <ChatNotificationListener />
                 {/* El VisualNotificationListener gestiona los diálogos inmersivos de pantalla completa */}
