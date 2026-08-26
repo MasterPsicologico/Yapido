@@ -4,34 +4,45 @@ import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { FieldValue, Firestore, getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 
-type AppEnv = {
+interface AppEnv {
   projectId: string | undefined;
   clientEmail: string | undefined;
   privateKey: string | undefined;
-};
+}
 
 function readAppEnv(): AppEnv {
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+  if (!projectId || !clientEmail || !privateKey) {
+    const missing = [];
+    if (!projectId) missing.push('FIREBASE_PROJECT_ID');
+    if (!clientEmail) missing.push('FIREBASE_CLIENT_EMAIL');
+    if (!privateKey) missing.push('FIREBASE_PRIVATE_KEY');
+    throw new Error(
+      `[Firebase Admin] Missing required environment variables: ${missing.join(', ')}. ` +
+      `Configure them in Vercel Dashboard → Settings → Environment Variables.`
+    );
+  }
+
   return {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    projectId,
+    clientEmail,
+    privateKey: privateKey!.replace(/\\n/g, '\n'),
   };
 }
 
 function ensureInitialized(): void {
   if (getApps().length > 0) return;
   const env = readAppEnv();
-  if (env.projectId && env.clientEmail && env.privateKey) {
-    initializeApp({
-      credential: cert({
-        projectId: env.projectId,
-        clientEmail: env.clientEmail,
-        privateKey: env.privateKey,
-      }),
-    });
-    return;
-  }
-  initializeApp();
+  initializeApp({
+    credential: cert({
+      projectId: env.projectId,
+      clientEmail: env.clientEmail,
+      privateKey: env.privateKey,
+    }),
+  });
 }
 
 export function getAdminDb(): Firestore {
@@ -43,8 +54,6 @@ export function getAdminAuth() {
   ensureInitialized();
   return getAuth();
 }
-
-export { FieldValue, Timestamp };
 
 export async function isSuperAdmin(uid: string): Promise<boolean> {
   const db = getAdminDb();
@@ -62,5 +71,7 @@ export async function verifySuperAdminFromAuthHeader(authHeader: string | null):
     return isSuperAdmin(decoded.uid);
   } catch {
     return false;
-  }
 }
+}
+
+export { FieldValue, Timestamp } from 'firebase-admin/firestore';
