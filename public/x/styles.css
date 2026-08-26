@@ -347,6 +347,46 @@ body.light .share-copy input{color:var(--ink)}
 .grad-swatch.sel{border-color:var(--acid);transform:scale(1.1)}
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
 
+/* ═══════ ESCÁNER DE INTERNET ═══════ */
+.modal-wide{width:min(820px,94vw);max-height:88vh;overflow-y:auto}
+.net-search{display:flex;gap:8px}
+.net-search input{
+  flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:10px;
+  padding:11px 13px;color:var(--ink);font-size:13.5px;outline:none;text-transform:none;letter-spacing:0;font-weight:400;
+}
+.net-search input:focus{border-color:var(--acid)}
+.net-status{
+  text-align:center;color:var(--acid);font-family:'JetBrains Mono';font-size:12.5px;padding:22px;
+  animation:blink 1s step-end infinite;
+}
+@keyframes blink{50%{opacity:.35}}
+.net-results{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;min-height:40px;
+}
+.net-empty{grid-column:1/-1;text-align:center;color:var(--dim);padding:26px;font-size:13px;border:1.5px dashed var(--line);border-radius:12px}
+.net-card{
+  position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  display:flex;flex-direction:column;transition:.16s;cursor:pointer;
+}
+.net-card:hover{transform:translateY(-3px);border-color:var(--acid);box-shadow:0 10px 26px rgba(0,0,0,.35)}
+.net-thumb{width:100%;aspect-ratio:16/10;object-fit:contain;background:#000;display:block}
+.net-loading{
+  position:absolute;inset:0;background:rgba(10,10,15,.85);z-index:3;
+  display:grid;place-items:center;color:var(--acid);
+  font-family:'JetBrains Mono';font-size:11.5px;text-align:center;padding:12px;
+  animation:fade .2s;
+}
+.net-meta{padding:9px 10px 6px;flex:1}
+.net-title{font-size:12px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.net-year{font-size:10px;color:var(--dim);font-family:'JetBrains Mono';margin-top:3px}
+.net-actions{display:flex;gap:6px;padding:0 8px 9px}
+.net-actions button{flex:1;padding:9px 6px;font-size:11.5px;font-weight:700;border-radius:8px;transition:.15s}
+.net-play{background:var(--acid);color:#111}
+.net-play:hover{filter:brightness(1.1)}
+.net-add{background:var(--bg);border:1px solid var(--line);color:var(--dim)}
+.net-add:hover{color:var(--acid);border-color:var(--acid)}
+.net-actions button:disabled{opacity:.5;cursor:wait}
+
 /* ═══════ TOAST ═══════ */
 .toast{
   position:fixed;bottom:26px;left:50%;transform:translateX(-50%);

@@ -111,6 +111,9 @@ const els = {
   shareBtn: $('shareBtn'), modalShare: $('modalShare'), shareTitle: $('shareTitle'),
   shareGrid: $('shareGrid'), shareUrl: $('shareUrl'), copyShareUrl: $('copyShareUrl'),
   closeShare: $('closeShare'),
+  netBtn: $('netBtn'), modalNet: $('modalNet'), netQuery: $('netQuery'),
+  netSearchBtn: $('netSearchBtn'), netStatus: $('netStatus'), netResults: $('netResults'),
+  closeNet: $('closeNet'),
   modalAdd: $('modalAdd'), newTitle: $('newTitle'), newJp: $('newJp'), newEps: $('newEps'),
   gradPicker: $('gradPicker'), cancelAdd: $('cancelAdd'), confirmAdd: $('confirmAdd'),
   toast: $('toast'), gestL: $('gestL'), gestR: $('gestR'),
@@ -608,6 +611,176 @@ function syncAddressBar() {
   if (!s || !ep) return;
   try { history.replaceState(null, '', buildShareUrl(s, ep)); } catch (e) { /* file:// antiguo */ }
 }
+
+/* ═══════════ Escáner de internet — Internet Archive ═══════════
+   Busca en tiempo real en archive.org (dominio público, legal) e
+   importa los videos a tu lista con su enlace MP4 directo.          */
+
+const IA = {
+  search: q => {
+    const p = new URLSearchParams({
+      q: `(${q}) AND mediatype:movies`,
+      rows: '24', page: '1', output: 'json',
+      sort: 'downloads desc',
+    });
+    ['identifier', 'title', 'year', 'downloads', 'format'].forEach(f => p.append('fl[]', f));
+    return `https://archive.org/advancedsearch.php?${p.toString()}`;
+  },
+  meta: id => `https://archive.org/metadata/${id}`,
+  file: (id, name) => `https://archive.org/download/${id}/${name.split('/').map(encodeURIComponent).join('/')}`,
+  thumb: id => `https://archive.org/services/img/${id}`,
+};
+
+async function netSearch() {
+  const q = els.netQuery.value.trim() || 'feature films';
+  els.netResults.innerHTML = '';
+  els.netStatus.classList.remove('hidden');
+  els.netStatus.textContent = '🔍 Escaneando la red…';
+  try {
+    const res = await fetch(IA.search(q));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const docs = (data.response && data.response.docs || [])
+      .filter(d => d.identifier && d.title)
+      /* prefiltra: solo items que declaren formatos de video reproducibles
+         en navegador (si no declara formato, se deja pasar por si acaso) */
+      .filter(d => {
+        if (!d.format) return true;
+        const f = (Array.isArray(d.format) ? d.format : [d.format]).filter(Boolean).join(' ').toLowerCase();
+        return !f || /mpeg4|mp4|h\.?264|webm|ogg video/.test(f);
+      });
+    els.netStatus.classList.add('hidden');
+    if (!docs.length) {
+      els.netResults.innerHTML = '<div class="net-empty">Sin resultados. Prueba en inglés: «charlie chaplin», «popeye», «horror 1960»…</div>';
+      return;
+    }
+    renderNetResults(docs);
+  } catch (e) {
+    els.netStatus.textContent = '⚠ No se pudo conectar con archive.org. Revisa tu conexión e inténtalo de nuevo.';
+  }
+}
+
+function renderNetResults(docs) {
+  els.netResults.innerHTML = '';
+  for (const d of docs) {
+    const year = String(d.year || '').slice(0, 4);
+    const title = Array.isArray(d.title) ? d.title[0] : d.title;
+    const card = document.createElement('div');
+    card.className = 'net-card';
+    card.innerHTML = `
+      <img class="net-thumb" loading="lazy" src="${IA.thumb(d.identifier)}" alt="" onerror="this.style.opacity=.15">
+      <div class="net-meta">
+        <div class="net-title" title="${title.replace(/"/g, '&quot;')}">${title}</div>
+        <div class="net-year">${year ? year + ' · ' : ''}${(d.downloads || 0).toLocaleString()} descargas</div>
+      </div>
+      <div class="net-actions">
+        <button class="net-play">▶ Ver</button>
+        <button class="net-add">＋ Lista</button>
+      </div>`;
+    const btnPlay = card.querySelector('.net-play');
+    const btnAdd = card.querySelector('.net-add');
+    let busy = false;
+
+    function startLoading(msg) {
+      btnPlay.disabled = btnAdd.disabled = true;
+      const ov = document.createElement('div');
+      ov.className = 'net-loading';
+      ov.textContent = msg;
+      card.appendChild(ov);
+    }
+    function stopLoading() {
+      btnPlay.disabled = btnAdd.disabled = false;
+      const ov = card.querySelector('.net-loading');
+      if (ov) ov.remove();
+    }
+
+    async function withMp4(fn, loadingMsg) {
+      if (busy) return;
+      busy = true;
+      startLoading(loadingMsg);
+      try {
+        const url = await iaGetMp4Url(d.identifier);
+        if (!url) { toast('Este archivo no tiene video MP4 reproducible', true); return; }
+        await fn(url);
+      } catch (e) {
+        console.error('import error:', e);
+        toast('No se pudo obtener el video — inténtalo de nuevo', true);
+      } finally {
+        busy = false;
+        stopLoading();
+      }
+    }
+
+    /* TODA la tarjeta reproduce e importa al hacer clic */
+    const playNow = () => withMp4(async url => {
+      importNetItem(d, title, url, year);
+      els.modalNet.classList.add('hidden');
+    }, '⏳ Obteniendo video…');
+    card.addEventListener('click', playNow);
+    btnPlay.addEventListener('click', ev => { ev.stopPropagation(); playNow(); });
+    btnAdd.addEventListener('click', ev => {
+      ev.stopPropagation();
+      withMp4(async url => {
+        importNetItem(d, title, url, year);
+        toast(`＋ «${String(title).slice(0, 40)}» añadido a tu lista`);
+      }, '＋ Importando…');
+    });
+    els.netResults.appendChild(card);
+  }
+}
+
+/* obtiene el mejor MP4 directo de un item de archive.org */
+async function iaGetMp4Url(id) {
+  const res = await fetch(IA.meta(id));
+  if (!res.ok) throw new Error('meta');
+  const meta = await res.json();
+  const files = (meta.files || []).filter(f => /\.(mp4|webm|m4v|ogv)$/i.test(f.name || ''));
+  if (!files.length) return null;
+  /* prioriza el transcode h264 (.ia.mp4), el más compatible con navegadores;
+     el _512kb solo como último recurso */
+  const score = f => {
+    const n = f.name.toLowerCase();
+    if (/_512kb\.mp4$/.test(n)) return 2;
+    if (/\.ia\.mp4$/.test(n)) return 20;
+    if (/\.mp4$|\.m4v$/.test(n)) return 12;
+    if (/\.webm$/.test(n)) return 8;
+    if (/\.ogv$/.test(n)) return 3;
+    return 0;
+  };
+  files.sort((a, b) => score(b) - score(a));
+  return IA.file(id, files[0].name);
+}
+
+/* importa un resultado como serie de 1 capítulo, lista para ver/compartir */
+function importNetItem(doc, title, url, year) {
+  const id = 'ia-' + doc.identifier.replace(/[^\w-]+/g, '-');
+  let s = getSeries(id);
+  if (!s) {
+    s = {
+      id, t: String(title).slice(0, 80), jp: '🎬',
+      tag: `Internet Archive · Dominio público${year ? ' · ' + year : ''}`,
+      g: 3,
+      episodes: [{ n: 1, t: String(title).slice(0, 60), url }],
+    };
+    state.series.push(s);
+    save();
+    renderSeries(els.searchInput.value);
+  }
+  selectSeries(id);
+  loadEpisode(1, true);
+  toast(`🌐 «${s.t}» importado de internet`);
+}
+
+/* wiring del modal */
+els.netBtn.addEventListener('click', () => {
+  els.modalNet.classList.remove('hidden');
+  setTimeout(() => els.netQuery.focus(), 60);
+  if (!els.netResults.children.length) netSearch();
+});
+els.closeNet.addEventListener('click', () => els.modalNet.classList.add('hidden'));
+els.modalNet.addEventListener('click', ev => { if (ev.target === els.modalNet) els.modalNet.classList.add('hidden'); });
+els.netSearchBtn.addEventListener('click', netSearch);
+els.netQuery.addEventListener('keydown', ev => { if (ev.key === 'Enter') netSearch(); });
 
 /* ═══════════ Tema claro / oscuro ═══════════ */
 const ICON_MOON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';

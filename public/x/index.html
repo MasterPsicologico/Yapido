@@ -22,6 +22,10 @@
   </div>
   <div class="top-actions">
     <button id="themeBtn" class="btn btn-ghost btn-icon" title="Cambiar tema (claro/oscuro)"></button>
+    <button id="netBtn" class="btn btn-ghost" title="Escanear internet (Internet Archive)">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+      <span>Escanear internet</span>
+    </button>
     <button id="editModeBtn" class="btn btn-ghost" title="Pegar tus enlaces MP4">
       <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
       <span>Editar enlaces</span>
@@ -189,6 +193,23 @@
     <p class="modal-sub share-note">El enlace abre exactamente este capítulo — funciona aunque la otra persona nunca haya usado la app.</p>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="closeShare">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL ESCANER DE INTERNET (Internet Archive · dominio público) ══════════ -->
+<div class="modal-backdrop hidden" id="modalNet">
+  <div class="modal modal-wide">
+    <h3>🌐 Escáner de internet</h3>
+    <p class="modal-sub">Rastrea el <b>Internet Archive</b> en tiempo real: miles de películas, series clásicas y anime antiguo de <b>dominio público</b> con enlace MP4 directo. Se importan a tu lista con 1 clic.</p>
+    <div class="net-search">
+      <input type="text" id="netQuery" placeholder="Ej: night of the living dead · charlie chaplin · popeye · trailers anime…" autocomplete="off">
+      <button class="btn btn-acid" id="netSearchBtn">Escanear</button>
+    </div>
+    <div class="net-status hidden" id="netStatus">🔍 Escaneando la red…</div>
+    <div class="net-results" id="netResults"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="closeNet">Cerrar</button>
     </div>
   </div>
 </div>
