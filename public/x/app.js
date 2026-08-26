@@ -107,6 +107,10 @@ const els = {
   episodesGrid: $('episodesGrid'), episodesTitle: $('episodesTitle'), searchInput: $('searchInput'),
   editModeBtn: $('editModeBtn'), addSeriesBtn: $('addSeriesBtn'), addEpBtn: $('addEpBtn'),
   delSeriesBtn: $('delSeriesBtn'), goEditBtn: $('goEditBtn'),
+  insertEpBtn: $('insertEpBtn'), undoBtn: $('undoBtn'), themeBtn: $('themeBtn'),
+  shareBtn: $('shareBtn'), modalShare: $('modalShare'), shareTitle: $('shareTitle'),
+  shareGrid: $('shareGrid'), shareUrl: $('shareUrl'), copyShareUrl: $('copyShareUrl'),
+  closeShare: $('closeShare'),
   modalAdd: $('modalAdd'), newTitle: $('newTitle'), newJp: $('newJp'), newEps: $('newEps'),
   gradPicker: $('gradPicker'), cancelAdd: $('cancelAdd'), confirmAdd: $('confirmAdd'),
   toast: $('toast'), gestL: $('gestL'), gestR: $('gestR'),
@@ -132,6 +136,11 @@ function exitDriveMode() {
   els.playerArea.classList.remove('drive-mode');
   els.driveFrame.src = 'about:blank'; // detiene la reproducción del iframe
 }
+
+/* ═══════════ Papelera / Deshacer (sesión) ═══════════
+   Guarda los capítulos eliminados de esta sesión para recuperarlos. */
+const trash = []; // { seriesId, index, ep }
+function syncUndoBtn() { els.undoBtn.classList.toggle('hidden', trash.length === 0); }
 
 /* ═══════════ Helpers ═══════════ */
 const grad = s => { const [a, b] = GRADS[s.g % GRADS.length]; return `linear-gradient(135deg,${a},${b})`; };
@@ -221,15 +230,25 @@ function renderEpisodes() {
       del.addEventListener('click', ev => {
         ev.stopPropagation();
         if (s.episodes.length <= 1) return toast('La serie necesita al menos 1 capítulo', true);
-        s.episodes.splice(s.episodes.indexOf(ep), 1);
+        const idx = s.episodes.indexOf(ep);
+        trash.push({ seriesId: s.id, index: idx, ep: { n: ep.n, t: ep.t, url: ep.url } });
+        syncUndoBtn();
+        s.episodes.splice(idx, 1);
         s.episodes.forEach((e, i) => e.n = i + 1);
         if (current.ep === ep.n) current.ep = null;
         save(); renderEpisodes(); renderSeries(els.searchInput.value);
-        toast('Capítulo eliminado');
+        toast('Capítulo eliminado — pulsa «↩ Deshacer» para recuperarlo');
       });
       cell.append(input, del);
     } else {
       cell.addEventListener('click', () => loadEpisode(ep.n, true));
+      /* botón compartir por capítulo */
+      const sh = document.createElement('span');
+      sh.className = 'ep-share';
+      sh.title = 'Compartir este capítulo';
+      sh.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v14"/></svg>';
+      sh.addEventListener('click', ev => { ev.stopPropagation(); openShare(s.id, ep.n); });
+      cell.appendChild(sh);
     }
     els.episodesGrid.appendChild(cell);
   }
@@ -263,6 +282,8 @@ function loadEpisode(epN, autoplayNow = true) {
   els.empty.classList.add('hidden');
   els.nowPlaying.textContent = `${s.t} · E${ep.n}`;
   document.title = `E${ep.n} · ${s.t} — X·STREAM`;
+  els.shareBtn.classList.remove('hidden');
+  syncAddressBar();
 
   if (!ep.url) {
     exitDriveMode();
@@ -468,6 +489,143 @@ document.addEventListener('keydown', ev => {
 /* ═══════════ Búsqueda ═══════════ */
 els.searchInput.addEventListener('input', () => renderSeries(els.searchInput.value));
 
+/* ═══════════ Compartir capítulos ═══════════
+   Cada capítulo tiene un enlace único: index.html#s=<serie>&e=<n>
+   El enlace incrusta el título y la URL del video, de modo que abre
+   el capítulo exacto aunque la otra persona nunca haya usado la app. */
+
+function buildShareUrl(s, ep) {
+  const base = location.href.split('#')[0];
+  const p = new URLSearchParams({ s: s.id, e: String(ep.n), t: s.t });
+  if (ep.url) p.set('u', ep.url);
+  return `${base}#${p.toString()}`;
+}
+
+/* redes sociales destino */
+const SHARE_NETS = [
+  { id: 'whatsapp', name: 'WhatsApp', c: '#25D366',
+    url: (txt, u) => `https://wa.me/?text=${encodeURIComponent(txt + '\n' + u)}` },
+  { id: 'telegram', name: 'Telegram', c: '#229ED9',
+    url: (txt, u) => `https://t.me/share/url?url=${encodeURIComponent(u)}&text=${encodeURIComponent(txt)}` },
+  { id: 'facebook', name: 'Facebook', c: '#1877F2',
+    url: (txt, u) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(u)}` },
+  { id: 'x',        name: 'X / Twitter', c: '#111111',
+    url: (txt, u) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(txt + '\n' + u)}` },
+  { id: 'email',    name: 'Email', c: '#7c3aed',
+    url: (txt, u) => `mailto:?subject=${encodeURIComponent(txt)}&body=${encodeURIComponent(u)}` },
+];
+
+let shareCtx = null; // { s, ep, url, msg }
+
+function openShare(seriesId, epN) {
+  const s = getSeries(seriesId);
+  const ep = s && s.episodes.find(e => e.n === epN);
+  if (!s || !ep) return;
+  const url = buildShareUrl(s, ep);
+  shareCtx = { s, ep, url, msg: `▶ ${s.t} — Capítulo ${ep.n} · míralo en X·STREAM` };
+
+  els.shareTitle.textContent = `${s.t} · Capítulo ${ep.n}`;
+  els.shareUrl.value = url;
+
+  /* botones de redes */
+  els.shareGrid.innerHTML = '';
+  for (const net of SHARE_NETS) {
+    const b = document.createElement('button');
+    b.className = 'share-net';
+    b.style.background = net.c;
+    b.textContent = net.name;
+    b.addEventListener('click', () => {
+      window.open(net.url(shareCtx.msg, shareCtx.url), '_blank', 'noopener,width=640,height=520');
+    });
+    els.shareGrid.appendChild(b);
+  }
+  /* botón "más apps" con Web Share API (abre el menú nativo del teléfono) */
+  const more = document.createElement('button');
+  more.className = 'share-net';
+  more.style.background = 'var(--panel2)';
+  more.style.color = 'var(--ink)';
+  more.style.border = '1px solid var(--line)';
+  more.textContent = navigator.share ? '＋ Más apps' : '＋ Copiar';
+  more.addEventListener('click', async () => {
+    if (navigator.share) {
+      try { await navigator.share({ title: shareCtx.msg, text: shareCtx.msg, url: shareCtx.url }); }
+      catch (e) { /* cancelado */ }
+    } else {
+      copyShareLink();
+    }
+  });
+  els.shareGrid.appendChild(more);
+
+  els.modalShare.classList.remove('hidden');
+}
+
+function copyShareLink() {
+  if (!shareCtx) return;
+  navigator.clipboard.writeText(shareCtx.url)
+    .then(() => toast('🔗 Enlace copiado — pégalo donde quieras'))
+    .catch(() => { els.shareUrl.select(); document.execCommand('copy'); toast('🔗 Enlace copiado'); });
+}
+
+els.copyShareUrl.addEventListener('click', copyShareLink);
+els.closeShare.addEventListener('click', () => els.modalShare.classList.add('hidden'));
+els.modalShare.addEventListener('click', ev => { if (ev.target === els.modalShare) els.modalShare.classList.add('hidden'); });
+els.shareBtn.addEventListener('click', () => {
+  if (current.seriesId && current.ep) openShare(current.seriesId, current.ep);
+});
+
+/* ── Abrir un capítulo desde un enlace compartido ── */
+function openFromHash() {
+  const h = location.hash.replace(/^#/, '');
+  if (!h) return false;
+  const p = new URLSearchParams(h);
+  const sid = p.get('s'), epN = parseInt(p.get('e'), 10);
+  if (!sid || !epN) return false;
+
+  let s = getSeries(sid);
+  if (!s) {
+    /* serie no existe localmente → se crea al vuelo con el capítulo compartido */
+    s = {
+      id: sid,
+      t: p.get('t') || 'Serie compartida',
+      jp: '▶', tag: 'Compartida contigo', g: 5,
+      episodes: [{ n: epN, t: `Capítulo ${epN}`, url: p.get('u') || '' }],
+    };
+    state.series.push(s);
+    save();
+  }
+  selectSeries(sid);
+  loadEpisode(epN, true);
+  renderSeries(els.searchInput.value);
+  toast('▶ Capítulo compartido cargado');
+  return true;
+}
+window.addEventListener('hashchange', openFromHash);
+
+/* mantiene la URL del navegador siempre compartible */
+function syncAddressBar() {
+  const s = getSeries(current.seriesId);
+  const ep = s && s.episodes.find(e => e.n === current.ep);
+  if (!s || !ep) return;
+  try { history.replaceState(null, '', buildShareUrl(s, ep)); } catch (e) { /* file:// antiguo */ }
+}
+
+/* ═══════════ Tema claro / oscuro ═══════════ */
+const ICON_MOON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+const ICON_SUN  = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+
+function applyTheme(theme) {
+  const light = theme === 'light';
+  document.body.classList.toggle('light', light);
+  els.themeBtn.innerHTML = light ? ICON_MOON : ICON_SUN;
+  els.themeBtn.title = light ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro';
+}
+els.themeBtn.addEventListener('click', () => {
+  state.theme = state.theme === 'light' ? 'dark' : 'light';
+  save();
+  applyTheme(state.theme);
+  toast(state.theme === 'light' ? '☀ Tema claro' : '🌙 Tema oscuro');
+});
+
 /* ═══════════ Modo edición ═══════════ */
 function setEditing(on) {
   editing = on;
@@ -492,6 +650,38 @@ els.addEpBtn.addEventListener('click', () => {
   toast(`+ Capítulo ${n} añadido a ${s.t}`);
 });
 
+/* ── Deshacer: recupera el último capítulo borrado (con su enlace) ── */
+els.undoBtn.addEventListener('click', () => {
+  const item = trash.pop();
+  if (!item) { syncUndoBtn(); return; }
+  const s = getSeries(item.seriesId);
+  if (!s) { toast('Esa serie ya no existe', true); syncUndoBtn(); return; }
+  const idx = Math.min(item.index, s.episodes.length);
+  s.episodes.splice(idx, 0, { n: idx + 1, t: item.ep.t, url: item.ep.url });
+  s.episodes.forEach((e, i) => e.n = i + 1);
+  save(); renderEpisodes(); renderSeries(els.searchInput.value);
+  syncUndoBtn();
+  toast(`↩ Capítulo ${item.ep.n} recuperado en ${s.t}`);
+});
+
+/* ── Insertar capítulo en una posición concreta ── */
+els.insertEpBtn.addEventListener('click', () => {
+  const s = getSeries(current.seriesId);
+  if (!s) return toast('Primero selecciona una serie', true);
+  const total = s.episodes.length;
+  const resp = prompt(
+    `¿En qué posición insertar el nuevo capítulo de «${s.t}»?\n(1 = al principio · ${total + 1} = al final)\nLos demás se reenumeran y conservan sus enlaces.`,
+    String(current.ep || 1)
+  );
+  if (resp === null) return;
+  const pos = Math.max(1, Math.min(total + 1, parseInt(resp, 10) || 1));
+  s.episodes.splice(pos - 1, 0, { n: pos, t: `Capítulo ${pos}`, url: '' });
+  s.episodes.forEach((e, i) => e.n = i + 1);
+  save(); renderEpisodes(); renderSeries(els.searchInput.value);
+  setEditing(true); // listo para pegar el enlace del nuevo capítulo
+  toast(`⇂ Capítulo insertado en la posición ${pos}`);
+});
+
 els.delSeriesBtn.addEventListener('click', () => {
   const s = getSeries(current.seriesId);
   if (!s) return;
@@ -499,6 +689,7 @@ els.delSeriesBtn.addEventListener('click', () => {
   state.series.splice(state.series.indexOf(s), 1);
   current.seriesId = null; current.ep = null;
   save();
+  els.shareBtn.classList.add('hidden');
   els.video.removeAttribute('src'); els.video.load();
   els.empty.classList.remove('hidden');
   els.noUrl.classList.add('hidden');
@@ -556,10 +747,16 @@ els.newTitle.addEventListener('keydown', ev => { if (ev.key === 'Enter') els.con
 
 /* ═══════════ Init ═══════════ */
 load();
+applyTheme(state.theme || 'dark');
 syncAutoplayBtn();
 renderSeries();
 renderEpisodes();
 setPlayIcon();
+syncUndoBtn();
+/* si la URL trae un capítulo compartido (#s=…&e=…), lo abre directo */
+if (openFromHash()) {
+  document.querySelector('.stage').scrollTo({ top: 0 });
+}
 
 /* registro global por si se quiere depurar */
 window.XSTREAM = { state, save };

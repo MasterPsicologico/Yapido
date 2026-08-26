@@ -7,12 +7,39 @@
   --r:14px;
   font-synthesis:none;
 }
+/* ═══════ TEMA CLARO ═══════ */
+body.light{
+  --bg:#f3f3f7; --bg2:#eaeaf1; --panel:#ffffff; --panel2:#f0f0f5;
+  --line:#dbd9e6; --ink:#17171f; --dim:#585870; --acid:#88b400;
+}
+body.light .topbar{background:rgba(243,243,247,.85)}
+body.light .stage{background:
+  radial-gradient(1000px 500px at 70% -10%,rgba(124,58,237,.10),transparent 60%),
+  radial-gradient(800px 400px at 10% 110%,rgba(255,46,99,.06),transparent 60%),var(--bg);
+}
+/* la zona del reproductor se mantiene oscura siempre */
+body.light .player{color:#f2f2f7}
+body.light .cbtn{color:#f2f2f7}
+body.light .player-empty h1,body.light .player-nourl h2,body.light .player-nourl p b{color:#f2f2f7}
+body.light .player-empty p,body.light .player-nourl p{color:#a8a8bf}
+body.light .time{color:#9a9ab0}
+body.light .time b{color:#f2f2f7}
+body.light .speed{color:#f2f2f7}
+body.light .badge{background:var(--panel)}
+body.light ::-webkit-scrollbar-thumb{background:#c6c4d6}
+body.light ::-webkit-scrollbar-thumb:hover{background:var(--acid)}
+.btn-icon{padding:9px 11px}
+
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
 body{
   background:var(--bg);color:var(--ink);
   font-family:'Inter',system-ui,sans-serif;overflow:hidden;
   -webkit-font-smoothing:antialiased;
+  transition:background .3s ease,color .3s ease;
+}
+.sidebar,.topbar,.search-box,.s-item,.ep,.btn-ghost,.btn-mini,.badge,.modal,.pill{
+  transition:background-color .3s ease,color .3s ease,border-color .3s ease;
 }
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-thumb{background:#2c2c45;border-radius:8px}
@@ -265,6 +292,35 @@ body.editing .ep .lbl{min-width:110px}
   color:var(--dim);font-size:15px;
 }
 .ep-del:hover{color:var(--hot);background:rgba(255,46,99,.12)}
+
+.stage-side{display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+
+/* botón compartir en cada capítulo */
+.ep-share{
+  position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:7px;
+  display:grid;place-items:center;color:var(--dim);opacity:0;transition:.15s;
+  background:rgba(0,0,0,.25);z-index:2;
+}
+.ep:hover .ep-share{opacity:1}
+.ep-share:hover{color:#111;background:var(--acid);transform:scale(1.1)}
+@media (hover:none){.ep-share{opacity:.85}}
+
+/* modal compartir */
+.share-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.share-net{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:12px 6px;border-radius:11px;font-size:12.5px;font-weight:700;color:#fff;
+  transition:.15s;border:none;
+}
+.share-net:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.share-copy{display:flex;gap:8px;margin-top:4px}
+.share-copy input{
+  flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:9px;
+  padding:9px 11px;color:var(--dim);font-size:11.5px;font-family:'JetBrains Mono';outline:none;
+}
+.share-copy input:focus{border-color:var(--acid)}
+.share-note{margin-top:2px}
+body.light .share-copy input{color:var(--ink)}
 
 /* ═══════ MODAL ═══════ */
 .modal-backdrop{

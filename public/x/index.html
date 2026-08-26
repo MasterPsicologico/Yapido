@@ -21,6 +21,7 @@
     <input id="searchInput" type="text" placeholder="Buscar serie… ( / )" autocomplete="off">
   </div>
   <div class="top-actions">
+    <button id="themeBtn" class="btn btn-ghost btn-icon" title="Cambiar tema (claro/oscuro)"></button>
     <button id="editModeBtn" class="btn btn-ghost" title="Pegar tus enlaces MP4">
       <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
       <span>Editar enlaces</span>
@@ -124,7 +125,13 @@
           <h1 id="stageTitle">X·STREAM Anime</h1>
           <p id="stageSub">Tu reproductor instantáneo de enlaces directos</p>
         </div>
-        <div class="stage-badges" id="stageBadges"></div>
+        <div class="stage-side">
+          <div class="stage-badges" id="stageBadges"></div>
+          <button class="btn btn-acid hidden" id="shareBtn" title="Compartir este capítulo">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v14"/></svg>
+            <span>Compartir capítulo</span>
+          </button>
+        </div>
       </div>
 
       <!-- ══════════ CAPÍTULOS ══════════ -->
@@ -132,7 +139,9 @@
         <div class="episodes-head">
           <h2 id="episodesTitle">Capítulos</h2>
           <div class="episodes-tools">
-            <button class="btn btn-mini" id="addEpBtn" title="Añadir capítulo a la serie">+ Capítulo</button>
+            <button class="btn btn-mini hidden" id="undoBtn" title="Recuperar el último capítulo eliminado">↩ Deshacer</button>
+            <button class="btn btn-mini" id="insertEpBtn" title="Insertar un capítulo en una posición concreta">⇂ Insertar</button>
+            <button class="btn btn-mini" id="addEpBtn" title="Añadir capítulo al final de la serie">+ Capítulo</button>
             <button class="btn btn-mini danger hidden" id="delSeriesBtn">Eliminar serie</button>
           </div>
         </div>
@@ -163,6 +172,23 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="cancelAdd">Cancelar</button>
       <button class="btn btn-acid" id="confirmAdd">Crear serie</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL COMPARTIR ══════════ -->
+<div class="modal-backdrop hidden" id="modalShare">
+  <div class="modal">
+    <h3>📤 Compartir capítulo</h3>
+    <p class="modal-sub" id="shareTitle"></p>
+    <div class="share-grid" id="shareGrid"></div>
+    <div class="share-copy">
+      <input id="shareUrl" readonly onclick="this.select()">
+      <button class="btn btn-acid" id="copyShareUrl">Copiar</button>
+    </div>
+    <p class="modal-sub share-note">El enlace abre exactamente este capítulo — funciona aunque la otra persona nunca haya usado la app.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="closeShare">Cerrar</button>
     </div>
   </div>
 </div>

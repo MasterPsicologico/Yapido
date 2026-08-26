@@ -334,7 +334,7 @@ class AuthService {
   // ==========================================
   // INITIALIZATION - AUTO INSTANT AUTH WITH DEVICE FINGERPRINT
   // ==========================================
-  private async initializeAuth(): Promise<void> {
+private async initializeAuth(): Promise<void> {
     // Wrap everything in try-catch to prevent app crashes
     try {
       // Check if we're in a browser environment
@@ -342,6 +342,21 @@ class AuthService {
         console.warn('[AuthService] Running in non-browser environment, skipping auth init');
         return;
       }
+
+      // IMPORTANT: Wait for Firebase Auth to finish loading persisted session from IndexedDB
+      // Using a Promise that resolves when auth state is first detected
+      const authUser = await new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(this.auth, (user) => {
+          unsubscribe();
+          resolve(user);
+        });
+        // Timeout fallback in case onAuthStateChanged never fires
+        setTimeout(() => {
+          unsubscribe();
+          resolve(this.auth.currentUser);
+        }, 3000);
+      });
+      console.log('[AuthService] Firebase auth state ready, user:', authUser ? (authUser as any).uid : 'null');
 
       // 1. Get device fingerprint (persistent across reinstalls)
       let deviceFingerprintStr = '';
@@ -354,7 +369,7 @@ class AuthService {
         deviceFingerprintStr = 'fallback-' + Math.random().toString(36).substring(7);
       }
 
-      // 0. Check if user is already authenticated (not anonymous)
+      // 2. Check if user is already authenticated (not anonymous)
       if (this.auth.currentUser && !this.auth.currentUser.isAnonymous) {
         console.log('[AuthService] User already authenticated, restoring session');
         this.currentUser = this.mapFirebaseUser(this.auth.currentUser);
@@ -386,13 +401,29 @@ class AuthService {
         return;
       }
 
-      // 1. Check for email link completion
+      // 3. Check if already anonymous - if so, auto-restore
+      if (this.auth.currentUser && this.auth.currentUser.isAnonymous) {
+        console.log('[AuthService] User is anonymous, performing auto-restore...');
+        await this.performAutoRestore();
+        this.startAuthListener();
+        return;
+      }
+
+      // 4. NO USER AT ALL - create new anonymous session
+      console.log('[AuthService] No user found, creating new anonymous session...');
+      await this.signInAnonymously();
+      this.currentState = 'anonymous';
+      this.callbacks?.onStateChange(this.currentState, null);
+      this.startAuthListener();
+      return;
+
+      // 5. Check email link completion
       if (isSignInWithEmailLink(this.auth, window.location.href)) {
         const email = getStorageItem('auth_email_for_link') || 
           new URLSearchParams(window.location.search).get('email');
         if (email) {
           try {
-            await this.completeEmailLinkSignIn(email, window.location.href);
+            await this.completeEmailLinkSignIn(email!, window.location.href);
           } catch (e) {
             console.warn('[AuthService] Email link sign-in failed:', e);
           }
@@ -400,10 +431,8 @@ class AuthService {
         }
       }
 
-      // 2. Check for remembered account (from previous logout)
-      const rememberedAccount = this.getRememberedAccount();
-      
-      // 3. Check if device is already linked to a phone number
+      // 6. Check remembered account (from previous logout)
+      // 7. Check if device is already linked to a phone number
       let linkedPhone = null;
       try {
         linkedPhone = await phoneAuth.getPhoneByDeviceFingerprint(deviceFingerprintStr);
@@ -411,14 +440,18 @@ class AuthService {
         console.warn('[AuthService] Failed to check device-phone link:', e);
       }
       
+      // 6. Load remembered account (from previous logout)
+      const rememberedAccount = this.getRememberedAccount();
+
       if (linkedPhone && rememberedAccount) {
         // Device is linked to a phone AND there's a remembered account
         // Show account selection screen instead of auto-sending SMS
-        console.log('[AuthService] Remembered account found with device-phone link:', rememberedAccount.displayName);
+        console.log('[AuthService] Remembered account found with device-phone link:', rememberedAccount?.displayName);
         this.currentState = 'account_selection';
         this.callbacks?.onStateChange(this.currentState, null);
         // Store linked phone for quick restore
         setStorageItem('linked_phone_for_verification', linkedPhone);
+        return;
       } else if (linkedPhone) {
         // Device is linked to a phone but no remembered account (new install or cleared data)
         // Auto-restore account by sending SMS code
@@ -433,6 +466,7 @@ class AuthService {
         } catch (e) {
           console.warn('[AuthService] Failed to send WhatsApp code:', e);
         }
+        return;
       } else {
         // NEW ARCHITECTURE: Check device_data collection first (stable by device fingerprint)
         console.log('[AuthService] Checking device_data for fingerprint:', deviceFingerprintStr);
@@ -472,7 +506,7 @@ class AuthService {
                 
                 // Restore data to device_data (NEW architecture)
                 const deviceData = {
-                  uid: currentAuthUser.uid,
+                  uid: currentAuthUser!.uid,
                   recoveryCode: fullData.recoveryCode || '',
                   profile: fullData.profile || {},
                   rentalHistory: fullData.rentalHistory || [],
@@ -489,7 +523,7 @@ class AuthService {
                 
                 // Prepare local data
                 const localData: LocalUserData = {
-                  uid: currentAuthUser.uid,
+                  uid: currentAuthUser!.uid,
                   recoveryCode: deviceData.recoveryCode,
                   profile: deviceData.profile,
                   rentalHistory: deviceData.rentalHistory,
@@ -504,16 +538,16 @@ class AuthService {
                 setStorageItem(STORAGE_KEYS.RECOVERY_CODE, deviceData.recoveryCode);
                 setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
                 
-                this.currentUser = this.mapFirebaseUser(currentAuthUser);
-                this.currentUser.localData = localData;
+                this.currentUser = this.mapFirebaseUser(currentAuthUser!);
+                this.currentUser!.localData = localData;
                 this.currentState = 'authenticated';
                 this.callbacks?.onStateChange(this.currentState, this.currentUser);
                 
                 // Update canonical UID
-                this.setCanonicalUid(currentAuthUser.uid);
+                this.setCanonicalUid(currentAuthUser!.uid);
                 
                 // Update legacy mapping to current auth UID
-                await this.linkDeviceFingerprintToUid(currentAuthUser.uid);
+                await this.linkDeviceFingerprintToUid(currentAuthUser!.uid);
                 
                 // Sync to users collection
                 await this.syncToCloud();
@@ -531,8 +565,8 @@ class AuthService {
             // NO DATA, NO LEGACY → First time on this device
             await this.createNewSession(deviceFingerprintStr);
 }
-      }
-    } // Close else block for linkedPhone check
+        }
+      } // Close else block for linkedPhone check
 
     // 5. Load local data
       try {
@@ -2079,6 +2113,14 @@ export function useAuth() {
 
   const clearError = useCallback(() => setError(null), []);
 
+  const initializeAuthListener = useCallback(() => {
+    return authService.initializeAuthListener();
+  }, []);
+
+  const performAutoRestore = useCallback(async () => {
+    return authService.performAutoRestore();
+  }, []);
+
   return {
     state,
     user,
@@ -2110,6 +2152,8 @@ export function useAuth() {
     clearRememberedAccount,
     quickRestoreAccount,
     clearError,
+    initializeAuthListener,
+    performAutoRestore,
   };
 }
 
