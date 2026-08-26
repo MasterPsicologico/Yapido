@@ -1517,14 +1517,14 @@ private async initializeAuth(): Promise<void> {
 
   /**
    * Método unificado: Iniciar sesión / Recuperar cuenta con código de 6 dígitos
-   * Busca el código en Firestore, autentica al usuario y restaura TODOS sus datos
+   * Usa API Route /api/auth/recovery (Admin SDK evita restricciones de reglas Firestore)
    */
   async signInWithRecoveryCode(code: string): Promise<AuthUser> {
     if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
       throw new Error('Código debe tener 6 dígitos numéricos');
     }
 
-    // Rate limiting check (local, antes de consultar Firestore)
+    // Rate limiting check (local, antes de llamar a la API)
     if (this.currentUser?.uid) {
       const rateLimit = await this.checkRateLimit(this.currentUser.uid);
       if (!rateLimit.allowed) {
@@ -1533,93 +1533,41 @@ private async initializeAuth(): Promise<void> {
     }
 
     try {
-      const db = getFirestoreInstance();
-      
-      // Query Firestore for user with this recovery code
-      const usersQuery = query(
-        collection(db, 'users'),
-        where('recoveryCode', '==', code),
-        limit(1)
-      );
-      
-      const snapshot = await getDocs(usersQuery);
-      
-      if (snapshot.empty) {
-        // Record failed attempt for rate limiting
-        if (this.currentUser?.uid) {
-          await this.recordRecoveryAttempt(this.currentUser.uid);
-        }
-        throw new Error('Código de recuperación inválido. Verifica tu código de 6 dígitos.');
+      // Call API endpoint which uses Firebase Admin SDK (bypasses Firestore rules)
+      const response = await fetch('/api/auth/recovery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || 'Código de recuperación inválido');
       }
 
-      const userDoc = snapshot.docs[0];
-      const userData = userDoc.data();
-      const targetUid = userDoc.id;
+      const { customToken, uid: targetUid, ...userData } = await response.json();
+
+      console.log('[AuthService] Got custom token from API for UID:', targetUid);
 
       // Record attempt for rate limiting
-      await this.recordRecoveryAttempt(targetUid);
-
-      // Sign in anonymously first to get a valid auth session
-      await this.ensureAuthenticated();
-
-      // If we're already the right user, just restore data
-      if (this.currentUser?.uid === targetUid) {
-        // Load full data from Firestore
-        const fullData = userData as any;
-        const localData: LocalUserData = {
-          uid: targetUid,
-          recoveryCode: code,
-          profile: fullData.profile || {},
-          rentalHistory: fullData.rentalHistory || [],
-          favorites: fullData.favorites || [],
-          cart: fullData.cart || [],
-          notifications: fullData.notifications || [],
-          createdAt: fullData.createdAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          synced: true,
-        };
-
-        // Save to localStorage
-        setStorageItem(STORAGE_KEYS.RECOVERY_CODE, code);
-        setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
-        
-        this.currentUser = this.mapFirebaseUser(this.auth.currentUser!);
-        this.currentUser.localData = localData;
-        this.currentState = 'authenticated';
-        this.callbacks?.onStateChange(this.currentState, this.currentUser);
-        
-        // Update device fingerprint link to this device (in case of device switch)
-        try {
-          const deviceFp = await deviceFingerprint.getFingerprint();
-          await phoneAuth.linkDeviceToPhone(deviceFp.fingerprint, fullData.phoneNumber || '');
-          console.log('[AuthService] Device fingerprint updated for same user login');
-        } catch (e) {
-          console.warn('[AuthService] Could not update device fingerprint link:', e);
-        }
-        
-        return this.currentUser;
+      if (this.currentUser?.uid) {
+        await this.recordRecoveryAttempt(this.currentUser.uid);
       }
 
-      // Different user - need to sign out and sign in as the target user
-      // For anonymous users, we can't directly switch UIDs, so we restore data to current session
-      // The key insight: the recovery code maps to a UID, but we're authenticated as anonymous
-      // We'll restore the data to the current anonymous session
-      
-      const fullData = userData as any;
-      const currentAuthUser = this.auth.currentUser;
-      if (!currentAuthUser) {
-        throw new Error('No hay sesión activa para restaurar datos');
-      }
+      // Sign in with custom token to get authenticated session
+      const { signInWithCustomToken } = await import('firebase/auth');
+      const result = await signInWithCustomToken(this.auth, customToken);
+
+      // Prepare local data from recovery code (includes profile, rentalHistory, favorites, cart, notifications)
       const localData: LocalUserData = {
-        uid: currentAuthUser.uid, // Keep current UID for auth
-        originalUid: targetUid,    // Track original UID for reference
+        uid: targetUid,
         recoveryCode: code,
-        profile: fullData.profile || {},
-        rentalHistory: fullData.rentalHistory || [],
-        favorites: fullData.favorites || [],
-        cart: fullData.cart || [],
-        notifications: fullData.notifications || [],
-        createdAt: fullData.createdAt || new Date().toISOString(),
+        profile: userData.profile || {},
+        rentalHistory: userData.rentalHistory || [],
+        favorites: userData.favorites || [],
+        cart: userData.cart || [],
+        notifications: userData.notifications || [],
+        createdAt: userData.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         synced: true,
       };
@@ -1627,25 +1575,47 @@ private async initializeAuth(): Promise<void> {
       // Save to localStorage
       setStorageItem(STORAGE_KEYS.RECOVERY_CODE, code);
       setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
-      
-      this.currentUser = this.mapFirebaseUser(this.auth.currentUser!);
+      setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(userData.profile || {}));
+
+      this.currentUser = this.mapFirebaseUser(result.user);
       this.currentUser.localData = localData;
       this.currentState = 'authenticated';
       this.callbacks?.onStateChange(this.currentState, this.currentUser);
-      
+
       // IMPORTANT: Update device fingerprint link to point to this new device
       // This effectively transfers the account to the new device
       try {
         const deviceFp = await deviceFingerprint.getFingerprint();
-        await phoneAuth.linkDeviceToPhone(deviceFp.fingerprint, fullData.phoneNumber || '');
-        console.log('[AuthService] Device fingerprint linked to phone for new device login');
+        await this.linkDeviceFingerprintToUid(targetUid);
+        console.log('[AuthService] Device fingerprint linked to new UID');
       } catch (e) {
         console.warn('[AuthService] Could not update device fingerprint link:', e);
       }
-      
-      // Sync this data back to Firestore under current UID
+
+      // Also update device_data for this device
+      try {
+        const deviceFp = await deviceFingerprint.getFingerprint();
+        const deviceFingerprintStr = deviceFp.fingerprint;
+        await this.addAccountToDeviceData(deviceFingerprintStr, targetUid, {
+          recoveryCode: code,
+          profile: userData.profile || {},
+          rentalHistory: userData.rentalHistory || [],
+          favorites: userData.favorites || [],
+          cart: userData.cart || [],
+          notifications: userData.notifications || [],
+          createdAt: userData.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          synced: true,
+        });
+        await this.setCurrentAccount(deviceFingerprintStr, targetUid);
+        console.log('[AuthService] Device data saved for recovery code login');
+      } catch (e) {
+        console.warn('[AuthService] Could not save device data:', e);
+      }
+
+      await this.linkDeviceFingerprintToUid(targetUid);
       await this.syncToCloud();
-      
+
       return this.currentUser;
 
     } catch (error) {
