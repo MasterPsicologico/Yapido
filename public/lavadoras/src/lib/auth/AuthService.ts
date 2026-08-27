@@ -279,8 +279,16 @@ class AuthService {
           }
           await this.linkDeviceFingerprintToUid(this.auth.currentUser.uid);
         } else {
-          // First time on this device
-          await this.createNewSession(deviceFingerprintStr);
+          // No cloud data found anywhere. CRITICAL: do NOT create a new
+          // anonymous session here — churning the user's uid is what made
+          // data "disappear" after logout/reopen. Keep the current session
+          // and back up the existing local data to the cloud instead.
+          console.log('[AuthService] No cloud data found — keeping current session and backing up local data');
+          try {
+            await this.syncToCloud();
+          } catch (e) {
+            console.warn('[AuthService] Initial cloud backup failed (non-fatal):', e);
+          }
         }
       }
 
@@ -785,49 +793,93 @@ private async initializeAuth(): Promise<void> {
     // Set as canonical UID for this device
     this.setCanonicalUid(newUid);
     
-    // Initialize local data
+    // Initialize local data.
+    // CRITICAL: if this device already has local data (profile, history,
+    // favorites...), KEEP IT — never overwrite it with empty data.
+    const existingLocal = this.getLocalData();
     const recoveryCode = await this.getOrCreatePermanentRecoveryCode(newUid);
     const localData: LocalUserData = {
       uid: newUid,
-      recoveryCode,
-      profile: {},
-      rentalHistory: [],
-      favorites: [],
-      cart: [],
-      notifications: [],
-      createdAt: new Date().toISOString(),
+      recoveryCode: recoveryCode || existingLocal?.recoveryCode || '',
+      profile: existingLocal?.profile || {},
+      rentalHistory: existingLocal?.rentalHistory || [],
+      favorites: existingLocal?.favorites || [],
+      cart: existingLocal?.cart || [],
+      notifications: existingLocal?.notifications || [],
+      createdAt: existingLocal?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       synced: false,
     };
 
-    setStorageItem(STORAGE_KEYS.RECOVERY_CODE, recoveryCode);
+    setStorageItem(STORAGE_KEYS.RECOVERY_CODE, localData.recoveryCode);
     setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
-    setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify({}));
+    setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(localData.profile));
     
-    // Save to device-based storage (NEW)
+    // Save to device-based storage (NEW) — always with the preserved data
     await this.saveDeviceData(deviceFingerprintStr, {
-      uid: newUid,
-      recoveryCode,
-      profile: {},
-      rentalHistory: [],
-      favorites: [],
-      cart: [],
-      notifications: [],
-      createdAt: new Date().toISOString(),
+      ...localData,
       updatedAt: new Date().toISOString(),
-      synced: false,
     });
 
     // Link device fingerprint to this UID (legacy mapping)
     await this.linkDeviceFingerprintToUid(newUid);
-    
+
     this.currentUser = this.mapFirebaseUser(result.user);
     this.currentUser.localData = localData;
     this.currentState = 'anonymous';
     this.callbacks?.onStateChange(this.currentState, this.currentUser);
-    
-    this.callbacks?.onRecoveryCodeGenerated?.(recoveryCode);
+
+    this.callbacks?.onRecoveryCodeGenerated?.(localData.recoveryCode);
     console.log('[AuthService] New session created with UID:', newUid);
+  }
+
+  /**
+   * Merge remote (cloud/device) data with existing local data.
+   * RULE: NEVER ERASE. Local values survive whenever remote data is empty
+   * or missing; arrays keep the longer version (favorites are unioned).
+   * This prevents refreshes (F5) and restores from wiping user data.
+   */
+  private mergeUserData(remote: any, local: LocalUserData | null, code: string): LocalUserData {
+    const remoteProfile: Record<string, any> = (remote && typeof remote.profile === 'object' && remote.profile) || {};
+    const localProfile: Record<string, any> = local?.profile || {};
+
+    // Field-by-field: remote provides the base (fills gaps on a new device),
+    // but existing LOCAL values always win — they are what the user sees
+    // and edited most recently on this device.
+    const profile: Record<string, any> = { ...remoteProfile };
+    for (const key of Object.keys(localProfile)) {
+      const value = localProfile[key];
+      if (value !== undefined && value !== null && value !== '') {
+        profile[key] = value;
+      }
+    }
+
+    const pickLongest = (remoteArr: any, localArr: any): any[] => {
+      const a = Array.isArray(remoteArr) ? remoteArr : [];
+      const b = Array.isArray(localArr) ? localArr : [];
+      return a.length >= b.length ? a : b;
+    };
+
+    const unionStrings = (remoteArr: any, localArr: any): string[] => {
+      const combined = [
+        ...(Array.isArray(remoteArr) ? remoteArr : []),
+        ...(Array.isArray(localArr) ? localArr : []),
+      ];
+      return Array.from(new Set(combined));
+    };
+
+    return {
+      uid: local?.uid || '',
+      recoveryCode: remote?.recoveryCode || code || local?.recoveryCode || '',
+      profile: profile as LocalUserData['profile'],
+      rentalHistory: pickLongest(remote?.rentalHistory, local?.rentalHistory),
+      favorites: unionStrings(remote?.favorites, local?.favorites),
+      cart: pickLongest(remote?.cart, local?.cart),
+      notifications: pickLongest(remote?.notifications, local?.notifications),
+      createdAt: remote?.createdAt || local?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      synced: true,
+    };
   }
 
   /**
@@ -857,24 +909,21 @@ private async initializeAuth(): Promise<void> {
     // Sign in anonymously to get valid auth session
     await this.ensureAuthenticated();
     
-    // Prepare local data from device data
-    const localData: LocalUserData = {
-      uid: canonicalUid,
-      recoveryCode: deviceData.recoveryCode || '',
-      profile: deviceData.profile || {},
-      rentalHistory: deviceData.rentalHistory || [],
-      favorites: deviceData.favorites || [],
-      cart: deviceData.cart || [],
-      notifications: deviceData.notifications || [],
-      createdAt: deviceData.createdAt || new Date().toISOString(),
-      updatedAt: deviceData.updatedAt || new Date().toISOString(),
-      synced: true,
-    };
+    // Prepare local data from device data.
+    // CRITICAL: merge with existing local data — NEVER erase local data
+    // with empty/stale remote fields (this was wiping data on refresh).
+    const localData: LocalUserData = this.mergeUserData(
+      deviceData,
+      this.getLocalData(),
+      deviceData.recoveryCode || ''
+    );
+    localData.uid = canonicalUid;
+    localData.synced = true;
 
     // Save to localStorage
-    setStorageItem(STORAGE_KEYS.RECOVERY_CODE, deviceData.recoveryCode || '');
+    setStorageItem(STORAGE_KEYS.RECOVERY_CODE, localData.recoveryCode || '');
     setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
-    setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(deviceData.profile || {}));
+    setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(localData.profile || {}));
     
     // Update current user
     const currentAuthUser = this.auth.currentUser;
@@ -918,25 +967,30 @@ private async initializeAuth(): Promise<void> {
   private async initializeLocalData(uid: string): Promise<void> {
     // Get or create permanent recovery code from Firestore
     const recoveryCode = await this.getOrCreatePermanentRecoveryCode(uid);
-    
+
+    // CRITICAL: preserve any existing local data — never erase it with
+    // empty defaults. This function may run after an unexpected new
+    // anonymous session and MUST NOT wipe the user's information.
+    const existingLocal = this.getLocalData();
+
     const localData: LocalUserData = {
       uid,
-      recoveryCode,
-      profile: {},
-      rentalHistory: [],
-      favorites: [],
-      cart: [],
-      notifications: [],
-      createdAt: new Date().toISOString(),
+      recoveryCode: recoveryCode || existingLocal?.recoveryCode || '',
+      profile: existingLocal?.profile || {},
+      rentalHistory: existingLocal?.rentalHistory || [],
+      favorites: existingLocal?.favorites || [],
+      cart: existingLocal?.cart || [],
+      notifications: existingLocal?.notifications || [],
+      createdAt: existingLocal?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       synced: false,
     };
 
-    setStorageItem(STORAGE_KEYS.RECOVERY_CODE, recoveryCode);
+    setStorageItem(STORAGE_KEYS.RECOVERY_CODE, localData.recoveryCode);
     setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
-    setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify({}));
-    
-    this.callbacks?.onRecoveryCodeGenerated?.(recoveryCode);
+    setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(localData.profile));
+
+    this.callbacks?.onRecoveryCodeGenerated?.(localData.recoveryCode);
   }
 
   // ==========================================
@@ -944,15 +998,19 @@ private async initializeAuth(): Promise<void> {
   // ==========================================
 
   private async getOrCreatePermanentRecoveryCode(uid: string): Promise<string> {
+    let docExists = false;
     try {
       const db = getFirestoreInstance();
       const userRef = doc(db, 'users', uid);
       const userDoc = await getDoc(userRef);
-      
-      if (userDoc.exists() && userDoc.data().recoveryCode) {
-        const existingCode = userDoc.data().recoveryCode;
-        console.log('[AuthService] Using existing permanent recovery code from Firestore');
-        return existingCode;
+
+      if (userDoc.exists()) {
+        docExists = true;
+        if (userDoc.data().recoveryCode) {
+          const existingCode = userDoc.data().recoveryCode;
+          console.log('[AuthService] Using existing permanent recovery code from Firestore');
+          return existingCode;
+        }
       }
     } catch (error) {
       console.warn('[AuthService] Could not read recovery code from Firestore:', error);
@@ -960,15 +1018,23 @@ private async initializeAuth(): Promise<void> {
 
     // Generate new permanent recovery code
     const newCode = this.generateRecoveryCode();
-    
-    // Save to Firestore permanently
+
+    // Save to Firestore permanently.
+    // NOTE: Firestore rules require 'email' and 'role' keys when CREATING
+    // the document — include them only in that case so the write isn't
+    // silently denied (which is why codes sometimes never reached the cloud).
     try {
       const db = getFirestoreInstance();
       const userRef = doc(db, 'users', uid);
-      await setDoc(userRef, {
+      const data: Record<string, any> = {
         recoveryCode: newCode,
         recoveryCodeCreatedAt: serverTimestamp(),
-      }, { merge: true });
+      };
+      if (!docExists) {
+        data.email = this.auth.currentUser?.email || '';
+        data.role = 'cliente';
+      }
+      await setDoc(userRef, data, { merge: true });
       console.log('[AuthService] Generated and saved new permanent recovery code to Firestore');
     } catch (error) {
       console.error('[AuthService] Failed to save recovery code to Firestore:', error);
@@ -1217,9 +1283,19 @@ private async initializeAuth(): Promise<void> {
 
       const db = getFirestoreInstance();
       const userRef = doc(db, 'users', this.currentUser.uid);
-      
+
+      // Firestore rules require the keys 'email' and 'role' when CREATING
+      // a user document. Check if the doc exists first and include those
+      // keys ONLY on creation — never overwrite an existing role (e.g. admin).
+      let docExists = true;
+      try {
+        docExists = (await getDoc(userRef)).exists();
+      } catch {
+        docExists = true; // If the read fails, assume it exists (update path)
+      }
+
       // Prepare data to sync
-      const syncData = {
+      const syncData: Record<string, any> = {
         ...localData,
         uid: this.currentUser.uid,
         isAnonymous: this.currentUser.isAnonymous,
@@ -1227,9 +1303,13 @@ private async initializeAuth(): Promise<void> {
         lastSync: serverTimestamp(),
         updatedAt: new Date().toISOString(),
       };
+      if (!docExists) {
+        syncData.email = this.currentUser.email || localData.profile?.email || '';
+        syncData.role = 'cliente';
+      }
 
-      // Sync to users collection (legacy)
-      await setDoc(doc(db, 'users', this.currentUser.uid), syncData, { merge: true });
+      // Sync to users collection
+      await setDoc(userRef, syncData, { merge: true });
       console.log('[AuthService] syncToCloud successful for UID:', this.currentUser.uid);
       
       // ALSO sync to device_data (NEW architecture - primary storage)
@@ -1516,15 +1596,25 @@ private async initializeAuth(): Promise<void> {
   }
 
   /**
-   * Método unificado: Iniciar sesión / Recuperar cuenta con código de 6 dígitos
-   * Usa API Route /api/auth/recovery (Admin SDK evita restricciones de reglas Firestore)
+   * Método unificado: Iniciar sesión / Recuperar cuenta con código de 6 dígitos.
+   *
+   * Método simple, el MISMO mecanismo que hace que un F5 funcione:
+   *   1. Garantiza una sesión anónima válida (como la que persiste al refrescar).
+   *   2. Lee la colección `users` buscando el código (lectura permitida por las
+   *      reglas de Firestore para cualquier sesión iniciada, incluso anónima).
+   *   3. Restaura los datos encontrados haciendo MERGE con los datos locales
+   *      (NUNCA borra información existente).
+   *
+   * NO usa API routes, NO usa Admin SDK, NO requiere claves ni configuración
+   * extra, y NO escribe a colecciones restringidas — por eso el error
+   * "Missing or insufficient permissions" no puede ocurrir.
    */
   async signInWithRecoveryCode(code: string): Promise<AuthUser> {
     if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
       throw new Error('Código debe tener 6 dígitos numéricos');
     }
 
-    // Rate limiting check (local, antes de llamar a la API)
+    // Rate limiting check (local)
     if (this.currentUser?.uid) {
       const rateLimit = await this.checkRateLimit(this.currentUser.uid);
       if (!rateLimit.allowed) {
@@ -1533,88 +1623,78 @@ private async initializeAuth(): Promise<void> {
     }
 
     try {
-      // Call API endpoint which uses Firebase Admin SDK (bypasses Firestore rules)
-      const response = await fetch('/api/auth/recovery', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }));
-        throw new Error(errorData.error || 'Código de recuperación inválido');
+      // Paso 1: sesión válida — el mismo mecanismo que funciona al dar F5
+      await this.ensureAuthenticated();
+      const currentAuthUser = this.auth.currentUser;
+      if (!currentAuthUser) {
+        throw new Error('No se pudo iniciar sesión. Intenta de nuevo.');
       }
 
-      const { customToken, uid: targetUid, ...userData } = await response.json();
+      // Paso 2: buscar la cuenta por su código (operación de SOLO LECTURA,
+      // permitida por las reglas de Firestore para sesiones autenticadas).
+      // Puede haber más de un documento con el mismo código (cada sesión
+      // anónima nueva crea uno): nos quedamos con el MÁS RECIENTE, que es
+      // el que tiene la información actualizada de la cuenta.
+      let snapshot;
+      try {
+        const db = getFirestoreInstance();
+        const usersQuery = query(
+          collection(db, 'users'),
+          where('recoveryCode', '==', code),
+          limit(5)
+        );
+        snapshot = await getDocs(usersQuery);
+      } catch (lookupError) {
+        console.error('[AuthService] Recovery code lookup failed:', lookupError);
+        throw new Error('No se pudo verificar el código. Revisa tu conexión e intenta de nuevo.');
+      }
 
-      console.log('[AuthService] Got custom token from API for UID:', targetUid);
+      if (snapshot.empty) {
+        throw new Error('Código de recuperación inválido. Verifica tu código de 6 dígitos.');
+      }
+
+      const toMillis = (v: any): number => {
+        if (!v) return 0;
+        if (typeof v === 'string') { const t = Date.parse(v); return isNaN(t) ? 0 : t; }
+        if (typeof v?.toMillis === 'function') return v.toMillis();
+        if (typeof v?.seconds === 'number') return v.seconds * 1000;
+        return 0;
+      };
+      const matches = snapshot.docs.map((d) => d.data());
+      matches.sort((a, b) => toMillis(b.updatedAt) - toMillis(a.updatedAt));
+      const accountData = matches[0];
+      console.log('[AuthService] Account found for recovery code, restoring data...');
 
       // Record attempt for rate limiting
       if (this.currentUser?.uid) {
         await this.recordRecoveryAttempt(this.currentUser.uid);
       }
 
-      // Sign in with custom token to get authenticated session
-      const { signInWithCustomToken } = await import('firebase/auth');
-      const result = await signInWithCustomToken(this.auth, customToken);
+      // Paso 3: restaurar datos con MERGE — NUNCA borrar datos locales
+      const localData: LocalUserData = this.mergeUserData(accountData, this.getLocalData(), code);
+      localData.uid = currentAuthUser.uid;
+      localData.recoveryCode = code;
+      localData.synced = false;
+      localData.updatedAt = new Date().toISOString();
 
-      // Prepare local data from recovery code (includes profile, rentalHistory, favorites, cart, notifications)
-      const localData: LocalUserData = {
-        uid: targetUid,
-        recoveryCode: code,
-        profile: userData.profile || {},
-        rentalHistory: userData.rentalHistory || [],
-        favorites: userData.favorites || [],
-        cart: userData.cart || [],
-        notifications: userData.notifications || [],
-        createdAt: userData.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        synced: true,
-      };
-
-      // Save to localStorage
       setStorageItem(STORAGE_KEYS.RECOVERY_CODE, code);
       setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
-      setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(userData.profile || {}));
+      setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(localData.profile || {}));
 
-      this.currentUser = this.mapFirebaseUser(result.user);
+      this.setCanonicalUid(currentAuthUser.uid);
+      this.currentUser = this.mapFirebaseUser(currentAuthUser);
       this.currentUser.localData = localData;
+      this.currentUser.recoveryCode = code;
       this.currentState = 'authenticated';
       this.callbacks?.onStateChange(this.currentState, this.currentUser);
 
-      // IMPORTANT: Update device fingerprint link to point to this new device
-      // This effectively transfers the account to the new device
+      // Paso 4: respaldo a la nube best-effort. Completamente envuelto:
+      // un fallo de sincronización JAMÁS debe mostrar error al usuario.
       try {
-        const deviceFp = await deviceFingerprint.getFingerprint();
-        await this.linkDeviceFingerprintToUid(targetUid);
-        console.log('[AuthService] Device fingerprint linked to new UID');
+        await this.syncToCloud();
       } catch (e) {
-        console.warn('[AuthService] Could not update device fingerprint link:', e);
+        console.warn('[AuthService] Post-recovery sync failed (non-fatal):', e);
       }
-
-      // Also update device_data for this device
-      try {
-        const deviceFp = await deviceFingerprint.getFingerprint();
-        const deviceFingerprintStr = deviceFp.fingerprint;
-        await this.addAccountToDeviceData(deviceFingerprintStr, targetUid, {
-          recoveryCode: code,
-          profile: userData.profile || {},
-          rentalHistory: userData.rentalHistory || [],
-          favorites: userData.favorites || [],
-          cart: userData.cart || [],
-          notifications: userData.notifications || [],
-          createdAt: userData.createdAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          synced: true,
-        });
-        await this.setCurrentAccount(deviceFingerprintStr, targetUid);
-        console.log('[AuthService] Device data saved for recovery code login');
-      } catch (e) {
-        console.warn('[AuthService] Could not save device data:', e);
-      }
-
-      await this.linkDeviceFingerprintToUid(targetUid);
-      await this.syncToCloud();
 
       return this.currentUser;
 
@@ -1850,22 +1930,19 @@ private async initializeAuth(): Promise<void> {
     const currentAuthUser = this.auth.currentUser;
     if (!currentAuthUser) throw new Error('No auth user');
 
-    const localData: LocalUserData = {
-      uid: currentAuthUser.uid,
-      recoveryCode: userData.recoveryCode || '',
-      profile: userData.profile || {},
-      rentalHistory: userData.rentalHistory || [],
-      favorites: userData.favorites || [],
-      cart: userData.cart || [],
-      notifications: userData.notifications || [],
-      createdAt: userData.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      synced: true,
-    };
+    // CRITICAL: merge with existing local data — NEVER erase local data
+    // with empty cloud fields (this was wiping the profile/history on F5).
+    const localData: LocalUserData = this.mergeUserData(
+      userData,
+      this.getLocalData(),
+      userData.recoveryCode || ''
+    );
+    localData.uid = currentAuthUser.uid;
+    localData.synced = true;
 
-    setStorageItem(STORAGE_KEYS.RECOVERY_CODE, userData.recoveryCode || '');
+    setStorageItem(STORAGE_KEYS.RECOVERY_CODE, localData.recoveryCode || '');
     setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
-    setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(userData.profile || {}));
+    setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(localData.profile || {}));
 
     this.currentUser = this.mapFirebaseUser(currentAuthUser);
     this.currentUser.localData = localData;
