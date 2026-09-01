@@ -785,10 +785,17 @@ private async initializeAuth(): Promise<void> {
    */
   private async createNewSession(deviceFingerprintStr: string): Promise<void> {
     console.log('[AuthService] Creating new session for device:', deviceFingerprintStr);
-    
-    // Create new anonymous user
-    const result = await signInAnonymously(this.auth);
-    const newUid = result.user.uid;
+
+    // Reuse the existing Firebase session if there is one — creating a second
+    // anonymous user would orphan the account data tied to the current uid.
+    let user: User;
+    if (this.auth.currentUser) {
+      user = this.auth.currentUser;
+    } else {
+      const result = await signInAnonymously(this.auth);
+      user = result.user;
+    }
+    const newUid = user.uid;
     
     // Set as canonical UID for this device
     this.setCanonicalUid(newUid);
@@ -824,7 +831,7 @@ private async initializeAuth(): Promise<void> {
     // Link device fingerprint to this UID (legacy mapping)
     await this.linkDeviceFingerprintToUid(newUid);
 
-    this.currentUser = this.mapFirebaseUser(result.user);
+    this.currentUser = this.mapFirebaseUser(user);
     this.currentUser.localData = localData;
     this.currentState = 'anonymous';
     this.callbacks?.onStateChange(this.currentState, this.currentUser);
@@ -1284,14 +1291,17 @@ private async initializeAuth(): Promise<void> {
       const db = getFirestoreInstance();
       const userRef = doc(db, 'users', this.currentUser.uid);
 
-      // Firestore rules require the keys 'email' and 'role' when CREATING
-      // a user document. Check if the doc exists first and include those
-      // keys ONLY on creation — never overwrite an existing role (e.g. admin).
-      let docExists = true;
+      // Firestore rules require 'email' and 'role' keys when CREATING a user doc.
+      // Read first to detect if doc exists. On ANY read error, assume it DOESN'T
+      // exist (safer to include email/role and let create succeed, than skip
+      // them and have create silently denied).
+      let docExists = false;
       try {
-        docExists = (await getDoc(userRef)).exists();
-      } catch {
-        docExists = true; // If the read fails, assume it exists (update path)
+        const snap = await getDoc(userRef);
+        docExists = snap.exists();
+      } catch (readError) {
+        console.warn('[AuthService] syncToCloud: could not read user doc, assuming create:', readError);
+        docExists = false;
       }
 
       // Prepare data to sync
@@ -1650,7 +1660,7 @@ private async initializeAuth(): Promise<void> {
       }
 
       if (snapshot.empty) {
-        throw new Error('Código de recuperación inválido. Verifica tu código de 6 dígitos.');
+        throw new Error('Esta cuenta no existe en nuestro sistema. Verifica tu código de 6 dígitos.');
       }
 
       const toMillis = (v: any): number => {
@@ -1660,9 +1670,10 @@ private async initializeAuth(): Promise<void> {
         if (typeof v?.seconds === 'number') return v.seconds * 1000;
         return 0;
       };
-      const matches = snapshot.docs.map((d) => d.data());
-      matches.sort((a, b) => toMillis(b.updatedAt) - toMillis(a.updatedAt));
-      const accountData = matches[0];
+      const matches = snapshot.docs.map((d) => ({ id: d.id, data: d.data() }));
+      matches.sort((a, b) => toMillis(b.data.updatedAt) - toMillis(a.data.updatedAt));
+      const sourceUid = matches[0].id;
+      const accountData = matches[0].data;
       console.log('[AuthService] Account found for recovery code, restoring data...');
 
       // Record attempt for rate limiting
@@ -1681,6 +1692,54 @@ private async initializeAuth(): Promise<void> {
       setStorageItem(STORAGE_KEYS.GUEST_DATA, JSON.stringify(localData));
       setStorageItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(localData.profile || {}));
 
+      // Paso 4: copiar la identidad de la cuenta recuperada al documento del
+      // usuario ACTUAL. La UI (perfil, navbar) lee `users/{uidActual}` — sin
+      // este paso cualquier código parecía abrir "la misma cuenta" y los datos
+      // restaurados no se veían. Solo aplica cuando el código pertenece a OTRO
+      // documento (cuenta distinta, o sesión nueva tras cerrar sesión).
+      if (sourceUid !== currentAuthUser.uid) {
+        try {
+          const db = getFirestoreInstance();
+          const targetRef = doc(db, 'users', currentAuthUser.uid);
+
+          // Las reglas exigen email+role al CREAR el documento — detectar si existe
+          let targetExists = false;
+          try {
+            targetExists = (await getDoc(targetRef)).exists();
+          } catch {
+            targetExists = false;
+          }
+
+          const copyPayload: Record<string, any> = {
+            uid: currentAuthUser.uid,
+            recoveryCode: code,
+            displayName: accountData.displayName ?? accountData.profile?.name ?? '',
+            phoneNumber: accountData.phoneNumber ?? accountData.profile?.phone ?? '',
+            addresses: Array.isArray(accountData.addresses) ? accountData.addresses
+              : (accountData.address ? [accountData.address]
+              : (accountData.profile?.address ? [accountData.profile.address] : [])),
+            address: accountData.address ?? accountData.addresses?.[0] ?? accountData.profile?.address ?? '',
+            profile: localData.profile,
+            rentalHistory: localData.rentalHistory,
+            favorites: localData.favorites,
+            cart: localData.cart,
+            notifications: localData.notifications,
+            restoredFromUid: sourceUid,
+            updatedAt: serverTimestamp(),
+          };
+          if (!targetExists) {
+            copyPayload.email = this.currentUser?.email || localData.profile?.email || accountData.email || '';
+            copyPayload.role = 'cliente';
+          }
+
+          await setDoc(targetRef, copyPayload, { merge: true });
+          console.log('[AuthService] Account identity copied to current session doc');
+        } catch (copyError) {
+          // NUNCA mostrar este error al usuario — los datos ya están restaurados localmente
+          console.warn('[AuthService] Could not copy account identity (non-fatal):', copyError);
+        }
+      }
+
       this.setCanonicalUid(currentAuthUser.uid);
       this.currentUser = this.mapFirebaseUser(currentAuthUser);
       this.currentUser.localData = localData;
@@ -1688,7 +1747,7 @@ private async initializeAuth(): Promise<void> {
       this.currentState = 'authenticated';
       this.callbacks?.onStateChange(this.currentState, this.currentUser);
 
-      // Paso 4: respaldo a la nube best-effort. Completamente envuelto:
+      // Paso 5: respaldo a la nube best-effort. Completamente envuelto:
       // un fallo de sincronización JAMÁS debe mostrar error al usuario.
       try {
         await this.syncToCloud();
