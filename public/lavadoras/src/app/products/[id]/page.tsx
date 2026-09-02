@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, ArrowLeft, Loader2, Minus, Plus, CheckCircle2, AlertCircle, UserCircle } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/navigation';
 import { useParams, useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { useProfile } from '@/firebase/auth/use-profile';
@@ -83,7 +82,7 @@ export default function ProductPage() {
         status: 'pending',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        isLogisticsPublic: true, // ¡ACTIVACIÓN LOGÍSTICA INMEDIATA!
+        isLogisticsPublic: true,
         participants: participants
       };
 
@@ -115,7 +114,7 @@ export default function ProductPage() {
             {product?.imageUrl && <Image src={product.imageUrl} alt={product.name || 'Producto'} fill className="object-cover" />}
           </div>
           <div className="p-8 flex flex-col">
-            <Badge className="bg-primary/10 text-primary border-none uppercase text-[10px] font-black px-4 py-1 rounded-full w-fit mb-4">yapido.click Pro</Badge>
+            <Badge className="bg-primary/10 text-primary border-none uppercase text-[10px] font-black px-4 py-1 rounded-full mb-4">yapido.click Pro</Badge>
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-tight mb-2">{product?.name}</h1>
             <span className="text-4xl font-black text-primary tracking-tighter mb-8">
               {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(product?.price || 0)}
@@ -142,7 +141,7 @@ export default function ProductPage() {
                   </div>
                 )}
                 
-                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
+                <div className="flex items-center justify-between bg-slate-50 p-5 rounded-2xl">
                   <span className="font-black text-slate-400 text-xs">CANTIDAD</span>
                   <div className="flex items-center gap-4">
                     <Button variant="outline" size="icon" className="rounded-full h-10 w-10" onClick={() => setQuantity(Math.max(1, quantity - 1))}><Minus className="w-4 h-4" /></Button>

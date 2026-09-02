@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -50,20 +49,15 @@ export default function CategoryPage() {
 
   const storesQuery = useMemoFirebase(() => {
     if (!firestore || !id) return null;
-    // Quitamos el filtro de 'active' para manejar la papelera en memoria
     return query(collection(firestore, 'stores'), where('mainCategoryId', '==', id));
   }, [firestore, id]);
 
   const { data: rawStores, isLoading: loadingStores } = useCollection(storesQuery);
 
-  // Filtrar por ciudad del usuario y manejar lógica de papelera
   const stores = useMemo(() => {
     if (!rawStores) return [];
     let filtered = rawStores;
 
-    // Lógica de Papelera:
-    // 1. Mostrar 'active' a todos.
-    // 2. Mostrar 'trashed' SOLO al dueño o admin, y solo si lleva menos de 24h.
     filtered = rawStores.filter((s: any) => {
       const isOwner = user?.uid === s.ownerId;
       const trashedAt = s.trashedAt?.toDate?.() || (s.trashedAt?.seconds ? new Date(s.trashedAt.seconds * 1000) : null);
@@ -72,18 +66,16 @@ export default function CategoryPage() {
       if (s.status === 'active') return true;
       if (s.status === 'trashed') {
         if (isAdmin || isOwner) {
-          return isWithin24h; // Solo mostrar si está en el periodo de gracia
+          return isWithin24h;
         }
       }
       return false;
     });
 
-    // Filtro geográfico
     if (profile?.cityId) {
       filtered = filtered.filter((s: any) => s.cityId === profile.cityId || !s.cityId);
     }
     
-    // Ordenar por calificación
     return [...filtered].sort((a: any, b: any) => (b.averageRating || 0) - (a.averageRating || 0));
   }, [rawStores, profile?.cityId, user?.uid, isAdmin]);
 
@@ -128,7 +120,6 @@ export default function CategoryPage() {
         data.imageUrl = null;
       }
 
-      // USO DE SET CON MERGE PARA EVITAR PERMISSION DENIED SI EL DOC NO EXISTE
       setDocumentNonBlocking(catRef, data, { merge: true });
       toast({ title: "Categoría actualizada correctamente" });
       setOpenEditCat(false);
@@ -170,7 +161,6 @@ export default function CategoryPage() {
       }, { merge: true });
 
       const userRef = doc(firestore, 'users', user.uid);
-      // CORRECCIÓN: No degradar el rol de administrador si ya lo tiene
       if (profile?.role === 'cliente') {
         updateDocumentNonBlocking(userRef, { role: 'dueño', updatedAt: serverTimestamp() });
       }
@@ -308,7 +298,16 @@ export default function CategoryPage() {
             </div>
           )}
 
-          {/* Se ha eliminado el div que contenía el título y la descripción para dejar el banner limpio */}
+          <div className="absolute bottom-4 left-4 right-4 z-20 px-4 sm:px-8">
+            <div className="max-w-6xl mx-auto">
+              <h1 className="text-3xl font-black italic uppercase tracking-tighter leading-none text-white">
+                {displayCategory?.name || 'Categoría'}
+              </h1>
+              <p className="text-white/80 font-bold text-[10px] uppercase tracking-[0.3em] mt-2">
+                {displayCategory?.description}
+              </p>
+            </div>
+          </div>
         </div>
 
         <section className="w-full py-8 px-4 sm:px-8 border-b bg-slate-50/50">
